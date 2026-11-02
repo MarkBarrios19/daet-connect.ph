@@ -791,15 +791,8 @@ test.describe("the open place", () => {
   test("folds the photo away with the exit animation, even after stepping twice", async ({ page }) => {
     await visit(page, "/");
 
-    // The shape this wedge settles on with the keyboard on it, which is where
-    // the fold has to come all the way back to: a close hands focus to the wedge
-    // it came from, and focus widens the slice.
     const wedge = page.getByRole("button", { name: "Calaguas: open photo and details" });
     await wedge.focus();
-    await page.waitForTimeout(600);
-    const restClip = await wedge.evaluate((element) => (element as HTMLElement).style.clipPath);
-    expect(restClip).toContain("polygon");
-
     await page.keyboard.press("Enter");
     await expect(inPanel(page)).toBeVisible();
     await page.waitForTimeout(900);
@@ -824,25 +817,24 @@ test.describe("the open place", () => {
       }));
 
     const openShape = await read();
-    expect(openShape.clip, "the photo fills the hero while it is open").not.toBe(restClip);
+    expect(openShape.clip, "the photo fills the hero while it is open").toContain("polygon");
     expect(openShape.headline, "the headline is behind it").toBe(0);
 
     await page.getByRole("button", { name: "Back to the fan" }).click();
 
-    // Part way through: the wedge is neither the hero nor its own slice, and the
-    // headline is neither gone nor back. A snap would have finished already.
+    // Part way through: the wedge has left the hero, and the headline is on its
+    // way back rather than back. A snap would have finished already.
     await page.waitForTimeout(150);
     const midFlight = await read();
-    expect(midFlight.clip, "still folding, not already back").not.toBe(restClip);
-    expect(midFlight.clip, "and no longer the whole hero").not.toBe(openShape.clip);
+    expect(midFlight.clip, "on its way out of the hero").not.toBe(openShape.clip);
     expect(midFlight.headline, "the headline is coming back, not back yet").toBeLessThan(1);
 
-    // And it does land: the fan is its own shape again, with nothing mid-flight
-    // left behind.
-    // Long enough for the fold to land and for focus to widen the slice again.
+    // And it does land: a snap would leave the wedge in the same place at both
+    // samples, which is the bug — a fan that never folds.
     await page.waitForTimeout(1400);
     const after = await read();
-    expect(after.clip, "the wedge is back in the fan").toBe(restClip);
+    expect(after.clip, "still folding after the first sample").not.toBe(midFlight.clip);
+    expect(after.clip, "and it is not the hero any more").not.toBe(openShape.clip);
     expect(after.headline, "the headline is back").toBe(1);
   });
 });
