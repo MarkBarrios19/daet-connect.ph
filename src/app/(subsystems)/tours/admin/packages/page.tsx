@@ -133,7 +133,7 @@ export default async function AdminPackagesPage() {
           </div>
           
           {pendingPackages.length === 0 ? (
-            <div className="bg-surface rounded-2xl p-6 text-center text-daet-ink/70">
+            <div className="card-edge bg-surface rounded-2xl p-6 text-center text-daet-ink/70">
               No pending packages
             </div>
           ) : (
@@ -154,7 +154,7 @@ export default async function AdminPackagesPage() {
           </div>
           
           {publishedPackages.length === 0 ? (
-            <div className="bg-surface rounded-2xl p-6 text-center text-daet-ink/70">
+            <div className="card-edge bg-surface rounded-2xl p-6 text-center text-daet-ink/70">
               No published packages
             </div>
           ) : (

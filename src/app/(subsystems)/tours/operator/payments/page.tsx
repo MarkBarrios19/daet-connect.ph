@@ -58,7 +58,7 @@ export default async function OperatorPaymentsPage({
         </ButtonLink>
       </div>
 
-      <nav aria-label="Month" className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-surface p-2">
+      <nav aria-label="Month" className="mb-6 flex items-center justify-between gap-3 rounded-2xl card-edge bg-surface p-2">
         <ButtonLink href={`/tours/operator/payments?month=${monthKey(shiftMonth(month, -1))}`} variant="ghost" size="icon" aria-label="Previous month">
           ‹
         </ButtonLink>

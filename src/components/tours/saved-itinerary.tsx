@@ -15,7 +15,7 @@ export function SavedItinerary({ days }: { days: SavedDay[] }) {
       {days.map((day) => {
         const points = day.items.filter((i) => i.kind === "visit" && i.lat !== null && i.lng !== null).map((i) => ({ lat: i.lat!, lng: i.lng!, label: i.name }));
         return (
-          <section key={day.dayNumber} className="rounded-2xl bg-surface p-5">
+          <section key={day.dayNumber} className="rounded-2xl card-edge bg-surface p-5">
             <h2 className="text-lg font-bold text-daet-ink">
               Day {day.dayNumber}
               {day.date ? ` · ${longDate(day.date)}` : ""}

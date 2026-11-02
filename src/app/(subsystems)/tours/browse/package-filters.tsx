@@ -84,7 +84,7 @@ export function PackageFilters({ currentParams }: PackageFiltersProps) {
           More filters{extra ? ` (${extra})` : ""}
         </summary>
         <form
-          className="mt-2 grid gap-4 rounded-2xl bg-surface p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-[2fr_1fr_1fr_1.4fr_auto] lg:items-end"
+          className="mt-2 grid gap-4 rounded-2xl card-edge bg-surface p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-[2fr_1fr_1fr_1.4fr_auto] lg:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             applyFilters();

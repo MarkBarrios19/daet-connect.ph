@@ -289,7 +289,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
             )}
 
             {/* Basic info */}
-            <div className="mt-6 rounded-2xl bg-surface p-6">
+            <div className="mt-6 rounded-2xl card-edge bg-surface p-6">
               <h2 className="font-bold text-daet-ink">Basic information</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
@@ -314,7 +314,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
             {/* Pricing */}
             {pkg.tours_package_price_variants && pkg.tours_package_price_variants.length > 0 && (
-              <div className="mt-6 rounded-2xl bg-surface p-6">
+              <div className="mt-6 rounded-2xl card-edge bg-surface p-6">
                 <h2 className="font-bold text-daet-ink">Pricing variants</h2>
                 <div className="mt-4 space-y-3">
                   {pkg.tours_package_price_variants.map((variant: any) => (
@@ -353,7 +353,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
             {/* Inclusions */}
             {(included.length > 0 || excluded.length > 0) && (
-              <div className="mt-6 rounded-2xl bg-surface p-6">
+              <div className="mt-6 rounded-2xl card-edge bg-surface p-6">
                 <h2 className="font-bold text-daet-ink">Inclusions</h2>
 
                 {included.length > 0 && (
@@ -394,7 +394,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
             {/* Itinerary */}
             {stops.length > 0 && (
-              <div className="mt-6 rounded-2xl bg-surface p-6">
+              <div className="mt-6 rounded-2xl card-edge bg-surface p-6">
                 <h2 className="font-bold text-daet-ink">Itinerary stops</h2>
                 <div className="mt-4 space-y-4">
                   {stops.map((stop: any, idx: number) => (
@@ -421,7 +421,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            <section aria-labelledby="meeting-heading" className="mt-6 rounded-2xl bg-surface p-6">
+            <section aria-labelledby="meeting-heading" className="mt-6 rounded-2xl card-edge bg-surface p-6">
               <h2 id="meeting-heading" className="font-bold text-daet-ink">Where guests meet</h2>
               <div className="mt-3">
                 <MeetingPointForm
@@ -436,7 +436,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
             {/* Gallery */}
             {gallery.length > 0 && (
-              <div className="mt-6 rounded-2xl bg-surface p-6">
+              <div className="mt-6 rounded-2xl card-edge bg-surface p-6">
                 <h2 className="font-bold text-daet-ink">Photo gallery</h2>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {gallery.map((img: any) => (
@@ -458,7 +458,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
           {/* Sidebar - Stats */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6 rounded-2xl bg-surface p-6 shadow-[var(--shadow-float)]">
+            <div className="sticky top-6 rounded-2xl card-edge bg-surface p-6 shadow-[var(--shadow-float)]">
               <h2 className="font-bold text-daet-ink">Package stats</h2>
 
               <div className="mt-4 space-y-4">

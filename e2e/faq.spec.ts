@@ -95,6 +95,68 @@ test("the home page asks six, all answered, and points at the rest", async ({ pa
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Common questions");
 });
 
+test("draws the questions as hairline rows with one turning chevron", async ({ page }) => {
+  // The owner's reference (image-46): a rule between questions on the page's own
+  // ground — no card fill, no plus/close pair — and a chevron that turns over.
+  await visit(page, "/tours/faq");
+
+  const book = page.locator("details#book");
+  const skin = await book.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { border: style.borderBottomWidth, colour: style.borderBottomColor, fill: style.backgroundColor };
+  });
+  expect(skin.border, "a hairline under the question").toBe("1px");
+  expect(skin.fill, "no card behind it").toBe("rgba(0, 0, 0, 0)");
+
+  const marker = book.locator("summary span");
+  expect(await marker.evaluate((element) => getComputedStyle(element).rotate)).toMatch(/^(none|0deg)$/);
+
+  await book.locator("summary").click();
+  await expect(book).toHaveAttribute("open", "");
+  await expect
+    .poll(() => marker.evaluate((element) => getComputedStyle(element).rotate), { timeout: 2000 })
+    .toBe("180deg");
+});
+
+test("opens a question like a drawer, not a jump", async ({ page }) => {
+  await visit(page, "/tours/faq");
+
+  // Only Chromium and friends can interpolate to `auto`; everywhere else the
+  // answer appears at once, as it always did, and there is no animation to test.
+  const animates = await page.evaluate(() => CSS.supports("interpolate-size", "allow-keywords"));
+
+  const book = page.locator("details#book");
+  const closed = (await book.boundingBox())!.height;
+
+  await book.locator("summary").click();
+  const onTheWay: number[] = [];
+  for (let sample = 0; sample < 6; sample += 1) {
+    onTheWay.push((await book.boundingBox())!.height);
+    await page.waitForTimeout(40);
+  }
+  await page.waitForTimeout(700);
+  const settled = (await book.boundingBox())!.height;
+
+  expect(settled, "the answer is on screen").toBeGreaterThan(closed + 40);
+  if (animates) {
+    expect(
+      onTheWay.some((height) => height > closed + 6 && height < settled - 6),
+      `the row grew in steps rather than jumping: ${onTheWay.map(Math.round).join(", ")}`,
+    ).toBe(true);
+  }
+});
+
+test("the light ground is white, and the cards on it carry a thin outline", async ({ page }) => {
+  // Sampled from the reference (image-46). White cards on a white ground need
+  // the hairline; that is the owner's other note.
+  await visit(page, "/tours/faq");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(255, 255, 255)");
+
+  const card = page.locator("section[aria-labelledby='faq-more']");
+  const shadow = await card.evaluate((element) => getComputedStyle(element).boxShadow);
+  expect(shadow, "a hairline drawn inside the card's own edge").toContain("inset");
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

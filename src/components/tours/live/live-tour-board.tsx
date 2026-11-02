@@ -168,10 +168,10 @@ export function LiveTourBoard(props: LiveTourBoardProps) {
           {markers.length ? (
             <FreeMap markers={markers} lines={lines} title={`Live map for ${props.tourTitle}`} fitKey={`${isLive}-${touristPos?.precision ?? "none"}-${live.flares.length}`} className="h-80 sm:h-[28rem]" />
           ) : (
-            <p className="rounded-2xl bg-surface p-5 text-sm text-daet-ink/70">The map appears once the guide starts the live tour.</p>
+            <p className="rounded-2xl card-edge bg-surface p-5 text-sm text-daet-ink/70">The map appears once the guide starts the live tour.</p>
           )}
           {role === "guide" && isLive ? (
-            <p className={`rounded-2xl p-3 text-sm ${location.status === "denied" || location.status === "unavailable" ? "bg-red-50 text-red-900 dark:bg-red-950/40 dark:text-red-200" : "bg-surface text-daet-ink"}`}>
+            <p className={`rounded-2xl p-3 text-sm ${location.status === "denied" || location.status === "unavailable" ? "bg-red-50 text-red-900 dark:bg-red-950/40 dark:text-red-200" : "card-edge bg-surface text-daet-ink"}`}>
               {LOCATION_STATUS_TEXT[location.status]}
               {location.fix?.accuracy && location.status === "on" ? ` Accurate to about ${location.fix.accuracy} m.` : ""}
             </p>
@@ -179,7 +179,7 @@ export function LiveTourBoard(props: LiveTourBoardProps) {
         </div>
 
         <div className="space-y-4">
-          <section className="rounded-2xl bg-surface p-4">
+          <section className="rounded-2xl card-edge bg-surface p-4">
             <h2 className="font-bold text-daet-ink">Guest</h2>
             <p className="mt-2 font-bold text-daet-ink">{contactName}</p>
             <p className="text-sm text-daet-ink/75">{touristLine}</p>
@@ -194,7 +194,7 @@ export function LiveTourBoard(props: LiveTourBoardProps) {
           </section>
 
           {props.stops.length ? (
-            <section className="rounded-2xl bg-surface p-4">
+            <section className="rounded-2xl card-edge bg-surface p-4">
               <h2 className="font-bold text-daet-ink">Stops</h2>
               <ol className="mt-2 space-y-1">
                 {props.stops.map((s, i) => (
@@ -220,7 +220,7 @@ export function LiveTourBoard(props: LiveTourBoardProps) {
             </section>
           ) : null}
 
-          <section className="rounded-2xl bg-surface p-4">
+          <section className="rounded-2xl card-edge bg-surface p-4">
             {isLive ? (
               confirmEnd ? (
                 <div>

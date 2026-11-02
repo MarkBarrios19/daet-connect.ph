@@ -20,10 +20,10 @@ Anatomy of `image-36`, top to bottom:
 | Layout | Two columns: narrow title column (~30%), wide list (~57%), 8-col gutter, centred | `WRAP` (`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8`) + `lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] gap-8` |
 | Title | "FAQ" in a very large bold sans | `display-1` or `display-2` (`docs/DESIGN_SYSTEM.md`) — **not** the word "FAQ" alone; see §4 |
 | Subline | One sentence, sentence case, 16–18px | `text-lg text-daet-ink`, no eyebrow label (house rule) |
-| Item (closed) | Rounded-2xl card, pale tint, bold question, blue `+` at the right | `<details>` + `<summary>`, `rounded-2xl bg-surface`, `min-h-14`, `LineIcon name="plus"` |
-| Item (open) | Card tinted one step further, question still bold, blue `✕` | `open:bg-blue-50 dark:open:bg-blue-950/40`, `LineIcon name="close"` |
+| Item (closed) | A rule between rows, bold question, chevron at the right | `<details data-faq>` + `<summary>`, `border-b border-hairline`, `py-5`, `LineIcon name="chevron-down"` |
+| Item (open) | Same row, chevron turned over, answer on the page's own ground | `group-open:rotate-180`; the answer grows open via `details[data-faq]::details-content` in `globals.css` (Chromium/Safari; elsewhere it appears at once) |
 | Answer | Paragraphs, bulleted lists, bold lead-ins, an underlined link, generous spacing | `space-y-3 text-base leading-relaxed`, `<ul className="list-disc pl-5">`, links `font-bold text-blue-700 underline dark:text-blue-300` |
-| Rhythm | ~16px between items, no borders, no shadows | House style: tone step, no resting shadow |
+| Rhythm | ~20px of padding either side of each rule, no shadows | One hairline list, no card fill (the owner's second reference, image-46) |
 
 Two things in the reference we should **not** copy: it uses `✕` as "collapse" (fine, matches
 "+" as "expand"), and it has no visible hint that the items are keyboard-operable. Native

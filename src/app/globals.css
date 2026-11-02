@@ -32,8 +32,14 @@
   /* Neutral surfaces that follow the theme (see the dark values below). Use
      these instead of bg-white / bg-slate-50 / -100 / -200 / -300. */
   --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
+  /* White, sampled from the owner's FAQ reference (image-46): the light ground is
+     the card's own white, so every card carries a hairline instead of relying on
+     a tone step. See `card-edge` below. */
+  --color-canvas: #ffffff;
   --color-muted: #f1f5f9;
+  /* The hairline that separates white cards from the white ground, and the rules
+     between the questions on the FAQ page. */
+  --color-hairline: #e3e8ef;
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
   --color-map-ground: #f2efe9;
@@ -121,6 +127,46 @@
   }
 }
 
+/* The card edge.
+ *
+ * The light ground is white now (image-46), so a white card has no tone step to
+ * separate it: it carries this hairline instead, on the owner's note — "give the
+ * cards a light thin outline". An inset shadow draws it inside the card's own
+ * radius, so it costs no layout, and it is one class rather than a border on
+ * every card, so a card can still add its own ring or float shadow without the
+ * two fighting. */
+@utility card-edge {
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+
+/* A question's answer draws itself open (image-46).
+ *
+ * Native <details> still does the opening, this is only the transition: the
+ * answer's block grows from nothing to its own height. That needs `auto` to be
+ * interpolatable, which is what `interpolate-size` is for — where a browser has
+ * neither, the answer simply appears, exactly as it did before. */
+@supports (interpolate-size: allow-keywords) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  details[data-faq]::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 280ms var(--ease-out),
+      opacity 180ms var(--ease-out),
+      content-visibility 280ms allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+
+  details[data-faq][open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
 /* Dark theme values. Raised cards stay one tone lighter than the ground, as in
    light mode. Brand blue fills, green/yellow fills and text-white keep their
    light values: they pass contrast on both grounds. */
@@ -136,6 +182,7 @@
     --color-map-ground: #141a23;
     --color-muted-strong: #26324d;
     --color-line: #334160;
+    --color-hairline: #22304b;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -150,6 +197,7 @@
     --color-map-ground: #141a23;
       --color-muted-strong: #26324d;
       --color-line: #334160;
+      --color-hairline: #22304b;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -162,10 +210,11 @@
     --color-daet-ink: #0f172a;
     --color-daet-sand: #eff6ff;
     --color-surface: #ffffff;
-    --color-canvas: #f8fafc;
+    --color-canvas: #ffffff;
     --color-muted: #f1f5f9;
     --color-muted-strong: #e2e8f0;
     --color-line: #cbd5e1;
+    --color-hairline: #e3e8ef;
   }
 }
 

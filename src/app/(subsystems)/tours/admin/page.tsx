@@ -108,11 +108,11 @@ export default async function AdminDashboardPage() {
             </>
           );
           return stat.href ? (
-            <Link key={stat.label} href={stat.href} className="block rounded-2xl bg-surface p-4 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99]">
+            <Link key={stat.label} href={stat.href} className="block rounded-2xl card-edge bg-surface p-4 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99]">
               {body}
             </Link>
           ) : (
-            <div key={stat.label} className="rounded-2xl bg-surface p-4">
+            <div key={stat.label} className="rounded-2xl card-edge bg-surface p-4">
               {body}
             </div>
           );
@@ -120,7 +120,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Analytics, approvals and messages are in the tab bar and header; this lists the rest. */}
-      <div className="mb-8 rounded-2xl bg-surface p-5 sm:p-6">
+      <div className="mb-8 rounded-2xl card-edge bg-surface p-5 sm:p-6">
         <h2 className="mb-4 text-xl font-bold text-daet-ink">Manage</h2>
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {[
@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
 
       {/* Recent Activity */}
       {recentActivities && recentActivities.length > 0 && (
-        <div className="rounded-2xl bg-surface p-6">
+        <div className="rounded-2xl card-edge bg-surface p-6">
           <h2 className="text-xl font-bold text-daet-ink mb-4">Recent activity</h2>
           <div className="space-y-3">
             {recentActivities.map((activity: any) => (

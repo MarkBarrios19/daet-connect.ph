@@ -168,7 +168,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           <LineIcon name="arrowRight" className="h-4 w-4 rotate-180" /> My bookings
         </Link>
 
-        <header className="mb-6 grid overflow-hidden rounded-2xl bg-surface md:grid-cols-[1fr_1.1fr]">
+        <header className="mb-6 grid overflow-hidden rounded-2xl card-edge bg-surface md:grid-cols-[1fr_1.1fr]">
           <div className="relative min-h-28 bg-blue-100 dark:bg-blue-900/40 sm:min-h-48 md:min-h-full">
             {pkg?.cover_image_url ? (
               <img src={pkg.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -236,7 +236,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             {Number(booking.total_paid ?? 0) > 0 ? " Any amount you paid will be refunded by the operator." : ""}
           </Notice>
         ) : (
-          <section aria-labelledby="progress" className="mb-6 rounded-2xl bg-surface p-5 sm:p-6">
+          <section aria-labelledby="progress" className="mb-6 rounded-2xl card-edge bg-surface p-5 sm:p-6">
             <h2 id="progress" className="text-xl font-bold text-daet-ink">
               Where it stands
             </h2>
@@ -260,7 +260,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
         )}
 
         {booking.status === "completed" ? (
-          <section id="review" aria-labelledby="review-title" className="mb-6 rounded-2xl bg-surface p-5 sm:p-6">
+          <section id="review" aria-labelledby="review-title" className="mb-6 rounded-2xl card-edge bg-surface p-5 sm:p-6">
             <h2 id="review-title" className="text-xl font-bold text-daet-ink">
               {myReview ? "Your review" : "Rate your tour"}
             </h2>
@@ -281,7 +281,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           </section>
         ) : null}
 
-        <section aria-labelledby="cost" className="mb-6 rounded-2xl bg-surface p-5 sm:p-6">
+        <section aria-labelledby="cost" className="mb-6 rounded-2xl card-edge bg-surface p-5 sm:p-6">
           <h2 id="cost" className="text-xl font-bold text-daet-ink">
             What it costs
           </h2>
@@ -319,7 +319,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           cancellation={(cancellation as MyCancellation | null) ?? null}
         />
 
-        <section aria-labelledby="contact" className="mb-6 rounded-2xl bg-surface p-5 sm:p-6">
+        <section aria-labelledby="contact" className="mb-6 rounded-2xl card-edge bg-surface p-5 sm:p-6">
           <h2 id="contact" className="text-xl font-bold text-daet-ink">
             Your contact details
           </h2>

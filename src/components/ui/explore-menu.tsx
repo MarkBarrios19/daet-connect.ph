@@ -28,7 +28,7 @@ export function ExploreMenu({ links, className = "" }: { links: MenuLink[]; clas
         <LineIcon name="chevron-down" className={`h-4 w-4 transition-transform duration-200 ease-out ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
-        <nav id="explore-panel" aria-label="Explore" className="motion-pop absolute left-0 top-full z-50 mt-2 w-52 [--pop-origin:3rem_0] rounded-2xl bg-surface p-2 shadow-[var(--shadow-float)]">
+        <nav id="explore-panel" aria-label="Explore" className="motion-pop absolute left-0 top-full z-50 mt-2 w-52 [--pop-origin:3rem_0] rounded-2xl card-edge bg-surface p-2 shadow-[var(--shadow-float)]">
           <ul>
             {links.map((link) => {
               const current = isCurrent(link.href);

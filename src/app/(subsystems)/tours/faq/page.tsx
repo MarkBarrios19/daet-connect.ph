@@ -11,7 +11,9 @@ import { faqGroupsWithAnswers, faqJsonLd } from "@/lib/faq";
  * `src/lib/faq.ts`), so the page and the assistant say the same thing.
  *
  * Static and script-free: every question is a native `<details>`, so it opens
- * without JavaScript and its text is in the HTML for search.
+ * without JavaScript and its text is in the HTML for search. The opening is
+ * animated in CSS (globals.css), which the reference in image-46 asks for and
+ * which costs the page no script.
  */
 
 export const metadata: Metadata = {
@@ -30,8 +32,8 @@ export default function FaqPage() {
         aside={
           <>
             <h1 className="display-2 text-daet-ink">Common questions</h1>
-            <p className="mt-3 text-lg leading-relaxed text-daet-ink">
-              What people ask before they book a boat, pay for a trip, or come to Daet. These are the same answers the travel guide gives.
+            <p className="mt-3 text-lg leading-relaxed text-daet-ink/80">
+              Boats, payments, cancellations and the day itself — answered from the same pages the travel guide uses.
             </p>
             <nav aria-label="Jump to a group" className="mt-6 hidden lg:block">
               <ul>
@@ -55,14 +57,14 @@ export default function FaqPage() {
       >
         {groups.map((group) => (
           <section key={group.id} id={group.id} aria-labelledby={`${group.id}-heading`} className="scroll-mt-[calc(var(--header-h)+1.5rem)]">
-            <h2 id={`${group.id}-heading`} className="mb-3 text-2xl font-bold text-daet-ink">
+            <h2 id={`${group.id}-heading`} className="mb-4 text-xl font-bold text-daet-ink">
               {group.title}
             </h2>
             <FaqList items={group.items} />
           </section>
         ))}
 
-        <section aria-labelledby="faq-more" className="rounded-2xl bg-surface p-5 sm:p-6">
+        <section aria-labelledby="faq-more" className="card-edge rounded-2xl bg-surface p-5 sm:p-6">
           <h2 id="faq-more" className="text-2xl font-bold text-daet-ink">
             Still not answered?
           </h2>

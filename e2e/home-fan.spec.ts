@@ -650,7 +650,7 @@ test.describe("home fan on a desktop", () => {
       expected.every((channel, i) => Math.abs((actual[i] ?? 0) - channel) <= 2);
 
     const light = await readHero();
-    expect(isNear(light.ground, [248, 250, 252]), "the page's own ground, no dark band").toBe(true);
+    expect(isNear(light.ground, [255, 255, 255]), "the page's own ground, no dark band").toBe(true);
     expect(isNear(light.headline, [15, 23, 42]), "ink on it").toBe(true);
     // White-on-white was the bug in the mock: this button has to carry ink here.
     expect(isNear(light.guide ?? [], [15, 23, 42]), "the guide button keeps an edge on light").toBe(true);

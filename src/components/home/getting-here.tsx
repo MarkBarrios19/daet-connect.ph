@@ -31,7 +31,7 @@ export function GettingHere() {
             key={card.title}
             data-reveal
             style={{ "--reveal-index": index } as CSSProperties}
-            className="rounded-2xl bg-surface p-5"
+            className="rounded-2xl card-edge bg-surface p-5"
           >
             <h3 className="text-xl font-bold text-daet-ink">{card.title}</h3>
             <p className="mt-2 text-base leading-relaxed text-daet-ink/90">{card.text}</p>

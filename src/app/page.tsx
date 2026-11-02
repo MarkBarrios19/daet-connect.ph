@@ -212,7 +212,7 @@ export default async function HomePage() {
             ))}
           </ul>
         ) : (
-          <p className="rounded-2xl bg-surface p-6 text-lg text-daet-ink">
+          <p className="rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">
             [placeholder: no trips are published yet] — <Link href="/tours/browse" className="font-bold text-blue-700 dark:text-blue-300 underline">browse the trips that are</Link>.
           </p>
         )}
@@ -237,7 +237,7 @@ export default async function HomePage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-6 rounded-2xl bg-surface p-6 text-lg text-daet-ink">
+          <p className="mt-6 rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">
             No events are posted yet. The <Link href="/tours/events" className="font-bold text-blue-700 dark:text-blue-300 underline">calendar</Link> lists the
             festivals and seasons through the year.
           </p>
@@ -284,7 +284,7 @@ export default async function HomePage() {
         {mapPlaces.length > 0 ? (
           <HomeMap places={mapPlaces} />
         ) : (
-          <p className="rounded-2xl bg-surface p-6 text-lg text-daet-ink">[placeholder: no place has coordinates yet]</p>
+          <p className="rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">[placeholder: no place has coordinates yet]</p>
         )}
       </section>
 
@@ -360,7 +360,7 @@ export default async function HomePage() {
 
       {/* For operators and guides: a picture of their working world, and two ways in. */}
       <section aria-labelledby="home-ops" className={`${WRAP} pt-20 sm:pt-32`}>
-        <div className="grid items-center gap-8 overflow-hidden rounded-2xl bg-surface lg:grid-cols-2">
+        <div className="grid items-center gap-8 overflow-hidden rounded-2xl card-edge bg-surface lg:grid-cols-2">
           <div className="relative aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[420px]">
             <Image src={PHOTOS.mercedesPort.src} alt={PHOTOS.mercedesPort.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
           </div>

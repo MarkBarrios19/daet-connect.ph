@@ -78,7 +78,7 @@ export default async function PaymentSuccessPage({ params }: PageProps) {
     <PageFrame>
       <div className="mx-auto max-w-xl">
         {paid ? (
-          <section aria-labelledby="paid-title" className="rounded-2xl bg-surface p-6 text-center sm:p-8">
+          <section aria-labelledby="paid-title" className="rounded-2xl card-edge bg-surface p-6 text-center sm:p-8">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-green-500 text-slate-950 dark:bg-green-500/20 dark:text-green-300">
               <LineIcon name="check" className="h-8 w-8" />
             </div>
@@ -123,7 +123,7 @@ export default async function PaymentSuccessPage({ params }: PageProps) {
             </div>
           </section>
         ) : check.status === "unpaid" ? (
-          <section aria-labelledby="unpaid-title" className="rounded-2xl bg-surface p-6 sm:p-8">
+          <section aria-labelledby="unpaid-title" className="rounded-2xl card-edge bg-surface p-6 sm:p-8">
             <h1 id="unpaid-title" className="display-2 text-daet-ink">
               Payment not completed
             </h1>
@@ -137,7 +137,7 @@ export default async function PaymentSuccessPage({ params }: PageProps) {
             </div>
           </section>
         ) : (
-          <section aria-labelledby="pending-title" className="rounded-2xl bg-surface p-6 sm:p-8">
+          <section aria-labelledby="pending-title" className="rounded-2xl card-edge bg-surface p-6 sm:p-8">
             <h1 id="pending-title" className="display-2 text-daet-ink">
               Confirming your payment
             </h1>

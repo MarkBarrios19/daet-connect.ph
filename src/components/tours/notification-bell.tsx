@@ -110,7 +110,7 @@ export function NotificationBell() {
       </button>
 
       {open ? (
-        <div className="motion-pop absolute inset-x-4 top-full z-50 mt-1 overflow-hidden rounded-2xl [--pop-origin:top_center] sm:[--pop-origin:calc(100%-1.25rem)_0] bg-surface text-left shadow-[var(--shadow-float)] sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem]">
+        <div className="motion-pop absolute inset-x-4 top-full z-50 mt-1 overflow-hidden rounded-2xl [--pop-origin:top_center] sm:[--pop-origin:calc(100%-1.25rem)_0] card-edge bg-surface text-left shadow-[var(--shadow-float)] sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[22rem]">
           <div className="flex items-center justify-between border-b border-daet-ink/10 px-4 py-3">
             <p className="font-bold text-daet-ink">Notifications</p>
             {unread > 0 ? (

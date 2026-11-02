@@ -57,7 +57,7 @@ export function GalleryUploadTile({
               <button
                 type="button"
                 onClick={onRemove}
-                className="min-h-9 rounded-2xl bg-surface px-3 text-xs font-medium text-daet-ink/80 transition hover:bg-muted"
+                className="min-h-9 rounded-2xl card-edge bg-surface px-3 text-xs font-medium text-daet-ink/80 transition hover:bg-muted"
               >
                 Remove
               </button>

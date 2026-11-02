@@ -25,7 +25,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
     <PageFrame>
       <div className="mx-auto max-w-3xl">
         <h1 className="display-2 mt-1 text-daet-ink">{shared.title}</h1>
-        {shared.summary ? <p className="mt-3 rounded-2xl bg-surface p-4 text-base leading-7 text-daet-ink">{shared.summary}</p> : null}
+        {shared.summary ? <p className="mt-3 rounded-2xl card-edge bg-surface p-4 text-base leading-7 text-daet-ink">{shared.summary}</p> : null}
         <div className="mt-6">
           <SavedItinerary days={rowsToDays(shared.items ?? [], shared.start_date)} />
         </div>

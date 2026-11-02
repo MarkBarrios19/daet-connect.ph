@@ -80,7 +80,7 @@ export function AccountMenu({ initial, name, links, variant = "header" }: { init
           }
         >
           {tab ? null : <span aria-hidden="true" className="absolute -top-1.5 right-4 h-4 w-4 rotate-45 rounded-[3px] bg-surface" />}
-          <nav aria-label="Your account" className="relative rounded-2xl bg-surface p-2 shadow-[var(--shadow-float)]">
+          <nav aria-label="Your account" className="relative rounded-2xl card-edge bg-surface p-2 shadow-[var(--shadow-float)]">
             {tab ? <span aria-hidden="true" className="mx-auto mt-1 block h-1.5 w-10 rounded-full bg-muted-strong" /> : null}
             <p className="truncate px-4 pb-1 pt-2 text-sm text-daet-ink/70">{name}</p>
             <ul>

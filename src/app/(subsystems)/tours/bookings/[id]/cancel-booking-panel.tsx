@@ -89,7 +89,7 @@ export function CancelBookingPanel({
 
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mb-6 rounded-2xl bg-surface p-6">
+    <section className="mb-6 rounded-2xl card-edge bg-surface p-6">
       <h3 className="mb-3 text-lg font-bold text-daet-ink">Cancellation</h3>
       {children}
     </section>

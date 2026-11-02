@@ -116,7 +116,7 @@ export default async function OperatorPackagesPage({
         )}
 
         {!packages || packages.length === 0 ? (
-          <section className="mt-8 rounded-2xl bg-surface px-6 py-14 text-center">
+          <section className="mt-8 rounded-2xl card-edge bg-surface px-6 py-14 text-center">
             <span
               className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-daet-sand text-2xl"
               aria-hidden="true"
@@ -139,7 +139,7 @@ export default async function OperatorPackagesPage({
             {packages.map((pkg) => (
               <article
                 key={pkg.id}
-                className="overflow-hidden rounded-2xl bg-surface transition"
+                className="overflow-hidden rounded-2xl card-edge bg-surface transition"
               >
                 {/* Cover Image */}
                 <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-daet-forest to-daet-leaf">

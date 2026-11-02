@@ -5,11 +5,11 @@ const date = (iso: string) => new Date(iso).toLocaleDateString("en-PH", { month:
 
 /** Public review cards with the operator's reply. Reviewer names are not shown. */
 export function ReviewList({ reviews, operatorName, emptyText = "No reviews yet." }: { reviews: Review[]; operatorName: string; emptyText?: string }) {
-  if (reviews.length === 0) return <p className="rounded-2xl bg-surface p-5 text-daet-ink/80">{emptyText}</p>;
+  if (reviews.length === 0) return <p className="rounded-2xl card-edge bg-surface p-5 text-daet-ink/80">{emptyText}</p>;
   return (
     <ul className="space-y-4">
       {reviews.map((review) => (
-        <li key={review.id} className="rounded-2xl bg-surface p-4 sm:p-5">
+        <li key={review.id} className="rounded-2xl card-edge bg-surface p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Stars value={review.rating} />
             <span className="text-sm text-daet-ink/75">Verified traveller · {date(review.created_at)}</span>

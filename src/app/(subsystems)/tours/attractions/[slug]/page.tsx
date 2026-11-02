@@ -80,7 +80,7 @@ export default async function AttractionPage({ params }: PageProps) {
           <Fact label="Municipality" value={attraction.municipality} />
         </dl>
 
-        <section className="mt-10 rounded-2xl bg-surface p-5 sm:p-6">
+        <section className="mt-10 rounded-2xl card-edge bg-surface p-5 sm:p-6">
           <h2 className="text-2xl font-semibold text-daet-ink">Opening hours</h2>
           {hours.length ? (
             <table className="mt-3 w-full">
@@ -129,7 +129,7 @@ export default async function AttractionPage({ params }: PageProps) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-surface p-4">
+    <div className="rounded-2xl card-edge bg-surface p-4">
       <dt className="text-sm font-semibold text-daet-ink/75">{label}</dt>
       <dd className="mt-1 text-lg font-bold text-daet-ink">{value}</dd>
     </div>

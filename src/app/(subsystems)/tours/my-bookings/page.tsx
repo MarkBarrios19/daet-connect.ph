@@ -145,7 +145,7 @@ function BookingRow({ booking: b, today, quiet = false }: { booking: Row; today:
   const owes = b.status === "confirmed" && b.payment_status !== "paid" && b.payment_status !== "refunded";
 
   return (
-    <li className="grid grid-cols-[88px_1fr] gap-4 rounded-2xl bg-surface p-3 sm:grid-cols-[160px_1fr] sm:p-4">
+    <li className="grid grid-cols-[88px_1fr] gap-4 rounded-2xl card-edge bg-surface p-3 sm:grid-cols-[160px_1fr] sm:p-4">
       <div className={`relative aspect-square overflow-hidden rounded-2xl bg-blue-100 dark:bg-blue-900/40 sm:aspect-[4/3] ${quiet ? "opacity-80" : ""}`}>
         {pkg?.cover_image_url ? (
           <img src={pkg.cover_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />

@@ -125,7 +125,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
 
   if (priceVariants.length === 0) {
     return (
-      <div className="rounded-2xl bg-surface p-6 text-center">
+      <div className="rounded-2xl card-edge bg-surface p-6 text-center">
         <p className="text-daet-ink/70">
           This package does not have pricing configured yet.
         </p>
@@ -147,7 +147,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
       )}
 
       {/* Tour Date */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Pick a date</h2>
         <p className="mt-1 text-sm text-daet-ink/70">Choose your preferred tour date</p>
 
@@ -194,7 +194,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
       </section>
 
       {/* Number of Pax & Price Variant */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Group Size & Pricing</h2>
         <p className="mt-1 text-sm text-daet-ink/70">Select number of participants</p>
 
@@ -288,7 +288,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
       </section>
 
       {/* Contact Information */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Contact Information</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           We'll use this to confirm your booking
@@ -361,7 +361,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
       </section>
 
       {/* Submit */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-surface p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl card-edge bg-surface p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-bold text-daet-ink">Ready to book?</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">

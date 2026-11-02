@@ -32,19 +32,29 @@ describe("FaqList", () => {
 
     expect(summaries).toHaveLength(6);
     expect(summaries.map((summary) => summary.querySelector("h3")?.textContent)).toEqual(HOME_FAQ.map((item) => item.question));
-    // The whole row is the target, so it is comfortably past 44px tall.
-    expect(summaries[0].className).toContain("min-h-14");
+    // The whole row is the target, and 20px of padding either side puts it well
+    // past 44px tall.
+    expect(summaries[0].className).toContain("py-5");
   });
 
-  it("swaps the marker from plus to close as it opens", () => {
+  it("marks each row with one chevron, and turns it as the row opens", () => {
     const { container } = render(<FaqList items={HOME_FAQ.slice(0, 1)} />);
+    const details = container.querySelector("details") as HTMLElement;
     const icons = Array.from(container.querySelectorAll("summary svg"));
 
-    expect(icons).toHaveLength(2);
-    expect(icons[0].getAttribute("class")).toContain("group-open:hidden");
-    expect(icons[1].getAttribute("class")).toContain("group-open:block");
-    // A circle, not a square: the sketch's quiet marker.
-    expect(container.querySelector("summary span")?.className).toContain("rounded-full");
+    // One icon, not the plus/close pair the card used to swap: the reference
+    // (image-46) turns a single chevron over.
+    expect(icons).toHaveLength(1);
+    expect(icons[0].tagName.toLowerCase()).toBe("svg");
+    const marker = container.querySelector("summary span") as HTMLElement;
+    expect(marker.className).toContain("group-open:rotate-180");
+    expect(marker.className).toContain("transition-transform");
+
+    // A hairline row, not a card: the rule is on the element itself, so the
+    // questions read as one list.
+    expect(details.className).toContain("border-b");
+    expect(details.className).toContain("border-hairline");
+    expect(details).toHaveAttribute("data-faq");
   });
 
   it("shows a placeholder where the Tourism Office still owes an answer", () => {

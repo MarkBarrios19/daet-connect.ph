@@ -365,7 +365,7 @@ export function ChatWindow(props: ChatWindowProps) {
                       <button
                         type="button"
                         onClick={() => message.reply_to_id && jumpTo(message.reply_to_id)}
-                        className={`mb-1 block w-full rounded-xl px-2 py-1 text-left text-sm ${mine ? "bg-blue-800 text-white" : "bg-surface text-slate-700 dark:text-slate-300"}`}
+                        className={`mb-1 block w-full rounded-xl px-2 py-1 text-left text-sm ${mine ? "bg-blue-800 text-white" : "card-edge bg-surface text-slate-700 dark:text-slate-300"}`}
                       >
                         <span className="block text-xs font-bold">{reply ? `Replying to ${senderLabel(reply.sender_id, viewerId, members)}` : "Reply"}</span>
                         <span className="line-clamp-2">{quotePreview(reply)}</span>

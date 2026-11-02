@@ -14,7 +14,7 @@ export default async function NewGuidePlacePage() {
     <PageFrame adminNav>
       <div className="mx-auto max-w-2xl">
         <AdminPageHeading title="New place" backHref="/tours/admin/guide-places" backLabel="All places" />
-        <div className="rounded-2xl bg-surface p-5 sm:p-8">
+        <div className="rounded-2xl card-edge bg-surface p-5 sm:p-8">
           <GuidePlaceForm />
         </div>
       </div>

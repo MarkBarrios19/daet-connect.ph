@@ -39,7 +39,7 @@ export function PackageCard({ package: pkg, rating = null, headingLevel = 2 }: P
   const Heading = headingLevel === 2 ? "h2" : "h3";
 
   return (
-    <article className="hover-lift group h-full overflow-hidden rounded-2xl bg-surface active:scale-[0.99]">
+    <article className="hover-lift group h-full overflow-hidden rounded-2xl card-edge bg-surface active:scale-[0.99]">
       <Link href={`/tours/packages/${pkg.id}`} className="flex h-full flex-col">
         <div className="relative aspect-[4/3] overflow-hidden bg-blue-100 dark:bg-blue-900/40">
           {pkg.cover_image_url ? (

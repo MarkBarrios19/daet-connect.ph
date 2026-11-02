@@ -2,7 +2,9 @@ import { expect, test } from "@playwright/test";
 import { checkA11y, signInAs } from "./fixtures";
 
 const canvas = (page: import("@playwright/test").Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-const LIGHT_CANVAS = "rgb(248, 250, 252)";
+// White, sampled from the owner's FAQ reference (image-46): the light theme's
+// ground is the card's own white, and cards carry a hairline instead of a tone.
+const LIGHT_CANVAS = "rgb(255, 255, 255)";
 const DARK_CANVAS = "rgb(11, 18, 32)";
 
 test.describe("dark mode", () => {

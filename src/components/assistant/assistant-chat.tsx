@@ -448,7 +448,7 @@ function TransportCardView({ card }: { card: TransportCard }) {
       <p className="font-bold text-daet-ink">{card.title}</p>
       <ol className="mt-2 space-y-3">
         {card.options.map((option, i) => (
-          <li key={i} className="rounded-2xl bg-surface p-2.5">
+          <li key={i} className="rounded-2xl card-edge bg-surface p-2.5">
             {card.options.length > 1 ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Option {i + 1}{option.time ? ` · about ${option.time}` : ""}</p> : option.time ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">About {option.time} in all</p> : null}
             <ol className="mt-1 space-y-2">
               {option.legs.map((leg, j) => (
@@ -505,7 +505,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
       <label htmlFor={id} className="text-sm font-bold text-daet-ink">
         Message to {who} (edit before sending)
       </label>
-      <textarea id={id} rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1 block w-full rounded-2xl bg-surface px-3 py-2 text-base" />
+      <textarea id={id} rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1 block w-full rounded-2xl card-edge bg-surface px-3 py-2 text-base" />
       {state.error ? (
         <p role="alert" className="mt-1 text-sm font-semibold text-red-600 dark:text-red-300">
           {state.error}

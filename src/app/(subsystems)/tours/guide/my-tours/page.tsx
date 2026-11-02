@@ -160,7 +160,7 @@ export default async function GuideMyToursPage() {
             { label: "Upcoming", value: upcomingTours.length },
             { label: "Completed", value: completedTours.length },
           ].map((stat) => (
-            <div key={stat.label} className="flex flex-col-reverse rounded-2xl bg-surface p-3 text-center sm:p-4">
+            <div key={stat.label} className="flex flex-col-reverse rounded-2xl card-edge bg-surface p-3 text-center sm:p-4">
               {/* dt before dd for valid markup; flex-col-reverse shows the number on top. */}
               <dt className="text-sm text-daet-ink/70">{stat.label}</dt>
               <dd className="text-2xl font-bold tabular-nums text-daet-ink sm:text-3xl">{stat.value}</dd>
@@ -203,7 +203,7 @@ export default async function GuideMyToursPage() {
               {completedTours.map((booking) => {
                 const pkg = Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages;
                 return (
-                  <li key={booking.id} className="flex items-center gap-3 rounded-2xl bg-surface p-3">
+                  <li key={booking.id} className="flex items-center gap-3 rounded-2xl card-edge bg-surface p-3">
                     {pkg?.cover_image_url ? <img src={pkg.cover_image_url} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" /> : null}
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-daet-ink">{pkg?.title || "Tour"}</p>
@@ -220,7 +220,7 @@ export default async function GuideMyToursPage() {
         ) : null}
 
         {!assignedTours || assignedTours.length === 0 ? (
-          <div className="mt-8 rounded-2xl bg-surface p-8 text-center">
+          <div className="mt-8 rounded-2xl card-edge bg-surface p-8 text-center">
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-daet-sand text-daet-ink">
               <LineIcon name="calendar" className="h-7 w-7" />
             </div>
@@ -254,7 +254,7 @@ function TourCard({ booking, today, swap }: { booking: AssignedBooking; today: s
   const operator = Array.isArray(pkg?.tours_operators) ? pkg?.tours_operators[0] : pkg?.tours_operators;
   const isToday = booking.tour_date === today;
   return (
-    <article className="overflow-hidden rounded-2xl bg-surface sm:flex">
+    <article className="overflow-hidden rounded-2xl card-edge bg-surface sm:flex">
       {pkg?.cover_image_url ? <img src={pkg.cover_image_url} alt="" className="h-36 w-full object-cover sm:h-auto sm:w-44 sm:shrink-0" /> : null}
       <div className="min-w-0 flex-1 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">

@@ -211,7 +211,7 @@ export function GuideRegistrationForm({
         </div>
       </div>
 
-      <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="rounded-2xl bg-surface p-5 sm:p-8">
+      <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="rounded-2xl card-edge bg-surface p-5 sm:p-8">
         {rejectionReason ? <Notice variant="warning" title="Updates requested by the Tourism Office" className="mb-6">{rejectionReason}</Notice> : null}
         {state.status === "error" && !state.fieldErrors ? <Notice variant="error" title="We couldn’t submit your application" className="mb-6">{state.message}</Notice> : null}
         {clientError ? <Notice variant="error" title="Please check your application" className="mb-6">{clientError}</Notice> : null}
@@ -300,7 +300,7 @@ export function GuideRegistrationForm({
             <div className="mt-6 grid min-h-64 place-items-center rounded-2xl bg-daet-sand text-sm font-semibold text-daet-ink/70">Preparing QR preview…</div>
           ) : qrPreview?.status === "success" && qrPreview.qrDataUrl ? (
             <div className="mt-6 flex flex-col items-center rounded-2xl bg-canvas p-5 text-center sm:p-8">
-              <div className="rounded-2xl bg-surface p-4"><img src={qrPreview.qrDataUrl} alt="Preview of your guide badge QR code" width={240} height={240} className="h-56 w-56 sm:h-64 sm:w-64" /></div>
+              <div className="rounded-2xl card-edge bg-surface p-4"><img src={qrPreview.qrDataUrl} alt="Preview of your guide badge QR code" width={240} height={240} className="h-56 w-56 sm:h-64 sm:w-64" /></div>
               <p className="mt-4 text-sm font-bold text-daet-ink">Preview only · activates after approval</p>
               <p className="mt-1 max-w-md break-all text-xs leading-5 text-daet-ink/70">No personal or ID data is encoded. Your final badge image is protected until the Tourism Office approves your application.</p>
             </div>

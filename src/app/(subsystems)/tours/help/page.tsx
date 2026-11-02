@@ -31,7 +31,7 @@ export default async function HelpPage() {
           </Link>{" "}
           answer booking, paying, cancelling and getting here in one line each.
         </p>
-        <div className="mt-6 flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface">
+        <div className="mt-6 flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl card-edge bg-surface">
           <AssistantChat signedIn={signedIn} />
         </div>
       </div>

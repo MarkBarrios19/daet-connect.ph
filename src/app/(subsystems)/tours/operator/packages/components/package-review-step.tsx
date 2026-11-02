@@ -43,7 +43,7 @@ export function PackageReviewStep({
       </div>
 
       {/* Package Summary */}
-      <div className="space-y-6 rounded-2xl bg-surface p-6">
+      <div className="space-y-6 rounded-2xl card-edge bg-surface p-6">
         {/* Title & Location */}
         <div>
           <h3 className="text-xl font-bold text-daet-ink">{data.title}</h3>

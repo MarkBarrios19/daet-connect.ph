@@ -96,7 +96,7 @@ export default async function OperatorPendingPage() {
 
   return (
     <PageFrame>
-      <section className="mx-auto max-w-2xl overflow-hidden rounded-2xl bg-surface">
+      <section className="mx-auto max-w-2xl overflow-hidden rounded-2xl card-edge bg-surface">
         <div className="bg-daet-forest px-6 py-8 text-white sm:px-10 sm:py-10">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
             <span className="h-2 w-2 animate-pulse rounded-full bg-daet-sun" /> In review

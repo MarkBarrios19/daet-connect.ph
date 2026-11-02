@@ -70,7 +70,7 @@ export default async function MessagesInboxPage({ searchParams }: PageProps) {
         ) : null}
 
         {isAdmin ? (
-          <details className="mt-4 rounded-2xl bg-surface p-4">
+          <details className="mt-4 rounded-2xl card-edge bg-surface p-4">
             <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-daet-forest dark:text-blue-300">Message an operator</summary>
             {(operatorList ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-daet-ink/70">No operators have registered yet.</p>

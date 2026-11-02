@@ -21,7 +21,7 @@ export function EventCard({ event, compact = false }: { event: TourEvent; compac
   return (
     <Link
       href={`/tours/events/${event.id}`}
-      className="group flex items-center gap-4 rounded-2xl bg-surface p-3 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99] sm:gap-5 sm:p-4"
+      className="group flex items-center gap-4 rounded-2xl card-edge bg-surface p-3 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99] sm:gap-5 sm:p-4"
     >
       <div className={`grid shrink-0 place-content-center rounded-2xl bg-blue-600 text-center text-white ${compact ? "h-16 w-16" : "h-20 w-20"}`}>
         <span className="text-sm font-semibold leading-none">{manila(event.starts_at, { month: "short" })}</span>

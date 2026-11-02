@@ -10,7 +10,7 @@ export function AuthShell({ title, description, children, after }: { title: stri
   return (
     <div className="mx-auto grid max-w-5xl items-stretch gap-6 lg:grid-cols-2">
       <div className="min-w-0">
-        <section className="rounded-2xl bg-surface p-5 sm:p-10">
+        <section className="rounded-2xl card-edge bg-surface p-5 sm:p-10">
           <h1 className="display-2 text-daet-ink">{title}</h1>
           <p className="mt-3 text-lg text-daet-ink">{description}</p>
           {children}

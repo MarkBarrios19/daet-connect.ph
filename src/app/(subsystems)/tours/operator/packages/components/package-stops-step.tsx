@@ -181,7 +181,7 @@ export function PackageStopsStep({
             {stops.map((stop, index) => (
               <li
                 key={index}
-                className="flex items-start justify-between gap-3 rounded-2xl bg-surface p-4"
+                className="flex items-start justify-between gap-3 rounded-2xl card-edge bg-surface p-4"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
