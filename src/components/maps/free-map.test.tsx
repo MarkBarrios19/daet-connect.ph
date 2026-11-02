@@ -21,6 +21,7 @@ const mockState: {
   layer: { emit: (event: string) => void } | null;
   mapOptions: Record<string, unknown>;
   tileOptions: Record<string, unknown>;
+  focusedAt: [number, number] | null;
 } = {
   fail: false,
   tiles: [],
@@ -33,6 +34,7 @@ const mockState: {
   layer: null,
   mapOptions: {},
   tileOptions: {},
+  focusedAt: null,
 };
 
 // Leaflet is a browser library; this stands in for the parts FreeMap uses and
@@ -49,6 +51,10 @@ jest.mock("leaflet", () => {
     }
     emit(event: string) {
       (this.handlers[event] ?? []).forEach((fn) => fn());
+    }
+    off(event: string, fn: () => void) {
+      this.handlers[event] = (this.handlers[event] ?? []).filter((handler) => handler !== fn);
+      return this;
     }
     remove() {}
     addTo() {
@@ -85,6 +91,22 @@ jest.mock("leaflet", () => {
       return mockState.pane;
     }
     invalidateSize() {}
+    getSize() {
+      return { x: 384, y: 256 };
+    }
+    // Enough projection for the camera offset: the pin is at the world's origin,
+    // so anything unprojected from there is the point the test expects.
+    project() {
+      return { x: 0, y: 0, subtract: () => ({ x: 0, y: 0 }) };
+    }
+    unproject() {
+      return { lat: 14.2, lng: 123 };
+    }
+    // A fixed spot, so a card pointing at the pin has something to point at.
+    latLngToContainerPoint(latlng: [number, number]) {
+      mockState.focusedAt = latlng;
+      return { x: 140, y: 96 };
+    }
   }
 
   class MockTileLayer extends Emitter {
@@ -274,6 +296,50 @@ describe("FreeMap", () => {
     await waitFor(() => expect(mockState.markerEls.at(-1)?.getAttribute("aria-current")).toBe("true"));
     // A picked pin hangs from its tip: the shift is by the marker's own height.
     expect(mockState.markerEls.at(-1)?.parentElement?.className).toContain("-translate-y-full");
+  });
+
+  it("puts the focused place's photo in its pin, the point on the spot", async () => {
+    const photo = { src: "/photos/bagasbas.jpg", alt: "Bagasbas Beach" };
+    const shown = markers.map((m) => (m.id === "b" ? { ...m, kind: "place" as const, photo } : m));
+
+    render(<FreeMap markers={shown} title="Places map" focusId="b" onMarkerClick={() => {}} />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+
+    const pin = mockState.markerEls[1];
+    // The place's own photo is the pin (image-42), not a number or a dot.
+    const image = pin.querySelector("img");
+    expect(image).toHaveAttribute("src", photo.src);
+    expect(image).toHaveAttribute("alt", "");
+    // It hangs from its tail: the point, not the middle, sits on the place.
+    expect(pin.parentElement?.className).toContain("-translate-y-full");
+    // The other places stay plain dots.
+    expect(mockState.markerEls[0].querySelector("img")).toBeNull();
+  });
+
+  it("sits the focused pin below the middle when a card above it needs the room", async () => {
+    render(<FreeMap markers={markers} title="Places map" focusId="b" focusOffsetY={56} />);
+
+    await waitFor(() => expect(mockState.camera.at(-1)?.[0]).toBe("flyTo"));
+    // Not the marker's own point: the camera is moved up so the pin lands lower
+    // on the card, which is what leaves space for the card over it (image-42).
+    expect(mockState.camera.at(-1)?.[1]).toEqual([14.2, 123]);
+    expect(mockState.camera.at(-1)?.[1]).not.toEqual([markers[1].lat, markers[1].lng]);
+  });
+
+  it("reports where the focused pin is, for a card that points at it", async () => {
+    const onFocusPoint = jest.fn();
+    const shown = markers.map((m) => (m.id === "b" ? { ...m, kind: "place" as const, photo: { src: "/photos/b.jpg" } } : m));
+
+    const { rerender } = render(
+      <FreeMap markers={shown} title="Places map" focusId="b" onFocusPoint={onFocusPoint} />,
+    );
+    await waitFor(() => expect(onFocusPoint).toHaveBeenCalledWith({ x: 140, y: 96 }));
+    expect(mockState.focusedAt).toEqual([shown[1].lat, shown[1].lng]);
+
+    // Nothing focused: no pin to point at, and the card is told so.
+    onFocusPoint.mockClear();
+    rerender(<FreeMap markers={shown} title="Places map" focusId={null} onFocusPoint={onFocusPoint} />);
+    await waitFor(() => expect(onFocusPoint).toHaveBeenCalledWith(null));
   });
 
   it("draws the route legs, dashed where there is no road", async () => {

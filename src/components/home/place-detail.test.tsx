@@ -255,6 +255,13 @@ describe("PlaceDetail", () => {
     expect(overTheMap).toHaveTextContent("Bagasbas Beach");
     expect(overTheMap).toHaveTextContent(FAN_PLACES[2].text);
     expect(overTheMap.querySelector("img")).toHaveAttribute("src", expect.stringContaining("bagasbas"));
+    // The layout the owner sketched (image-42): the photo across the top, the
+    // name under it, then the line about the place — and a tail on the card's
+    // bottom edge, which is what points it at the pin below.
+    expect(overTheMap.querySelector("img")).toHaveClass("h-20", "w-full", "object-cover");
+    const tail = overTheMap.querySelector("[data-map-place-tail]") as HTMLElement;
+    expect(tail).toBeInTheDocument();
+    expect(tail).toHaveClass("rotate-45");
     // Nothing in it takes the pointer: the map underneath still drags.
     expect(overTheMap).toHaveClass("pointer-events-none");
     // Leaflet paints its panes at 200–800 inside the map, so a plain absolutely

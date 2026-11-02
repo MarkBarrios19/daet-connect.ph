@@ -262,6 +262,38 @@ test.describe("home fan on a phone", () => {
     await expect(page).toHaveURL(/#place-first-rizal-monument/);
   });
 
+  test("scrolls away from an open place and finds the page's own text under it", async ({ page }) => {
+    // What the owner photographed (image-41): a photo clicked, then a scroll —
+    // and a screen of bare canvas under the hero, with no text on it anywhere.
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(inPanel(page)).toBeVisible();
+
+    // A wheel over an open photo is someone leaving the hero: it closes, and the
+    // page scrolls as it normally would.
+    await page.mouse.move(900, 500);
+    await page.mouse.wheel(0, 900);
+    await page.waitForTimeout(800);
+    expect(await page.evaluate(() => window.scrollY), "the page scrolled").toBeGreaterThan(400);
+
+    // Anything at the fold has to be readable. A section the reveal never marked
+    // is `opacity: 0` under `html.js` — invisible for the life of the page.
+    const stranded = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-reveal]:not([data-revealed])"))
+        .filter((element) => element.getBoundingClientRect().top < window.innerHeight * 0.9)
+        .map((element) => element.id || element.textContent?.slice(0, 40) || element.tagName),
+    );
+    expect(stranded, "sections at the fold left hidden").toEqual([]);
+
+    const heading = page.getByRole("heading", { level: 2, name: "Places to start" });
+    await expect(heading).toBeVisible();
+    expect(
+      await page.evaluate(() => Number(getComputedStyle(document.querySelector("#home-places") as HTMLElement).opacity)),
+      "readable, not a ghost",
+    ).toBe(1);
+  });
+
   test("closes when the Back button takes the hash away", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
@@ -754,6 +786,61 @@ test.describe("the open place", () => {
     ];
 
     expect(problems, JSON.stringify({ settled, afterPointer, afterScroll, late }, null, 1)).toEqual([]);
+  });
+
+  test("folds the photo away with the exit animation, even after stepping twice", async ({ page }) => {
+    await visit(page, "/");
+
+    // The shape this wedge has at rest, before anything is opened: the fold has
+    // to come all the way back to it.
+    const wedge = page.getByRole("button", { name: "Calaguas: open photo and details" });
+    const restClip = await wedge.evaluate((element) => (element as HTMLElement).style.clipPath);
+    expect(restClip).toContain("polygon");
+
+    await wedge.focus();
+    await page.keyboard.press("Enter");
+    await expect(inPanel(page)).toBeVisible();
+    await page.waitForTimeout(900);
+
+    // Two steps. A step is a swipe of two photos, and it kills the timeline that
+    // opened the place — which left the ✕ with nothing to reverse, so the fan
+    // snapped back with no animation at all. The owner stepped twice and filmed
+    // exactly that.
+    const next = page.getByRole("button", { name: "Next place" });
+    await next.click();
+    await next.click();
+    await page.waitForTimeout(900);
+
+    const handle = await page.locator("[data-wedge][aria-expanded='true']").elementHandle();
+    expect(handle, "the stepped-to photo is the open one").not.toBeNull();
+
+    /** The open wedge's clip, and the headline's fade, as they are right now. */
+    const read = () =>
+      handle!.evaluate((element) => ({
+        clip: (element as HTMLElement).style.clipPath,
+        headline: Number(getComputedStyle(document.querySelector("[data-headline]") as HTMLElement).opacity),
+      }));
+
+    const openShape = await read();
+    expect(openShape.clip, "the photo fills the hero while it is open").not.toBe(restClip);
+    expect(openShape.headline, "the headline is behind it").toBe(0);
+
+    await page.getByRole("button", { name: "Back to the fan" }).click();
+
+    // Part way through: the wedge is neither the hero nor its own slice, and the
+    // headline is neither gone nor back. A snap would have finished already.
+    await page.waitForTimeout(150);
+    const midFlight = await read();
+    expect(midFlight.clip, "still folding, not already back").not.toBe(restClip);
+    expect(midFlight.clip, "and no longer the whole hero").not.toBe(openShape.clip);
+    expect(midFlight.headline, "the headline is coming back, not back yet").toBeLessThan(1);
+
+    // And it does land: the fan is its own shape again, with nothing mid-flight
+    // left behind.
+    await page.waitForTimeout(900);
+    const after = await read();
+    expect(after.clip, "the wedge is back in the fan").toBe(restClip);
+    expect(after.headline, "the headline is back").toBe(1);
   });
 });
 

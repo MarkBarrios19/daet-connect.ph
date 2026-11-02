@@ -55,6 +55,28 @@ function markerElement(
   if (!m.href && !onClick) el.setAttribute("role", "img");
   el.setAttribute("aria-label", m.title);
 
+  // A place with its photo in the pin: the marker the open place's card points
+  // at. The frame is the photo, and the tail underneath puts its point on the
+  // spot, so the card above it and the pin read as one thing (image-42).
+  if (m.photo) {
+    el.className = "relative block pb-2";
+    const frame = document.createElement("span");
+    frame.className =
+      "block h-12 w-12 overflow-hidden rounded-[1.1rem] border-[3px] border-white bg-blue-600 shadow-[0_6px_18px_rgba(15,23,42,0.35)] dark:border-slate-900";
+    const img = document.createElement("img");
+    img.src = m.photo.src;
+    img.alt = "";
+    img.decoding = "async";
+    img.className = "h-full w-full object-cover";
+    const tail = document.createElement("span");
+    tail.setAttribute("aria-hidden", "true");
+    tail.className =
+      "absolute bottom-[3px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-blue-600";
+    frame.append(img);
+    el.append(frame, tail);
+    return el;
+  }
+
   if (!(labels && m.kind === "stop")) {
     el.className = MARKER_CLASSES[active && m.kind === "stop" ? "stopActive" : m.kind];
     el.textContent = m.label;
@@ -95,7 +117,7 @@ function markerElement(
 }
 
 const signature = (m: FreeMapMarker, active: boolean, clickable: boolean, labels: boolean) =>
-  `${m.kind}|${m.label}|${m.title}|${m.subtitle ?? ""}|${m.href ?? ""}|${active}|${clickable}|${labels}`;
+  `${m.kind}|${m.label}|${m.title}|${m.subtitle ?? ""}|${m.href ?? ""}|${m.photo?.src ?? ""}|${active}|${clickable}|${labels}`;
 
 /** The camera after a flight lands: a slow push in, like a drone settling. */
 const DRIFT_ZOOM = 0.6;
@@ -149,6 +171,8 @@ export function FreeMap({
   onMarkerClick,
   labels = false,
   animateFit = false,
+  focusOffsetY = 0,
+  onFocusPoint,
 }: {
   markers: FreeMapMarker[];
   lines?: FreeMapLine[];
@@ -159,6 +183,22 @@ export function FreeMap({
   onMarkerClick?: (id: string) => void;
   labels?: boolean;
   animateFit?: boolean;
+  /**
+   * Pixels to sit the focused pin *below* the middle of the map.
+   *
+   * A card drawn over the map needs room above the pin it points at; on a short
+   * card the middle of the map leaves none, and the card would have to cover the
+   * pin instead of pointing at it.
+   */
+  focusOffsetY?: number;
+  /**
+   * Where the focused marker is right now, in the map's own pixels.
+   *
+   * A card drawn over the map has to sit above that pin with its tail on it, and
+   * a map pans under its own steam — so the position is reported as it moves
+   * (null when there is no pin to point at).
+   */
+  onFocusPoint?: (point: { x: number; y: number } | null) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -167,6 +207,7 @@ export function FreeMap({
   const lineRefs = useRef(new Map<string, { line: Polyline; sig: string }>());
   const latest = useRef({ markers, lines });
   const clickRef = useRef(onMarkerClick);
+  const focusPointRef = useRef(onFocusPoint);
   // Bumped whenever a drift should not start (or should stop): a new focus, the viewer moving the map.
   const driftToken = useRef(0);
   const firstFit = useRef(true);
@@ -174,6 +215,7 @@ export function FreeMap({
   const [ready, setReady] = useState(false);
   latest.current = { markers, lines };
   clickRef.current = onMarkerClick;
+  focusPointRef.current = onFocusPoint;
   const clickable = Boolean(onMarkerClick);
 
   // Create the map once.
@@ -312,8 +354,9 @@ export function FreeMap({
       }
       existing?.marker.remove();
       const element = markerElement(m, active, labels, clickable ? (id) => clickRef.current?.(id) : undefined);
-      // A picked, labelled stop is a pin: its tip (the bottom) sits on the spot.
-      const pin = labels && active && m.kind === "stop";
+      // A picked, labelled stop is a pin, and so is a photo pin: its tip (the
+      // bottom) sits on the spot rather than the middle of the marker.
+      const pin = (labels && active && m.kind === "stop") || Boolean(m.photo);
       // Shrink-wrapped, so a percentage shift is a shift by the marker's own size;
       // the icon box itself is 0×0, so Leaflet's own anchor maths is out of it.
       const anchor = document.createElement("div");
@@ -338,6 +381,34 @@ export function FreeMap({
       }
     }
   }, [markers, ready, focusId, clickable, labels]);
+
+  // Where the focused pin is, for a card drawn over the map that has to point
+  // at it. Reported on every pan and zoom: the map moves under its own steam.
+  const focusTarget = focusId ? markers.find((marker) => marker.id === focusId) : undefined;
+  const focusLat = focusTarget?.lat ?? null;
+  const focusLng = focusTarget?.lng ?? null;
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    if (focusLat === null || focusLng === null) {
+      focusPointRef.current?.(null);
+      return;
+    }
+    // Keyed on the pin's own coordinates, not on the array it arrived in: the
+    // page re-renders while a photo is dragged, and re-subscribing to the map on
+    // every pointer move would be for nothing.
+    const spot: [number, number] = [focusLat, focusLng];
+    const report = () => {
+      const point = map.latLngToContainerPoint(spot);
+      focusPointRef.current?.({ x: point.x, y: point.y });
+    };
+    report();
+    map.on("move zoom viewreset resize", report);
+    return () => {
+      map.off("move zoom viewreset resize", report);
+    };
+  }, [ready, focusLat, focusLng]);
 
   // Lines: the road legs, a dashed straight line where there is no road.
   useEffect(() => {
@@ -381,7 +452,21 @@ export function FreeMap({
     if (!ready || !map || !focusId) return;
     const m = latest.current.markers.find((marker) => marker.id === focusId);
     if (!m) return;
-    const center: [number, number] = [m.lat, m.lng];
+    /**
+     * Where the camera has to be for the pin to sit where it is wanted.
+     *
+     * The zoom is a parameter: the slow push in after the flight changes it every
+     * frame, and a pixel offset means a different piece of the world at another
+     * zoom.
+     */
+    const camera = (zoom: number): [number, number] => {
+      if (!focusOffsetY) return [m.lat, m.lng];
+      const spot = map.project([m.lat, m.lng], zoom).subtract([0, focusOffsetY]);
+      const ll = map.unproject(spot, zoom);
+      return [ll.lat, ll.lng];
+    };
+
+    const center = camera(15.5);
     if (reducedMotion()) {
       map.setView(center, 15.5, { animate: false });
       return;
@@ -397,7 +482,8 @@ export function FreeMap({
       const step = (now: number) => {
         if (driftToken.current !== token) return;
         const t = Math.min(1, (now - startedAt) / DRIFT_MS);
-        map!.setView(center, from + DRIFT_ZOOM * easeOutCubic(t), { animate: false });
+        const zoom = from + DRIFT_ZOOM * easeOutCubic(t);
+        map!.setView(camera(zoom), zoom, { animate: false });
         if (t < 1) raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
@@ -406,7 +492,7 @@ export function FreeMap({
       cancelAnimationFrame(raf);
       driftToken.current += 1;
     };
-  }, [focusId, ready]);
+  }, [focusId, ready, focusOffsetY]);
 
   // Reframe when asked — but never over a focus. A focus is a camera move of its
   // own, and two of them at once fight: each takes the zoom somewhere new, each

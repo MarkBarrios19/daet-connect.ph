@@ -64,6 +64,13 @@ export function useFanAnimation({
   onClosed?: () => void;
 }) {
   const timeline = useRef<Timeline | null>(null);
+  /**
+   * The wedge that is showing, when one is.
+   *
+   * A step kills the open timeline and leaves nothing to reverse, so the close
+   * needs to know on its own which photo it is folding away (see `foldBack`).
+   */
+  const opened = useRef<number | null>(null);
   /** Which swap is the latest one, so a finished fade cannot tidy up a newer one. */
   const swapToken = useRef(0);
   const reduced = useRef(false);
@@ -293,6 +300,7 @@ export function useFanAnimation({
 
     timeline.current?.kill();
     timeline.current = null;
+    opened.current = index;
 
     const state = live.current;
     const headline = root.current?.querySelector("[data-headline]");
@@ -381,21 +389,102 @@ export function useFanAnimation({
     });
   });
 
+  /**
+   * Folding back after a step, where there is no open timeline left to reverse.
+   *
+   * A step (`swapTo`) kills the timeline that opened the place: the strip of two
+   * photos is a different motion, and the open one has already played out. That
+   * left the ✕ with nothing to reverse, so `close` fell straight through to
+   * `reset` — the fan snapped back with no animation at all, every time a
+   * visitor had stepped once. This builds the fold-back the open timeline would
+   * have given, starting from the state the step settled on.
+   */
+  const foldBack = contextSafe((index: number) => {
+    const { wedges, photos, nudges, chips } = parts();
+    const geo = current.current;
+    const state = live.current;
+    const headline = root.current?.querySelector("[data-headline]");
+
+    // The others were slid out along their own angle (openAt); coming back is
+    // the same trip the other way.
+    const slides = wedges.map((_, i) => {
+      const [ux, uy] = midVector(geo.wedges[i]?.mid ?? 270);
+      return { x: ux * SLIDE, y: uy * SLIDE };
+    });
+
+    const tl = gsap.timeline({ defaults: { ease: "power3.inOut" } });
+    timeline.current = tl;
+
+    // Numbers, not shapes, exactly as it opened: the wedge shrinks back to its
+    // own slice frame by frame.
+    const closing = { t: state.open[index] ?? 1 };
+    tl.to(
+      closing,
+      {
+        t: 0,
+        duration: OPEN,
+        onUpdate: () => {
+          state.open[index] = closing.t;
+          render();
+        },
+      },
+      0,
+    );
+
+    tl.to(wedges[index], { filter: "brightness(1)", duration: OPEN }, 0);
+    // Back to the resting zoom the fan's own photos carry.
+    tl.to(photos[index], { x: 0, y: 0, xPercent: 0, scale: 1.15, duration: OPEN }, 0);
+
+    if (nudges[index]) {
+      takeOver(nudges[index]);
+      const rest = restNudge(nudges[index]);
+      tl.to(nudges[index], { x: rest.x, y: rest.y, duration: OPEN }, 0);
+    }
+
+    wedges.forEach((element, i) => {
+      if (i === index) return;
+      tl.to(element, { autoAlpha: 1, x: 0, y: 0, duration: OPEN }, 0);
+    });
+
+    chips.forEach((element) => {
+      tl.to(element, { y: 0, autoAlpha: geo.layout === "phone" ? 1 : 0, duration: 0.2 }, 0);
+    });
+
+    if (headline) tl.to(headline, { opacity: 1, duration: 0.25, ease: "power2.out" }, 0);
+
+    tl.eventCallback("onComplete", () => {
+      timeline.current = null;
+      opened.current = null;
+      reset();
+      onClosed?.();
+    });
+  });
+
   /** Folding back. Reversing the open timeline gives the mock-up's close. */
   const close = contextSafe(() => {
     const tl = timeline.current;
-    if (!tl) {
+    if (tl) {
+      tl.eventCallback("onReverseComplete", () => {
+        timeline.current = null;
+        opened.current = null;
+        reset();
+        onClosed?.();
+      });
+      tl.reverse();
+      return;
+    }
+
+    // No timeline: either nothing is open, or a step took it. A step's close is
+    // a fold-back of its own — a visitor who stepped and then pressed ✕ asked
+    // for the same animation as everyone else.
+    const index = opened.current;
+    if (index === null || reduced.current) {
       reset();
       onClosed?.();
       return;
     }
 
-    tl.eventCallback("onReverseComplete", () => {
-      timeline.current = null;
-      reset();
-      onClosed?.();
-    });
-    tl.reverse();
+    foldBack(index);
   });
 
   /**
@@ -415,6 +504,7 @@ export function useFanAnimation({
 
     timeline.current?.kill();
     timeline.current = null;
+    opened.current = index;
 
     const leaving = from !== undefined && from !== index ? from : null;
 

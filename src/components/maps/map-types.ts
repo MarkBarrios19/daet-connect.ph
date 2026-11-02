@@ -17,6 +17,14 @@ export type FreeMapMarker = LatLng & {
   href?: string;
   /** A second line under the name on a labelled map, e.g. "Heritage site". */
   subtitle?: string;
+  /**
+   * The place's own photo, drawn inside the pin.
+   *
+   * Only the place the map is showing carries one (place-map-panel), so the pin
+   * the open place's card points at is the photo pin and the other places stay
+   * plain dots.
+   */
+  photo?: { src: string; alt?: string };
 };
 
 export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };

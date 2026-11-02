@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FreeMap } from "@/components/maps/free-map";
 import type { FreeMapMarker } from "@/components/maps/map-types";
+
+/** Room between the card's tail and the pin it points at. */
+const GAP = 12;
 
 /** A place the hero's map can pin: the coordinates come from the places table. */
 export type MapPoint = { slug: string; name: string; lat: number; lng: number };
@@ -14,6 +17,8 @@ export type MapCardPlace = {
   name: string;
   text: string;
   photo: { src: string; alt: string };
+  /** Only drawn when there is a real one: the card never invents a score. */
+  rating?: number;
 };
 
 /**
@@ -40,9 +45,63 @@ export function PlaceMapPanel({
   className?: string;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const card = useRef<HTMLDivElement>(null);
+  const tail = useRef<HTMLSpanElement>(null);
 
   // Stepping to another place is a fresh focus, even if the last one was "Show all".
   useEffect(() => setShowAll(false), [place.slug]);
+
+  /**
+   * Sit the card above the pin and point its tail at it (image-42).
+   *
+   * The map is written to, not re-rendered: a pan reports its pin's position on
+   * every frame, and a React render per frame would fight the map for them. When
+   * there is no pin to point at — "Show all" — the card keeps the corner and
+   * loses its tail, which would otherwise point at nothing. If the pin is too
+   * near the top of the card's own height, the card drops underneath it and the
+   * tail turns the other way, rather than covering the thing it names.
+   */
+  const trackPin = useCallback((point: { x: number; y: number } | null) => {
+    const element = card.current;
+    if (!element) return;
+    const tip = tail.current;
+    const box = element.parentElement;
+
+    if (!point) {
+      element.setAttribute("data-anchored", "false");
+      element.style.left = "0.75rem";
+      element.style.top = "0.75rem";
+      element.style.transform = "none";
+      if (tip) tip.style.display = "none";
+      return;
+    }
+
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
+    const mapWidth = box?.clientWidth ?? width;
+    const mapHeight = box?.clientHeight ?? height;
+
+    const x = Math.min(Math.max(point.x, width / 2 + 6), Math.max(width / 2 + 6, mapWidth - width / 2 - 6));
+    const above = point.y - GAP - height >= 6;
+    const y = above
+      ? point.y - GAP - height
+      : Math.min(point.y + GAP, Math.max(6, mapHeight - height - 6));
+
+    element.setAttribute("data-anchored", "true");
+    element.setAttribute("data-side", above ? "above" : "below");
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    element.style.transform = "translate(-50%, 0)";
+
+    if (tip) {
+      // The tail stays on the pin, which is not always the card's centre: the
+      // card is clamped into the map, the tail is not.
+      const tipX = Math.min(Math.max(point.x - (x - width / 2), 12), width - 12);
+      tip.style.display = "";
+      tip.style.left = `${tipX}px`;
+      tip.setAttribute("data-side", above ? "above" : "below");
+    }
+  }, []);
 
   if (places.length === 0) return null;
 
@@ -53,6 +112,8 @@ export function PlaceMapPanel({
     kind: "place",
     label: "",
     title: point.name,
+    // The pin the card points at carries the place's photo; the rest stay dots.
+    photo: point.slug === place.slug ? place.photo : undefined,
   }));
   const pinned = places.some((point) => point.slug === place.slug);
 
@@ -92,6 +153,10 @@ export function PlaceMapPanel({
           fitKey={showAll ? "all" : place.slug}
           animateFit
           onMarkerClick={onPick}
+          onFocusPoint={trackPin}
+          // Room for the card above the pin, so its tail points down at the
+          // place the way the owner sketched it (image-42).
+          focusOffsetY={56}
           className="h-64"
         />
 
@@ -101,22 +166,49 @@ export function PlaceMapPanel({
             800 inside the map, and a plain absolute sibling sits under every one
             of them — which is how it went missing. */}
         <div
+          ref={card}
           data-map-place
+          data-anchored="false"
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-3 z-[800] w-40 rounded-xl bg-surface/95 p-2 ring-1 ring-daet-ink/10 backdrop-blur dark:bg-slate-950/92 dark:ring-white/15"
+          className="pointer-events-none absolute z-[800] w-52"
+          style={{ left: "0.75rem", top: "0.75rem" }}
         >
-          <Image
-            src={place.photo.src}
-            alt=""
-            width={320}
-            height={180}
-            sizes="160px"
-            className="h-16 w-full rounded-lg object-cover"
+          {/* The tail: a rotated square on the card's own ground, so the card
+              reads as a bubble over the pin rather than a box that happens to be
+              near it. */}
+          <span
+            ref={tail}
+            data-map-place-tail
+            data-side="above"
+            aria-hidden="true"
+            style={{ display: "none" }}
+            className="absolute h-2.5 w-2.5 rotate-45 rounded-[2px] bg-surface/95 dark:bg-slate-950/92 data-[side=above]:-bottom-[5px] data-[side=above]:-ml-[5px] data-[side=below]:-top-[5px] data-[side=below]:-ml-[5px]"
           />
-          <p className="mt-1.5 text-xs font-extrabold leading-tight text-daet-ink dark:text-white">{place.name}</p>
-          <p className="mt-0.5 line-clamp-3 text-[0.7rem] leading-snug text-daet-ink/75 dark:text-white/75">
-            {place.text}
-          </p>
+          <div className="overflow-hidden rounded-xl bg-surface/95 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur dark:bg-slate-950/92 dark:ring-white/15">
+            <Image
+              src={place.photo.src}
+              alt=""
+              width={320}
+              height={180}
+              sizes="208px"
+              className="h-20 w-full object-cover"
+            />
+            <div className="px-2.5 py-2">
+              <p className="flex items-baseline gap-1.5">
+                <span className="min-w-0 flex-1 truncate text-xs font-extrabold leading-tight text-daet-ink dark:text-white">
+                  {place.name}
+                </span>
+                {typeof place.rating === "number" && (
+                  <span className="shrink-0 text-[0.7rem] font-bold leading-tight text-amber-600 dark:text-amber-300">
+                    <span aria-hidden="true">★</span> {place.rating.toFixed(1)}
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 line-clamp-2 text-[0.7rem] leading-snug text-daet-ink/75 dark:text-white/75">
+                {place.text}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

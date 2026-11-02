@@ -9,6 +9,7 @@ import { act, render } from "@testing-library/react";
 import {
   fanGeometry,
   fanWedgePoints,
+  lerpPoints,
   rectPolygon,
   restWidths,
   toClipPath,
@@ -138,6 +139,10 @@ const shapeAt = (widths: number[], index: number): string =>
   toClipPath(fanWedgePoints(geometry, 0, widths)[index], WIDTH, HEIGHT);
 
 const OPEN = toClipPath(rectPolygon(WIDTH, HEIGHT), WIDTH, HEIGHT);
+
+/** The shape a wedge has part-way towards the whole hero, as `render` writes it. */
+const lerpShape = (index: number, open: number): string =>
+  toClipPath(lerpPoints(fanWedgePoints(geometry, 0, restWidths(geometry))[index], rectPolygon(WIDTH, HEIGHT), open), WIDTH, HEIGHT);
 
 type Api = ReturnType<typeof useFanAnimation>;
 
@@ -334,6 +339,54 @@ describe("useFanAnimation", () => {
     expect(timeline.reversed).toBe(true);
     expect(onClosed).toHaveBeenCalledTimes(1);
     expect(wedges[4].style.clipPath).toBe(geometry.wedges[4].rest);
+    wedges.forEach((wedge, index) => expect(wedge.style.clipPath).toBe(geometry.wedges[index].rest));
+  });
+
+  it("folds the fan back with a real animation after a step, not a snap", () => {
+    // A step kills the timeline that opened the place. The close then has
+    // nothing to reverse, and used to fall straight through to reset(): the
+    // owner stepped twice, pressed the ✕, and the fan snapped back with no
+    // animation at all.
+    const onClosed = jest.fn();
+    const { api, wedges } = mount({ onClosed });
+
+    act(() => api.current?.openAt(0));
+    act(() => api.current?.swapTo(1, { from: 0, direction: 1 }));
+
+    // The open timeline is gone: nothing of the sort is left to reverse.
+    expect(records.timelines[0].killed).toBe(true);
+
+    records.timelines.length = 0;
+    records.set.length = 0;
+    act(() => api.current?.close());
+
+    // A close timeline exists, and it is not a reversal of the dead one.
+    expect(records.timelines).toHaveLength(1);
+    const [foldBack] = records.timelines;
+    expect(foldBack.reversed).toBe(false);
+
+    // It shrinks the open wedge frame by frame, exactly as opening grew it.
+    const steps = foldBack.steps;
+    const shrinking = steps.find(
+      (step) => step.kind === "to" && typeof step.vars.onUpdate === "function" && typeof (step.targets as { t: number }).t === "number",
+    );
+    expect(shrinking).toBeDefined();
+    expect((shrinking!.targets as { t: number }).t).toBe(1);
+    expect(shrinking!.vars.duration).toBeGreaterThan(0);
+
+    // The photo it replaced comes back, the ones that slid out return.
+    expect(tweensOn(steps, wedges[0]).map((step) => step.vars)).toContainEqual(
+      expect.objectContaining({ autoAlpha: 1, x: 0, y: 0 }),
+    );
+
+    advanceOpen(shrinking!, 0.4);
+    expect(wedges[1].style.clipPath).toBe(lerpShape(1, 0.4));
+
+    // Still open until it has actually folded back.
+    expect(onClosed).not.toHaveBeenCalled();
+    act(() => foldBack.callbacks.onComplete?.());
+
+    expect(onClosed).toHaveBeenCalledTimes(1);
     wedges.forEach((wedge, index) => expect(wedge.style.clipPath).toBe(geometry.wedges[index].rest));
   });
 
