@@ -40,7 +40,11 @@ function alphaOf(value: string): number {
   if (text === "transparent") return 0;
   const slash = text.match(/\/\s*([\d.]+)(%?)\s*\)$/);
   if (slash) return Number(slash[1]) / (slash[2] ? 100 : 1);
-  const parts = text.match(/^rgba?\(([^)]*)\)$/)?.[1].split(/[,\s]+/).filter(Boolean) ?? [];
+  const parts =
+    text
+      .match(/^rgba?\(([^)]*)\)$/)?.[1]
+      .split(/[,\s]+/)
+      .filter(Boolean) ?? [];
   if (parts.length === 4) return Number(parts[3]);
   if (parts.length === 3) return 1;
   const mix = text.match(/([\d.]+)%\s*,?\s*transparent\s*\)?$/);
@@ -146,7 +150,9 @@ test.describe("home fan on a phone", () => {
 
   test("opens a folded bar at the top of the phone, with the photo to itself", async ({ page }) => {
     await visit(page, "/");
-    const wedge = page.getByRole("button", { name: "Bagasbas Beach: open photo and details" });
+    const wedge = page.getByRole("button", {
+      name: "Bagasbas Beach: open photo and details",
+    });
 
     await wedge.focus();
     await page.keyboard.press("Enter");
@@ -195,39 +201,50 @@ test.describe("home fan on a phone", () => {
 
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2, { steps: 6 });
+    // Slow on purpose: a quick drag is a flick now, and a flick steps on. A
+    // visitor who takes their time is looking along the photo, not turning a page.
+    for (let step = 1; step <= 7; step += 1) {
+      await page.mouse.move(box.x + box.width / 2 - step * 10, box.y + box.height / 2);
+      await page.waitForTimeout(90);
+    }
     await page.mouse.up();
 
     const after = await photo.evaluate((element) => (element as HTMLImageElement).style.objectPosition);
     expect(after, "the crop moved along the photo").not.toBe(before);
-    // Letting go of a drag is not a tap: the place stays open.
+    // Letting go of a slow drag is neither a tap nor a flick: the place stays open.
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
   });
 
-  test("shows a hand over a newly opened photo, and puts it away once the photo is dragged", async ({ page }) => {
+  test("coaches the gestures over a newly opened photo, and puts them away once it is flicked", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
     await page.keyboard.press("Enter");
 
-    const hint = page.locator("[data-drag-hint]");
-    await expect(hint).toBeVisible();
-    await expect(hint).toContainText("Drag to look around");
+    const coach = page.locator("[data-gesture-hints]");
+    await expect(coach).toBeVisible();
+    // A phone is told to tap, because it has no double-click.
+    for (const line of ["Drag to look around", "Flick left or right to step", "Tap the photo to go back"]) {
+      await expect(coach).toContainText(line);
+    }
 
     const photo = page.locator("[data-wedge][aria-expanded='true'] img");
     const box = (await photo.boundingBox())!;
-    // The drag starts on top of the hand: it must teach the gesture, not eat it.
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // The flick starts on top of the coaching: it must teach the gesture, not eat it.
+    await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2);
     await page.mouse.up();
 
-    await expect(hint).toHaveCount(0);
-
-    // A visitor who has dragged one place knows how: the next one opens without the hand.
-    await page.keyboard.press("ArrowRight");
+    // A quick sideways flick turns the page, and the coaching goes with it.
     await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
-    await expect(hint).toHaveCount(0);
+    await expect(page).toHaveURL(/#place-first-rizal-monument/);
+    await expect(coach).toHaveCount(0);
+
+    // A visitor who has flicked one place knows how: the next one opens without it.
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeVisible();
+    await expect(coach).toHaveCount(0);
   });
 
   test("steps to the next place while open", async ({ page }) => {
@@ -255,7 +272,12 @@ test.describe("home fan on a phone", () => {
   test("opens straight onto the place a shared link names", async ({ page }) => {
     await visit(page, "/#place-cathedral-most-holy-trinity");
 
-    await expect(page.getByRole("heading", { level: 2, name: "Cathedral of the Most Holy Trinity" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Cathedral of the Most Holy Trinity",
+      }),
+    ).toBeVisible();
     await expect(inPanel(page).getByText("6 of 6")).toBeVisible();
   });
 
@@ -298,7 +320,11 @@ test.describe("home fan on a phone", () => {
 });
 
 test.describe("home fan on a desktop", () => {
-  test.use({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
+  test.use({
+    viewport: { width: 1280, height: 900 },
+    isMobile: false,
+    hasTouch: false,
+  });
 
   test("keeps the headline's links", async ({ page }) => {
     await visit(page, "/");
@@ -317,59 +343,67 @@ test.describe("home fan on a desktop", () => {
     await expect
       .poll(async () =>
         page.evaluate(() =>
-          Math.max(...Array.from(document.querySelectorAll("[data-chip]")).map((chip) => Number(getComputedStyle(chip).opacity))),
+          Math.max(
+            ...Array.from(document.querySelectorAll("[data-chip]")).map((chip) =>
+              Number(getComputedStyle(chip).opacity),
+            ),
+          ),
         ),
       )
       .toBeGreaterThan(0.5);
   });
 
-  test("opens the place as a card in the photo's top left, with the map under it, and folds on Escape", async ({ page }) => {
+  test("opens the place into the sketch's three cards over its photo, and folds on Escape", async ({ page }) => {
     await visit(page, "/");
-    const wedge = page.getByRole("button", { name: "Bagasbas Beach: open photo and details" });
+    const wedge = page.getByRole("button", {
+      name: "Bagasbas Beach: open photo and details",
+    });
 
     await wedge.focus();
     await page.keyboard.press("Enter");
 
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
-    await expect(inPanel(page).getByRole("link", { name: "Open on the map" })).toHaveAttribute(
-      "href",
-      "#home-map",
-    );
+    await expect(inPanel(page).getByRole("link", { name: "Open on the map" })).toHaveAttribute("href", "#home-map");
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await checkA11y(page, "home, a place open, desktop");
 
-    // As in the owner's markup (image-25): the card is in the photo's top left
-    // corner, hanging off the page's own 7xl column, not a slab over the bottom.
+    // The owner's sketch (image-30): the map card leads, on the page's own column;
+    // the place's own card stands beside it; the Fun fact card sits under that.
     const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
+    const map = (await page.locator("[data-place-map]").boundingBox())!;
     const card = (await page.locator("[data-detail]").boundingBox())!;
+    const fun = (await page.locator("[data-fun-fact]").boundingBox())!;
     const column = (await page.locator("#home-places").boundingBox())!.x;
 
-    expect(Math.abs(card.x - column), "on the page's column").toBeLessThanOrEqual(1);
-    expect(card.y - hero.y, "at the top of the photo, under the bar").toBeGreaterThanOrEqual(0);
-    expect(card.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
-    expect(card.width, "a card, not a column").toBeLessThanOrEqual(320);
+    expect(Math.abs(map.x - column), "the map card leads, on the page's column").toBeLessThanOrEqual(1);
+    expect(map.y - hero.y, "at the top of the photo, under the bar").toBeGreaterThanOrEqual(0);
+    expect(map.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
+    expect(map.width, "a card, not a column").toBeLessThanOrEqual(420);
+
+    expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
+    expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);
+    expect(fun.x, "the Fun fact card under the place card").toBeGreaterThan(map.x + map.width - 1);
+    expect(fun.y, "below the place card").toBeGreaterThan(card.y + card.height - 1);
+
+    // The map card shows the place's own photo and name over the pins.
+    await expect(page.locator("[data-map-place]")).toContainText("Bagasbas Beach");
+    await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
 
     // The ✕ and the floating arrows are gone: the ‹ › pair lives in the card's
-    // own header, so the photo has nothing over it but the two panels.
+    // own header, so the photo has nothing over it but these cards.
     await expect(page.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
     const next = (await page.getByRole("button", { name: "Next place" }).boundingBox())!;
     expect(next.x, "inside the card").toBeGreaterThanOrEqual(card.x);
     expect(next.x + next.width, "inside the card").toBeLessThanOrEqual(card.x + card.width + 1);
     expect(next.y + next.height, "inside the card").toBeLessThanOrEqual(card.y + card.height + 1);
 
-    // The map sits under it, in the same column, and names what it is showing.
-    const map = (await page.locator("[data-place-map]").boundingBox())!;
-    expect(Math.abs(map.x - column), "in the same column as the card").toBeLessThanOrEqual(1);
-    expect(map.y, "below the card").toBeGreaterThan(card.y + card.height);
-    expect(hero.y + hero.height - (map.y + map.height), "its foot near the photo's").toBeLessThanOrEqual(80);
-    await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
-
     // The map follows the ‹ › pair: the next place is what it is showing now.
     await page.getByRole("button", { name: "Next place" }).click();
     await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+First Rizal Monument/);
+    await expect(page.locator("[data-map-place]")).toContainText("First Rizal Monument");
     await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
 
-    // Folding keeps the name and the map, and gives the photo back its corner.
+    // Folding keeps the name and the map, and gives the photo back its room.
     const tall = (await page.locator("[data-detail]").boundingBox())!.height;
     await page.getByRole("button", { name: "Hide the place's details" }).click();
     await expect(page.getByRole("button", { name: "Show the place's details" })).toBeVisible();
@@ -493,7 +527,12 @@ test.describe("home fan on a desktop", () => {
 test.describe("the open place", () => {
   // Motion on: the file's own default is `reduce`, which settles every shape
   // instantly and so never exercises the fold-in that fills the screen.
-  test.use({ reducedMotion: "no-preference", viewport: { width: 1920, height: 1080 }, isMobile: false, hasTouch: false });
+  test.use({
+    reducedMotion: "no-preference",
+    viewport: { width: 1920, height: 1080 },
+    isMobile: false,
+    hasTouch: false,
+  });
 
   test("keeps the open photo covering the hero, while it opens and after it settles", async ({ page }) => {
     await visit(page, "/");
@@ -575,7 +614,9 @@ test.describe("the open place", () => {
       ...gapsIn(late).map((gap) => `a few seconds later: ${gap}`),
       // A photo that keeps changing size while the visitor looks at it is a bug
       // of its own: the box has to be the same one it settled on.
-      ...(late.img && settled.img && (Math.abs(late.img.w - settled.img.w) > 1 || Math.abs(late.img.h - settled.img.h) > 1)
+      ...(late.img &&
+      settled.img &&
+      (Math.abs(late.img.w - settled.img.w) > 1 || Math.abs(late.img.h - settled.img.h) > 1)
         ? [`the photo changed size on its own: ${settled.img.w}x${settled.img.h} then ${late.img.w}x${late.img.h}`]
         : []),
     ];
@@ -625,8 +666,7 @@ test.describe("home fan, motion on", () => {
   /** The spots where a photo is what the visitor would hit, right now. */
   const photoSpots = (page: import("@playwright/test").Page, spots: Spot[]) =>
     page.evaluate(
-      (spots) =>
-        spots.filter((spot) => Boolean(document.elementFromPoint(spot.x, spot.y)?.closest("[data-wedge]"))),
+      (spots) => spots.filter((spot) => Boolean(document.elementFromPoint(spot.x, spot.y)?.closest("[data-wedge]"))),
       spots,
     );
 
@@ -701,9 +741,10 @@ test.describe("home fan, motion on", () => {
         await page.waitForTimeout(at - elapsed);
         elapsed = at;
         const { share, lost } = await coverage(page, photos);
-        expect(share, `the fan came apart ${at}ms into hovering wedge ${index}; lost ${lost.join(" ")}`).toBeGreaterThanOrEqual(
-          0.95,
-        );
+        expect(
+          share,
+          `the fan came apart ${at}ms into hovering wedge ${index}; lost ${lost.join(" ")}`,
+        ).toBeGreaterThanOrEqual(0.95);
       }
 
       expect(await clipPathOf(page, index), `wedge ${index} widened`).not.toBe(before);
@@ -751,17 +792,11 @@ test.describe("home fan, motion on", () => {
         };
       });
 
-      expect(fit.heroBottom, `${label}: the hero ends at the fold`).toBeLessThanOrEqual(
-        fit.viewportHeight + 1,
-      );
-      expect(fit.titleTop, `${label}: the headline sits under the fan's point`).toBeGreaterThanOrEqual(
-        fit.apexY - 1,
-      );
+      expect(fit.heroBottom, `${label}: the hero ends at the fold`).toBeLessThanOrEqual(fit.viewportHeight + 1);
+      expect(fit.titleTop, `${label}: the headline sits under the fan's point`).toBeGreaterThanOrEqual(fit.apexY - 1);
       expect(fit.buttonBottoms.length, `${label}: both buttons are showing`).toBeGreaterThanOrEqual(2);
       fit.buttonBottoms.forEach((bottom) =>
-        expect(bottom, `${label}: a button is cut off by the fold`).toBeLessThanOrEqual(
-          fit.viewportHeight - 16,
-        ),
+        expect(bottom, `${label}: a button is cut off by the fold`).toBeLessThanOrEqual(fit.viewportHeight - 16),
       );
     }
   });
@@ -932,7 +967,10 @@ test.describe("stepping through places with motion on", () => {
       await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
       // The fold-in or the cross-fade has to land before the box means anything.
       await page.waitForTimeout(700);
-      expect(await edgesOfOpenPhoto(page), `the edges of ${name}`).toEqual({ left: "photo", right: "photo" });
+      expect(await edgesOfOpenPhoto(page), `the edges of ${name}`).toEqual({
+        left: "photo",
+        right: "photo",
+      });
 
       await page.getByRole("button", { name: "Next place" }).click();
     }
@@ -978,7 +1016,10 @@ test.describe("a pin opens a place from further down the page", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(600);
 
-    expect(await edgesOfOpenPhoto(page), "the photo the pin opened").toEqual({ left: "photo", right: "photo" });
+    expect(await edgesOfOpenPhoto(page), "the photo the pin opened").toEqual({
+      left: "photo",
+      right: "photo",
+    });
 
     // Sideways is the photo's gesture; up and down belongs to the page, so a
     // thumb can scroll away and pull to refresh as usual.

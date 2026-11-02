@@ -15,7 +15,8 @@ import {
 import type { FanPlace } from "./fan-places";
 import { PlaceDetail } from "./place-detail";
 import { DRAG_AFTER, PAN_CENTRE, coverRoom, panBy, panStyle, type PanPosition } from "./photo-pan";
-import { PhotoDragHint } from "./photo-drag-hint";
+import { GestureHints } from "./gesture-hints";
+import { flickStep } from "./flick";
 import type { MapPoint } from "./place-map-panel";
 import { useFanAnimation } from "./use-fan-animation";
 import { useHeroFold } from "./use-hero-fold";
@@ -57,9 +58,15 @@ export function PlaceFan({
     id: number;
     x: number;
     y: number;
+    /** Where the pointer is now, for telling a flick from a slow look. */
+    to: { x: number; y: number };
+    /** When it went down, in ms, for the same reason. */
+    at: number;
     start: PanPosition;
     room: { x: number; y: number };
   } | null>(null);
+  /** When the place last closed, so a second tap of a double tap is not a re-open. */
+  const closedAt = useRef(0);
   /** Set by a drag, so the release does not also count as a tap on the photo. */
   const dragged = useRef(false);
   const swallowClick = useRef(false);
@@ -105,8 +112,7 @@ export function PlaceFan({
       const header = document.querySelector("header");
       const tabBar = document.querySelector('nav[aria-label="Dashboard"]');
       const top = header?.getBoundingClientRect().height ?? 0;
-      const bottom =
-        tabBar && getComputedStyle(tabBar).display !== "none" ? tabBar.getBoundingClientRect().height : 0;
+      const bottom = tabBar && getComputedStyle(tabBar).display !== "none" ? tabBar.getBoundingClientRect().height : 0;
       setInsets((was) => (was.top === top && was.bottom === bottom ? was : { top, bottom }));
 
       setSize({ width, height });
@@ -140,8 +146,7 @@ export function PlaceFan({
   );
 
   /** The band between the phone's two fans, where the headline stands. */
-  const bandCentre =
-    geometry.fans.length === 2 ? (geometry.fans[0].vp[1] + geometry.fans[1].vp[1]) / 2 : null;
+  const bandCentre = geometry.fans.length === 2 ? (geometry.fans[0].vp[1] + geometry.fans[1].vp[1]) / 2 : null;
 
   const slugs = useMemo(() => places.map((place) => place.slug), [places]);
   const { openSlug, open: openInUrl, close: closeInUrl } = usePlaceHash(slugs);
@@ -182,12 +187,15 @@ export function PlaceFan({
   // hero's own ground along the bottom edge.
   useHeroFold(sectionRef, { paused: isOpen });
 
-  const describe = useCallback(
-    (index: number) => `${places[index].name}, ${index + 1} of ${places.length}`,
-    [places],
-  );
+  const describe = useCallback((index: number) => `${places[index].name}, ${index + 1} of ${places.length}`, [places]);
 
-  const { hover, openAt, close: closeAnimation, swapTo, parallax } = useFanAnimation({
+  const {
+    hover,
+    openAt,
+    close: closeAnimation,
+    swapTo,
+    parallax,
+  } = useFanAnimation({
     root: sectionRef,
     geometry,
     // Focus follows the panel in and the wedge back out, so the next Tab, arrow
@@ -241,6 +249,7 @@ export function PlaceFan({
 
   const close = useCallback(() => {
     driven.current = -1;
+    closedAt.current = Date.now();
     closeInUrl();
     setAnnouncement("");
     // lastOpen stays put: the fan's close animation reads it to put focus back
@@ -308,9 +317,9 @@ export function PlaceFan({
    * photo pans — pressing the card, the map or the header leaves them alone —
    * and a drag is not a tap, so letting go does not close the place.
    *
-   * This replaces the sideways flick that used to step to the next place while
-   * one was open: a horizontal drag now belongs to the photo. The ‹ › pair, and
-   * the arrow keys, still step.
+   * A slow drag looks; a quick, flat flick steps to the next or previous place
+   * (flick.ts holds where the line falls). The ‹ › pair and the arrow keys step
+   * too, and a desktop double-clicks the photo to go back to the fan.
    */
   const movePan = (next: PanPosition) => {
     panRef.current = next;
@@ -334,6 +343,8 @@ export function PlaceFan({
       id: event.pointerId,
       x: event.clientX,
       y: event.clientY,
+      to: { x: event.clientX, y: event.clientY },
+      at: Date.now(),
       start: panRef.current,
       room: coverRoom(
         { width: img.clientWidth, height: img.clientHeight },
@@ -347,6 +358,7 @@ export function PlaceFan({
     const press_ = press.current;
     if (!press_ || press_.id !== event.pointerId) return;
 
+    press_.to = { x: event.clientX, y: event.clientY };
     const dx = event.clientX - press_.x;
     const dy = event.clientY - press_.y;
     if (!dragged.current && Math.hypot(dx, dy) > DRAG_AFTER) {
@@ -364,8 +376,24 @@ export function PlaceFan({
     if (!press_) return;
 
     event.currentTarget.releasePointerCapture?.(press_.id);
+    if (!dragged.current) return;
+
     // A drag that ends over the photo is not a tap: it must not close the place.
-    if (dragged.current) swallowClick.current = true;
+    swallowClick.current = true;
+
+    // A quick, flat drag is a flick: it steps to the next or previous place.
+    // Anything slower was the visitor looking along the photo, which has already
+    // happened, and the place they were looking at stays put.
+    const flicked = flickStep({
+      dx: press_.to.x - press_.x,
+      dy: press_.to.y - press_.y,
+      ms: Date.now() - press_.at,
+    });
+    if (flicked !== 0) {
+      hintTaught.current = true;
+      setHint(false);
+      step(flicked);
+    }
   };
 
   const onPointerCancel = () => {
@@ -383,7 +411,10 @@ export function PlaceFan({
   const photoNudge = (index: number) => {
     const [ux, uy] = midVector(geometry.wedges[index].mid);
     const offset = 0.18 * Math.min(size.width, size.height);
-    return { x: Number((ux * offset).toFixed(2)), y: Number((uy * offset).toFixed(2)) };
+    return {
+      x: Number((ux * offset).toFixed(2)),
+      y: Number((uy * offset).toFixed(2)),
+    };
   };
 
   /** Chip position: a short way out from the apex, along the same mid angle. */
@@ -423,109 +454,121 @@ export function PlaceFan({
         {places.map((place, index) => {
           const nudge = photoNudge(index);
           return (
-          <button
-            key={place.slug}
-            ref={(element) => {
-              wedgeRefs.current[index] = element;
-            }}
-            type="button"
-            data-wedge={index}
-            aria-label={`${place.name}: ${openIndex === index ? "close" : "open"} photo and details`}
-            aria-expanded={openIndex === index}
-            aria-controls="place-detail"
-            style={{ clipPath: geometry.wedges[index].rest }}
-            onClick={() => {
-              if (swallowClick.current) {
-                swallowClick.current = false;
-                return;
-              }
-              if (openIndex === index) close();
-              else open(index);
-            }}
-            onPointerEnter={(event) => {
-              if (event.pointerType === "mouse" && !onPhone && openIndex < 0) hover(index);
-            }}
-            onPointerLeave={(event) => {
-              // Not while a place is open: that hover would resize the
-              // full-screen photo under the visitor (it zoomed to 1.15).
-              if (event.pointerType === "mouse" && !onPhone && openIndex < 0) hover(null);
-            }}
-            // A keyboard visitor gets the same name a mouse visitor does. Only
-            // for `:focus-visible`, so a click that happens to focus a wedge
-            // doesn't pin a tag on after the pointer has gone.
-            onFocus={(event) => {
-              if (onPhone || openIndex >= 0 || !focusVisible(event.currentTarget)) return;
-              hover(index);
-            }}
-            onBlur={() => {
-              if (onPhone || openIndex >= 0) return;
-              hover(null);
-            }}
-            onPointerMove={(event) => {
-              if (event.pointerType !== "mouse" || onPhone || openIndex >= 0) return;
-              const box = sectionRef.current?.getBoundingClientRect();
-              if (!box) return;
-              parallax(index, ((event.clientX - box.left) / box.width - 0.5) * 0.02 * box.width);
-            }}
-            className={`group absolute inset-0 m-0 block border-0 bg-canvas p-0 text-left dark:bg-slate-900 ${
-              openIndex >= 0 ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-            }`}
-          >
-            {/* Two layers: the outer one is GSAP's (scale, and the parallax
+            <button
+              key={place.slug}
+              ref={(element) => {
+                wedgeRefs.current[index] = element;
+              }}
+              type="button"
+              data-wedge={index}
+              aria-label={`${place.name}: ${openIndex === index ? "close" : "open"} photo and details`}
+              aria-expanded={openIndex === index}
+              aria-controls="place-detail"
+              style={{ clipPath: geometry.wedges[index].rest }}
+              onClick={() => {
+                if (swallowClick.current) {
+                  swallowClick.current = false;
+                  return;
+                }
+                if (openIndex !== index) {
+                  // A tap that lands the instant the fan closed is the tail of a
+                  // double-click, not a wish to open the place straight back up.
+                  if (Date.now() - closedAt.current < 400) return;
+                  open(index);
+                  return;
+                }
+                // A phone has no double-click: there the photo itself is the way
+                // back. A desktop asks for a double-click (below), so one click on
+                // the open photo does nothing at all.
+                if (sheet) close();
+              }}
+              onDoubleClick={() => {
+                if (openIndex === index) close();
+              }}
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse" && !onPhone && openIndex < 0) hover(index);
+              }}
+              onPointerLeave={(event) => {
+                // Not while a place is open: that hover would resize the
+                // full-screen photo under the visitor (it zoomed to 1.15).
+                if (event.pointerType === "mouse" && !onPhone && openIndex < 0) hover(null);
+              }}
+              // A keyboard visitor gets the same name a mouse visitor does. Only
+              // for `:focus-visible`, so a click that happens to focus a wedge
+              // doesn't pin a tag on after the pointer has gone.
+              onFocus={(event) => {
+                if (onPhone || openIndex >= 0 || !focusVisible(event.currentTarget)) return;
+                hover(index);
+              }}
+              onBlur={() => {
+                if (onPhone || openIndex >= 0) return;
+                hover(null);
+              }}
+              onPointerMove={(event) => {
+                if (event.pointerType !== "mouse" || onPhone || openIndex >= 0) return;
+                const box = sectionRef.current?.getBoundingClientRect();
+                if (!box) return;
+                parallax(index, ((event.clientX - box.left) / box.width - 0.5) * 0.02 * box.width);
+              }}
+              className={`group absolute inset-0 m-0 block border-0 bg-canvas p-0 text-left dark:bg-slate-900 ${
+                openIndex >= 0 ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+              }`}
+            >
+              {/* Two layers: the outer one is GSAP's (scale, and the parallax
                 nudge), the inner one holds the still radial offset that keeps
                 each photo looking down its own wedge. */}
-            <span data-photo={index} className="absolute inset-0 block" style={{ transform: "scale(1.15)" }}>
-              {/* The photo's rest offset, out along its own wedge. The motion
+              <span data-photo={index} className="absolute inset-0 block" style={{ transform: "scale(1.15)" }}>
+                {/* The photo's rest offset, out along its own wedge. The motion
                   layer owns this one: it reads the two numbers off the element
                   and puts the photo back to nought while its place is open, so
                   the open view is full-bleed instead of leaving the corner its
                   wedge pointed at empty. One owner, so nothing has to cancel
                   anything else out. */}
-              {/* The inline transform is for the server's first paint (and for a
+                {/* The inline transform is for the server's first paint (and for a
                   visitor without scripts) only: from hydration the motion layer
                   owns it, and can take it back to nought. */}
-              <span
-                data-nudge
-                data-nudge-x={nudge.x}
-                data-nudge-y={nudge.y}
-                className="absolute inset-0 block"
-                style={{ transform: `translate(${nudge.x}px, ${nudge.y}px)` }}
-              >
-                <Image
-                  src={place.photo.src}
-                  alt={place.photo.alt}
-                  fill
-                  priority={index < 2}
-                  sizes="100vw"
-                  // A finger on the photo pans it; the browser's own image drag
-                  // would take the gesture instead.
-                  draggable={false}
-                  style={openIndex === index ? { objectPosition: panStyle(pan) } : undefined}
-                  className="object-cover"
-                />
+                <span
+                  data-nudge
+                  data-nudge-x={nudge.x}
+                  data-nudge-y={nudge.y}
+                  className="absolute inset-0 block"
+                  style={{ transform: `translate(${nudge.x}px, ${nudge.y}px)` }}
+                >
+                  <Image
+                    src={place.photo.src}
+                    alt={place.photo.alt}
+                    fill
+                    priority={index < 2}
+                    sizes="100vw"
+                    // A finger on the photo pans it; the browser's own image drag
+                    // would take the gesture instead.
+                    draggable={false}
+                    style={openIndex === index ? { objectPosition: panStyle(pan) } : undefined}
+                    className="object-cover"
+                  />
+                </span>
               </span>
-            </span>
 
-            {/* The chip is the wedge's label: clip-path eats outlines, so focus
+              {/* The chip is the wedge's label: clip-path eats outlines, so focus
                 shows here instead. Always on for phones, on hover/focus for a
                 mouse, and not at all on a landscape phone. */}
-            {/* GSAP owns this tag's visibility and nothing else does: the CSS
+              {/* GSAP owns this tag's visibility and nothing else does: the CSS
                 hover/focus classes used to fight its inline style, which left
                 the last name stuck on screen after the pointer left. */}
-            {!shortHero && (
-              <span
-                data-chip={index}
-                aria-hidden="true"
-                style={{
-                  ...chipPosition(index),
-                  ...(onPhone ? {} : { opacity: 0, visibility: "hidden" as const }),
-                }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-950/80 px-3 py-1.5 text-sm font-semibold text-white group-focus-visible:ring-2 group-focus-visible:ring-blue-300"
-              >
-                {onPhone ? place.shortName : place.name}
-              </span>
-            )}
-          </button>
+              {!shortHero && (
+                <span
+                  data-chip={index}
+                  aria-hidden="true"
+                  style={{
+                    ...chipPosition(index),
+                    ...(onPhone ? {} : { opacity: 0, visibility: "hidden" as const }),
+                  }}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-950/80 px-3 py-1.5 text-sm font-semibold text-white group-focus-visible:ring-2 group-focus-visible:ring-blue-300"
+                >
+                  {onPhone ? place.shortName : place.name}
+                </span>
+              )}
+            </button>
           );
         })}
       </div>
@@ -548,9 +591,7 @@ export function PlaceFan({
         <h1
           id="home-title"
           className={
-            onPhone || tight
-              ? "display-2 text-daet-ink dark:text-white"
-              : "display-1 text-daet-ink dark:text-white"
+            onPhone || tight ? "display-2 text-daet-ink dark:text-white" : "display-1 text-daet-ink dark:text-white"
           }
         >
           {/* The lead-in runs a step smaller than the statement under it, as in
@@ -567,8 +608,7 @@ export function PlaceFan({
           <>
             {!tight && (
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-daet-ink/80 dark:text-white/90 sm:text-base">
-                Beaches, islands and old-town walks, with operators and guides verified by the Daet Tourism
-                Office.
+                Beaches, islands and old-town walks, with operators and guides verified by the Daet Tourism Office.
               </p>
             )}
             {/* Behind an open place this row is invisible, so it must not be
@@ -608,7 +648,7 @@ export function PlaceFan({
         }}
       />
 
-      {isOpen && hint && <PhotoDragHint onDone={() => setHint(false)} />}
+      {isOpen && hint && <GestureHints phone={sheet} onDone={() => setHint(false)} />}
 
       {/* The panel's slot is always in the tree so aria-controls always resolves. */}
       <div id="place-detail" className="pointer-events-none absolute inset-0 z-20">

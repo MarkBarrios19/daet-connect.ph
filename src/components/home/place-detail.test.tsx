@@ -36,10 +36,30 @@ jest.mock("@/components/maps/free-map", () => ({
 
 /** The seeded coordinates, as the places table has them. */
 const MAP_PLACES: MapPoint[] = [
-  { slug: "tinaga-island-calaguas", name: "Calaguas", lat: 14.4692, lng: 122.945 },
-  { slug: "apuao-grande-island", name: "Apuao sandbar", lat: 14.0823, lng: 123.1048 },
-  { slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 },
-  { slug: "first-rizal-monument", name: "First Rizal Monument", lat: 14.1131, lng: 122.9545 },
+  {
+    slug: "tinaga-island-calaguas",
+    name: "Calaguas",
+    lat: 14.4692,
+    lng: 122.945,
+  },
+  {
+    slug: "apuao-grande-island",
+    name: "Apuao sandbar",
+    lat: 14.0823,
+    lng: 123.1048,
+  },
+  {
+    slug: "bagasbas-beach",
+    name: "Bagasbas Beach",
+    lat: 14.131583,
+    lng: 122.985083,
+  },
+  {
+    slug: "first-rizal-monument",
+    name: "First Rizal Monument",
+    lat: 14.1131,
+    lng: 122.9545,
+  },
 ];
 
 const renderDetail = (overrides: Partial<React.ComponentProps<typeof PlaceDetail>> = {}) => {
@@ -126,7 +146,9 @@ describe("PlaceDetail", () => {
     expect(body).not.toHaveAttribute("hidden");
     expect(screen.getByRole("link", { name: "Open on the map" })).toBeVisible();
 
-    const fold = screen.getByRole("button", { name: "Hide the place's details" });
+    const fold = screen.getByRole("button", {
+      name: "Hide the place's details",
+    });
     expect(fold).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(fold);
 
@@ -147,6 +169,8 @@ describe("PlaceDetail", () => {
     // move from the left edge to the middle.
     expect(screen.queryByRole("region", { name: /Map showing/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
+    // The Fun fact card is part of the desktop row too.
+    expect(document.querySelector("[data-fun-fact]")).not.toBeInTheDocument();
     expect(document.querySelector("[data-detail]")!.className).toContain("mx-auto");
   });
 
@@ -172,11 +196,62 @@ describe("PlaceDetail", () => {
     });
   });
 
-  it("puts the map under the card, pinned to the place it is showing", () => {
+  it("leads with the map card, and stands the place card and the Fun fact card beside it", () => {
+    const { container } = renderDetail({ places: MAP_PLACES });
+
+    // The owner's sketch (image-30): map card first, the place's own card to its
+    // right, and the Fun fact card under that one.
+    const order = Array.from(container.querySelectorAll("[data-place-map], [data-detail], [data-fun-fact]")).map(
+      (element) =>
+        element.hasAttribute("data-place-map") ? "map" : element.hasAttribute("data-detail") ? "card" : "fun fact",
+    );
+    expect(order).toEqual(["map", "card", "fun fact"]);
+
+    // The two of them share a row, so the card is beside the map and not under it.
+    expect(container.querySelector("[data-detail]")!.parentElement).not.toBe(
+      container.querySelector("[data-place-map]")!.parentElement,
+    );
+    expect(
+      container.querySelector("[data-detail]")!.parentElement!.parentElement?.querySelector("[data-place-map]"),
+    ).not.toBeNull();
+  });
+
+  it("puts the place's own photo, name and line on the map card", () => {
+    const { container } = renderDetail({ places: MAP_PLACES });
+
+    const overTheMap = container.querySelector("[data-map-place]") as HTMLElement;
+    expect(overTheMap).toBeInTheDocument();
+    expect(overTheMap).toHaveTextContent("Bagasbas Beach");
+    expect(overTheMap).toHaveTextContent(FAN_PLACES[2].text);
+    expect(overTheMap.querySelector("img")).toHaveAttribute("src", expect.stringContaining("bagasbas"));
+    // Nothing in it takes the pointer: the map underneath still drags.
+    expect(overTheMap).toHaveClass("pointer-events-none");
+  });
+
+  it("carries the Fun fact line, and folds it away and back", () => {
+    renderDetail({ places: MAP_PLACES });
+
+    // No place has a fact written yet, so the card says so rather than making one up.
+    expect(screen.getByText(/\[placeholder: a fun fact about Bagasbas Beach/)).toBeInTheDocument();
+
+    const toggle = screen.getByRole("button", { name: "Hide the fun fact" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggle);
+
+    expect(document.getElementById("place-fun-fact-body")).toHaveAttribute("hidden");
+    expect(screen.getByRole("button", { name: "Show the fun fact" })).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the fun fact" }));
+    expect(document.getElementById("place-fun-fact-body")).not.toHaveAttribute("hidden");
+  });
+
+  it("pins the map card to the place it is showing", () => {
     renderDetail({ places: MAP_PLACES });
 
     expect(screen.getByText("Viewing")).toBeInTheDocument();
-    const map = screen.getByRole("region", { name: /Map showing Bagasbas Beach/ });
+    const map = screen.getByRole("region", {
+      name: /Map showing Bagasbas Beach/,
+    });
     expect(map).toHaveAttribute("data-focus", "bagasbas-beach");
     // Every place with coordinates is on it, so a visitor can see where this one
     // sits among the rest.

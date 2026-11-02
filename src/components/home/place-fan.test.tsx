@@ -158,28 +158,30 @@ describe("PlaceFan", () => {
   it("names only the wedge under the mouse, and drops the name when it leaves", async () => {
     gsap.globalTimeline.timeScale(40);
     const { container } = renderFan();
-    const wedge = screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" });
+    const wedge = screen.getByRole("button", {
+      name: "Bagasbas Beach: open photo and details",
+    });
 
     fireEvent.pointerOver(wedge, { pointerType: "mouse" });
 
     await waitFor(() => {
-      const showing = Array.from(container.querySelectorAll("[data-chip]")).filter((chip) =>
-        (chip as HTMLElement).style.visibility !== "hidden",
+      const showing = Array.from(container.querySelectorAll("[data-chip]")).filter(
+        (chip) => (chip as HTMLElement).style.visibility !== "hidden",
       );
       expect(showing.map((chip) => chip.textContent)).toEqual(["Bagasbas Beach"]);
     });
 
     fireEvent.pointerOut(wedge, { pointerType: "mouse" });
 
-    await waitFor(() =>
-      container.querySelectorAll("[data-chip]").forEach((chip) => expect(chip).not.toBeVisible()),
-    );
+    await waitFor(() => container.querySelectorAll("[data-chip]").forEach((chip) => expect(chip).not.toBeVisible()));
   });
 
   it("names the wedge a keyboard visitor has tabbed to", async () => {
     gsap.globalTimeline.timeScale(40);
     const { container } = renderFan();
-    const wedge = screen.getByRole("button", { name: "Calaguas: open photo and details" });
+    const wedge = screen.getByRole("button", {
+      name: "Calaguas: open photo and details",
+    });
 
     act(() => wedge.focus());
 
@@ -198,7 +200,11 @@ describe("PlaceFan opening a place", () => {
 
   const openThird = () => {
     renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
   };
 
   it("opens the panel, marks the wedge expanded and names the place in the URL", () => {
@@ -206,10 +212,11 @@ describe("PlaceFan opening a place", () => {
 
     expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
     // Open, the wedge's own action is to close, and its label says so.
-    expect(screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: close photo and details",
+      }),
+    ).toHaveAttribute("aria-expanded", "true");
     expect(window.location.hash).toBe("#place-bagasbas-beach");
   });
 
@@ -226,7 +233,11 @@ describe("PlaceFan opening a place", () => {
     const row = (name: string) => screen.getByRole("link", { name }).parentElement;
     expect(row("Find a tour")).not.toHaveAttribute("inert");
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     expect(row("Find a tour")).toHaveAttribute("inert");
     expect(container.querySelector("[data-headline]")).not.toBeNull();
@@ -245,7 +256,10 @@ describe("PlaceFan opening a place", () => {
     };
     const restOf = (index: number) => {
       const element = container.querySelector(`[data-wedge="${index}"] [data-nudge]`) as HTMLElement;
-      return { x: Number(element.dataset.nudgeX), y: Number(element.dataset.nudgeY) };
+      return {
+        x: Number(element.dataset.nudgeX),
+        y: Number(element.dataset.nudgeY),
+      };
     };
     /**
      * Wait for the open/close tweens, turning GSAP's clock as we go: jsdom's
@@ -263,13 +277,19 @@ describe("PlaceFan opening a place", () => {
     expect(Math.abs(rest.x)).toBeGreaterThan(1);
     await until(() => expect(Math.abs(offsetOf(2).x)).toBeGreaterThan(1));
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     // A photo still pushed out along its old wedge leaves a corner of the hero
     // empty — the opened one has to sit dead centre, filling the screen.
     await until(() => expect(offsetOf(2)).toEqual({ x: 0, y: 0 }));
 
-    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), {
+      key: "Escape",
+    });
 
     await until(() => expect(offsetOf(2).x).toBeCloseTo(rest.x, 0));
   });
@@ -290,7 +310,11 @@ describe("PlaceFan opening a place", () => {
         assert();
       });
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
     await until(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
 
     // Opening a place slides the other five out along their own angles.
@@ -326,7 +350,11 @@ describe("PlaceFan opening a place", () => {
         assert();
       });
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
     await until(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
 
     // A pin is the one way in that skips the panel's cross-fade: it sets the
@@ -346,7 +374,10 @@ describe("PlaceFan opening a place", () => {
     expect(wedge.style.opacity).toBe("1");
 
     const offset = /translate3?d?\((-?[\d.e+]+)(?:px)?, *(-?[\d.e+]+)(?:px)?/.exec(wedge.style.transform);
-    expect({ x: Number(offset?.[1] ?? 0), y: Number(offset?.[2] ?? 0) }).toEqual({ x: 0, y: 0 });
+    expect({
+      x: Number(offset?.[1] ?? 0),
+      y: Number(offset?.[2] ?? 0),
+    }).toEqual({ x: 0, y: 0 });
   });
 
   it("tells a screen reader which place just opened", () => {
@@ -355,19 +386,29 @@ describe("PlaceFan opening a place", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Bagasbas Beach, 3 of 6");
   });
 
-  it("closes when the photo behind the card is tapped again, and takes the hash with it", () => {
-    // The owner took the ✕ off the photo, so the photo itself is the way back:
-    // tapping the open wedge folds it away.
+  it("keeps the place open on one click, and goes back to the fan on a double-click", () => {
+    // A desktop has a mouse, so the owner asked for the double-click as the way
+    // back — one click no longer takes the photo away while you are looking at
+    // it. (Phones keep the single tap; that is tested with the phone layout.)
     openThird();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" }));
+    const photo = screen.getByRole("button", {
+      name: "Bagasbas Beach: close photo and details",
+    });
 
+    fireEvent.click(photo);
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#place-bagasbas-beach");
+
+    fireEvent.doubleClick(photo);
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(window.location.hash).toBe("");
   });
 
   it("closes on Escape", () => {
     openThird();
-    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), {
+      key: "Escape",
+    });
 
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(window.location.hash).toBe("");
@@ -428,7 +469,10 @@ describe("PlaceFan opening a place", () => {
     renderFan();
 
     expect(
-      screen.getByRole("heading", { level: 2, name: "Cathedral of the Most Holy Trinity" }),
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Cathedral of the Most Holy Trinity",
+      }),
     ).toBeInTheDocument();
     expect(screen.getByText("6 of 6")).toBeInTheDocument();
   });
@@ -444,32 +488,45 @@ describe("PlaceFan opening a place", () => {
     hurry();
     openThird();
 
-    await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveFocus(),
-    );
+    await waitFor(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveFocus());
 
     fireEvent.click(screen.getByRole("button", { name: "Previous place" }));
-    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), {
+      key: "Escape",
+    });
 
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Apuao sandbar: open photo and details", hidden: true })).toHaveFocus(),
+      expect(
+        screen.getByRole("button", {
+          name: "Apuao sandbar: open photo and details",
+          hidden: true,
+        }),
+      ).toHaveFocus(),
     );
   });
 
   it("walks the fan with the arrow keys while it is closed", () => {
     renderFan();
-    const first = screen.getByRole("button", { name: "Calaguas: open photo and details" });
+    const first = screen.getByRole("button", {
+      name: "Calaguas: open photo and details",
+    });
     first.focus();
 
     fireEvent.keyDown(first, { key: "ArrowRight" });
 
-    expect(screen.getByRole("button", { name: "Apuao sandbar: open photo and details" })).toHaveFocus();
+    expect(
+      screen.getByRole("button", {
+        name: "Apuao sandbar: open photo and details",
+      }),
+    ).toHaveFocus();
   });
 
   it("widens the wedge under a mouse and restores it when the pointer leaves", async () => {
     hurry();
     renderFan();
-    const wedge = screen.getByRole("button", { name: "Daet Heritage Center: open photo and details" });
+    const wedge = screen.getByRole("button", {
+      name: "Daet Heritage Center: open photo and details",
+    });
 
     fireEvent.pointerOver(wedge, { pointerType: "mouse" });
     await waitFor(() => expect(wedge.style.clipPath).toBe(widened(4)));
@@ -481,7 +538,9 @@ describe("PlaceFan opening a place", () => {
   it("ignores hovering from a finger, which taps instead", async () => {
     hurry();
     renderFan();
-    const wedge = screen.getByRole("button", { name: "Daet Heritage Center: open photo and details" });
+    const wedge = screen.getByRole("button", {
+      name: "Daet Heritage Center: open photo and details",
+    });
 
     fireEvent.pointerOver(wedge, { pointerType: "touch" });
 
@@ -493,8 +552,14 @@ describe("PlaceFan opening a place", () => {
 describe("PlaceFan's hero", () => {
   /** jsdom has no layout, so the hero is told how big it is. */
   const setHeroSize = (width: number, height: number) => {
-    Object.defineProperty(Element.prototype, "clientWidth", { configurable: true, get: () => width });
-    Object.defineProperty(Element.prototype, "clientHeight", { configurable: true, get: () => height });
+    Object.defineProperty(Element.prototype, "clientWidth", {
+      configurable: true,
+      get: () => width,
+    });
+    Object.defineProperty(Element.prototype, "clientHeight", {
+      configurable: true,
+      get: () => height,
+    });
   };
 
   afterEach(() => {
@@ -592,8 +657,14 @@ describe("PlaceFan on a phone", () => {
    * transformed hero cannot change the shapes mid-scroll.
    */
   const setHeroSize = (width: number, height: number) => {
-    Object.defineProperty(Element.prototype, "clientWidth", { configurable: true, get: () => width });
-    Object.defineProperty(Element.prototype, "clientHeight", { configurable: true, get: () => height });
+    Object.defineProperty(Element.prototype, "clientWidth", {
+      configurable: true,
+      get: () => width,
+    });
+    Object.defineProperty(Element.prototype, "clientHeight", {
+      configurable: true,
+      get: () => height,
+    });
   };
 
   afterEach(() => {
@@ -677,7 +748,11 @@ describe("PlaceFan on a phone", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const card = container.querySelector("[data-detail]") as HTMLElement;
     expect(card).toBeInTheDocument();
@@ -691,10 +766,21 @@ describe("PlaceFan on a phone", () => {
   it("keeps the photo to itself on a phone: no map, and the card centred", () => {
     setHeroSize(390, 844);
     const { container } = renderFan({
-      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+      mapPlaces: [
+        {
+          slug: "bagasbas-beach",
+          name: "Bagasbas Beach",
+          lat: 14.131583,
+          lng: 122.985083,
+        },
+      ],
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     // The owner asked for the map at the phone's foot to go, so the photo can be
     // dragged instead; the card sits centred at the top.
@@ -707,7 +793,11 @@ describe("PlaceFan on a phone", () => {
     setHeroSize(844, 390);
     const { container } = renderFan();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
     expect(container.querySelector("[data-detail]")).toBeInTheDocument();
@@ -719,16 +809,32 @@ describe("PlaceFan on a phone", () => {
    * which leaves room to pan sideways and none up and down.
    */
   const giveThePhotoAShape = (image: HTMLImageElement) => {
-    Object.defineProperty(image, "clientWidth", { configurable: true, value: 375 });
-    Object.defineProperty(image, "clientHeight", { configurable: true, value: 812 });
-    Object.defineProperty(image, "naturalWidth", { configurable: true, value: 1920 });
-    Object.defineProperty(image, "naturalHeight", { configurable: true, value: 1280 });
+    Object.defineProperty(image, "clientWidth", {
+      configurable: true,
+      value: 375,
+    });
+    Object.defineProperty(image, "clientHeight", {
+      configurable: true,
+      value: 812,
+    });
+    Object.defineProperty(image, "naturalWidth", {
+      configurable: true,
+      value: 1920,
+    });
+    Object.defineProperty(image, "naturalHeight", {
+      configurable: true,
+      value: 1280,
+    });
   };
 
   it("drags the open photo to look along it, and steps nothing", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
     giveThePhotoAShape(image);
@@ -747,11 +853,17 @@ describe("PlaceFan on a phone", () => {
   it("does not close the place when a drag lets go", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
     giveThePhotoAShape(image);
-    const wedge = screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" });
+    const wedge = screen.getByRole("button", {
+      name: "Bagasbas Beach: close photo and details",
+    });
 
     fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
     fireEvent.pointerMove(image, { clientX: 220, clientY: 400, pointerId: 1 });
@@ -765,7 +877,11 @@ describe("PlaceFan on a phone", () => {
   it("still closes on a tap: a few pixels of drift is not a drag", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
     giveThePhotoAShape(image);
@@ -775,15 +891,87 @@ describe("PlaceFan on a phone", () => {
     fireEvent.pointerUp(image, { clientX: 202, clientY: 401, pointerId: 1 });
 
     expect(image.style.objectPosition).toBe("50.00% 50.00%");
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: close photo and details",
+      }),
+    );
 
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+  });
+
+  it("steps on with a quick flick to the left, and back with one to the right", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+
+    const clock = jest.spyOn(Date, "now");
+    clock.mockReturnValue(1_000);
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 220, clientY: 402, pointerId: 1 });
+    clock.mockReturnValue(1_120);
+    fireEvent.pointerUp(image, { clientX: 220, clientY: 402, pointerId: 1 });
+
+    expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#place-first-rizal-monument");
+    // The flick that stepped must not also count as a click on the new place.
+    expect(
+      screen.getByRole("button", {
+        name: "First Rizal Monument: close photo and details",
+      }),
+    ).toBeInTheDocument();
+
+    const next = container.querySelector("[data-wedge='3'] img") as HTMLImageElement;
+    giveThePhotoAShape(next);
+    clock.mockReturnValue(2_000);
+    fireEvent.pointerDown(next, { clientX: 200, clientY: 400, pointerId: 2 });
+    fireEvent.pointerMove(next, { clientX: 280, clientY: 400, pointerId: 2 });
+    clock.mockReturnValue(2_100);
+    fireEvent.pointerUp(next, { clientX: 280, clientY: 400, pointerId: 2 });
+    clock.mockRestore();
+
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+  });
+
+  it("keeps looking along the photo, and steps nothing, when the drag is slow", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+
+    const clock = jest.spyOn(Date, "now");
+    clock.mockReturnValue(1_000);
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 200, clientY: 400, pointerId: 1 });
+    clock.mockReturnValue(1_900);
+    fireEvent.pointerUp(image, { clientX: 200, clientY: 400, pointerId: 1 });
+    clock.mockRestore();
+
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+    expect(image.style.objectPosition).toBe("61.86% 50.00%");
   });
 
   it("leaves a press on the card alone", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
     giveThePhotoAShape(image);
@@ -795,61 +983,85 @@ describe("PlaceFan on a phone", () => {
     expect(image.style.objectPosition).toBe("50.00% 50.00%");
   });
 
-  it("puts a hand on the open photo to say it drags, and no hand while nothing is open", () => {
+  it("coaches the gestures over an open photo, and never while the fan is shut", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
 
-    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-gesture-hints]")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
-    const hint = container.querySelector("[data-drag-hint]") as HTMLElement;
-    expect(hint).toBeInTheDocument();
-    expect(within(hint).getByText("Drag to look around")).toBeInTheDocument();
-    // The hand teaches the gesture; it must not stand in the way of it.
-    expect(hint).toHaveClass("pointer-events-none");
+    const coach = container.querySelector("[data-gesture-hints]") as HTMLElement;
+    expect(coach).toBeInTheDocument();
+    expect(within(coach).getByText("Drag to look around")).toBeInTheDocument();
+    expect(within(coach).getByText("Flick left or right to step")).toBeInTheDocument();
+    // A phone taps, because it has no double-click.
+    expect(within(coach).getByText("Tap the photo to go back")).toBeInTheDocument();
+    // The coaching must not stand in the way of the gesture it teaches.
+    expect(coach).toHaveClass("pointer-events-none");
   });
 
-  it("takes the hand down once the photo is dragged, and does not raise it again", async () => {
+  it("takes the coaching down once the photo is dragged, and does not raise it again", async () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
     giveThePhotoAShape(image);
-    expect(container.querySelector("[data-drag-hint]")).toBeInTheDocument();
+    expect(container.querySelector("[data-gesture-hints]")).toBeInTheDocument();
 
+    const clock = jest.spyOn(Date, "now");
+    clock.mockReturnValue(1_000);
     fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
     fireEvent.pointerMove(image, { clientX: 200, clientY: 400, pointerId: 1 });
 
-    // A real drag: the visitor knows now, so the hand goes.
-    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+    // A real drag: the visitor knows now, so the coaching goes.
+    expect(container.querySelector("[data-gesture-hints]")).not.toBeInTheDocument();
 
-    // …and stays gone for the next place they open.
+    // …and stays gone for the next place they open. A slow release, so this drag
+    // is a look along the photo and not a flick on to the next place.
+    clock.mockReturnValue(2_000);
     fireEvent.pointerUp(image, { clientX: 200, clientY: 400, pointerId: 1 });
+    clock.mockRestore();
     fireEvent.click(screen.getByRole("button", { name: "Next place" }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument(),
     );
-    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-gesture-hints]")).not.toBeInTheDocument();
   });
 
-  it("puts the hand away by itself after it has shown the gesture", async () => {
+  it("puts the coaching away by itself once it has shown the gestures", async () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
-    expect(container.querySelector("[data-drag-hint]")).toBeInTheDocument();
+    expect(container.querySelector("[data-gesture-hints]")).toBeInTheDocument();
 
     // The timeline is real; only the clock is hurried along.
     gsap.globalTimeline.timeScale(40);
-    await waitFor(() => expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument());
+    await waitFor(() => expect(container.querySelector("[data-gesture-hints]")).not.toBeInTheDocument());
   });
 
   it("leaves the page's own scrolling to the page while a place is open", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     // A full screen of photo that holds every finger is a trap: no scroll, no
     // drag down and up, no pull to refresh, and no way out but a tap the
@@ -904,13 +1116,21 @@ describe("PlaceFan with reduced motion", () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, "matchMedia", { configurable: true, writable: true, value: original });
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: original,
+    });
   });
 
   it("still opens the place, but snaps to it instead of folding the fan", () => {
     const { container } = renderFan();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
 
     expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
     const wedge = container.querySelector('[data-wedge="2"]') as HTMLElement;
