@@ -6,9 +6,44 @@ import React, { createRef } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { PlaceDetail } from "./place-detail";
 import { FAN_PLACES } from "./fan-places";
+import type { MapPoint } from "./place-map-panel";
+
+// Leaflet is a browser library and its own behaviour is pinned in free-map.test;
+// here the map is a stand-in that reports what it was asked to show.
+jest.mock("@/components/maps/free-map", () => ({
+  FreeMap: ({
+    markers,
+    title,
+    focusId,
+    fitKey,
+    onMarkerClick,
+  }: {
+    markers: Array<{ id: string; title: string }>;
+    title: string;
+    focusId?: string | null;
+    fitKey?: string;
+    onMarkerClick?: (id: string) => void;
+  }) => (
+    <div role="region" aria-label={title} data-focus={focusId ?? ""} data-fit={fitKey ?? ""}>
+      {markers.map((marker) => (
+        <button key={marker.id} type="button" onClick={() => onMarkerClick?.(marker.id)}>
+          {marker.title}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+
+/** The seeded coordinates, as the places table has them. */
+const MAP_PLACES: MapPoint[] = [
+  { slug: "tinaga-island-calaguas", name: "Calaguas", lat: 14.4692, lng: 122.945 },
+  { slug: "apuao-grande-island", name: "Apuao sandbar", lat: 14.0823, lng: 123.1048 },
+  { slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 },
+  { slug: "first-rizal-monument", name: "First Rizal Monument", lat: 14.1131, lng: 122.9545 },
+];
 
 const renderDetail = (overrides: Partial<React.ComponentProps<typeof PlaceDetail>> = {}) => {
-  const handlers = { onClose: jest.fn(), onPrev: jest.fn(), onNext: jest.fn() };
+  const handlers = { onPrev: jest.fn(), onNext: jest.fn(), onPick: jest.fn() };
   const view = render(
     <PlaceDetail
       place={FAN_PLACES[2]}
@@ -21,12 +56,6 @@ const renderDetail = (overrides: Partial<React.ComponentProps<typeof PlaceDetail
     />,
   );
   return { ...view, ...handlers };
-};
-
-const swipe = (element: Element, from: number, to: number) => {
-  fireEvent.touchStart(element, { touches: [{ clientY: from }] });
-  fireEvent.touchMove(element, { touches: [{ clientY: to }] });
-  fireEvent.touchEnd(element, { changedTouches: [{ clientY: to }] });
 };
 
 describe("PlaceDetail", () => {
@@ -71,76 +100,112 @@ describe("PlaceDetail", () => {
     }
   });
 
-  it("reports the close and step buttons to the handlers", () => {
-    const { onClose, onPrev, onNext } = renderDetail();
+  it("reports the step buttons to the handlers", () => {
+    const { onPrev, onNext } = renderDetail();
 
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getByRole("button", { name: "Previous place" }));
     fireEvent.click(screen.getByRole("button", { name: "Next place" }));
 
-    expect(onClose).toHaveBeenCalledTimes(1);
     expect(onPrev).toHaveBeenCalledTimes(1);
     expect(onNext).toHaveBeenCalledTimes(1);
   });
 
-  it("uses 48px targets for close and the arrows", () => {
+  it("has no ✕ anywhere: Escape and the photo are the way out", () => {
     renderDetail();
 
-    ["Close", "Previous place", "Next place"].forEach((name) => {
-      expect(screen.getByRole("button", { name })).toHaveClass("h-12", "w-12");
+    // The owner asked for the ✕ on the photo's right to go, and with it the
+    // arrows that floated over the photo's bottom right corner.
+    expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /close/i })).not.toBeInTheDocument();
+  });
+
+  it("folds down to a bar that keeps the place's name, and opens again", () => {
+    renderDetail();
+
+    const body = document.getElementById("place-detail-body") as HTMLElement;
+    expect(body).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("link", { name: "Open on the map" })).toBeVisible();
+
+    const fold = screen.getByRole("button", { name: "Hide the place's details" });
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(fold);
+
+    expect(screen.getByRole("button", { name: "Show the place's details" })).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    // The name stays: it is the card, and the map under it still has to say what
+    // it is showing.
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the place's details" }));
+    expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
+  });
+
+  it("opens folded on a phone, where the photo is the point", () => {
+    renderDetail({ phone: true });
+
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    expect(screen.getByRole("button", { name: "Show the place's details" })).toBeInTheDocument();
+  });
+
+  it("keeps its three buttons at 44px", () => {
+    renderDetail();
+
+    ["Previous place", "Next place", "Hide the place's details"].forEach((name) => {
+      expect(screen.getByRole("button", { name })).toHaveClass("h-11", "w-11");
     });
   });
 
-  it("floats the ✕ and the arrows over the photo, clear of the card", () => {
-    const { container } = renderDetail();
-    const card = container.querySelector("[data-detail]") as HTMLElement;
+  it("puts the map under the card, pinned to the place it is showing", () => {
+    renderDetail({ places: MAP_PLACES });
 
-    // As in the mock: the card holds the words and the two ways on, while the ✕
-    // sits over the photo's top right corner and the ‹ › over its bottom right.
-    expect(card).not.toContainElement(screen.getByRole("button", { name: "Close" }));
-    expect(card).not.toContainElement(screen.getByRole("button", { name: "Previous place" }));
-    expect(card).not.toContainElement(screen.getByRole("button", { name: "Next place" }));
-    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+    expect(screen.getByText("Viewing")).toBeInTheDocument();
+    const map = screen.getByRole("region", { name: /Map showing Bagasbas Beach/ });
+    expect(map).toHaveAttribute("data-focus", "bagasbas-beach");
+    // Every place with coordinates is on it, so a visitor can see where this one
+    // sits among the rest.
+    expect(screen.getByRole("button", { name: "Calaguas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "First Rizal Monument" })).toBeInTheDocument();
   });
 
-  it("keeps the arrows with the sheet on a phone, where there is no room beside it", () => {
-    const { container } = renderDetail({ phone: true });
-    const sheet = container.querySelector("[data-detail]") as HTMLElement;
+  it("shows all the places when asked, and goes back to the place on the next step", () => {
+    const { rerender } = renderDetail({ places: MAP_PLACES });
 
-    expect(sheet).toContainElement(screen.getByRole("button", { name: "Next place" }));
-    expect(sheet).toContainElement(screen.getByRole("button", { name: "Previous place" }));
-    expect(sheet).not.toContainElement(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    expect(screen.getByRole("region", { name: /Map showing/ })).toHaveAttribute("data-focus", "");
+    expect(screen.getByRole("region", { name: /Map showing/ })).toHaveAttribute("data-fit", "all");
+
+    rerender(
+      <PlaceDetail
+        place={FAN_PLACES[3]}
+        index={3}
+        total={FAN_PLACES.length}
+        phone={false}
+        headingRef={createRef<HTMLHeadingElement>()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onPick={jest.fn()}
+        places={MAP_PLACES}
+      />,
+    );
+
+    expect(screen.getByRole("region", { name: /Map showing First Rizal Monument/ })).toHaveAttribute(
+      "data-focus",
+      "first-rizal-monument",
+    );
   });
 
-  it("makes the sheet follow a finger on a phone and dismiss on a long drag", () => {
-    const { container, onClose } = renderDetail({ phone: true });
-    const sheet = container.querySelector("[data-detail]") as HTMLElement;
+  it("opens a place picked on the map", () => {
+    const { onPick } = renderDetail({ places: MAP_PLACES });
 
-    fireEvent.touchStart(sheet, { touches: [{ clientY: 100 }] });
-    fireEvent.touchMove(sheet, { touches: [{ clientY: 160 }] });
-    expect(sheet.style.transform).toBe("translateY(60px)");
+    fireEvent.click(screen.getByRole("button", { name: "Calaguas" }));
 
-    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 240 }] });
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onPick).toHaveBeenCalledWith("tinaga-island-calaguas");
   });
 
-  it("springs back when the drag is short", () => {
-    const { container, onClose } = renderDetail({ phone: true });
-    const sheet = container.querySelector("[data-detail]") as HTMLElement;
+  it("does not show a map when no place has coordinates yet", () => {
+    renderDetail({ places: [] });
 
-    swipe(sheet, 100, 140);
-
-    expect(onClose).not.toHaveBeenCalled();
-    expect(sheet.style.transform).toBe("");
-  });
-
-  it("ignores a drag on the desktop panel", () => {
-    const { container, onClose } = renderDetail();
-    const panel = container.querySelector("[data-detail]") as HTMLElement;
-
-    swipe(panel, 100, 300);
-
-    expect(onClose).not.toHaveBeenCalled();
-    expect(panel.style.transform).toBe("");
+    expect(screen.queryByRole("region", { name: /Map showing/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
   });
 });

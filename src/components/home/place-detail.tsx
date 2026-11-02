@@ -1,27 +1,24 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import type { FanPlace } from "./fan-places";
-
-/** A downward drag longer than this dismisses the phone sheet. */
-const DISMISS_AFTER = 80;
+import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
 
 /**
  * What opens over the fan: the place's name, where it sits in the six, what it
  * is, and the two things a visitor can do next.
  *
- * Laid out as in the mock (image-2): a dark scrim card over the place's own
- * photo — not a panel taking a column off the right — with the ✕ in the photo's
- * top right corner and the ‹ › pair along its bottom right. The card, the ✕ and
- * the arrows all hang off the same 7xl column the rest of the page is set in, so
- * on a wide screen the card sits with the page's text rather than floating in
- * the screen's corner. A phone has no room beside the photo, so the same card
- * stands up as a sheet from the bottom, keeping the arrows with it.
+ * Laid out as in the mock (image-25): the card sits in the photo's top left
+ * corner, and it folds. Expanded it carries the words and the two ways on;
+ * collapsed it is a slim bar with the position, the name and a chevron, so the
+ * photo is nearly clear. The ‹ › pair lives in the card's own header, and under
+ * the card is the map, which follows them.
  *
- * The card is a scrim rather than a flat surface, so its background is dark
- * whatever the theme: white text at 80% ink over any photo stays past 10:1,
- * and the ✕ and the arrows are 48px targets.
+ * There is no ✕: Escape closes the place, and so does tapping the photo again.
+ * The card follows the page's theme — a white glass card in light mode, the
+ * dark one in dark mode — and its edges ring, rather than a shadow, keep it
+ * apart from whatever photo is behind it.
  */
 export function PlaceDetail({
   place,
@@ -29,21 +26,25 @@ export function PlaceDetail({
   total,
   phone,
   headingRef,
-  onClose,
   onPrev,
   onNext,
+  places = [],
+  onPick,
 }: {
   place: FanPlace;
   index: number;
   total: number;
   phone: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
-  onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  /** Every place the map can pin, with the coordinates the places table gave. */
+  places?: MapPoint[];
+  onPick: (slug: string) => void;
 }) {
-  const panelRef = useRef<HTMLElement>(null);
-  const dragStart = useRef<number | null>(null);
+  // A phone opens the bar, not the whole card: the photo is the point, and the
+  // words are one tap away. A desktop has room for both.
+  const [collapsed, setCollapsed] = useState(phone);
   const position = index + 1;
 
   /**
@@ -59,160 +60,106 @@ export function PlaceDetail({
     map.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const onTouchStart = (event: React.TouchEvent<HTMLElement>) => {
-    if (!phone) return;
-    dragStart.current = event.touches[0].clientY;
-  };
+  /** A 44px circle in the card's header: ink in light, white in dark. */
+  const step =
+    "grid h-11 w-11 place-items-center rounded-full text-daet-ink ring-1 ring-inset ring-daet-ink/15 transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong dark:text-white dark:ring-white/20 dark:hover:bg-white/10 dark:active:bg-white/20";
 
-  const onTouchMove = (event: React.TouchEvent<HTMLElement>) => {
-    if (!phone || dragStart.current === null) return;
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    const moved = Math.max(0, event.touches[0].clientY - dragStart.current);
-    panel.style.transition = "none";
-    panel.style.transform = `translateY(${moved}px)`;
-  };
-
-  const onTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
-    if (!phone || dragStart.current === null) return;
-    const moved = event.changedTouches[0].clientY - dragStart.current;
-    dragStart.current = null;
-
-    const panel = panelRef.current;
-    if (panel) {
-      panel.style.transition = "transform 200ms ease-out";
-      panel.style.transform = moved > DISMISS_AFTER ? "translateY(100%)" : "";
-    }
-    if (moved > DISMISS_AFTER) onClose();
-  };
-
-  /** A 48px circle over the photo: dark glass, white glyph. */
-  const round = "grid h-12 w-12 place-items-center rounded-full bg-slate-950/45 text-white backdrop-blur-md transition hover:bg-slate-950/70 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white";
-
-  const card = (
-    <>
-      <p className="text-sm font-medium text-white/75">
-        {position} of {total}
-      </p>
-      <h2
-        id="place-detail-title"
-        ref={headingRef}
-        tabIndex={-1}
-        className="display-2 mt-1 text-white outline-none"
-      >
-        {place.name}
-      </h2>
-      <p className="mt-3 text-base leading-relaxed text-white/90">{place.text}</p>
-
-      {place.tag && (
-        <p className="mt-4 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
-          {place.tag}
-        </p>
-      )}
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {/* A plain anchor, so it still works with the script off; the handler
-            scrolls without changing the hash, which would close the place the
-            visitor is standing on. */}
-        <a href="#home-map" onClick={onOpenMap} className={buttonClasses()}>
-          Open on the map
-        </a>
-        <ButtonLink href={place.toursHref} variant="onBlue">
-          Trips near here
-        </ButtonLink>
-      </div>
-    </>
+  const pin = (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300" fill="currentColor" aria-hidden>
+      <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
+    </svg>
   );
-
-  const arrows = (variant: "float" | "inline") => (
-    <div className={variant === "float" ? "pointer-events-auto flex gap-3" : "mt-6 flex items-center justify-between gap-2"}>
-      <button
-        type="button"
-        onClick={onPrev}
-        aria-label="Previous place"
-        className={variant === "float" ? round : "grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"}
-      >
-        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-
-      <button
-        type="button"
-        onClick={onNext}
-        aria-label="Next place"
-        className={variant === "float" ? round : "grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"}
-      >
-        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
-  );
-
-  /**
-   * The page's own column. The card, the ✕ and the arrows hang off this, so on a
-   * wide screen they line up with the sections below instead of drifting out to
-   * the screen's corners.
-   */
-  const COLUMN = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
-
-  const closeButton = (
-    <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--header-h)+0.75rem)] z-30 sm:top-[calc(var(--header-h)+1.5rem)]">
-      <div className={`${COLUMN} flex justify-end`}>
-        <button type="button" onClick={onClose} aria-label="Close" className={`pointer-events-auto ${round}`}>
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-
-  const panel = (
-    <section
-      ref={panelRef}
-      data-detail
-      aria-labelledby="place-detail-title"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      className={
-        phone
-          ? "pointer-events-auto absolute inset-x-0 bottom-0 z-20 max-h-[72%] overflow-y-auto overscroll-contain rounded-t-2xl bg-slate-950/85 p-5 pb-8 text-white backdrop-blur-md"
-          : "pointer-events-auto w-full max-w-[28.5rem] rounded-2xl bg-slate-950/80 p-6 text-white sm:p-7"
-      }
-    >
-      {phone && <div aria-hidden="true" className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-white/30" />}
-
-      {card}
-
-      {/* A phone keeps the arrows with the card; a desktop floats them over the
-          photo's bottom right corner, as in the mock. */}
-      {phone && arrows("inline")}
-    </section>
-  );
-
-  if (phone) {
-    return (
-      <>
-        {closeButton}
-        {panel}
-      </>
-    );
-  }
 
   return (
     <>
-      {closeButton}
+      <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--header-h)+0.5rem)] z-30 sm:top-[calc(var(--header-h)+1rem)]">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <section
+            data-detail
+            aria-labelledby="place-detail-title"
+            className="pointer-events-auto w-full max-w-[18rem] rounded-2xl bg-surface/92 p-4 text-daet-ink shadow-[var(--shadow-float)] ring-1 ring-daet-ink/10 backdrop-blur-md dark:bg-slate-950/82 dark:text-white dark:ring-white/15"
+          >
+            <div className="flex items-center gap-2">
+              <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-daet-ink/70 dark:text-white/75">
+                {pin}
+                <span className="truncate">
+                  {position} of {total}
+                </span>
+              </p>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
-        <div className={`${COLUMN} flex items-end justify-between gap-4 pb-8 sm:pb-12`}>
-          {panel}
-          <div className="shrink-0">{arrows("float")}</div>
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                <button type="button" onClick={onPrev} aria-label="Previous place" className={step}>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                <button type="button" onClick={onNext} aria-label="Next place" className={step}>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCollapsed((open) => !open)}
+                  aria-expanded={!collapsed}
+                  aria-controls="place-detail-body"
+                  aria-label={collapsed ? "Show the place's details" : "Hide the place's details"}
+                  className={step}
+                >
+                  <svg
+                    className={`h-5 w-5 transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <h2
+              id="place-detail-title"
+              ref={headingRef}
+              tabIndex={-1}
+              className={
+                collapsed
+                  ? "mt-2 text-lg font-extrabold leading-tight tracking-tight outline-none"
+                  : "mt-2 text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-blue-700 outline-none dark:text-white"
+              }
+            >
+              {place.name}
+            </h2>
+
+            <div id="place-detail-body" hidden={collapsed}>
+              <p className="mt-2 text-sm leading-relaxed text-daet-ink/85 dark:text-white/90">{place.text}</p>
+
+              {place.tag && (
+                <p className="mt-3 inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800 dark:bg-blue-500/20 dark:text-blue-100">
+                  {place.tag}
+                </p>
+              )}
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {/* A plain anchor, so it still works with the script off; the
+                    handler scrolls without changing the hash, which would close
+                    the place the visitor is standing on. */}
+                <a href="#home-map" onClick={onOpenMap} className={buttonClasses({ size: "md" })}>
+                  Open on the map
+                </a>
+                <ButtonLink href={place.toursHref} variant="secondary" size="md">
+                  Trips near here
+                </ButtonLink>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
+
+      <PlaceMapPanel place={place} places={places} phone={phone} onPick={onPick} />
     </>
   );
 }

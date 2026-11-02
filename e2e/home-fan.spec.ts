@@ -107,7 +107,7 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByText("Tap a place to see it")).toBeVisible();
   });
 
-  test("opens a place in a sheet, and closes it again", async ({ page }) => {
+  test("opens a folded bar on a phone, keeps the map at the bottom, and closes again", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", { name: "Bagasbas Beach: open photo and details" });
 
@@ -115,14 +115,26 @@ test.describe("home fan on a phone", () => {
     await page.keyboard.press("Enter");
 
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
-    await expect(inPanel(page).getByText(/ten minutes from the plaza/)).toBeVisible();
+    // Folded: the photo is the point on a phone, and the copy is one tap away.
+    await expect(inPanel(page).getByText(/ten minutes from the plaza/)).toBeHidden();
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
+
+    await page.getByRole("button", { name: "Show the place's details" }).click();
+    await expect(inPanel(page).getByText(/ten minutes from the plaza/)).toBeVisible();
+
+    // The map takes the bottom of the screen, under the card rather than over the photo.
+    const map = (await page.locator("[data-place-map]").boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(map.y + map.height, "pinned to the bottom").toBeGreaterThan(viewport.height - 40);
+    expect(map.width, "the width of the screen").toBeGreaterThan(viewport.width * 0.8);
+
     await checkA11y(page, "home, a place open");
 
     await page.keyboard.press("Escape");
 
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
     await expect(page).not.toHaveURL(/#place-/);
+    await expect(page.locator("[data-place-map]")).toHaveCount(0);
   });
 
   test("steps to the next place while open", async ({ page }) => {
@@ -218,7 +230,7 @@ test.describe("home fan on a desktop", () => {
       .toBeGreaterThan(0.5);
   });
 
-  test("opens the place as a card over the photo's bottom left, and folds it back on Escape", async ({ page }) => {
+  test("opens the place as a card in the photo's top left, with the map under it, and folds on Escape", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", { name: "Bagasbas Beach: open photo and details" });
 
@@ -233,43 +245,51 @@ test.describe("home fan on a desktop", () => {
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await checkA11y(page, "home, a place open, desktop");
 
-    // The mock (image-2) puts the card in the photo's bottom left corner, not in
-    // a column down the right: it hugs the left edge, its foot sits near the
-    // hero's, and it is one card wide rather than half the screen.
-    const viewport = page.viewportSize()!;
+    // As in the owner's markup (image-25): the card is in the photo's top left
+    // corner, hanging off the page's own 7xl column, not a slab over the bottom.
     const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
     const card = (await page.locator("[data-detail]").boundingBox())!;
-
-    // The card, the ✕ and the arrows hang off the page's own 7xl column — the
-    // same left edge the sections below start from — rather than the screen's.
     const column = (await page.locator("#home-places").boundingBox())!.x;
+
     expect(Math.abs(card.x - column), "on the page's column").toBeLessThanOrEqual(1);
-    expect(hero.y + hero.height - (card.y + card.height), "its foot near the photo's").toBeLessThanOrEqual(80);
-    expect(card.width, "a card, not a column").toBeLessThanOrEqual(470);
-    expect(card.x + card.width, "clear of the arrows on the right").toBeLessThan(viewport.width * 0.7);
+    expect(card.y - hero.y, "at the top of the photo, under the bar").toBeGreaterThanOrEqual(0);
+    expect(card.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
+    expect(card.width, "a card, not a column").toBeLessThanOrEqual(320);
 
-    // The photo fills the hero dead centre: pushed out along its own wedge it
-    // left a slab of the hero's own ground showing in the corner.
-    const photo = (await page.locator("[data-wedge][aria-expanded='true'] img").boundingBox())!;
-    expect(Math.abs(photo.x + photo.width / 2 - (hero.x + hero.width / 2)), "centred across").toBeLessThanOrEqual(2);
-    expect(Math.abs(photo.y + photo.height / 2 - (hero.y + hero.height / 2)), "centred down").toBeLessThanOrEqual(2);
-    expect(photo.width, "edge to edge").toBeGreaterThanOrEqual(hero.width - 1);
-    expect(photo.height, "top to bottom").toBeGreaterThanOrEqual(hero.height - 1);
-
-    // ✕ over the photo's top right, ‹ › over its bottom right.
-    // `exact`: an open wedge is labelled "Bagasbas Beach: close photo and details".
-    const close = (await page.getByRole("button", { name: "Close", exact: true }).boundingBox())!;
-    expect(close.x, "the ✕ on the right").toBeGreaterThan(viewport.width * 0.85);
-    expect(close.y, "and at the top, under the bar").toBeLessThan(hero.y + hero.height * 0.25);
-
+    // The ✕ and the floating arrows are gone: the ‹ › pair lives in the card's
+    // own header, so the photo has nothing over it but the two panels.
+    await expect(page.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
     const next = (await page.getByRole("button", { name: "Next place" }).boundingBox())!;
-    expect(next.x, "the arrows on the right").toBeGreaterThan(viewport.width * 0.8);
-    expect(next.y + next.height, "level with the card's foot").toBeGreaterThan(hero.y + hero.height - 120);
+    expect(next.x, "inside the card").toBeGreaterThanOrEqual(card.x);
+    expect(next.x + next.width, "inside the card").toBeLessThanOrEqual(card.x + card.width + 1);
+    expect(next.y + next.height, "inside the card").toBeLessThanOrEqual(card.y + card.height + 1);
 
+    // The map sits under it, in the same column, and names what it is showing.
+    const map = (await page.locator("[data-place-map]").boundingBox())!;
+    expect(Math.abs(map.x - column), "in the same column as the card").toBeLessThanOrEqual(1);
+    expect(map.y, "below the card").toBeGreaterThan(card.y + card.height);
+    expect(hero.y + hero.height - (map.y + map.height), "its foot near the photo's").toBeLessThanOrEqual(80);
+    await expect(page.locator("[data-place-map]").getByText("Bagasbas Beach")).toBeVisible();
+
+    // The map follows the ‹ › pair: the next place is what it is showing now.
+    await page.getByRole("button", { name: "Next place" }).click();
+    await expect(page.locator("[data-place-map]").getByText("First Rizal Monument")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
+
+    // Folding keeps the name and the map, and gives the photo back its corner.
+    const tall = (await page.locator("[data-detail]").boundingBox())!.height;
+    await page.getByRole("button", { name: "Hide the place's details" }).click();
+    await expect(page.getByRole("button", { name: "Show the place's details" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
+    const short = (await page.locator("[data-detail]").boundingBox())!.height;
+    expect(short, "a folded bar").toBeLessThan(tall - 80);
+
+    // The photo is the way out, along with Escape.
     await page.keyboard.press("Escape");
 
-    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toHaveCount(0);
     await expect(wedge).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("[data-place-map]")).toHaveCount(0);
   });
 
   test("is a slim white scrim in light mode, and the dark one in dark mode", async ({ page }) => {

@@ -175,7 +175,7 @@ export default async function HomePage() {
     <PageFrame bleed credits={credits}>
       {/* First screen: six photos of Daet fanned out, the headline in the dark
           under the point they radiate from. */}
-      <PlaceFan places={FAN_PLACES} signedIn={!!user} />
+      <PlaceFan places={FAN_PLACES} mapPlaces={mapPlaces} signedIn={!!user} />
 
       {/* Places: one panel open at a time, the rest narrow and grey. */}
       <section aria-labelledby="home-places" className={`${WRAP} pt-16 sm:pt-24`}>

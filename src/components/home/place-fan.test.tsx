@@ -4,8 +4,20 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import "@testing-library/jest-dom";
 import { gsap } from "@/lib/gsap";
 import { fanGeometry, fanWedgePoints, restWidths, toClipPath, widthsWithFocus } from "./fan-geometry";
+import React from "react";
 import { PlaceFan } from "./place-fan";
 import { FAN_PLACES } from "./fan-places";
+
+// The open place's map is Leaflet's; free-map.test pins it. Here it is a region.
+jest.mock("@/components/maps/free-map", () => ({
+  FreeMap: ({ title, markers }: { title: string; markers: Array<{ id: string; title: string }> }) => (
+    <div role="region" aria-label={title}>
+      {markers.map((marker) => (
+        <span key={marker.id}>{marker.title}</span>
+      ))}
+    </div>
+  ),
+}));
 
 /** jsdom has no ResizeObserver; the fan falls back to the server's default size. */
 class NoopResizeObserver {
@@ -21,7 +33,10 @@ beforeAll(() => {
   });
 });
 
-const renderFan = (signedIn = false) => render(<PlaceFan places={FAN_PLACES} signedIn={signedIn} />);
+const renderFan = (signedInOrProps: boolean | Partial<React.ComponentProps<typeof PlaceFan>> = false) => {
+  const props = typeof signedInOrProps === "boolean" ? { signedIn: signedInOrProps } : signedInOrProps;
+  return render(<PlaceFan places={FAN_PLACES} signedIn={false} {...props} />);
+};
 
 // The hero's own geometry at the size the fan renders at before it is measured.
 const WIDTH = 1440;
@@ -254,7 +269,7 @@ describe("PlaceFan opening a place", () => {
     // empty — the opened one has to sit dead centre, filling the screen.
     await until(() => expect(offsetOf(2)).toEqual({ x: 0, y: 0 }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), { key: "Escape" });
 
     await until(() => expect(offsetOf(2).x).toBeCloseTo(rest.x, 0));
   });
@@ -265,9 +280,11 @@ describe("PlaceFan opening a place", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Bagasbas Beach, 3 of 6");
   });
 
-  it("closes on the ✕ and takes the hash away with it", () => {
+  it("closes when the photo behind the card is tapped again, and takes the hash with it", () => {
+    // The owner took the ✕ off the photo, so the photo itself is the way back:
+    // tapping the open wedge folds it away.
     openThird();
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" }));
 
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(window.location.hash).toBe("");
@@ -357,7 +374,7 @@ describe("PlaceFan opening a place", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Previous place" }));
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.keyDown(screen.getByRole("heading", { level: 2 }), { key: "Escape" });
 
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Apuao sandbar: open photo and details", hidden: true })).toHaveFocus(),
@@ -546,24 +563,42 @@ describe("PlaceFan on a phone", () => {
     expect(screen.getByRole("link", { name: "Find a tour" })).toBeInTheDocument();
   });
 
-  it("opens the place as a sheet on a phone", () => {
+  it("opens a phone's card as a folded bar at the top, not a sheet over the photo", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    const sheet = container.querySelector("[data-detail]") as HTMLElement;
-    expect(sheet.className).toContain("inset-x-0");
-    expect(sheet.className).toContain("bottom-0");
+    const card = container.querySelector("[data-detail]") as HTMLElement;
+    expect(card).toBeInTheDocument();
+    // Folded: the photo is the point on a small screen, and the words are one tap away.
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    expect(screen.getByRole("button", { name: "Show the place's details" })).toBeInTheDocument();
+    // No map without coordinates, so nothing is left hanging over the photo.
+    expect(container.querySelector("[data-place-map]")).toBeNull();
   });
 
-  it("opens full screen on a landscape phone too", () => {
+  it("puts the map at the bottom of a phone when it has somewhere to point", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const panel = container.querySelector("[data-place-map]")?.parentElement?.parentElement as HTMLElement;
+    expect(panel.className).toContain("bottom-0");
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+  });
+
+  it("folds a landscape phone's card too", () => {
     setHeroSize(844, 390);
     const { container } = renderFan();
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    expect((container.querySelector("[data-detail]") as HTMLElement).className).toContain("bottom-0");
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    expect(container.querySelector("[data-detail]")).toBeInTheDocument();
   });
 
   it("moves to the next place on a sideways flick", () => {

@@ -13,6 +13,7 @@ import {
 } from "./fan-geometry";
 import type { FanPlace } from "./fan-places";
 import { PlaceDetail } from "./place-detail";
+import type { MapPoint } from "./place-map-panel";
 import { useFanAnimation } from "./use-fan-animation";
 import { useHeroFold } from "./use-hero-fold";
 import { usePlaceHash } from "./use-place-hash";
@@ -30,7 +31,16 @@ const SWIPE_AFTER = 40;
  * closes and a shared link opens straight onto a place. Motion lives in
  * use-fan-animation; the panel in PlaceDetail.
  */
-export function PlaceFan({ places, signedIn }: { places: FanPlace[]; signedIn: boolean }) {
+export function PlaceFan({
+  places,
+  signedIn,
+  mapPlaces = [],
+}: {
+  places: FanPlace[];
+  signedIn: boolean;
+  /** The places the open card's map can pin, with the coordinates from the places table. */
+  mapPlaces?: MapPoint[];
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
@@ -476,9 +486,13 @@ export function PlaceFan({ places, signedIn }: { places: FanPlace[]; signedIn: b
             total={places.length}
             phone={sheet}
             headingRef={headingRef}
-            onClose={close}
             onPrev={() => step(-1)}
             onNext={() => step(1)}
+            places={mapPlaces}
+            onPick={(slug) => {
+              const index = places.findIndex((place) => place.slug === slug);
+              if (index >= 0 && index !== openIndex) open(index);
+            }}
           />
         )}
       </div>
