@@ -720,6 +720,57 @@ describe("PlaceFan on a phone", () => {
     expect(image.style.objectPosition).toBe("50.00% 50.00%");
   });
 
+  it("puts a hand on the open photo to say it drags, and no hand while nothing is open", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+
+    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const hint = container.querySelector("[data-drag-hint]") as HTMLElement;
+    expect(hint).toBeInTheDocument();
+    expect(within(hint).getByText("Drag to look around")).toBeInTheDocument();
+    // The hand teaches the gesture; it must not stand in the way of it.
+    expect(hint).toHaveClass("pointer-events-none");
+  });
+
+  it("takes the hand down once the photo is dragged, and does not raise it again", async () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+    expect(container.querySelector("[data-drag-hint]")).toBeInTheDocument();
+
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 200, clientY: 400, pointerId: 1 });
+
+    // A real drag: the visitor knows now, so the hand goes.
+    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+
+    // …and stays gone for the next place they open.
+    fireEvent.pointerUp(image, { clientX: 200, clientY: 400, pointerId: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "Next place" }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument(),
+    );
+    expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument();
+  });
+
+  it("puts the hand away by itself after it has shown the gesture", async () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    expect(container.querySelector("[data-drag-hint]")).toBeInTheDocument();
+
+    // The timeline is real; only the clock is hurried along.
+    gsap.globalTimeline.timeScale(40);
+    await waitFor(() => expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument());
+  });
+
   it("ignores a flick while nothing is open", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();

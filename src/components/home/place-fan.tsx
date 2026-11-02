@@ -15,6 +15,7 @@ import {
 import type { FanPlace } from "./fan-places";
 import { PlaceDetail } from "./place-detail";
 import { DRAG_AFTER, PAN_CENTRE, coverRoom, panBy, panStyle, type PanPosition } from "./photo-pan";
+import { PhotoDragHint } from "./photo-drag-hint";
 import type { MapPoint } from "./place-map-panel";
 import { useFanAnimation } from "./use-fan-animation";
 import { useHeroFold } from "./use-hero-fold";
@@ -62,6 +63,9 @@ export function PlaceFan({
   /** Set by a drag, so the release does not also count as a tap on the photo. */
   const dragged = useRef(false);
   const swallowClick = useRef(false);
+  /** The hand has already shown itself for a photo the visitor dragged. */
+  const hintTaught = useRef(false);
+  const [hint, setHint] = useState(false);
 
   const [size, setSize] = useState<{ width: number; height: number }>({
     width: DEFAULT_HERO_SIZE.width,
@@ -153,6 +157,15 @@ export function PlaceFan({
   const shortHero = size.height < 500;
   const sheet = onPhone || shortHero;
   const isOpen = openIndex >= 0;
+
+  // The hand that says the photo drags, until this visitor has dragged one.
+  useEffect(() => {
+    if (openIndex < 0) {
+      setHint(false);
+      return;
+    }
+    setHint(!hintTaught.current);
+  }, [openIndex]);
 
   // Another place, or none at all: the photo starts looking at its middle again,
   // and no leftover press keeps it from being tapped.
@@ -336,7 +349,12 @@ export function PlaceFan({
 
     const dx = event.clientX - press_.x;
     const dy = event.clientY - press_.y;
-    if (!dragged.current && Math.hypot(dx, dy) > DRAG_AFTER) dragged.current = true;
+    if (!dragged.current && Math.hypot(dx, dy) > DRAG_AFTER) {
+      dragged.current = true;
+      // The visitor has found the gesture: the hand has done its job.
+      hintTaught.current = true;
+      setHint(false);
+    }
     if (dragged.current) movePan(panBy(press_.start, { dx, dy }, press_.room));
   };
 
@@ -586,6 +604,8 @@ export function PlaceFan({
             .join("")}</ul></div>`,
         }}
       />
+
+      {isOpen && hint && <PhotoDragHint onDone={() => setHint(false)} />}
 
       {/* The panel's slot is always in the tree so aria-controls always resolves. */}
       <div id="place-detail" className="pointer-events-none absolute inset-0 z-20">

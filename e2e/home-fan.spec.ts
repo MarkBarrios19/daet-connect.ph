@@ -205,6 +205,31 @@ test.describe("home fan on a phone", () => {
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
   });
 
+  test("shows a hand over a newly opened photo, and puts it away once the photo is dragged", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+
+    const hint = page.locator("[data-drag-hint]");
+    await expect(hint).toBeVisible();
+    await expect(hint).toContainText("Drag to look around");
+
+    const photo = page.locator("[data-wedge][aria-expanded='true'] img");
+    const box = (await photo.boundingBox())!;
+    // The drag starts on top of the hand: it must teach the gesture, not eat it.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.up();
+
+    await expect(hint).toHaveCount(0);
+
+    // A visitor who has dragged one place knows how: the next one opens without the hand.
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
+    await expect(hint).toHaveCount(0);
+  });
+
   test("steps to the next place while open", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
