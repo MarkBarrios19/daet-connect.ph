@@ -101,8 +101,11 @@ describe("BookingSteps", () => {
     const frame = ridge.querySelector("[data-ticket-frame]") as HTMLElement;
     expect(frame.className).toContain("ticket-frame");
     expect(frame.className).toContain("bg-ticket-frame");
-    // The paper grain lives on the ridge only.
-    expect(frame.querySelector(".ticket-grain")).not.toBeNull();
+    // The owner's noise is the card's surface: the ridge, the photograph and
+    // the cyan panel, and nothing else on the band.
+    expect(frame.querySelector(".ticket-noise")).not.toBeNull();
+    expect((band.querySelector("[data-ticket-photo]") as HTMLElement).querySelector(".ticket-noise")).not.toBeNull();
+    expect((band.querySelector("[data-ticket-panel]") as HTMLElement).querySelector(".ticket-noise")).not.toBeNull();
 
     // The left half is the photograph, full bleed, with the heading on it.
     const photo = band.querySelector("[data-ticket-photo]") as HTMLElement;
@@ -112,6 +115,8 @@ describe("BookingSteps", () => {
     const heading = photo.querySelector("h2") as HTMLElement;
     expect(heading.textContent).toBe("Booking, in three moves");
     expect(heading.className).toContain("text-white");
+    // Set right, against the cyan panel.
+    expect(heading.className).toContain("text-right");
     // The placeholder box is gone: the photograph is in its place.
     expect(band.textContent).not.toContain("image here");
 

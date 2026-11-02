@@ -376,7 +376,7 @@ test.describe("home fan on a phone", () => {
         bites: style.maskImage.split("radial-gradient").length - 1,
         composite: style.maskComposite,
         paint: style.backgroundColor,
-        grain: getComputedStyle(grain).backgroundImage.includes("feTurbulence"),
+        grain: getComputedStyle(grain).backgroundImage.includes("feSpecularLighting"),
       };
     });
     expect(ridge.bites, "one bite per edge").toBe(4);
@@ -388,12 +388,30 @@ test.describe("home fan on a phone", () => {
     ]);
     expect(ridge.paint, "the reference's cream").toBe("rgb(232, 215, 185)");
     expect(ridge.blur, "a hair of blur on the ridge").toContain("blur");
-    expect(ridge.grain, "and a paper grain").toBe(true);
+    expect(ridge.grain, "and the owner's noise on it").toBe(true);
+
+    // The same noise is the card's surface: the ridge, the photograph, the panel.
+    const surfaces = await band.evaluate((element) =>
+      ["[data-ticket-frame]", "[data-ticket-photo]", "[data-ticket-panel]"].map((selector) => {
+        const layer = element.querySelector(`${selector} .ticket-noise`) as HTMLElement | null;
+        return layer ? getComputedStyle(layer).backgroundImage.includes("feSpecularLighting") : false;
+      }),
+    );
+    expect(surfaces, "ridge, photograph, panel").toEqual([true, true, true]);
 
     // The left half is the photograph, full bleed, with the heading on it.
     const photo = band.locator("[data-ticket-photo]");
     await expect(photo.locator("img")).toHaveAttribute("src", /rizal-monument-park/);
     await expect(photo.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
+
+    // The heading is set right, at the picture's right edge.
+    const heading = await photo.locator("h2").evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
+      return { align: getComputedStyle(element).textAlign, gap: Math.round(half.right - box.right) };
+    });
+    expect(heading.align, "set right").toBe("right");
+    expect(heading.gap, "at the picture's right edge").toBeLessThanOrEqual(24);
 
     // The right half is the reference's cyan, carrying dark copy: white on it
     // is 2.3:1, under AA, so the panel is printed in ink in both themes.

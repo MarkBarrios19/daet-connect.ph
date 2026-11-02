@@ -33,8 +33,10 @@ const STEPS: ReadonlyArray<{ title: string; text: string; icon: IconName }> = [
  * on image-50 was that a dark ridge disappeared into the dark ground.
  *
  * The frame is a decorative layer behind the content (`ticket-ridge` softens
- * it, `ticket-frame` masks the bites, `ticket-grain` is the paper), so nothing a
- * visitor reads is clipped and the panels' own colours stay put.
+ * it, `ticket-frame` masks the bites), so nothing a visitor reads is clipped and
+ * the panels' own colours stay put. The owner's noise — the same surface on the
+ * ridge, the photograph and the cyan panel — is `ticket-noise`, laid over each
+ * and under the words.
  */
 export function BookingSteps() {
   return (
@@ -45,14 +47,15 @@ export function BookingSteps() {
     >
       <div aria-hidden="true" className="ticket-ridge pointer-events-none absolute inset-0">
         <div data-ticket-frame className="ticket-frame absolute inset-0 bg-ticket-frame">
-          <div className="ticket-grain absolute inset-0" />
+          <div className="ticket-noise absolute inset-0 opacity-35" />
         </div>
       </div>
 
       <div className="relative grid md:grid-cols-2">
-        {/* The photograph, filling the left half, with the heading on it. A
-            scrim under the words keeps them readable over the trees. */}
-        <div data-ticket-photo className="relative aspect-[4/3] md:aspect-auto md:min-h-[440px]">
+        {/* The photograph, filling the left half, with the heading on it, set
+            right against the cyan panel. The same noise as the card is laid over
+            the picture, and a scrim under the words keeps them readable. */}
+        <div data-ticket-photo className="relative isolate aspect-[4/3] md:aspect-auto md:min-h-[440px]">
           <Image
             src={PHOTOS.rizalMonumentPark.src}
             alt={PHOTOS.rizalMonumentPark.alt}
@@ -60,14 +63,15 @@ export function BookingSteps() {
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover"
           />
+          <div aria-hidden="true" className="ticket-noise pointer-events-none absolute inset-0 opacity-25" />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(155deg,rgba(15,23,42,0.8),rgba(15,23,42,0.34)_42%,transparent_68%)]"
+            className="absolute inset-0 bg-[linear-gradient(205deg,rgba(15,23,42,0.82),rgba(15,23,42,0.34)_42%,transparent_68%)]"
           />
           <h2
             id="home-how"
             data-reveal
-            className="display-2 absolute left-5 top-8 max-w-md text-white sm:left-10 sm:top-12 lg:left-14"
+            className="display-2 absolute right-5 top-8 max-w-md text-right text-white sm:right-10 sm:top-12 lg:right-14"
           >
             Booking, in three moves
           </h2>
@@ -76,9 +80,10 @@ export function BookingSteps() {
         {/* The cyan panel: the three moves, unchanged, in a printed dark ink. */}
         <div
           data-ticket-panel
-          className="bg-ticket-field px-5 py-10 text-ticket-ink sm:px-10 sm:py-14 lg:px-14"
+          className="relative isolate bg-ticket-field px-5 py-10 text-ticket-ink sm:px-10 sm:py-14 lg:px-14"
         >
-          <ol className="max-w-xl space-y-8">
+          <div aria-hidden="true" className="ticket-noise pointer-events-none absolute inset-0 opacity-20" />
+          <ol className="relative max-w-xl space-y-8">
             {STEPS.map((step, index) => (
               <li
                 key={step.title}
