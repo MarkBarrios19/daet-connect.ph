@@ -878,3 +878,59 @@ test.describe("home fan, motion on", () => {
     await expect.poll(() => tagsOnShow(page)).toEqual([focused]);
   });
 });
+
+/**
+ * The gap the owner photographed on their phone.
+ *
+ * Every other test here runs with reduced motion, which snaps a place open and
+ * never slides the other wedges. A visitor's phone has no such setting: opening
+ * one place flings the other five out along their own angles, and stepping onto
+ * one of those left it standing where it was flung — up to 60px off the hero,
+ * showing a strip of the page down one side of the photo. So this one runs with
+ * motion on and reads the glass, not the DOM: a point two pixels inside the
+ * hero's edge has to land on the photo that is open.
+ */
+test.describe("stepping through places with motion on", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  const edgesOfOpenPhoto = (page: import("@playwright/test").Page) =>
+    page.evaluate(() => {
+      const open = document.querySelector("[data-wedge][aria-expanded='true']");
+      const hero = open?.closest("section");
+      if (!open || !hero) return { left: "no place open", right: "no place open" };
+
+      const box = hero.getBoundingClientRect();
+      const at = (x: number) => {
+        const hit = document.elementFromPoint(x, box.top + box.height * 0.72);
+        return hit?.closest("[data-wedge]") === open ? "photo" : "page";
+      };
+
+      return { left: at(box.left + 2), right: at(box.right - 3) };
+    });
+
+  test("opens each place edge to edge, with no strip of the page down either side", async ({ page }) => {
+    await visit(page, "/");
+    // Plenty of room to be pushed around: a landscape photo behind a portrait
+    // phone, and a wedge whose own angle points sideways.
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+
+    const order = [
+      "Bagasbas Beach",
+      "First Rizal Monument",
+      "Daet Heritage Center",
+      "Cathedral of the Most Holy Trinity",
+      "Calaguas",
+      "Apuao sandbar",
+    ];
+
+    for (const name of order) {
+      await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
+      // The fold-in or the cross-fade has to land before the box means anything.
+      await page.waitForTimeout(700);
+      expect(await edgesOfOpenPhoto(page), `the edges of ${name}`).toEqual({ left: "photo", right: "photo" });
+
+      await page.getByRole("button", { name: "Next place" }).click();
+    }
+  });
+});

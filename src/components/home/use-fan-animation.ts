@@ -404,7 +404,11 @@ export function useFanAnimation({
       gsap.to(element, { autoAlpha: 0, duration: SWAP, ease: "power2.inOut", overwrite: "auto" });
     });
 
-    gsap.set(wedges[index], { zIndex: 5, filter: "brightness(1)" });
+    // Square on the hero first. While this place was one of the others it was
+    // slid out along its own angle, and opening it where it stood left the
+    // photo up to 60px off the hero — a strip of the page down one side (and
+    // one behind the header), which is exactly the gap the owner photographed.
+    gsap.set(wedges[index], { zIndex: 5, filter: "brightness(1)", x: 0, y: 0 });
     nudges.forEach((element, i) => {
       takeOver(element);
       const rest = restNudge(element);

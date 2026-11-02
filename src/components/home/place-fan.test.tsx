@@ -274,6 +274,48 @@ describe("PlaceFan opening a place", () => {
     await until(() => expect(offsetOf(2).x).toBeCloseTo(rest.x, 0));
   });
 
+  it("steps to the next place square on the hero, with no strip of the page down its side", async () => {
+    hurry();
+    const { container } = renderFan();
+
+    /** How far a wedge sits from where it belongs, read off its own transform. */
+    const wedgeOffsetOf = (index: number) => {
+      const element = container.querySelector(`[data-wedge="${index}"]`) as HTMLElement;
+      const read = /translate3?d?\((-?[\d.e+]+)(?:px)?, *(-?[\d.e+]+)(?:px)?/.exec(element.style.transform);
+      return { x: read ? Number(read[1]) : 0, y: read ? Number(read[2]) : 0 };
+    };
+    const until = (assert: () => void) =>
+      waitFor(() => {
+        gsap.ticker.tick();
+        assert();
+      });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    await until(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
+
+    // Opening a place slides the other five out along their own angles.
+    await until(() => {
+      const slid = wedgeOffsetOf(3);
+      expect(Math.abs(slid.x) + Math.abs(slid.y)).toBeGreaterThan(1);
+    });
+
+    // Stepping onto that wedge must put it back square first: opened where it
+    // was slid to, its photo sat up to 60px off the hero and left a band of the
+    // page down one side — the gap the owner photographed on their phone.
+    fireEvent.click(screen.getByRole("button", { name: "Next place" }));
+    await until(() =>
+      expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument(),
+    );
+    await until(() => expect(wedgeOffsetOf(3)).toEqual({ x: 0, y: 0 }));
+
+    // …and the same for every place after it, stepping on.
+    fireEvent.click(screen.getByRole("button", { name: "Next place" }));
+    await until(() =>
+      expect(screen.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeInTheDocument(),
+    );
+    await until(() => expect(wedgeOffsetOf(4)).toEqual({ x: 0, y: 0 }));
+  });
+
   it("tells a screen reader which place just opened", () => {
     openThird();
 
