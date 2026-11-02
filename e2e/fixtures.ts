@@ -77,7 +77,7 @@ export async function offScreen(page: Page): Promise<string[]> {
     };
     const found: string[] = [];
     for (const el of document.querySelectorAll("body *")) {
-      if (el.closest("svg, .sr-only, [aria-hidden='true'], .maplibregl-map, figure")) continue;
+      if (el.closest("svg, .sr-only, [aria-hidden='true'], .leaflet-container, figure")) continue;
       const tag = el.tagName.toLowerCase();
       const hasText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim());
       if (!hasText && !["button", "a", "img", "input", "select", "textarea"].includes(tag)) continue;

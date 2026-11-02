@@ -1,43 +1,27 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
+import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
+import type { Map as LeafletMap, Marker as LeafletMarker, Polyline } from "leaflet";
 import { MARKER_CLASSES, type FreeMapLine, type FreeMapMarker } from "@/components/maps/map-types";
 import { SketchMap } from "@/components/maps/sketch-map";
 import type { LatLng } from "@/lib/maps/geo";
-import { MAP_ATTRIBUTION, MAP_LOAD_TIMEOUT_MS, MAP_STYLES, workerUrl } from "@/lib/maps/map-style";
+import {
+  DARK_TILE_FILTER,
+  MAP_ATTRIBUTION,
+  MAP_LOAD_TIMEOUT_MS,
+  MAP_TILES,
+  TILE_FAILURES_BEFORE_SKETCH,
+  TILE_MAX_ZOOM,
+} from "@/lib/maps/map-style";
 
-type MapLibre = typeof import("maplibre-gl");
-
-const LINE_SOURCE = "free-map-lines";
+type Leaflet = typeof import("leaflet");
 
 /** Dark when the page is dark: an explicit choice, else the device setting (src/lib/theme.ts). */
 function pageIsDark(): boolean {
   const choice = document.documentElement.getAttribute("data-theme");
   if (choice) return choice === "dark";
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-function lineData(lines: FreeMapLine[]) {
-  return {
-    type: "FeatureCollection" as const,
-    features: lines
-      .filter((line) => line.path.length > 1)
-      .map((line) => ({
-        type: "Feature" as const,
-        properties: { id: line.id, dashed: Boolean(line.dashed) },
-        geometry: { type: "LineString" as const, coordinates: line.path.map((p) => [p.lng, p.lat]) },
-      })),
-  };
-}
-
-function addLineLayers(map: MapLibreMap, lines: FreeMapLine[]) {
-  if (map.getSource(LINE_SOURCE)) return;
-  map.addSource(LINE_SOURCE, { type: "geojson", data: lineData(lines) });
-  const paint = { "line-color": "#2563eb", "line-width": 4, "line-opacity": 0.85 };
-  map.addLayer({ id: `${LINE_SOURCE}-solid`, type: "line", source: LINE_SOURCE, filter: ["==", ["get", "dashed"], false], layout: { "line-cap": "round", "line-join": "round" }, paint });
-  map.addLayer({ id: `${LINE_SOURCE}-dashed`, type: "line", source: LINE_SOURCE, filter: ["==", ["get", "dashed"], true], layout: { "line-cap": "round" }, paint: { ...paint, "line-dasharray": [2, 1.5] } });
 }
 
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -110,36 +94,42 @@ const DRIFT_ZOOM = 0.6;
 const DRIFT_MS = 5000;
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-function fit(map: MapLibreMap, points: LatLng[], animate = false) {
+const pointsOf = (markers: FreeMapMarker[], lines: FreeMapLine[]): LatLng[] => [
+  ...markers,
+  ...lines.flatMap((line) => line.path),
+];
+
+function fit(map: LeafletMap, points: LatLng[], animate = false) {
   if (points.length === 0) return;
-  const duration = animate && !reducedMotion() ? 800 : 0;
+  const still = animate && !reducedMotion();
   if (points.length === 1) {
-    map.easeTo({ center: [points[0].lng, points[0].lat], zoom: 15, duration });
+    map.setView([points[0].lat, points[0].lng], 15, { animate: still });
     return;
   }
-  const lngs = points.map((p) => p.lng);
-  const lats = points.map((p) => p.lat);
+  const lats = points.map((point) => point.lat);
+  const lngs = points.map((point) => point.lng);
   map.fitBounds(
     [
-      [Math.min(...lngs), Math.min(...lats)],
-      [Math.max(...lngs), Math.max(...lats)],
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)],
     ],
-    { padding: 56, maxZoom: 16, duration },
+    { padding: [56, 56], maxZoom: 16, animate: still },
   );
 }
 
 /**
- * Map on free OpenStreetMap tiles (MapLibre + OpenFreeMap, no key). Markers
- * move in place when their positions change. Follows the light/dark theme.
- * If tiles or WebGL aren't available it draws the sketch map instead.
+ * Map on the standard OpenStreetMap tiles, drawn with Leaflet. Markers move in
+ * place when their positions change. Follows the light/dark theme; dark mode
+ * turns the same tiles down (there is no dark OSM raster). If no tile arrives —
+ * no network, or the provider is away — it draws the sketch map instead.
  *
  * `fitKey`: the map frames all markers and lines on load and again whenever
  * this value changes; otherwise it stays where the viewer left it.
  *
- * `focusId`: fly to that marker (pulling back, gliding over, diving in, then
- * a slow drift closer) and mark it active. `labels` names stop markers on the
- * map. `onMarkerClick` makes markers buttons. `animateFit` eases reframes
- * after the first one.
+ * `focusId`: fly to that marker (pulling back, gliding over, diving in, then a
+ * slow drift closer) and mark it active. `labels` names stop markers on the
+ * map. `onMarkerClick` makes markers buttons. `animateFit` eases reframes after
+ * the first one.
  */
 export function FreeMap({
   markers,
@@ -163,9 +153,10 @@ export function FreeMap({
   animateFit?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const libRef = useRef<MapLibre | null>(null);
-  const markerRefs = useRef(new Map<string, { marker: MapLibreMarker; sig: string }>());
+  const mapRef = useRef<LeafletMap | null>(null);
+  const libRef = useRef<Leaflet | null>(null);
+  const markerRefs = useRef(new Map<string, { marker: LeafletMarker; sig: string }>());
+  const lineRefs = useRef(new Map<string, { line: Polyline; sig: string }>());
   const latest = useRef({ markers, lines });
   const clickRef = useRef(onMarkerClick);
   // Bumped whenever a drift should not start (or should stop): a new focus, the viewer moving the map.
@@ -181,40 +172,71 @@ export function FreeMap({
   useEffect(() => {
     if (mode !== "map" || !container.current) return;
     let cancelled = false;
-    let map: MapLibreMap | null = null;
+    let map: LeafletMap | null = null;
     let timer = 0;
+    let tiles = false;
+    let failedTiles = 0;
     const markersMap = markerRefs.current;
+    const linesMap = lineRefs.current;
     const giveUp = () => {
       if (cancelled) return;
       cancelled = true;
+      window.clearTimeout(timer);
       map?.remove();
       mapRef.current = null;
       setReady(false);
       setMode("sketch");
     };
 
-    import("maplibre-gl")
+    import("leaflet")
       .then((lib) => {
         if (cancelled || !container.current) return;
         libRef.current = lib;
-        lib.setWorkerUrl(workerUrl(lib.getVersion()));
-        let dark = pageIsDark();
-        let triedLight = !dark;
-        let loaded = false;
+
+        /** Dark mode has no dark tiles to ask for, so the tiles themselves are turned down. */
+        const paint = () => {
+          const pane = map?.getPane("tilePane");
+          if (pane) pane.style.filter = pageIsDark() ? DARK_TILE_FILTER : "";
+        };
+
         try {
-          map = new lib.Map({
-            container: container.current,
-            style: dark ? MAP_STYLES.dark : MAP_STYLES.light,
-            attributionControl: { compact: true, customAttribution: MAP_ATTRIBUTION },
-            cooperativeGestures: true,
-            center: [122.955, 14.112],
+          map = lib.map(container.current, {
+            center: [14.112, 122.955],
             zoom: 12,
+            // A half-step of zoom, so a flight can land between tile levels.
+            zoomSnap: 0.25,
+            zoomDelta: 0.5,
+            // The page scrolls past the map; the buttons and pinch still zoom it.
+            scrollWheelZoom: false,
+            zoomControl: false,
+            attributionControl: true,
           });
         } catch {
           giveUp();
           return;
         }
         mapRef.current = map;
+        lib.control.zoom({ position: "topright" }).addTo(map);
+
+        const tiles_ = lib
+          .tileLayer(MAP_TILES.light, {
+            maxZoom: TILE_MAX_ZOOM,
+            attribution: MAP_ATTRIBUTION,
+            crossOrigin: true,
+            detectRetina: true,
+          })
+          .addTo(map);
+
+        tiles_.on("tileload", () => {
+          tiles = true;
+          window.clearTimeout(timer);
+        });
+        tiles_.on("tileerror", () => {
+          failedTiles += 1;
+          if (!tiles && failedTiles >= TILE_FAILURES_BEFORE_SKETCH) giveUp();
+        });
+        timer = window.setTimeout(() => !tiles && giveUp(), MAP_LOAD_TIMEOUT_MS);
+
         // The viewer taking over the camera stops the drift.
         const stopDrift = () => {
           driftToken.current += 1;
@@ -222,41 +244,21 @@ export function FreeMap({
         map.on("dragstart", stopDrift);
         map.on("wheel", stopDrift);
         map.on("touchstart", stopDrift);
-        map.addControl(new lib.NavigationControl({ showCompass: false }), "top-right");
-        timer = window.setTimeout(() => !loaded && giveUp(), MAP_LOAD_TIMEOUT_MS);
 
-        map.on("error", () => {
-          if (loaded) return; // A missing tile later on is fine; the rest of the map still shows.
-          if (!triedLight) {
-            triedLight = true;
-            map?.setStyle(MAP_STYLES.light);
-            return;
-          }
-          giveUp();
-        });
-        // Runs for the first style and after every theme switch.
-        map.on("style.load", () => {
-          if (!map) return;
-          addLineLayers(map, latest.current.lines);
-          if (!loaded) {
-            loaded = true;
-            window.clearTimeout(timer);
-            fit(map, [...latest.current.markers, ...latest.current.lines.flatMap((l) => l.path)]);
-            setReady(true);
-          }
+        paint();
+        // The container may still be settling when it mounts (an overlay opening).
+        requestAnimationFrame(() => {
+          map?.invalidateSize();
+          if (map) fit(map, pointsOf(latest.current.markers, latest.current.lines));
+          setReady(true);
         });
 
-        const onTheme = () => {
-          const next = pageIsDark();
-          if (next === dark || !map) return;
-          dark = next;
-          map.setStyle(dark ? MAP_STYLES.dark : MAP_STYLES.light);
-        };
+        const onTheme = () => paint();
         const observer = new MutationObserver(onTheme);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
         const media = window.matchMedia("(prefers-color-scheme: dark)");
         media.addEventListener("change", onTheme);
-        map.once("remove", () => {
+        map.once("unload", () => {
           observer.disconnect();
           media.removeEventListener("change", onTheme);
         });
@@ -268,8 +270,11 @@ export function FreeMap({
       window.clearTimeout(timer);
       markersMap.forEach(({ marker }) => marker.remove());
       markersMap.clear();
+      linesMap.forEach(({ line }) => line.remove());
+      linesMap.clear();
       map?.remove();
       mapRef.current = null;
+      setReady(false);
     };
   }, [mode]);
 
@@ -285,14 +290,26 @@ export function FreeMap({
       const sig = signature(m, active, clickable, labels);
       const existing = markerRefs.current.get(m.id);
       if (existing && existing.sig === sig) {
-        existing.marker.setLngLat([m.lng, m.lat]);
+        existing.marker.setLatLng([m.lat, m.lng]);
         continue;
       }
       existing?.marker.remove();
       const element = markerElement(m, active, labels, clickable ? (id) => clickRef.current?.(id) : undefined);
       // A picked, labelled stop is a pin: its tip (the bottom) sits on the spot.
-      const anchor = labels && active && m.kind === "stop" ? "bottom" : "center";
-      const marker = new lib.Marker({ element, anchor }).setLngLat([m.lng, m.lat]).addTo(map);
+      const pin = labels && active && m.kind === "stop";
+      // Shrink-wrapped, so a percentage shift is a shift by the marker's own size;
+      // the icon box itself is 0×0, so Leaflet's own anchor maths is out of it.
+      const anchor = document.createElement("div");
+      anchor.className = pin ? "inline-block -translate-x-1/2 -translate-y-full" : "inline-block -translate-x-1/2 -translate-y-1/2";
+      anchor.append(element);
+      const marker = lib
+        .marker([m.lat, m.lng], {
+          icon: lib.divIcon({ html: anchor, className: "daet-marker", iconSize: [0, 0] }),
+          keyboard: false,
+          title: m.title,
+          alt: m.title,
+        })
+        .addTo(map);
       markerRefs.current.set(m.id, { marker, sig });
     }
     for (const [id, { marker }] of markerRefs.current) {
@@ -303,6 +320,41 @@ export function FreeMap({
     }
   }, [markers, ready, focusId, clickable, labels]);
 
+  // Lines: the road legs, a dashed straight line where there is no road.
+  useEffect(() => {
+    const map = mapRef.current;
+    const lib = libRef.current;
+    if (!ready || !map || !lib) return;
+    const seen = new Set<string>();
+    for (const line of lines) {
+      seen.add(line.id);
+      const sig = `${line.dashed ? "dash" : "solid"}|${line.path.map((p) => `${p.lat},${p.lng}`).join(";")}`;
+      const existing = lineRefs.current.get(line.id);
+      if (existing && existing.sig === sig) continue;
+      existing?.line.remove();
+      const drawn = lib
+        .polyline(
+          line.path.map((p) => [p.lat, p.lng] as [number, number]),
+          {
+            color: "#2563eb",
+            weight: 4,
+            opacity: 0.85,
+            dashArray: line.dashed ? "8 8" : undefined,
+            lineCap: "round",
+            lineJoin: "round",
+          },
+        )
+        .addTo(map);
+      lineRefs.current.set(line.id, { line: drawn, sig });
+    }
+    for (const [id, { line }] of lineRefs.current) {
+      if (!seen.has(id)) {
+        line.remove();
+        lineRefs.current.delete(id);
+      }
+    }
+  }, [lines, ready]);
+
   // Focus: pull back, glide over and dive in to the picked marker, then drift slowly closer.
   useEffect(() => {
     const map = mapRef.current;
@@ -310,22 +362,37 @@ export function FreeMap({
     if (!ready || !map || !focusId) return;
     const m = latest.current.markers.find((marker) => marker.id === focusId);
     if (!m) return;
-    const center: [number, number] = [m.lng, m.lat];
+    const center: [number, number] = [m.lat, m.lng];
     if (reducedMotion()) {
-      map.jumpTo({ center, zoom: 15.5 });
+      map.setView(center, 15.5, { animate: false });
       return;
     }
-    map.flyTo({ center, zoom: 15.5, curve: 1.9, speed: 0.9, essential: true });
+    map.flyTo(center, 15.5, { duration: 1.1, easeLinearity: 0.25 });
+
+    // Leaflet animates the flight itself; the slow push in after it is ours.
+    let raf = 0;
     map.once("moveend", () => {
       if (driftToken.current !== token) return;
-      map.easeTo({ zoom: map.getZoom() + DRIFT_ZOOM, duration: DRIFT_MS, easing: easeOutCubic, essential: true });
+      const from = map!.getZoom();
+      const startedAt = performance.now();
+      const step = (now: number) => {
+        if (driftToken.current !== token) return;
+        const t = Math.min(1, (now - startedAt) / DRIFT_MS);
+        map!.setView(center, from + DRIFT_ZOOM * easeOutCubic(t), { animate: false });
+        if (t < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
     });
+    return () => {
+      cancelAnimationFrame(raf);
+      driftToken.current += 1;
+    };
   }, [focusId, ready]);
 
   // Reframe when asked.
   useEffect(() => {
     if (!ready || !mapRef.current) return;
-    fit(mapRef.current, [...latest.current.markers, ...latest.current.lines.flatMap((l) => l.path)], animateFit && !firstFit.current);
+    fit(mapRef.current, pointsOf(latest.current.markers, latest.current.lines), animateFit && !firstFit.current);
     firstFit.current = false;
   }, [fitKey, ready, animateFit]);
 
