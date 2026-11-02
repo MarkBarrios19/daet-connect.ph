@@ -109,15 +109,17 @@ describe("useHeroFold", () => {
     expect(tween!.vars.scrollTrigger).not.toMatchObject({ pin: true });
   });
 
-  it("fades the headline out over the first 60% of the fold", () => {
+  it("leaves the headline and its buttons alone, so nothing fades as the page scrolls", () => {
+    // It used to fade to nothing over the first 60% of the fold. The owner
+    // stepped twice, left a place, scrolled, and watched the hero's words and
+    // buttons vanish under the pointer: the hero scrolls away by itself, so the
+    // fade was never protecting anything.
     const { container } = render(<Harness />);
 
-    const tween = records.tweens.find(
-      (candidate) => candidate.target === container.querySelector("[data-headline]"),
-    );
-    expect(tween).toBeDefined();
-    expect(tween!.vars).toMatchObject({ opacity: 0, ease: "none" });
-    expect(tween!.vars.scrollTrigger).toMatchObject({ start: "top top", end: "60% top", scrub: true });
+    const headline = container.querySelector("[data-headline]");
+    const touchesHeadline = records.tweens.filter((tween) => tween.target === headline);
+    expect(touchesHeadline).toHaveLength(0);
+    records.tweens.forEach((tween) => expect(tween.vars).not.toHaveProperty("opacity"));
   });
 
   it("does not fold at all while a place is open", () => {

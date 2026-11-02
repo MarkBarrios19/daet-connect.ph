@@ -21,7 +21,6 @@ export type FanPlace = {
    * The line the open view's "Fun fact" card carries. Empty for now: no place
    * has one written, and the card says so rather than inventing a fact.
    */
-  funFact?: string;
   /** The place page. */
   href: string;
   /** The browsable trips near this place; /tours/browse filters on `location`. */

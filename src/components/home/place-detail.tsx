@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import type { FanPlace } from "./fan-places";
 import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
-import { PlaceFunFact } from "./place-fun-fact";
 
 /**
  * What opens over the fan: the place's name, where it sits in the six, what it
@@ -192,14 +191,13 @@ export function PlaceDetail({
         {phone ? (
           card
         ) : (
-          // The map card first, the place's own card beside it, and the Fun fact
-          // card under that — the sketch's three cards, with the photo behind.
+          // The map card first, the place's own card beside it, with the photo
+          // behind. There used to be a third card under the place's — a "Fun
+          // fact" — and the owner asked for it to go: every place would have
+          // shown the Tourism Office's placeholder until someone wrote one.
           <div className="flex items-start gap-3">
             <PlaceMapPanel place={place} places={places} onPick={onPick} className="w-[24rem] shrink-0" />
-            <div className="flex w-[18rem] shrink-0 flex-col gap-3">
-              {card}
-              <PlaceFunFact name={place.name} fact={place.funFact} />
-            </div>
+            <div className="w-[18rem] shrink-0">{card}</div>
           </div>
         )}
       </div>

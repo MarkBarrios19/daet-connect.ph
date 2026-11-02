@@ -476,7 +476,7 @@ test.describe("home fan on a desktop", () => {
       .toBeGreaterThan(0.5);
   });
 
-  test("opens the place into the sketch's three cards over its photo, and folds on Escape", async ({ page }) => {
+  test("opens the place into the sketch's cards over its photo, and folds on Escape", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", {
       name: "Bagasbas Beach: open photo and details",
@@ -490,12 +490,12 @@ test.describe("home fan on a desktop", () => {
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await checkA11y(page, "home, a place open, desktop");
 
-    // The owner's sketch (image-30): the map card leads, on the page's own column;
-    // the place's own card stands beside it; the Fun fact card sits under that.
+    // The owner's sketch (image-30): the map card leads, and the place's own card
+    // stands beside it. The sketch's third card, the Fun fact, is gone — the owner
+    // asked for it (image-45), and every place would have shown a placeholder.
     const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
     const map = (await page.locator("[data-place-map]").boundingBox())!;
     const card = (await page.locator("[data-detail]").boundingBox())!;
-    const fun = (await page.locator("[data-fun-fact]").boundingBox())!;
     const column = (await page.locator("#home-places").boundingBox())!.x;
 
     // The owner asked for the cards flush to the left of the photo, off the page's
@@ -508,8 +508,8 @@ test.describe("home fan on a desktop", () => {
 
     expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
     expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);
-    expect(fun.x, "the Fun fact card under the place card").toBeGreaterThan(map.x + map.width - 1);
-    expect(fun.y, "below the place card").toBeGreaterThan(card.y + card.height - 1);
+    // No card under it any more: the row is the map and the place, nothing else.
+    await expect(page.locator("[data-fun-fact]")).toHaveCount(0);
 
     // The map card shows the place's own photo and name over the pins.
     await expect(page.locator("[data-map-place]")).toContainText("Bagasbas Beach");
@@ -1204,10 +1204,13 @@ test.describe("home fan, motion on", () => {
     const fold = await page.evaluate(() => {
       const hero = document.querySelector("section[aria-labelledby='home-title']") as HTMLElement;
       const headline = hero.querySelector("[data-headline]") as HTMLElement;
+      const buttons = Array.from(headline.querySelectorAll<HTMLElement>("a, button"));
       return {
         heroWidth: hero.getBoundingClientRect().width,
         heroTransform: getComputedStyle(hero).transform,
         headlineOpacity: Number(getComputedStyle(headline).opacity),
+        buttonOpacities: buttons.map((button) => Number(getComputedStyle(button).opacity)),
+        fanTransform: getComputedStyle(hero.querySelector("[role='group']") as HTMLElement).transform,
         viewportWidth: window.innerWidth,
       };
     });
@@ -1215,8 +1218,53 @@ test.describe("home fan, motion on", () => {
     // No shrunken card with white margins: the section keeps the screen's width.
     expect(fold.heroTransform).toBe("none");
     expect(Math.round(fold.heroWidth)).toBe(fold.viewportWidth);
-    // …and the parts inside it are the things that move.
-    expect(fold.headlineOpacity).toBeLessThan(1);
+    // The fan is the thing that moves — and the words and buttons above it stay
+    // solid: they used to fade out under the pointer as the page scrolled, which
+    // is what the owner reported.
+    expect(fold.fanTransform).not.toBe("none");
+    expect(fold.headlineOpacity).toBe(1);
+    fold.buttonOpacities.forEach((opacity) => expect(opacity).toBe(1));
+  });
+
+  test("keeps the hero's words and buttons solid after stepping out of a place", async ({ page }) => {
+    // The owner's sequence, exactly: open one of the fan's photos, press Next
+    // twice, leave the photo, then scroll — and the hero's words and its buttons
+    // kept vanishing under the pointer as the page moved.
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(inPanel(page)).toBeVisible();
+
+    const next = page.getByRole("button", { name: "Next place" });
+    await next.click();
+    await next.click();
+    await page.waitForTimeout(900);
+    await page.getByRole("button", { name: "Back to the fan" }).click();
+    await page.waitForTimeout(900);
+
+    const read = () =>
+      page.evaluate(() => {
+        const headline = document.querySelector("[data-headline]") as HTMLElement;
+        const buttons = Array.from(headline.querySelectorAll<HTMLElement>("a, button"));
+        return {
+          headline: Number(getComputedStyle(headline).opacity),
+          buttons: buttons.map((button) => Number(getComputedStyle(button).opacity)),
+        };
+      });
+
+    const atRest = await read();
+    expect(atRest.headline, "the words are back once the photo is gone").toBe(1);
+    atRest.buttons.forEach((opacity) => expect(opacity, "and so are the buttons").toBe(1));
+
+    // Down the page in steps, the way a wheel goes: nothing fades on the way, and
+    // nothing comes back half-faded.
+    for (const y of [80, 160, 240, 320, 400]) {
+      await page.evaluate((top) => window.scrollTo(0, top), y);
+      await page.waitForTimeout(200);
+      const state = await read();
+      expect(state.headline, `the words at ${y}px`).toBe(1);
+      state.buttons.forEach((opacity) => expect(opacity, `a button at ${y}px`).toBe(1));
+    }
   });
 
   test("reveals a band once, then leaves it fully readable", async ({ page }) => {

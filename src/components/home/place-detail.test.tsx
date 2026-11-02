@@ -169,7 +169,6 @@ describe("PlaceDetail", () => {
     // move from the left edge to the middle.
     expect(screen.queryByRole("region", { name: /Map showing/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
-    // The Fun fact card is part of the desktop row too.
     expect(document.querySelector("[data-fun-fact]")).not.toBeInTheDocument();
     expect(document.querySelector("[data-detail]")!.className).toContain("mx-auto");
   });
@@ -196,16 +195,17 @@ describe("PlaceDetail", () => {
     });
   });
 
-  it("leads with the map card, and stands the place card and the Fun fact card beside it", () => {
+  it("leads with the map card, and stands the place card beside it", () => {
     const { container } = renderDetail({ places: MAP_PLACES });
 
     // The owner's sketch (image-30): map card first, the place's own card to its
-    // right, and the Fun fact card under that one.
+    // right. The third card the sketch had — the Fun fact — was dropped on the
+    // owner's word (image-45): every place would have shown a placeholder.
     const order = Array.from(container.querySelectorAll("[data-place-map], [data-detail], [data-fun-fact]")).map(
       (element) =>
         element.hasAttribute("data-place-map") ? "map" : element.hasAttribute("data-detail") ? "card" : "fun fact",
     );
-    expect(order).toEqual(["map", "card", "fun fact"]);
+    expect(order).toEqual(["map", "card"]);
 
     // The two of them share a row, so the card is beside the map and not under it.
     expect(container.querySelector("[data-detail]")!.parentElement).not.toBe(
@@ -270,21 +270,14 @@ describe("PlaceDetail", () => {
     expect(overTheMap).toHaveClass("z-[800]");
   });
 
-  it("carries the Fun fact line, and folds it away and back", () => {
+  it("has no Fun fact card at all", () => {
+    // The owner asked for it to go (image-45). Nothing else was standing in for
+    // it either: the card had a placeholder for every place in the fan.
     renderDetail({ places: MAP_PLACES });
 
-    // No place has a fact written yet, so the card says so rather than making one up.
-    expect(screen.getByText(/\[placeholder: a fun fact about Bagasbas Beach/)).toBeInTheDocument();
-
-    const toggle = screen.getByRole("button", { name: "Hide the fun fact" });
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    fireEvent.click(toggle);
-
-    expect(document.getElementById("place-fun-fact-body")).toHaveAttribute("hidden");
-    expect(screen.getByRole("button", { name: "Show the fun fact" })).toHaveAttribute("aria-expanded", "false");
-
-    fireEvent.click(screen.getByRole("button", { name: "Show the fun fact" }));
-    expect(document.getElementById("place-fun-fact-body")).not.toHaveAttribute("hidden");
+    expect(document.querySelector("[data-fun-fact]")).toBeNull();
+    expect(screen.queryByText(/fun fact/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /fun fact/i })).toBeNull();
   });
 
   it("pins the map card to the place it is showing", () => {

@@ -5,8 +5,14 @@ import type { RefObject } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 /**
- * The fold: as the hero scrolls out, the fan lifts and the headline fades, so
- * the page's first heading arrives underneath it.
+ * The fold: as the hero scrolls out, the fan lifts a little.
+ *
+ * The headline used to fade out over the first 60% of that, "so the page's first
+ * heading arrives underneath it" — but the hero scrolls out of the way by
+ * itself, so there was nothing for the fade to protect, and the owner reported
+ * the opposite of a fold: after opening a place, stepping twice, leaving it and
+ * scrolling, the hero's words and its buttons kept vanishing under the pointer.
+ * The words are simply left alone now; the fan still lifts.
  *
  * The section itself never moves. Scaling it, as this used to, shrank the hero
  * into a boxed card with white margins beside and below it — and because
@@ -41,7 +47,6 @@ export function useHeroFold(root: RefObject<HTMLElement | null>, { paused = fals
         if (!section) return;
 
         const fan = section.querySelector("[role='group']");
-        const headline = section.querySelector("[data-headline]");
         const tweens: ReturnType<typeof gsap.to>[] = [];
 
         if (fan) {
@@ -53,23 +58,6 @@ export function useHeroFold(root: RefObject<HTMLElement | null>, { paused = fals
                 trigger: section,
                 start: "top top",
                 end: "bottom top",
-                scrub: true,
-              },
-            }),
-          );
-        }
-
-        if (headline) {
-          // Gone by 60% of the way out, so the section below is already the
-          // thing being read while the last of the fan leaves.
-          tweens.push(
-            gsap.to(headline, {
-              opacity: 0,
-              ease: "none",
-              scrollTrigger: {
-                trigger: section,
-                start: "top top",
-                end: "60% top",
                 scrub: true,
               },
             }),
