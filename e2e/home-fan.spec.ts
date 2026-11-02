@@ -388,11 +388,18 @@ test.describe("home fan on a phone", () => {
     expect(frame.paint, "the owner's navy frame").toBe("rgb(16, 0, 86)");
 
     // The white half and the blue one. The blue is the house blue-600 rather
-    // than the SVG's #406FFF, which is under AA against white body copy.
+    // than the SVG's #406FFF, which is under AA against white body copy — so it
+    // is checked against the page's other blue band instead of a hex (Tailwind
+    // emits the palette in a modern colour space, not rgb()).
     const halves = await band
       .locator("[data-ticket-panel]")
       .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor));
-    expect(halves).toEqual(["rgb(255, 255, 255)", "rgb(21, 93, 252)"]);
+    const askBand = await page
+      .locator("section[aria-labelledby='home-ask']")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(halves[0], "the white half").toBe("rgb(255, 255, 255)");
+    expect(halves[1], "the house blue, as the page's other band").toBe(askBand);
+    expect(halves[1], "not the white half").not.toBe(halves[0]);
 
     // The words are the owner's, and the photograph's place says what it is.
     await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
