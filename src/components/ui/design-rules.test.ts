@@ -67,6 +67,21 @@ describe("design rules", () => {
     ).toEqual([]);
   });
 
+  it("keeps the display face behind one token", () => {
+    // Swapping the display typeface is one line in globals.css (docs/FONTS.md).
+    // If a second place names Fraunces, a swap leaves half the site behind.
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css.match(/--font-display\s*:/g) ?? []).toHaveLength(1);
+    expect(css.replace(/--font-display\s*:[^;]*;/, "")).not.toContain("--font-fraunces");
+    expect(css).toContain("font-family: var(--font-display)");
+  });
+
+  it("loads the display font's whole weight range, so 900 is not synthesised", () => {
+    const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
+    expect(layout).toContain("Fraunces-Variable.woff2");
+    expect(layout).toContain('weight: "100 900"');
+  });
+
   it("has no eyebrow labels and no rounded-3xl cards", () => {
     expect(offenders((line) => /\beyebrow\b|rounded-3xl/.test(line) && !line.trim().startsWith("*"))).toEqual([]);
   });

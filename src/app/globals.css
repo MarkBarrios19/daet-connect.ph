@@ -82,7 +82,7 @@
 
   h1,
   h2 {
-    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+    font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.02em;
     text-wrap: balance;
@@ -184,18 +184,27 @@
   }
 }
 
-/* Display sizes: large and tight. Mobile first; they scale with the viewport. */
+/* Display sizes: large and tight. Mobile first; they scale with the viewport.
+   The family comes from --font-display and nothing else, so changing the display
+   face (a licensed Migra, say) is one line here plus the font file; docs/FONTS.md
+   has the steps.
+   Fraunces' 900 with optical sizing on is the weight the owner picked: at 6rem
+   the opsz axis gives it the high-contrast, tight cut of a display Didone, while
+   the same face stays legible at 1.75rem. WONK 0 turns off its quirkier
+   letterforms, SOFT 0 keeps the terminals crisp. */
 @utility display-1 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
   font-size: clamp(2.5rem, 9vw, 6rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
 }
 
 @utility display-2 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
   font-size: clamp(1.75rem, 5vw, 3rem);
   line-height: 1.05;
   letter-spacing: -0.025em;

@@ -21,7 +21,8 @@ This is the frontend redesign's rulebook. It follows the team's **UI & Mobile-Fi
 - **No small uppercase letter-spaced labels.** Use sentence case at a readable size.
 - **No emoji as icons.** Use `LineIcon` (`src/components/ui/icons.tsx`), `TabIcon` or `CategoryIcon`.
 - **Type:**
-  - Fraunces for display, Public Sans for text;
+  - Fraunces for display, Public Sans for text — see `docs/FONTS.md`, including how to swap
+    the display face (it hangs off one token, `--font-display`);
   - `display-1` (`clamp(2.5rem, 9vw, 6rem)`) and `display-2` (`clamp(1.75rem, 5vw, 3rem)`) for page titles;
   - body text 16px or larger, in full ink.
 - **Motion:**
