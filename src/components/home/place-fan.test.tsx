@@ -998,6 +998,34 @@ describe("PlaceFan on a phone", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
   });
 
+  it("keeps the keyboard reaching the fan after a flick hides the photo that had focus", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+    // A real tap on the photo leaves focus on the photo's button — the one the
+    // step is about to hide.
+    (image.closest("button") as HTMLButtonElement).focus();
+
+    const clock = jest.spyOn(Date, "now");
+    clock.mockReturnValue(1_000);
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 220, clientY: 402, pointerId: 1 });
+    clock.mockReturnValue(1_120);
+    fireEvent.pointerUp(image, { clientX: 220, clientY: 402, pointerId: 1 });
+    clock.mockRestore();
+
+    // A hidden element cannot hold focus, so it moves into the card instead of
+    // falling to the body, where the next arrow key would go nowhere.
+    const heading = screen.getByRole("heading", { level: 2, name: "First Rizal Monument" });
+    expect(document.activeElement).toBe(heading);
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "ArrowRight" });
+    expect(screen.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeInTheDocument();
+  });
+
   it("keeps looking along the photo, and steps nothing, when the drag is slow", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();

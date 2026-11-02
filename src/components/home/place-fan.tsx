@@ -257,7 +257,20 @@ export function PlaceFan({
     closeAnimation();
   }, [closeInUrl, closeAnimation]);
 
-  /** Next/previous, wrapping: the panel cross-fades rather than folding back. */
+  /**
+   * A step hides the photo that had focus (its wedge slides out and goes), and a
+   * hidden element cannot hold focus: the browser drops it on the body and the
+   * next arrow key goes nowhere. When that is about to happen, focus moves to the
+   * card's heading instead, where the keyboard still reaches the fan. A visitor
+   * working the card's own buttons keeps their focus where it is.
+   */
+  const keepFocusAfterStep = useCallback(() => {
+    const active = document.activeElement as HTMLElement | null;
+    const lost = !active || active === document.body || Boolean(active.closest("[data-wedge]"));
+    if (lost) headingRef.current?.focus();
+  }, []);
+
+  /** Next/previous, wrapping: the panel swipes rather than folding back. */
   const step = useCallback(
     (delta: number) => {
       if (openIndex < 0) return;
@@ -267,8 +280,9 @@ export function PlaceFan({
       openInUrl(places[next].slug);
       setAnnouncement(describe(next));
       swapTo(next, { from: openIndex, direction: delta });
+      keepFocusAfterStep();
     },
-    [openIndex, places, openInUrl, describe, swapTo],
+    [openIndex, places, openInUrl, describe, swapTo, keepFocusAfterStep],
   );
 
   // A wheel over an open place is someone trying to leave the hero: close
