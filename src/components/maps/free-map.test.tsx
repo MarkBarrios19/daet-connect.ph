@@ -245,6 +245,10 @@ describe("FreeMap", () => {
     // the OpenStreetMap land colour (see globals.css).
     const region = container.querySelector("[role='region']") as HTMLElement;
     expect(region.style.background).toBe("var(--color-map-ground)");
+    // Leaflet's panes are z-index 400–700. Without a stacking context on this
+    // element they escape it and paint over fixed chrome — they covered the chat
+    // dock's left edge — so `isolate` is part of the contract, not decoration.
+    expect(region.className).toContain("isolate");
 
     // A tile that appears instantly, the level already on screen kept while the new
     // one is fetched, and a generous buffer past the edges.

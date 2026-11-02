@@ -171,7 +171,7 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 bg-canvas px-4 py-1 text-sm text-slate-600 dark:text-slate-400">
-        <span>{lastMode === "basic" ? <Badge tone="neutral">Basic mode</Badge> : lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
+        <span className="min-w-0">{lastMode === "basic" ? <Badge tone="neutral">Basic mode</Badge> : lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
         {turns.length && !signedIn ? (
           <button
             type="button"
@@ -214,7 +214,13 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
         ) : null}
       </div>
 
-      <ol ref={logRef} tabIndex={0} aria-live="polite" aria-label="Conversation" className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4">
+      <ol
+        ref={logRef}
+        tabIndex={0}
+        aria-live="polite"
+        aria-label="Conversation"
+        className="scrollbar-quiet min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-3 py-4"
+      >
         {turns.length === 0 ? (
           <li className="space-y-3">
             <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
@@ -235,7 +241,7 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
             {turn.role === "user" ? (
               <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">{turn.content}</p>
             ) : (
-              <div className="max-w-[92%] space-y-2">
+              <div className="min-w-0 max-w-[92%] space-y-2">
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
                 </p>
@@ -317,7 +323,7 @@ const pill = "inline-flex min-h-11 items-center gap-1.5 rounded-full bg-blue-50 
 function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { cards: AssistantCard[]; signedIn: boolean; onNavigate?: () => void; onShareLocation: () => void }) {
   const links = cards.filter((c) => c.type === "link");
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       {cards.map((card, i) => {
         if (card.type === "tour") {
           return (

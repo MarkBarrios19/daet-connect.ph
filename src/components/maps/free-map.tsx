@@ -426,11 +426,14 @@ export function FreeMap({
       {/* The ground is the map's own land colour, not the page's near-white: it is
           what shows in the moment before a tile arrives. Inline, because Leaflet's
           own stylesheet paints `.leaflet-container` grey. */}
+      {/* `isolate` is load-bearing: Leaflet gives its panes z-index 400–700, and
+          without a stacking context here those panes win against the whole page —
+          they painted over the chat dock's left edge. */}
       <div
         ref={container}
         role="region"
         aria-label={title}
-        className={`w-full overflow-hidden rounded-2xl ${className}`}
+        className={`isolate w-full overflow-hidden rounded-2xl ${className}`}
         style={{ background: "var(--color-map-ground)" }}
       />
       <ul className="sr-only">

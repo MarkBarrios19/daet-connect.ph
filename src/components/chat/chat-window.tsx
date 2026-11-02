@@ -328,7 +328,7 @@ export function ChatWindow(props: ChatWindowProps) {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="min-h-0 flex-1 overflow-y-auto bg-surface px-3 py-3"
+        className="scrollbar-quiet min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-surface px-3 py-3"
       >
         {hasMore ? (
           <div className="mb-3 flex justify-center">

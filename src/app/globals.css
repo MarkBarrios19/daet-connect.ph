@@ -210,6 +210,14 @@
   letter-spacing: -0.025em;
 }
 
+/* Scrollbars inside panels, not the page. Windows' default light scrollbars in a
+   dark chat panel are a white slab with arrows; this keeps them a hairline in
+   whichever theme is on, and Firefox + Chromium both honour it. */
+@utility scrollbar-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
 /* Section entrance: a part marked data-reveal rises into place once, the first
    time it reaches the viewport, and then stays put (heading, then text, then
    picture, via --reveal-index). The observer in reveal-observer.tsx sets

@@ -67,5 +67,40 @@ test.describe("desktop chat heads", () => {
     await page.getByRole("button", { name: "Daet AI assistant" }).click();
     await expect(dock.getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
     await checkA11y(page, "chat dock");
+
+    // The floating pill sits where an open window lands, so it stands down
+    // instead of overlapping the panel's corner.
+    await expect(page.getByRole("button", { name: "Daet AI assistant" })).toBeHidden();
+
+    // A narrow window must never scroll its conversation sideways.
+    const list = dock.getByRole("list", { name: "Conversation" }).first();
+    const sideways = await list.evaluate((element) => element.scrollWidth - element.clientWidth);
+    expect(sideways).toBeLessThanOrEqual(0);
+  });
+
+  test("the page's own layers stay under the dock", async ({ context, page }) => {
+    // Leaflet's panes are z-index 400–700. With no stacking context on the map
+    // they escaped it and painted over the dock: the panel's header, its messages
+    // and the attribution all sat on top of a chat the visitor was reading.
+    await signInAs(context, "tourist");
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Daet AI assistant" }).click();
+    await expect(page.getByRole("region", { name: "Open chats" }).getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
+
+    await page.locator("#home-map").scrollIntoViewIfNeeded();
+    await expect(page.locator(".leaflet-container").first()).toBeVisible();
+
+    const isolation = await page.evaluate(() => {
+      const host = document.querySelector(".leaflet-container")?.closest("[role='region']");
+      return host ? getComputedStyle(host).isolation : "missing";
+    });
+    expect(isolation).toBe("isolate");
+
+    // And nothing in the page outranks the dock itself.
+    const zIndex = await page.evaluate(() => {
+      const dock = document.querySelector("[aria-label='Open chats']");
+      return dock ? getComputedStyle(dock).zIndex : null;
+    });
+    expect(Number(zIndex)).toBeGreaterThanOrEqual(800);
   });
 });
