@@ -394,6 +394,12 @@ test.describe("home fan on a desktop", () => {
 
     // The map card shows the place's own photo and name over the pins.
     await expect(page.locator("[data-map-place]")).toContainText("Bagasbas Beach");
+    // Leaflet paints its panes inside the map at z-index 200–800; the card pinned
+    // to the place has to sit above all of them to be seen at all.
+    expect(
+      await page.locator("[data-map-place]").evaluate((element) => Number(getComputedStyle(element).zIndex)),
+      "over the map's own panes",
+    ).toBeGreaterThanOrEqual(800);
     await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
 
     // The way out sits at the photo's top right, on the image itself.
@@ -801,7 +807,7 @@ test.describe("home fan, motion on", () => {
           .map((photo) => photo.getBoundingClientRect())
           .sort((a, b) => a.left - b.left);
 
-      const frames: Array<{ gap: number; covers: boolean; fromTheLeft: boolean | null }> = [];
+      const frames: Array<{ gap: number; covers: boolean; fromTheLeft: boolean | null; shapes: string[] }> = [];
       const start = performance.now();
       while (performance.now() - start < 600) {
         const boxes = visible();
@@ -816,6 +822,11 @@ test.describe("home fan, motion on", () => {
           covers: Boolean(leftmost && rightmost) && leftmost.left <= hero.left + 1 && rightmost.right >= hero.right - 1,
           // A photo coming in from the left starts outside the hero's left edge.
           fromTheLeft: boxes.length === 2 ? leftmost.left < hero.left - 1 : null,
+          // Both wedges must keep the hero's own shape while they travel: a wedge
+          // that fell back to its fan sliver would show the fan through the gap.
+          shapes: Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]"))
+            .filter((wedge) => wedge.style.visibility !== "hidden")
+            .map((wedge) => getComputedStyle(wedge).clipPath),
         });
         await new Promise((done) => requestAnimationFrame(() => done(null)));
       }
@@ -830,6 +841,7 @@ test.describe("home fan, motion on", () => {
     for (const frame of sliding) {
       expect(frame.gap, "the two photos' edges meet").toBeLessThanOrEqual(2);
       expect(frame.covers, "the pair covers the hero end to end").toBe(true);
+      expect(new Set(frame.shapes).size, "both wedges keep the hero's shape").toBe(1);
     }
     // Next swipes in from the left, as the owner asked.
     expect(sliding[0].fromTheLeft, "the next photo comes in from the left").toBe(true);

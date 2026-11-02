@@ -96,11 +96,14 @@ export function PlaceMapPanel({
         />
 
         {/* The place itself, over the map: its photo, its name, the line about
-            it. Nothing in here takes the pointer, so the map still drags. */}
+            it. Nothing in here takes the pointer, so the map still drags.
+            The z-index is not decoration: Leaflet paints its own panes at 200 to
+            800 inside the map, and a plain absolute sibling sits under every one
+            of them — which is how it went missing. */}
         <div
           data-map-place
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-3 w-40 rounded-xl bg-surface/95 p-2 ring-1 ring-daet-ink/10 backdrop-blur dark:bg-slate-950/92 dark:ring-white/15"
+          className="pointer-events-none absolute left-3 top-3 z-[800] w-40 rounded-xl bg-surface/95 p-2 ring-1 ring-daet-ink/10 backdrop-blur dark:bg-slate-950/92 dark:ring-white/15"
         >
           <Image
             src={place.photo.src}

@@ -257,6 +257,10 @@ describe("PlaceDetail", () => {
     expect(overTheMap.querySelector("img")).toHaveAttribute("src", expect.stringContaining("bagasbas"));
     // Nothing in it takes the pointer: the map underneath still drags.
     expect(overTheMap).toHaveClass("pointer-events-none");
+    // Leaflet paints its panes at 200–800 inside the map, so a plain absolutely
+    // positioned sibling sits *under* every one of them — which is how this card
+    // went missing on the owner's screen. It has to be lifted over them.
+    expect(overTheMap).toHaveClass("z-[800]");
   });
 
   it("carries the Fun fact line, and folds it away and back", () => {

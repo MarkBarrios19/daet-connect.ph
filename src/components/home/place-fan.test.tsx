@@ -351,6 +351,10 @@ describe("PlaceFan opening a place", () => {
       return read ? Number(read[1]) : 0;
     };
 
+    // The wedge's own fan shape, before anything opens: with the place open it
+    // becomes the hero's rectangle, and it must stay that while it slides out.
+    const fanShapeOfWedgeTwo = (container.querySelector("[data-wedge='2']") as HTMLElement).style.clipPath;
+
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
     await waitFor(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
     await waitFor(() =>
@@ -380,6 +384,14 @@ describe("PlaceFan opening a place", () => {
     moving.forEach((frame) => {
       expect(Math.abs(100 + frame.incoming - frame.outgoing)).toBeLessThanOrEqual(0.5);
     });
+
+    // …and both keep the hero's own shape all the way. A wedge that fell back to
+    // its fan sliver while it was leaving would show the fan through the gap where
+    // its photo used to be, which is the flash the owner photographed.
+    const outgoingShape = (container.querySelector("[data-wedge='2']") as HTMLElement).style.clipPath;
+    const incomingShape = (container.querySelector("[data-wedge='3']") as HTMLElement).style.clipPath;
+    expect(incomingShape).not.toBe(fanShapeOfWedgeTwo);
+    expect(outgoingShape).toBe(incomingShape);
   });
 
   it("puts a way back to the fan at the photo's top right on a desktop", () => {

@@ -416,12 +416,15 @@ export function useFanAnimation({
     timeline.current?.kill();
     timeline.current = null;
 
+    const leaving = from !== undefined && from !== index ? from : null;
+
     const state = live.current;
     gsap.killTweensOf(state.open);
-    state.open = state.open.map((_, i) => (i === index ? 1 : 0));
+    // Both photos keep the hero's own shape while they travel. Left to the fan's
+    // shapes, the wedge that is leaving falls back to its sliver the moment the
+    // new one goes on top, and the fan shows through where its photo was.
+    state.open = state.open.map((_, i) => (i === index || i === leaving ? 1 : 0));
     render();
-
-    const leaving = from !== undefined && from !== index ? from : null;
 
     // Every other photo goes now: an older one left mid-slide would otherwise
     // show the wedge's own ground through the part of its clip its photo has

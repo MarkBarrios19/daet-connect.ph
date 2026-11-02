@@ -355,7 +355,10 @@ describe("useFanAnimation", () => {
     act(() => api.current?.swapTo(3, { from: 0, direction: 1 }));
 
     expect(wedges[3].style.clipPath).toBe(OPEN);
-    expect(wedges[0].style.clipPath).toBe(geometry.wedges[0].rest);
+    // The one that is leaving keeps the hero's shape while it goes, rather than
+    // falling back to its fan sliver under the incoming photo — the fan would show
+    // through the gap where its photo used to be.
+    expect(wedges[0].style.clipPath).toBe(OPEN);
 
     // The incoming photo starts a hero to the left of its frame, and is set there
     // rather than tweened: nothing of the page shows behind a slide that starts
