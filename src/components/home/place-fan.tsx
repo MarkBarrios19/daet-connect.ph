@@ -413,7 +413,10 @@ export function PlaceFan({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
-      style={sheet && isOpen ? { touchAction: "none" } : undefined}
+      // A finger on the open photo pans it sideways. Down and up belongs to the
+      // page, or the visitor is stuck on a full screen of photo: no scroll, no
+      // pull to refresh, and no way out but a tap they have to guess at.
+      style={sheet && isOpen ? { touchAction: "pan-y" } : undefined}
       className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas dark:bg-slate-900"
     >
       <div role="group" aria-label="Places in Daet" className="absolute inset-0 z-0">

@@ -890,23 +890,27 @@ test.describe("home fan, motion on", () => {
  * motion on and reads the glass, not the DOM: a point two pixels inside the
  * hero's edge has to land on the photo that is open.
  */
+/**
+ * What is showing two pixels inside the open hero's left and right edges: the
+ * photo of the open place, or the page behind it.
+ */
+const edgesOfOpenPhoto = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => {
+    const open = document.querySelector("[data-wedge][aria-expanded='true']");
+    const hero = open?.closest("section");
+    if (!open || !hero) return { left: "no place open", right: "no place open" };
+
+    const box = hero.getBoundingClientRect();
+    const at = (x: number) => {
+      const hit = document.elementFromPoint(x, box.top + box.height * 0.72);
+      return hit?.closest("[data-wedge]") === open ? "photo" : "page";
+    };
+
+    return { left: at(box.left + 2), right: at(box.right - 3) };
+  });
+
 test.describe("stepping through places with motion on", () => {
   test.use({ reducedMotion: "no-preference" });
-
-  const edgesOfOpenPhoto = (page: import("@playwright/test").Page) =>
-    page.evaluate(() => {
-      const open = document.querySelector("[data-wedge][aria-expanded='true']");
-      const hero = open?.closest("section");
-      if (!open || !hero) return { left: "no place open", right: "no place open" };
-
-      const box = hero.getBoundingClientRect();
-      const at = (x: number) => {
-        const hit = document.elementFromPoint(x, box.top + box.height * 0.72);
-        return hit?.closest("[data-wedge]") === open ? "photo" : "page";
-      };
-
-      return { left: at(box.left + 2), right: at(box.right - 3) };
-    });
 
   test("opens each place edge to edge, with no strip of the page down either side", async ({ page }) => {
     await visit(page, "/");
@@ -932,5 +936,53 @@ test.describe("stepping through places with motion on", () => {
 
       await page.getByRole("button", { name: "Next place" }).click();
     }
+  });
+});
+
+/**
+ * The pin, from the owner's phone: open a place, take its card's "Open on the
+ * map" down to the map, tap another place's pin.
+ *
+ * A pin is the one way into the fan that isn't the panel's own ‹ › cross-fade:
+ * it changes the hash with a place already open, so the place it names arrives
+ * through the fold-in — which found it still hidden (the previous place had
+ * hidden every other wedge) and still slid out along its own angle. It grew to
+ * full size invisible: a card over an empty screen, holding the whole viewport
+ * against a thumb, so there was no scrolling out of it either.
+ */
+test.describe("a pin opens a place from further down the page", () => {
+  test.use({ reducedMotion: "no-preference" });
+
+  test("comes back to a photo, with the page still able to scroll", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    // A phone opens the card folded to a bar, so its link is one tap away.
+    const show = page.getByRole("button", { name: "Show the place's details" });
+    if (await show.count()) await show.click();
+    await page.getByRole("link", { name: "Open on the map" }).click();
+
+    // The pin's name is the place's own name from the places table, which is
+    // longer than the fan's short one ("… and Museum"), so match its start.
+    const pin = page.locator('section[aria-labelledby="home-map"] button[aria-label^="Daet Heritage Center"]');
+    await pin.waitFor({ state: "visible" });
+    await pin.click();
+
+    await expect(page.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeVisible();
+    // The fan takes the visitor back up to see what the pin named.
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeLessThan(5);
+    await page.waitForTimeout(600);
+
+    expect(await edgesOfOpenPhoto(page), "the photo the pin opened").toEqual({ left: "photo", right: "photo" });
+
+    // Sideways is the photo's gesture; up and down belongs to the page, so a
+    // thumb can scroll away and pull to refresh as usual.
+    const touchAction = await page.evaluate(() => {
+      const hero = document.querySelector("[data-wedge]")?.closest("section");
+      return hero ? getComputedStyle(hero).touchAction : null;
+    });
+    expect(touchAction).toBe("pan-y");
   });
 });

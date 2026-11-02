@@ -316,6 +316,39 @@ describe("PlaceFan opening a place", () => {
     await until(() => expect(wedgeOffsetOf(4)).toEqual({ x: 0, y: 0 }));
   });
 
+  it("opens the place a map pin names on top of an open one, photo and all", async () => {
+    hurry();
+    const { container } = renderFan();
+
+    const until = (assert: () => void) =>
+      waitFor(() => {
+        gsap.ticker.tick();
+        assert();
+      });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    await until(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
+
+    // A pin is the one way in that skips the panel's cross-fade: it sets the
+    // hash with a place already open, so the next one arrives by `openAt` —
+    // which found it still hidden (the last place hid it) and still slid out
+    // along its angle. It grew to full size invisible: the card over an empty
+    // hero, and no way to scroll out of it.
+    act(() => {
+      window.location.hash = "#place-daet-heritage-center";
+    });
+    await until(() =>
+      expect(screen.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeInTheDocument(),
+    );
+
+    const wedge = container.querySelector("[data-wedge='4']") as HTMLElement;
+    await until(() => expect(wedge.style.visibility).not.toBe("hidden"));
+    expect(wedge.style.opacity).toBe("1");
+
+    const offset = /translate3?d?\((-?[\d.e+]+)(?:px)?, *(-?[\d.e+]+)(?:px)?/.exec(wedge.style.transform);
+    expect({ x: Number(offset?.[1] ?? 0), y: Number(offset?.[2] ?? 0) }).toEqual({ x: 0, y: 0 });
+  });
+
   it("tells a screen reader which place just opened", () => {
     openThird();
 
@@ -811,6 +844,18 @@ describe("PlaceFan on a phone", () => {
     // The timeline is real; only the clock is hurried along.
     gsap.globalTimeline.timeScale(40);
     await waitFor(() => expect(container.querySelector("[data-drag-hint]")).not.toBeInTheDocument());
+  });
+
+  it("leaves the page's own scrolling to the page while a place is open", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    // A full screen of photo that holds every finger is a trap: no scroll, no
+    // drag down and up, no pull to refresh, and no way out but a tap the
+    // visitor has to guess at. Sideways is the photo's; up and down is the page's.
+    const section = container.querySelector("section") as HTMLElement;
+    expect(section.style.touchAction).toBe("pan-y");
   });
 
   it("ignores a flick while nothing is open", () => {

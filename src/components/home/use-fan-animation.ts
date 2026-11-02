@@ -330,7 +330,12 @@ export function useFanAnimation({
     const tl = gsap.timeline({ defaults: { ease: "power3.inOut" } });
     timeline.current = tl;
 
-    tl.set(wedges[index], { zIndex: 5 });
+    // Visible, and square on the hero, before anything else. Opening a place
+    // while another is already open — which is what a map pin does, and the only
+    // way in that skips the panel's cross-fade — finds this wedge still hidden
+    // (the previous place hid it) and still slid out along its angle. Left
+    // alone it grew to full size while invisible: the card over an empty hero.
+    tl.set(wedges[index], { zIndex: 5, autoAlpha: 1, x: 0, y: 0 });
 
     // Numbers, not shapes: the wedge grows out of its slice towards the box.
     const opening = { t: state.open[index] ?? 0 };
