@@ -18,6 +18,29 @@ test.describe("dark mode", () => {
     await context.close();
   });
 
+  test("the postcard's ridge turns off-white in dark mode, and its panel stays cyan", async ({ browser }) => {
+    // The owner's note on image-50: the navy ridge disappeared into the dark
+    // ground. It takes the heading's off-white instead; the cyan panel and its
+    // dark ink are printed, so they read the same in both themes.
+    const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    const frame = await page
+      .locator("[data-ticket-frame]")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(frame, "off-white, the heading's colour in dark mode").toBe("rgb(226, 232, 240)");
+
+    const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [
+      getComputedStyle(element).backgroundColor,
+      getComputedStyle(element).color,
+    ]);
+    expect(field, "the reference's cyan").toBe("rgb(29, 180, 247)");
+    expect(ink, "its dark copy").toBe("rgb(15, 23, 42)");
+
+    await context.close();
+  });
+
   test("the phone menu switches theme, and the choice survives a reload", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     expect(await canvas(page)).toBe(LIGHT_CANVAS);

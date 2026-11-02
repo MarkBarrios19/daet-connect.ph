@@ -43,12 +43,19 @@
      1.5px in `card-edge`, so a card's edge reads at a glance instead of only when
      looked for. */
   --color-hairline: #d3dae5;
-  /* The "Booking, in three moves" band is a ticket (the owner's SVG, image-49):
-     a navy frame with semicircular bites taken out of it, the blue field inside,
-     and a white half on the left for the photograph. This is the frame's own
-     navy. The field inside keeps the house blue-600 rather than the SVG's
-     #406FFF, which measures 4.25:1 against white body text — under AA. */
-  --color-ticket-frame: #100056;
+  /* The "Booking, in three moves" band is the owner's postcard: a cream frame
+     with semicircular bites taken out of it, a photograph in its left half and
+     a flat cyan panel on the right. Frame and field are sampled from the
+     owner's reference (image-52: cream rgb(232 215 185), cyan rgb(29 180 247)).
+     In dark mode the frame turns to the page's own off-white — the owner's note
+     after seeing it (image-50): the dark ridge disappeared into the dark
+     ground, so the frame takes the heading's colour there instead.
+     The cyan panel is *printed*: its copy stays dark in both themes (an ink
+     that does not switch), because white on that cyan is 2.3:1 — well under
+     AA — while this ink is 7.5:1. */
+  --color-ticket-frame: #e8d7b9;
+  --color-ticket-field: #1db4f7;
+  --color-ticket-ink: #0f172a;
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
   --color-map-ground: #f2efe9;
@@ -148,14 +155,14 @@
   box-shadow: inset 0 0 0 1.5px var(--color-hairline);
 }
 
-/* The ticket band (owner's SVG, image-49).
+/* The postcard band (owner's SVG image-49, palette from image-52).
  *
  * The band is drawn as a frame with a row of semicircular bites taken out of it:
  * the bites are a mask rather than paint, so what shows through them is the page
- * itself — white on the light ground, near-black on the dark one — and the edge
- * keeps working in both themes. The mask is on a decorative layer behind the
- * content, so nothing a visitor reads is ever clipped, and a browser without
- * masks falls back to a plain square frame.
+ * itself — the white ground in light, near-black in dark — and the edge keeps
+ * working in both themes. The mask is on a decorative layer behind the content,
+ * so nothing a visitor reads is ever clipped, and a browser without masks falls
+ * back to a plain square frame.
  *
  * The sizes follow the SVG's own proportions: its frame is 51px wide and 39px
  * tall at 1919px, with 35px and 24px bites — which would swallow a phone, so
@@ -187,6 +194,28 @@
     mask-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
     mask-composite: intersect;
   }
+}
+
+/* Paper, not paint: the frame is a printed ridge (owner's note on image-52), so
+ * it carries a grain and a hair of blur and nothing else on the band does.
+ * The grain is an SVG feTurbulence tile — one tile repeated, desaturated to a
+ * grey, multiplied over the frame's colour so it darkens rather than washes it
+ * out. It lives inside the masked layer, so the bites take it too, and the
+ * panels cover the middle of it: what a visitor sees of the grain is the ridge. */
+@utility ticket-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: multiply;
+  opacity: 0.32;
+}
+
+/* A hair of blur so the ridge does not look cut out with scissors. It sits on
+ * the wrapper *around* the masked layer, so it softens the scalloped edge the
+ * mask has already drawn — the one thing the mask itself cannot do, since a
+ * filter on an element runs before its mask. Only the decorative layer carries
+ * this; nothing a visitor reads is touched. */
+@utility ticket-ridge {
+  filter: blur(0.75px);
 }
 
 /* A question's answer draws itself open (image-46).
@@ -233,6 +262,9 @@
     --color-muted-strong: #26324d;
     --color-line: #334160;
     --color-hairline: #2b3a57;
+    /* The postcard's frame is the heading's off-white here; the cyan panel and
+       its dark ink are unchanged, so the card reads the same in both themes. */
+    --color-ticket-frame: #e2e8f0;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -248,6 +280,7 @@
       --color-muted-strong: #26324d;
       --color-line: #334160;
       --color-hairline: #2b3a57;
+      --color-ticket-frame: #e2e8f0;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -265,6 +298,7 @@
     --color-muted-strong: #e2e8f0;
     --color-line: #cbd5e1;
     --color-hairline: #d3dae5;
+    --color-ticket-frame: #e8d7b9;
   }
 }
 

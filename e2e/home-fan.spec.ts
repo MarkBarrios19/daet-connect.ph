@@ -354,56 +354,56 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Trips you can book" })).toBeVisible();
   });
 
-  test("draws the booking band as a ticket, with a white half for the photograph", async ({ page }) => {
-    // The owner's SVG (image-49): a frame bitten along every edge, the blue
-    // field inside it, and the left half white where the photograph goes.
+  test("is the owner's postcard: a grained cream frame, the photograph and the cyan panel", async ({ page }) => {
+    // The owner's references: the SVG's bitten frame (image-49), image-52's
+    // palette, and the photograph itself filling the left half.
     await visit(page, "/");
 
     const band = page.locator("[data-ticket]");
     await expect(band).toBeVisible();
     await band.scrollIntoViewIfNeeded();
 
-    // One gradient per edge, composited by intersection, over the SVG's navy —
-    // and a mask rather than paint, so what shows through the bites is the page
-    // itself on the white ground and on the dark one alike.
-    const frame = await band
-      .locator("[aria-hidden='true']")
-      .first()
-      .evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          bites: style.maskImage.split("radial-gradient").length - 1,
-          composite: style.maskComposite,
-          paint: style.backgroundColor,
-        };
-      });
-    expect(frame.bites, "one bite per edge").toBe(4);
-    // Computed per layer: every one of the four is intersected with the rest.
-    expect(frame.composite.split(",").map((value) => value.trim()), "all four layers intersected").toEqual([
+    // The ridge: a hair of blur on the wrapper, one gradient per edge on the
+    // masked layer, all four intersected, in the reference's cream — and a mask
+    // rather than paint, so what shows through the bites is the page.
+    const ridge = await band.evaluate((element) => {
+      const wrapper = element.firstElementChild as HTMLElement;
+      const frame = wrapper.querySelector("[data-ticket-frame]") as HTMLElement;
+      const grain = frame.firstElementChild as HTMLElement;
+      const style = getComputedStyle(frame);
+      return {
+        blur: getComputedStyle(wrapper).filter,
+        bites: style.maskImage.split("radial-gradient").length - 1,
+        composite: style.maskComposite,
+        paint: style.backgroundColor,
+        grain: getComputedStyle(grain).backgroundImage.includes("feTurbulence"),
+      };
+    });
+    expect(ridge.bites, "one bite per edge").toBe(4);
+    expect(ridge.composite.split(",").map((value) => value.trim()), "all four layers intersected").toEqual([
       "intersect",
       "intersect",
       "intersect",
       "intersect",
     ]);
-    expect(frame.paint, "the owner's navy frame").toBe("rgb(16, 0, 86)");
+    expect(ridge.paint, "the reference's cream").toBe("rgb(232, 215, 185)");
+    expect(ridge.blur, "a hair of blur on the ridge").toContain("blur");
+    expect(ridge.grain, "and a paper grain").toBe(true);
 
-    // The white half and the blue one. The blue is the house blue-600 rather
-    // than the SVG's #406FFF, which is under AA against white body copy — so it
-    // is checked against the page's other blue band instead of a hex (Tailwind
-    // emits the palette in a modern colour space, not rgb()).
-    const halves = await band
-      .locator("[data-ticket-panel]")
-      .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor));
-    const askBand = await page
-      .locator("section[aria-labelledby='home-ask']")
-      .evaluate((element) => getComputedStyle(element).backgroundColor);
-    expect(halves[0], "the white half").toBe("rgb(255, 255, 255)");
-    expect(halves[1], "the house blue, as the page's other band").toBe(askBand);
-    expect(halves[1], "not the white half").not.toBe(halves[0]);
+    // The left half is the photograph, full bleed, with the heading on it.
+    const photo = band.locator("[data-ticket-photo]");
+    await expect(photo.locator("img")).toHaveAttribute("src", /rizal-monument-park/);
+    await expect(photo.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
 
-    // The words are the owner's, and the photograph's place says what it is.
-    await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
-    await expect(band.locator("[data-booking-photo]")).toContainText("image here");
+    // The right half is the reference's cyan, carrying dark copy: white on it
+    // is 2.3:1, under AA, so the panel is printed in ink in both themes.
+    const panel = band.locator("[data-ticket-panel]");
+    const [field, ink] = await panel.evaluate((element) => [
+      getComputedStyle(element).backgroundColor,
+      getComputedStyle(element).color,
+    ]);
+    expect(field, "the reference's cyan").toBe("rgb(29, 180, 247)");
+    expect(ink, "dark copy on it").toBe("rgb(15, 23, 42)");
   });
 });
 
@@ -476,24 +476,22 @@ test.describe("home fan on a desktop", () => {
     hasTouch: false,
   });
 
-  test("splits the booking band: the words on the left, the three moves on the right", async ({ page }) => {
+  test("splits the booking band: the photograph on the left, the three moves on the right", async ({ page }) => {
     await visit(page, "/");
     await page.evaluate(() =>
       document.querySelector("#home-how")?.scrollIntoView({ block: "center", behavior: "instant" }),
     );
 
-    const halves = page.locator("[data-ticket-panel]");
-    await expect(halves).toHaveCount(2);
-    const left = await halves.nth(0).boundingBox();
-    const right = await halves.nth(1).boundingBox();
-    expect(left && right, "both halves are on the page").toBeTruthy();
-    expect(right!.x, "side by side, not stacked").toBeGreaterThanOrEqual(left!.x + left!.width - 1);
-    expect(left!.y, "on the same line").toBeCloseTo(right!.y, 0);
-    expect(left!.width, "half each").toBeCloseTo(right!.width, 0);
+    const photo = await page.locator("[data-ticket-photo]").boundingBox();
+    const panel = await page.locator("[data-ticket-panel]").boundingBox();
+    expect(photo && panel, "both halves are on the page").toBeTruthy();
+    expect(panel!.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo!.x + photo!.width - 1);
+    expect(photo!.y, "on the same line").toBeCloseTo(panel!.y, 0);
+    expect(photo!.width, "half each").toBeCloseTo(panel!.width, 0);
 
-    // The photograph's place is in the white half, the steps in the blue one.
-    await expect(halves.nth(0).locator("[data-booking-photo]")).toBeVisible();
-    await expect(halves.nth(1).getByRole("listitem")).toHaveCount(3);
+    // The photograph fills its half, and the steps are all in the panel.
+    await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
+    await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
   });
 
   test("draws the three ways to Daet as one outlined band", async ({ page }) => {

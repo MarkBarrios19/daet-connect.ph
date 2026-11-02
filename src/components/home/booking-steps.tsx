@@ -1,5 +1,7 @@
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { LineIcon, type IconName } from "@/components/ui/icons";
+import { PHOTOS } from "@/lib/photo-credits";
 
 const STEPS: ReadonlyArray<{ title: string; text: string; icon: IconName }> = [
   {
@@ -20,18 +22,19 @@ const STEPS: ReadonlyArray<{ title: string; text: string; icon: IconName }> = [
 ];
 
 /**
- * How booking works: the page's one full-colour band, laid out as the owner's
- * SVG (image-49).
+ * How booking works: the page's one full-colour band, and now the owner's
+ * postcard (image-52).
  *
- * The band is a ticket — a navy frame bitten along every edge, the blue field
- * inside it, and the left half white. The heading and the photograph the Tourism
- * Office will supply live in the white half, the three moves in the blue one, so
- * the section reads title-then-steps exactly as it did before the band was
- * drawn. The copy is the owner's and unchanged.
+ * A cream frame bitten along every edge, softened and grained like printed
+ * paper; the photograph filling the left half with the heading on it; the three
+ * moves on a flat cyan panel on the right. The frame's cream, the cyan and the
+ * dark copy on it are the reference's palette (see the tokens in globals.css);
+ * in dark mode the frame takes the page's off-white, because the owner's note
+ * on image-50 was that a dark ridge disappeared into the dark ground.
  *
- * The frame is a decorative layer behind the content (`ticket-frame` masks the
- * bites out of it), so nothing a visitor reads is clipped and the panel's own
- * colours stay put — see the utility's note in globals.css.
+ * The frame is a decorative layer behind the content (`ticket-ridge` softens
+ * it, `ticket-frame` masks the bites, `ticket-grain` is the paper), so nothing a
+ * visitor reads is clipped and the panels' own colours stay put.
  */
 export function BookingSteps() {
   return (
@@ -40,40 +43,40 @@ export function BookingSteps() {
       data-ticket
       className="ticket-band relative mt-20 sm:mt-32"
     >
-      <div aria-hidden="true" className="ticket-frame absolute inset-0 bg-ticket-frame" />
+      <div aria-hidden="true" className="ticket-ridge pointer-events-none absolute inset-0">
+        <div data-ticket-frame className="ticket-frame absolute inset-0 bg-ticket-frame">
+          <div className="ticket-grain absolute inset-0" />
+        </div>
+      </div>
 
       <div className="relative grid md:grid-cols-2">
-        {/* The white half: the heading, and the photograph's place. */}
-        <div
-          data-ticket-panel="words"
-          className="bg-surface px-5 py-10 text-daet-ink sm:px-10 sm:py-14 lg:px-14"
-        >
-          <h2 id="home-how" data-reveal className="display-2 max-w-md">
+        {/* The photograph, filling the left half, with the heading on it. A
+            scrim under the words keeps them readable over the trees. */}
+        <div data-ticket-photo className="relative aspect-[4/3] md:aspect-auto md:min-h-[440px]">
+          <Image
+            src={PHOTOS.rizalMonumentPark.src}
+            alt={PHOTOS.rizalMonumentPark.alt}
+            fill
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className="object-cover"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-[linear-gradient(155deg,rgba(15,23,42,0.8),rgba(15,23,42,0.34)_42%,transparent_68%)]"
+          />
+          <h2
+            id="home-how"
+            data-reveal
+            className="display-2 absolute left-5 top-8 max-w-md text-white sm:left-10 sm:top-12 lg:left-14"
+          >
             Booking, in three moves
           </h2>
-
-          {/* The owner is supplying the photograph. Until it lands this is a
-              visible placeholder, not a stand-in image: swap the box for an
-              <img> (with its credit) and leave the heading where it is. */}
-          <figure data-booking-photo className="mt-8 max-w-md sm:mt-12">
-            <div className="grid aspect-[16/10] w-full place-items-center rounded-xl border border-dashed border-hairline bg-muted p-6 text-center">
-              <p className="text-lg font-bold text-daet-ink/70">
-                image here
-                <span className="mt-1 block text-sm font-normal">
-                  [placeholder: the photograph goes in before launch]
-                </span>
-              </p>
-            </div>
-            <figcaption className="sr-only">
-              [placeholder: a photograph of a booking step in Daet]
-            </figcaption>
-          </figure>
         </div>
 
-        {/* The blue half: the three moves, unchanged. */}
+        {/* The cyan panel: the three moves, unchanged, in a printed dark ink. */}
         <div
-          data-ticket-panel="steps"
-          className="bg-blue-600 px-5 py-10 text-white sm:px-10 sm:py-14 lg:px-14"
+          data-ticket-panel
+          className="bg-ticket-field px-5 py-10 text-ticket-ink sm:px-10 sm:py-14 lg:px-14"
         >
           <ol className="max-w-xl space-y-8">
             {STEPS.map((step, index) => (
@@ -86,7 +89,7 @@ export function BookingSteps() {
                 <LineIcon name={step.icon} className="mt-1 h-7 w-7" />
                 <div>
                   <p className="text-2xl font-bold">{step.title}</p>
-                  <p className="mt-1 text-lg text-blue-50">{step.text}</p>
+                  <p className="mt-1 text-lg text-ticket-ink/85">{step.text}</p>
                 </div>
               </li>
             ))}
