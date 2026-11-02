@@ -10,6 +10,7 @@ import { PlaceFan } from "@/components/home/place-fan";
 import { FAN_PLACES } from "@/components/home/fan-places";
 import { AskBand } from "@/components/home/ask-band";
 import { GettingHere } from "@/components/home/getting-here";
+import { HomeFaq } from "@/components/home/home-faq";
 import { HomeMap, type MapPlace } from "@/components/home/home-map";
 import { PackageCard } from "@/components/tours/package-card";
 import { placePhoto } from "@/lib/tours/trip-board";
@@ -286,6 +287,10 @@ export default async function HomePage() {
           <p className="rounded-2xl bg-surface p-6 text-lg text-daet-ink">[placeholder: no place has coordinates yet]</p>
         )}
       </section>
+
+      {/* The questions that block a booking, in the owner's two-column layout.
+          Six answered ones here; the full list is on /tours/faq. */}
+      <HomeFaq />
 
       {/* The one place the page says "just ask". */}
       <AskBand />

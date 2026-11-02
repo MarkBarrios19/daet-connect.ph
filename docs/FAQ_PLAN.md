@@ -4,8 +4,10 @@ A plan for the two-column FAQ in `image-36` (large title and subline on the left
 question cards on the right, `+` closed and `✕` open), fitted to what this repo already is
 and to what people actually ask before they book a boat in Daet.
 
-Status: **plan only.** Nothing here is built yet. Content marked **[sign-off]** is not in the
-repo and must come from the Daet Tourism Office before it goes live.
+Status: **phases 1 and 2 are built** (`src/lib/faq.ts`, `src/components/ui/faq.tsx`,
+`/tours/faq`, the six-question band on the home page, the footer link). Phases 3 and 4 are not.
+Content marked **[sign-off]** is not in the repo and shows a visible placeholder until the Daet
+Tourism Office writes it.
 
 ---
 

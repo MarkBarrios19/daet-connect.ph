@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AssistantChat } from "@/components/assistant/assistant-chat";
 import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -22,6 +23,13 @@ export default async function HelpPage() {
         <h1 className="display-2 text-daet-ink">Daet AI assistant</h1>
         <p className="mt-3 text-lg leading-relaxed text-daet-ink">
           Ask about tours, open dates and prices, places and events, how to pay or cancel, or your own bookings. The assistant only reads; you make bookings and payments yourself. For anything it can&apos;t answer, it passes you to the operator or the Daet Tourism Office.
+        </p>
+        <p className="mt-4 text-base text-daet-ink">
+          In a hurry? The{" "}
+          <Link href="/tours/faq" className="font-bold text-blue-700 underline underline-offset-2 dark:text-blue-300">
+            common questions
+          </Link>{" "}
+          answer booking, paying, cancelling and getting here in one line each.
         </p>
         <div className="mt-6 flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface">
           <AssistantChat signedIn={signedIn} />
