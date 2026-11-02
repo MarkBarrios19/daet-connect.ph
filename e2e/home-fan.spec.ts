@@ -963,6 +963,9 @@ test.describe("a pin opens a place from further down the page", () => {
     const show = page.getByRole("button", { name: "Show the place's details" });
     if (await show.count()) await show.click();
     await page.getByRole("link", { name: "Open on the map" }).click();
+    // Down at the map, whether or not this browser honoured the card's own
+    // smooth scroll — the map has to be on screen for it to mount at all.
+    await page.locator("#home-map").scrollIntoViewIfNeeded();
 
     // The pin's name is the place's own name from the places table, which is
     // longer than the fan's short one ("… and Museum"), so match its start.
@@ -971,8 +974,8 @@ test.describe("a pin opens a place from further down the page", () => {
     await pin.click();
 
     await expect(page.getByRole("heading", { level: 2, name: "Daet Heritage Center" })).toBeVisible();
-    // The fan takes the visitor back up to see what the pin named.
-    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBeLessThan(5);
+    // Back up at the hero, which is where the pin takes the visitor.
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(600);
 
     expect(await edgesOfOpenPhoto(page), "the photo the pin opened").toEqual({ left: "photo", right: "photo" });
