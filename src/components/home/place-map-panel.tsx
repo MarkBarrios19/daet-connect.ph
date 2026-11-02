@@ -3,10 +3,16 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FreeMap } from "@/components/maps/free-map";
-import type { FreeMapMarker } from "@/components/maps/map-types";
+import { PHOTO_PIN_RISE, type FreeMapMarker } from "@/components/maps/map-types";
 
-/** Room between the card's tail and the pin it points at. */
-const GAP = 12;
+/**
+ * Room between the card's edge and the pin it points at.
+ *
+ * The tail hangs half outside the card's edge, so this ends up as a hair of
+ * daylight: the tail's point lands on the pin's top (or its tip, when the card
+ * has to sit underneath), never floating in between.
+ */
+const GAP = 6;
 
 /** A place the hero's map can pin: the coordinates come from the places table. */
 export type MapPoint = { slug: string; name: string; lat: number; lng: number };
@@ -57,9 +63,14 @@ export function PlaceMapPanel({
    * The map is written to, not re-rendered: a pan reports its pin's position on
    * every frame, and a React render per frame would fight the map for them. When
    * there is no pin to point at — "Show all" — the card keeps the corner and
-   * loses its tail, which would otherwise point at nothing. If the pin is too
-   * near the top of the card's own height, the card drops underneath it and the
-   * tail turns the other way, rather than covering the thing it names.
+   * loses its tail, which would otherwise point at nothing.
+   *
+   * The pin's point is its *bottom*: its photo stands `PHOTO_PIN_RISE` pixels
+   * above the coordinates. Clearing only the tail's gap put the card straight
+   * over the pin's photo — the owner's screenshot (image-43) is a card with the
+   * pin hidden behind it, its tail pointing at the card's own paper. So the card
+   * clears the pin's body, and when there is no room above it, it drops below
+   * the pin with the tail turned the other way — never on top of it.
    */
   const trackPin = useCallback((point: { x: number; y: number } | null) => {
     const element = card.current;
@@ -82,9 +93,9 @@ export function PlaceMapPanel({
     const mapHeight = box?.clientHeight ?? height;
 
     const x = Math.min(Math.max(point.x, width / 2 + 6), Math.max(width / 2 + 6, mapWidth - width / 2 - 6));
-    const above = point.y - GAP - height >= 6;
+    const above = point.y - (height + GAP + PHOTO_PIN_RISE) >= 6;
     const y = above
-      ? point.y - GAP - height
+      ? point.y - PHOTO_PIN_RISE - GAP - height
       : Math.min(point.y + GAP, Math.max(6, mapHeight - height - 6));
 
     element.setAttribute("data-anchored", "true");
@@ -154,9 +165,10 @@ export function PlaceMapPanel({
           animateFit
           onMarkerClick={onPick}
           onFocusPoint={trackPin}
-          // Room for the card above the pin, so its tail points down at the
-          // place the way the owner sketched it (image-42).
-          focusOffsetY={56}
+          // Room above the pin for the card *and* the pin's own photo, and the
+          // wheel zooms: this map is what the visitor is working in.
+          focusOffsetY={76}
+          wheelZoom
           className="h-64"
         />
 
@@ -191,7 +203,7 @@ export function PlaceMapPanel({
               width={320}
               height={180}
               sizes="208px"
-              className="h-20 w-full object-cover"
+              className="h-16 w-full object-cover"
             />
             <div className="px-2.5 py-2">
               <p className="flex items-baseline gap-1.5">

@@ -56,22 +56,26 @@ function markerElement(
   el.setAttribute("aria-label", m.title);
 
   // A place with its photo in the pin: the marker the open place's card points
-  // at. The frame is the photo, and the tail underneath puts its point on the
-  // spot, so the card above it and the pin read as one thing (image-42).
+  // at. A circle with the site's blue drawn round it (so it reads on dark tiles,
+  // where the old white ring vanished), and a blue tail that grows straight out
+  // of the circle rather than floating under it — the owner's crop (image-44)
+  // showed the two as separate shapes with the map's own label between them.
   if (m.photo) {
-    el.className = "relative block pb-2";
+    el.className = "relative block h-12 w-12";
     const frame = document.createElement("span");
     frame.className =
-      "block h-12 w-12 overflow-hidden rounded-[1.1rem] border-[3px] border-white bg-blue-600 shadow-[0_6px_18px_rgba(15,23,42,0.35)] dark:border-slate-900";
+      "block h-full w-full overflow-hidden rounded-full border-[3px] border-blue-600 bg-surface shadow-[0_4px_14px_rgba(15,23,42,0.45)] dark:border-blue-400 dark:bg-slate-900";
     const img = document.createElement("img");
     img.src = m.photo.src;
     img.alt = "";
     img.decoding = "async";
     img.className = "h-full w-full object-cover";
+    // The point: a triangle whose top is tucked under the circle's lower arc, so
+    // the two shapes are one pin at any size.
     const tail = document.createElement("span");
     tail.setAttribute("aria-hidden", "true");
     tail.className =
-      "absolute bottom-[3px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-blue-600";
+      "absolute left-1/2 top-[38px] h-0 w-0 -translate-x-1/2 border-x-[7px] border-t-[10px] border-x-transparent border-t-blue-600 dark:border-t-blue-400";
     frame.append(img);
     el.append(frame, tail);
     return el;
@@ -172,6 +176,7 @@ export function FreeMap({
   labels = false,
   animateFit = false,
   focusOffsetY = 0,
+  wheelZoom = false,
   onFocusPoint,
 }: {
   markers: FreeMapMarker[];
@@ -191,6 +196,14 @@ export function FreeMap({
    * pin instead of pointing at it.
    */
   focusOffsetY?: number;
+  /**
+   * Whether the wheel over the map zooms it.
+   *
+   * Off by default: most of these maps sit in a page that has to be scrolled
+   * past, and a map that swallows the wheel is a trap. A map the visitor is
+   * working in — the card over the open place — turns it on.
+   */
+  wheelZoom?: boolean;
   /**
    * Where the focused marker is right now, in the map's own pixels.
    *
@@ -381,6 +394,15 @@ export function FreeMap({
       }
     }
   }, [markers, ready, focusId, clickable, labels]);
+
+  // The wheel zooms where the map is something being worked in, and scrolls the
+  // page everywhere else.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map?.scrollWheelZoom) return;
+    if (wheelZoom) map.scrollWheelZoom.enable();
+    else map.scrollWheelZoom.disable();
+  }, [ready, wheelZoom]);
 
   // Where the focused pin is, for a card drawn over the map that has to point
   // at it. Reported on every pan and zoom: the map moves under its own steam.

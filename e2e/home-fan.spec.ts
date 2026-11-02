@@ -676,6 +676,76 @@ test.describe("home fan on a desktop", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
   });
 
+  test("zooms the card's map with the wheel, and keeps its tail on the pin", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(inPanel(page)).toBeVisible();
+    await page.waitForTimeout(1200);
+
+    const map = (await page.locator("[data-place-map]").boundingBox())!;
+    const card = page.locator("[data-map-place]");
+    const pin = page.locator("[data-place-map] .leaflet-marker-icon:has(img)");
+
+    // The wheel over the card's map zooms the map — it does not scroll the page
+    // out from under the hero.
+    const tileZoom = () =>
+      page.evaluate(() => {
+        const tile = document.querySelector("[data-place-map] img.leaflet-tile") as HTMLImageElement | null;
+        const level = tile?.src.match(/\/(\d+)\/\d+\/\d+\.png/);
+        return level ? Number(level[1]) : null;
+      });
+
+    const zoomBefore = await tileZoom();
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(map.x + map.width / 2, map.y + map.height * 0.75);
+    await page.mouse.wheel(0, -300);
+    await page.waitForTimeout(900);
+    expect(await page.evaluate(() => window.scrollY), "the page stayed where it was").toBe(scrollBefore);
+    if (zoomBefore !== null) {
+      expect(await tileZoom(), "the wheel zoomed the map").not.toBe(zoomBefore);
+    }
+
+    /** The card never sits on the pin it names: above it, or below it, but off it. */
+    const clearOfThePin = async () => {
+      const cardBox = (await card.boundingBox())!;
+      const pinBox = (await pin.boundingBox())!;
+      return {
+        clear: cardBox.y + cardBox.height <= pinBox.y + 1 || cardBox.y >= pinBox.y + pinBox.height - 1,
+        cardBox,
+        pinBox,
+      };
+    };
+
+    const settled = await clearOfThePin();
+    expect(settled.clear, "the card is over the pin's own photo").toBe(true);
+
+    // The tail is part of the card, and it points at the pin: the crop the owner
+    // sent (image-44) had two shapes with the map's labels between them.
+    const tail = (await page.locator("[data-map-place-tail]").boundingBox())!;
+    expect(tail, "the tail is drawn").not.toBeNull();
+    expect(tail.x, "inside the card's own edge").toBeGreaterThanOrEqual(settled.cardBox.x - 1);
+    expect(tail.x + tail.width).toBeLessThanOrEqual(settled.cardBox.x + settled.cardBox.width + 1);
+    expect(
+      Math.abs(tail.x + tail.width / 2 - (settled.pinBox.x + settled.pinBox.width / 2)),
+      "the tail points at the pin",
+    ).toBeLessThanOrEqual(10);
+
+    // Drag the map: the pin moves, and the card and its tail go with it.
+    const beforeDrag = (await card.boundingBox())!;
+    await page.mouse.move(map.x + map.width / 2, map.y + map.height * 0.8);
+    await page.mouse.down();
+    await page.mouse.move(map.x + map.width / 2 - 70, map.y + map.height * 0.8, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    expect(
+      Math.abs((await card.boundingBox())!.x - beforeDrag.x),
+      "the card followed the pin",
+    ).toBeGreaterThan(10);
+    expect((await clearOfThePin()).clear, "and it is still off the pin").toBe(true);
+  });
+
   test("never scrolls sideways", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();

@@ -683,6 +683,28 @@ describe("PlaceFan's hero", () => {
     expect(container.querySelector("#place-detail")?.className ?? "").not.toContain("overscroll-contain");
   });
 
+  it("leaves a wheel over the open place's map to the map, which zooms with it", () => {
+    // The card's map zooms with the wheel, so a wheel over it is someone looking
+    // at the place — not someone asking to leave the hero.
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    expect(window.location.hash).toBe("#place-bagasbas-beach");
+
+    const map = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(map).toBeInTheDocument();
+
+    fireEvent.wheel(map, { deltaY: 240 });
+    expect(window.location.hash).toBe("#place-bagasbas-beach");
+
+    // A wheel anywhere else still takes the visitor out of the hero.
+    fireEvent.wheel(document.body, { deltaY: 240 });
+    expect(window.location.hash).toBe("");
+    expect(container.querySelector("[data-detail]")).toBeNull();
+  });
+
   it("sets the lead-in smaller than the line under it", () => {
     const { container } = renderFan();
     const lines = Array.from(container.querySelectorAll("#home-title > span"));

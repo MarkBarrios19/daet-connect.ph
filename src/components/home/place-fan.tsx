@@ -291,6 +291,9 @@ export function PlaceFan({
     if (openIndex < 0) return;
 
     const onWheel = (event: WheelEvent) => {
+      // The map over the open place zooms with the wheel, so a wheel over it is
+      // not someone leaving the hero — it is someone looking at the place.
+      if (event.target instanceof Element && event.target.closest("[data-place-map]")) return;
       if (event.deltaY > 0) close();
     };
 

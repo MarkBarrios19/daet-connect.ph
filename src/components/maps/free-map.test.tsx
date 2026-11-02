@@ -22,6 +22,7 @@ const mockState: {
   mapOptions: Record<string, unknown>;
   tileOptions: Record<string, unknown>;
   focusedAt: [number, number] | null;
+  wheel: boolean;
 } = {
   fail: false,
   tiles: [],
@@ -35,6 +36,7 @@ const mockState: {
   mapOptions: {},
   tileOptions: {},
   focusedAt: null,
+  wheel: false,
 };
 
 // Leaflet is a browser library; this stands in for the parts FreeMap uses and
@@ -90,6 +92,17 @@ jest.mock("leaflet", () => {
     getPane() {
       return mockState.pane;
     }
+    scrollWheelZoom = {
+      enabled: false,
+      enable() {
+        this.enabled = true;
+        mockState.wheel = true;
+      },
+      disable() {
+        this.enabled = false;
+        mockState.wheel = false;
+      },
+    };
     invalidateSize() {}
     getSize() {
       return { x: 384, y: 256 };
@@ -296,6 +309,39 @@ describe("FreeMap", () => {
     await waitFor(() => expect(mockState.markerEls.at(-1)?.getAttribute("aria-current")).toBe("true"));
     // A picked pin hangs from its tip: the shift is by the marker's own height.
     expect(mockState.markerEls.at(-1)?.parentElement?.className).toContain("-translate-y-full");
+  });
+
+  it("draws the focused place's pin as a blue-ringed circle, its tail one shape with it", async () => {
+    const photo = { src: "/photos/bagasbas.jpg" };
+    const shown = markers.map((m) => (m.id === "b" ? { ...m, kind: "place" as const, photo } : m));
+
+    render(<FreeMap markers={shown} title="Places map" focusId="b" onFocusPoint={() => {}} />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+
+    const pin = mockState.markerEls[1];
+    const frame = pin.querySelector("span") as HTMLElement;
+    // A circle with the site's blue drawn round it: the old white ring vanished
+    // against dark tiles, and the crop showed the photo reading as a dark blob.
+    expect(frame).toHaveClass("rounded-full", "border-blue-600");
+    // Its point is a triangle tucked under the circle, not a diamond floating
+    // below it — one pin, not two shapes with the map's labels between them.
+    const tail = pin.querySelectorAll("span")[1] as HTMLElement;
+    expect(tail).toHaveClass("border-t-blue-600", "top-[38px]");
+    expect(tail.parentElement).toBe(pin);
+  });
+
+  it("leaves the wheel to the page until a map asks for it", async () => {
+    const { rerender } = render(<FreeMap markers={markers} title="Places map" />);
+    await waitFor(() => expect(mockState.map).not.toBeNull());
+    // A map in a long page does not swallow the wheel.
+    expect(mockState.wheel).toBe(false);
+
+    rerender(<FreeMap markers={markers} title="Places map" wheelZoom />);
+    // The map the visitor is working in does.
+    await waitFor(() => expect(mockState.wheel).toBe(true));
+
+    rerender(<FreeMap markers={markers} title="Places map" />);
+    await waitFor(() => expect(mockState.wheel).toBe(false));
   });
 
   it("puts the focused place's photo in its pin, the point on the spot", async () => {

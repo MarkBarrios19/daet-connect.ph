@@ -29,6 +29,15 @@ export type FreeMapMarker = LatLng & {
 
 export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };
 
+/**
+ * How far a photo pin's body stands above the place it marks.
+ *
+ * Its point sits on the coordinates, so anything drawn over the map (the place's
+ * card, with its tail) has to clear this much before it can sit above the pin
+ * rather than on top of it.
+ */
+export const PHOTO_PIN_RISE = 48;
+
 /** The marker look on the tile map (HTML markers). The sketch draws the same shapes in SVG. */
 export const MARKER_CLASSES: Record<MapMarkerKind | "stopActive", string> = {
   stop: "grid h-8 w-8 place-items-center rounded-full border-[3px] border-white bg-blue-600 text-sm font-extrabold text-white",
