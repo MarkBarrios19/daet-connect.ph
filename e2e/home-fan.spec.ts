@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { checkA11y, signInAs, visit } from "./fixtures";
+import { checkA11y, visit } from "./fixtures";
 
 /**
  * The landing fan, at phone width and at desktop width.
@@ -330,14 +330,36 @@ test.describe("home fan on a phone", () => {
  * Painting one pixel onto a canvas normalises all of them; the glass behind
  * the hero is a photo, so the check is against the page ground underneath.
  */
-async function srgb(locator: import("@playwright/test").Locator): Promise<[number, number, number]> {
-  return locator.evaluate((element) => {
-    const canvas = document.createElement("canvas").getContext("2d")!;
-    canvas.fillStyle = getComputedStyle(element).color;
-    canvas.fillRect(0, 0, 1, 1);
-    const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
-    return [r, g, b] as [number, number, number];
-  });
+type Rgba = [number, number, number, number];
+
+/**
+ * A computed colour as sRGB bytes, whatever shape the browser serialised it
+ * in: `rgb(…)`, `oklch(…)` or `color(srgb …)` all normalise to one pixel on a
+ * canvas, which also tells us the alpha.
+ */
+async function paint(locator: import("@playwright/test").Locator, property: "color" | "backgroundColor"): Promise<Rgba> {
+  return locator.evaluate(
+    (element, name) => {
+      const canvas = document.createElement("canvas").getContext("2d")!;
+      canvas.fillStyle = getComputedStyle(element)[name];
+      canvas.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = canvas.getImageData(0, 0, 1, 1).data;
+      return [r, g, b, a] as [number, number, number, number];
+    },
+    property,
+  );
+}
+
+/**
+ * The label's colour and the colour it sits on: the button's own fill when it
+ * has one, otherwise the page ground showing through it.
+ */
+async function labelAndGround(locator: import("@playwright/test").Locator, page: import("@playwright/test").Page) {
+  const [fg, bg] = await Promise.all([paint(locator, "color"), paint(locator, "backgroundColor")]);
+  return {
+    fg: fg.slice(0, 3) as [number, number, number],
+    bg: bg[3] === 0 ? await ground(page) : (bg.slice(0, 3) as [number, number, number]),
+  };
 }
 
 async function ground(page: import("@playwright/test").Page): Promise<[number, number, number]> {
@@ -377,21 +399,26 @@ test.describe("home fan on a desktop", () => {
     await expect(page.getByRole("button", { name: "Ask the travel guide" })).toBeVisible();
   });
 
-test("the second hero button reads on the pale ground, in both themes", async ({ browser }) => {
-    // It was `onBlue`: white label, white outline, on a near-white hero — so
-    // the signed-in visitor's "My dashboard" was invisible until hover.
+  test("the hero's buttons read on the pale ground, in both themes", async ({ browser }) => {
+    // The outline button was `onBlue`: white label, white ring, on a near-white
+    // hero — so the second button's label vanished in light mode until hover.
+    // It is `onHeader` now (ink in light, white in dark). The signed-in
+    // "My dashboard" is the same variant; place-fan.test.tsx pins that one.
     for (const colorScheme of ["light", "dark"] as const) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme });
-      await signInAs(context, "tourist");
       const page = await context.newPage();
       await page.goto("/", { waitUntil: "networkidle" });
 
-      const back = await ground(page);
-      for (const name of ["Find a tour", "My dashboard"]) {
-        const label = page.getByRole("link", { name, exact: true });
+      const labels = [
+        page.getByRole("link", { name: "Find a tour", exact: true }),
+        page.getByRole("button", { name: "Ask the travel guide", exact: true }),
+      ];
+      for (const label of labels) {
         await expect(label).toBeVisible();
-        const ratio = contrast(await srgb(label), back);
-        expect(ratio, `${name} on the ${colorScheme} hero`).toBeGreaterThanOrEqual(4.5);
+        // A filled button is judged against its own blue; an outline button
+        // against the hero's pale ground, which is what used to swallow it.
+        const { fg, bg } = await labelAndGround(label, page);
+        expect(contrast(fg, bg), `${await label.textContent()} on the ${colorScheme} hero`).toBeGreaterThanOrEqual(4.5);
       }
       await context.close();
     }
