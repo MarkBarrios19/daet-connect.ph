@@ -378,7 +378,13 @@ test.describe("home fan on a phone", () => {
         };
       });
     expect(frame.bites, "one bite per edge").toBe(4);
-    expect(frame.composite, "all four layers intersected").toBe("intersect");
+    // Computed per layer: every one of the four is intersected with the rest.
+    expect(frame.composite.split(",").map((value) => value.trim()), "all four layers intersected").toEqual([
+      "intersect",
+      "intersect",
+      "intersect",
+      "intersect",
+    ]);
     expect(frame.paint, "the owner's navy frame").toBe("rgb(16, 0, 86)");
 
     // The white half and the blue one. The blue is the house blue-600 rather
