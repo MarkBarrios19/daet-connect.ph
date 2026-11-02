@@ -29,14 +29,27 @@ test.describe("dark mode", () => {
     const frame = await page
       .locator("[data-ticket-frame]")
       .evaluate((element) => getComputedStyle(element).backgroundColor);
-    expect(frame, "off-white, the heading's colour in dark mode").toBe("rgb(226, 232, 240)");
+    // Off-white, a step under the heading's #e2e8f0 so the card sits in the
+    // theme instead of glowing out of it (the owner's note on image-56).
+    expect(frame, "off-white, dimmed for the dark ground").toBe("rgb(205, 214, 227)");
 
     const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [
       getComputedStyle(element).backgroundColor,
       getComputedStyle(element).color,
     ]);
-    expect(field, "the reference's cyan").toBe("rgb(29, 180, 247)");
-    expect(ink, "its dark copy").toBe("rgb(15, 23, 42)");
+    // The reference's cyan, a step deeper: it was the largest light area on the
+    // page, and white on it would be 2.3:1.
+    expect(field, "a deeper cyan").toBe("rgb(16, 162, 220)");
+    expect(ink, "its dark copy, unchanged").toBe("rgb(15, 23, 42)");
+
+    // And the photograph is set into the theme with a fifth of the page's ground
+    // (the layer is display:none in light mode).
+    const scrim = await page.locator("[data-ticket-photo] > div").first().evaluate((element) => ({
+      display: getComputedStyle(element).display,
+      paint: getComputedStyle(element).backgroundColor,
+    }));
+    expect(scrim.display, "over the picture in dark mode").toBe("block");
+    expect(scrim.paint, "a dark wash, not a clear one").not.toBe("rgba(0, 0, 0, 0)");
 
     await context.close();
   });

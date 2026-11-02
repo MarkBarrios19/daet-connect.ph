@@ -49,7 +49,11 @@
      owner's reference (image-52: cream rgb(232 215 185), cyan rgb(29 180 247)).
      In dark mode the frame turns to the page's own off-white — the owner's note
      after seeing it (image-50): the dark ridge disappeared into the dark
-     ground, so the frame takes the heading's colour there instead.
+     ground, so the frame takes the heading's colour there instead. The values
+     there are then pulled back a step (image-56, "optimize colors for dark
+     mode"): the panel was 375k pixels of neon on a near-black page, so it and
+     the frame are dimmed until the card sits in the theme instead of glaring
+     out of it — see the dark block below for the numbers and the contrast.
      The cyan panel is *printed*: its copy stays dark in both themes (an ink
      that does not switch), because white on that cyan is 2.3:1 — well under
      AA — while this ink is 7.5:1. */
@@ -264,9 +268,13 @@
     --color-muted-strong: #26324d;
     --color-line: #334160;
     --color-hairline: #2b3a57;
-    /* The postcard's frame is the heading's off-white here; the cyan panel and
-       its dark ink are unchanged, so the card reads the same in both themes. */
-    --color-ticket-frame: #e2e8f0;
+    /* The postcard, dimmed for the dark ground: the frame is an off-white a
+       step under the heading's, and the field a step deeper than the
+       reference's cyan, which was the largest light area on the page. Both
+       keep the card's own ink readable — 6.1:1 for the titles, 4.9:1 for the
+       body copy at 85%. */
+    --color-ticket-frame: #cdd6e3;
+    --color-ticket-field: #10a2dc;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -282,7 +290,8 @@
       --color-muted-strong: #26324d;
       --color-line: #334160;
       --color-hairline: #2b3a57;
-      --color-ticket-frame: #e2e8f0;
+      --color-ticket-frame: #cdd6e3;
+      --color-ticket-field: #10a2dc;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -301,6 +310,8 @@
     --color-line: #cbd5e1;
     --color-hairline: #d3dae5;
     --color-ticket-frame: #e8d7b9;
+    --color-ticket-field: #1db4f7;
+    --color-ticket-ink: #0f172a;
   }
 }
 

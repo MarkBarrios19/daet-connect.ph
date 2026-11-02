@@ -65,6 +65,9 @@ export function BookingSteps() {
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover"
           />
+          {/* In dark mode the picture is seated in the theme rather than blazing
+              out of it: the page's own ground, at a fifth, over it. */}
+          <div aria-hidden="true" className="absolute inset-0 hidden bg-canvas/20 dark:block" />
           <div aria-hidden="true" className="ticket-noise pointer-events-none absolute inset-0 opacity-25" />
           {/* The scrim follows the words: up from the bottom while the heading is
               centred at the foot of the picture, and from the top right once the
