@@ -613,7 +613,7 @@ describe("PlaceFan on a phone", () => {
     expect(container.querySelector("[data-place-map]")).toBeNull();
   });
 
-  it("puts the map at the bottom of a phone when it has somewhere to point", () => {
+  it("keeps the photo to itself on a phone: no map, and the card centred", () => {
     setHeroSize(390, 844);
     const { container } = renderFan({
       mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
@@ -621,9 +621,11 @@ describe("PlaceFan on a phone", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    const panel = container.querySelector("[data-place-map]")?.parentElement?.parentElement as HTMLElement;
-    expect(panel.className).toContain("bottom-0");
-    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    // The owner asked for the map at the phone's foot to go, so the photo can be
+    // dragged instead; the card sits centred at the top.
+    expect(container.querySelector("[data-place-map]")).toBeNull();
+    const card = container.querySelector("[data-detail]") as HTMLElement;
+    expect(card.className).toContain("mx-auto");
   });
 
   it("folds a landscape phone's card too", () => {
@@ -636,29 +638,86 @@ describe("PlaceFan on a phone", () => {
     expect(container.querySelector("[data-detail]")).toBeInTheDocument();
   });
 
-  it("moves to the next place on a sideways flick", () => {
+  /**
+   * jsdom lays nothing out and decodes nothing, so the photo is given the size
+   * and the shape it would have: a landscape photo behind a portrait phone,
+   * which leaves room to pan sideways and none up and down.
+   */
+  const giveThePhotoAShape = (image: HTMLImageElement) => {
+    Object.defineProperty(image, "clientWidth", { configurable: true, value: 375 });
+    Object.defineProperty(image, "clientHeight", { configurable: true, value: 812 });
+    Object.defineProperty(image, "naturalWidth", { configurable: true, value: 1920 });
+    Object.defineProperty(image, "naturalHeight", { configurable: true, value: 1280 });
+  };
+
+  it("drags the open photo to look along it, and steps nothing", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    const section = container.querySelector("section") as HTMLElement;
-    fireEvent.pointerDown(section, { clientX: 300, clientY: 400 });
-    fireEvent.pointerUp(section, { clientX: 120, clientY: 410 });
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+    expect(image.style.objectPosition).toBe("50.00% 50.00%");
 
-    expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument();
-    expect(window.location.hash).toBe("#place-first-rizal-monument");
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 200, clientY: 400, pointerId: 1 });
+
+    // 100px leftwards over 843px of hidden photo: 11.86% further along it.
+    expect(image.style.objectPosition).toBe("61.86% 50.00%");
+    // The photo is the gesture now, not the next place.
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#place-bagasbas-beach");
   });
 
-  it("ignores a mostly-vertical drag, which belongs to the sheet", () => {
+  it("does not close the place when a drag lets go", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    const section = container.querySelector("section") as HTMLElement;
-    fireEvent.pointerDown(section, { clientX: 200, clientY: 500 });
-    fireEvent.pointerUp(section, { clientX: 220, clientY: 200 });
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+    const wedge = screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" });
+
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 220, clientY: 400, pointerId: 1 });
+    fireEvent.pointerUp(image, { clientX: 220, clientY: 400, pointerId: 1 });
+    // A browser still sends the click after a drag that ends where it began.
+    fireEvent.click(wedge);
 
     expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
+  });
+
+  it("still closes on a tap: a few pixels of drift is not a drag", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+
+    fireEvent.pointerDown(image, { clientX: 200, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(image, { clientX: 202, clientY: 401, pointerId: 1 });
+    fireEvent.pointerUp(image, { clientX: 202, clientY: 401, pointerId: 1 });
+
+    expect(image.style.objectPosition).toBe("50.00% 50.00%");
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: close photo and details" }));
+
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+  });
+
+  it("leaves a press on the card alone", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+    const card = container.querySelector("[data-detail]") as HTMLElement;
+
+    fireEvent.pointerDown(card, { clientX: 300, clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(card, { clientX: 200, clientY: 400, pointerId: 1 });
+
+    expect(image.style.objectPosition).toBe("50.00% 50.00%");
   });
 
   it("ignores a flick while nothing is open", () => {

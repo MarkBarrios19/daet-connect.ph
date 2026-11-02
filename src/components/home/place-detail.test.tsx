@@ -140,6 +140,23 @@ describe("PlaceDetail", () => {
     expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
   });
 
+  it("centres its card on a phone and leaves the photo the whole screen", () => {
+    renderDetail({ phone: true, places: MAP_PLACES });
+
+    // The owner asked for the map at the phone's foot to go, and for the card to
+    // move from the left edge to the middle.
+    expect(screen.queryByRole("region", { name: /Map showing/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
+    expect(document.querySelector("[data-detail]")!.className).toContain("mx-auto");
+  });
+
+  it("keeps the map on a desktop, in the page's column", () => {
+    renderDetail({ places: MAP_PLACES });
+
+    expect(screen.getByRole("region", { name: /Map showing Bagasbas Beach/ })).toBeInTheDocument();
+    expect(document.querySelector("[data-detail]")!.className).not.toContain("mx-auto");
+  });
+
   it("opens folded on a phone, where the photo is the point", () => {
     renderDetail({ phone: true });
 

@@ -14,13 +14,11 @@ import {
 } from "./fan-geometry";
 import type { FanPlace } from "./fan-places";
 import { PlaceDetail } from "./place-detail";
+import { DRAG_AFTER, PAN_CENTRE, coverRoom, panBy, panStyle, type PanPosition } from "./photo-pan";
 import type { MapPoint } from "./place-map-panel";
 import { useFanAnimation } from "./use-fan-animation";
 import { useHeroFold } from "./use-hero-fold";
 import { usePlaceHash } from "./use-place-hash";
-
-/** A horizontal drag longer than this, on a phone, moves to the next place. */
-const SWIPE_AFTER = 40;
 
 /**
  * The place fan: six photos of Daet cut into wedges that radiate from a point
@@ -51,7 +49,19 @@ export function PlaceFan({
   // itself is not opened a second time by the effect below.
   const driven = useRef<number | null>(null);
   const firstPaint = useRef(true);
-  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
+  /** Where the open photo is looking: object-position, as percentages. */
+  const [pan, setPan] = useState<PanPosition>(PAN_CENTRE);
+  const panRef = useRef<PanPosition>(PAN_CENTRE);
+  const press = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    start: PanPosition;
+    room: { x: number; y: number };
+  } | null>(null);
+  /** Set by a drag, so the release does not also count as a tap on the photo. */
+  const dragged = useRef(false);
+  const swallowClick = useRef(false);
 
   const [size, setSize] = useState<{ width: number; height: number }>({
     width: DEFAULT_HERO_SIZE.width,
@@ -143,6 +153,16 @@ export function PlaceFan({
   const shortHero = size.height < 500;
   const sheet = onPhone || shortHero;
   const isOpen = openIndex >= 0;
+
+  // Another place, or none at all: the photo starts looking at its middle again,
+  // and no leftover press keeps it from being tapped.
+  useEffect(() => {
+    panRef.current = PAN_CENTRE;
+    setPan(PAN_CENTRE);
+    press.current = null;
+    dragged.current = false;
+    swallowClick.current = false;
+  }, [openIndex]);
 
   // An open place is the hero's whole screen filled by one photo, so the scroll
   // fold steps out of the way: lifting the fan would uncover a band of the
@@ -267,23 +287,71 @@ export function PlaceFan({
   };
 
   /**
-   * On a phone the open view covers the screen, so a sideways flick moves to
-   * the next place. Mostly-vertical drags belong to the sheet, not to this.
+   * Dragging the open photo looks along it.
+   *
+   * The open place covers the screen with `object-fit: cover`, so the photo is
+   * already cropped: dragging moves which part of it shows through, and the
+   * frame can never come up short (photo-pan.ts holds the arithmetic). Only the
+   * photo pans — pressing the card, the map or the header leaves them alone —
+   * and a drag is not a tap, so letting go does not close the place.
+   *
+   * This replaces the sideways flick that used to step to the next place while
+   * one was open: a horizontal drag now belongs to the photo. The ‹ › pair, and
+   * the arrow keys, still step.
    */
+  const movePan = (next: PanPosition) => {
+    panRef.current = next;
+    setPan(next);
+  };
+
   const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    swipeFrom.current = onPhone && openIndex >= 0 ? { x: event.clientX, y: event.clientY } : null;
+    press.current = null;
+    dragged.current = false;
+    swallowClick.current = false;
+    if (openIndex < 0) return;
+
+    const target = event.target as Element | null;
+    const wedge = target?.closest("[data-wedge]") ?? null;
+    if (!wedge || Number(wedge.getAttribute("data-wedge")) !== openIndex) return;
+
+    const img = wedge.querySelector("img");
+    if (!img) return;
+
+    press.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      start: panRef.current,
+      room: coverRoom(
+        { width: img.clientWidth, height: img.clientHeight },
+        { width: img.naturalWidth, height: img.naturalHeight },
+      ),
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLElement>) => {
+    const press_ = press.current;
+    if (!press_ || press_.id !== event.pointerId) return;
+
+    const dx = event.clientX - press_.x;
+    const dy = event.clientY - press_.y;
+    if (!dragged.current && Math.hypot(dx, dy) > DRAG_AFTER) dragged.current = true;
+    if (dragged.current) movePan(panBy(press_.start, { dx, dy }, press_.room));
   };
 
   const onPointerUp = (event: React.PointerEvent<HTMLElement>) => {
-    const from = swipeFrom.current;
-    swipeFrom.current = null;
-    if (!from) return;
+    const press_ = press.current;
+    press.current = null;
+    if (!press_) return;
 
-    const dx = event.clientX - from.x;
-    const dy = event.clientY - from.y;
-    if (Math.abs(dx) < SWIPE_AFTER || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    event.currentTarget.releasePointerCapture?.(press_.id);
+    // A drag that ends over the photo is not a tap: it must not close the place.
+    if (dragged.current) swallowClick.current = true;
+  };
 
-    step(dx < 0 ? 1 : -1);
+  const onPointerCancel = () => {
+    press.current = null;
   };
 
   /**
@@ -324,7 +392,9 @@ export function PlaceFan({
       aria-labelledby="home-title"
       onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       style={sheet && isOpen ? { touchAction: "none" } : undefined}
       className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas dark:bg-slate-900"
     >
@@ -343,7 +413,14 @@ export function PlaceFan({
             aria-expanded={openIndex === index}
             aria-controls="place-detail"
             style={{ clipPath: geometry.wedges[index].rest }}
-            onClick={() => (openIndex === index ? close() : open(index))}
+            onClick={() => {
+              if (swallowClick.current) {
+                swallowClick.current = false;
+                return;
+              }
+              if (openIndex === index) close();
+              else open(index);
+            }}
             onPointerEnter={(event) => {
               if (event.pointerType === "mouse" && !onPhone && openIndex < 0) hover(index);
             }}
@@ -369,7 +446,9 @@ export function PlaceFan({
               if (!box) return;
               parallax(index, ((event.clientX - box.left) / box.width - 0.5) * 0.02 * box.width);
             }}
-            className="group absolute inset-0 m-0 block cursor-pointer border-0 bg-canvas p-0 text-left dark:bg-slate-900"
+            className={`group absolute inset-0 m-0 block border-0 bg-canvas p-0 text-left dark:bg-slate-900 ${
+              openIndex >= 0 ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+            }`}
           >
             {/* Two layers: the outer one is GSAP's (scale, and the parallax
                 nudge), the inner one holds the still radial offset that keeps
@@ -397,6 +476,10 @@ export function PlaceFan({
                   fill
                   priority={index < 2}
                   sizes="100vw"
+                  // A finger on the photo pans it; the browser's own image drag
+                  // would take the gesture instead.
+                  draggable={false}
+                  style={openIndex === index ? { objectPosition: panStyle(pan) } : undefined}
                   className="object-cover"
                 />
               </span>

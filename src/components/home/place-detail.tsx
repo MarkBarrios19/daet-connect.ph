@@ -15,6 +15,9 @@ import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
  * photo is nearly clear. The ‹ › pair lives in the card's own header, and under
  * the card is the map, which follows them.
  *
+ * On a phone the card is centred at the top and nothing else is on the screen:
+ * the photo can be dragged to look along it, and the map is desktop only.
+ *
  * There is no ✕: Escape closes the place, and so does tapping the photo again.
  * The card follows the page's theme — a white glass card in light mode, the
  * dark one in dark mode — and its edges ring, rather than a shadow, keep it
@@ -77,7 +80,9 @@ export function PlaceDetail({
           <section
             data-detail
             aria-labelledby="place-detail-title"
-            className="pointer-events-auto w-full max-w-[18rem] rounded-2xl bg-surface/92 p-4 text-daet-ink shadow-[var(--shadow-float)] ring-1 ring-daet-ink/10 backdrop-blur-md dark:bg-slate-950/82 dark:text-white dark:ring-white/15"
+            className={`pointer-events-auto w-full max-w-[18rem] rounded-2xl bg-surface/92 p-4 text-daet-ink shadow-[var(--shadow-float)] ring-1 ring-daet-ink/10 backdrop-blur-md dark:bg-slate-950/82 dark:text-white dark:ring-white/15 ${
+              phone ? "mx-auto" : ""
+            }`}
           >
             <div className="flex items-center gap-2">
               <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-daet-ink/70 dark:text-white/75">
@@ -159,7 +164,8 @@ export function PlaceDetail({
         </div>
       </div>
 
-      <PlaceMapPanel place={place} places={places} phone={phone} onPick={onPick} />
+      {/* A phone keeps the photo to itself; the map is a desktop thing now. */}
+      {!phone && <PlaceMapPanel place={place} places={places} onPick={onPick} />}
     </>
   );
 }

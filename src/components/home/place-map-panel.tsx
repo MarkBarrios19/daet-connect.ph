@@ -14,19 +14,17 @@ export type MapPoint = { slug: string; name: string; lat: number; lng: number };
  * flies to whichever place is showing, and "Show all" pulls back to all six.
  * Clicking a pin opens that place too.
  *
- * Desktop puts it in the page's column at the bottom left, as in the mock; a
- * phone has no room beside the photo, so it takes the bottom of the screen
- * under the collapsed bar.
+ * It sits at the bottom left, in the page's column, as in the owner's markup.
+ * A phone does not get one: the photo is the whole screen there, and the owner
+ * asked for the map at its foot to go, so the photo could be dragged instead.
  */
 export function PlaceMapPanel({
   place,
   places,
-  phone,
   onPick,
 }: {
   place: { slug: string; name: string };
   places: MapPoint[];
-  phone: boolean;
   onPick: (slug: string) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
@@ -47,8 +45,8 @@ export function PlaceMapPanel({
   const pinned = places.some((point) => point.slug === place.slug);
 
   return (
-    <div className={phone ? "pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-3" : "pointer-events-none absolute inset-x-0 bottom-0 z-20"}>
-      <div className={phone ? "" : "mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 sm:pb-12 lg:px-8"}>
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 sm:pb-12 lg:px-8">
         <div
           data-place-map
           className="pointer-events-auto overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15"
@@ -78,7 +76,7 @@ export function PlaceMapPanel({
             fitKey={showAll ? "all" : place.slug}
             animateFit
             onMarkerClick={onPick}
-            className={phone ? "h-52" : "h-72"}
+            className="h-72"
           />
         </div>
       </div>
