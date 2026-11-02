@@ -22,8 +22,9 @@ test.use({ reducedMotion: "reduce" });
  * name the same places (and quote the same lines about them) in their closed,
  * inert regions, so an unscoped role or text lookup matches two elements.
  */
+// `exact`: the map under the card is a region whose name starts with the place's.
 const panel = (page: import("@playwright/test").Page, name: string) =>
-  page.locator("#place-detail").getByRole("region", { name });
+  page.locator("#place-detail").getByRole("region", { name, exact: true });
 
 const inPanel = (page: import("@playwright/test").Page) => page.locator("#place-detail");
 
@@ -269,11 +270,11 @@ test.describe("home fan on a desktop", () => {
     expect(Math.abs(map.x - column), "in the same column as the card").toBeLessThanOrEqual(1);
     expect(map.y, "below the card").toBeGreaterThan(card.y + card.height);
     expect(hero.y + hero.height - (map.y + map.height), "its foot near the photo's").toBeLessThanOrEqual(80);
-    await expect(page.locator("[data-place-map]").getByText("Bagasbas Beach")).toBeVisible();
+    await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
 
     // The map follows the ‹ › pair: the next place is what it is showing now.
     await page.getByRole("button", { name: "Next place" }).click();
-    await expect(page.locator("[data-place-map]").getByText("First Rizal Monument")).toBeVisible();
+    await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+First Rizal Monument/);
     await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
 
     // Folding keeps the name and the map, and gives the photo back its corner.
