@@ -162,6 +162,10 @@ test.describe("home fan on a phone", () => {
     await expect(inPanel(page).getByText(/ten minutes from the plaza/)).toBeHidden();
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
 
+    // The way out at the photo's top right is a desktop's: a phone has its folded
+    // bar at the top and a tap on the photo itself.
+    await expect(page.getByRole("button", { name: "Back to the fan" })).toHaveCount(0);
+
     // The map that used to sit at the foot of the screen is gone, and the card
     // has moved from the left edge to the middle.
     await expect(page.locator("[data-place-map]")).toHaveCount(0);
@@ -375,7 +379,10 @@ test.describe("home fan on a desktop", () => {
     const fun = (await page.locator("[data-fun-fact]").boundingBox())!;
     const column = (await page.locator("#home-places").boundingBox())!.x;
 
-    expect(Math.abs(map.x - column), "the map card leads, on the page's column").toBeLessThanOrEqual(1);
+    // The owner asked for the cards flush to the left of the photo, off the page's
+    // centred column (image-31), so the map card hugs the viewport's left edge.
+    expect(map.x, "flush to the left edge").toBeLessThanOrEqual(24);
+    expect(map.x, "nearer the edge than the page's column").toBeLessThan(column);
     expect(map.y - hero.y, "at the top of the photo, under the bar").toBeGreaterThanOrEqual(0);
     expect(map.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
     expect(map.width, "a card, not a column").toBeLessThanOrEqual(420);
@@ -388,6 +395,13 @@ test.describe("home fan on a desktop", () => {
     // The map card shows the place's own photo and name over the pins.
     await expect(page.locator("[data-map-place]")).toContainText("Bagasbas Beach");
     await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
+
+    // The way out sits at the photo's top right, on the image itself.
+    const back = page.getByRole("button", { name: "Back to the fan" });
+    await expect(back).toBeVisible();
+    const backBox = (await back.boundingBox())!;
+    expect(hero.x + hero.width - (backBox.x + backBox.width), "at the photo's right edge").toBeLessThanOrEqual(32);
+    expect(backBox.y - hero.y, "under the header").toBeLessThanOrEqual(110);
 
     // The ✕ and the floating arrows are gone: the ‹ › pair lives in the card's
     // own header, so the photo has nothing over it but these cards.
@@ -417,6 +431,55 @@ test.describe("home fan on a desktop", () => {
     await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toHaveCount(0);
     await expect(wedge).toHaveAttribute("aria-expanded", "false");
     await expect(page.locator("[data-place-map]")).toHaveCount(0);
+  });
+
+  test("goes back to the fan from the button at the photo's top right", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Back to the fan" }).click();
+
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
+    await expect(page).not.toHaveURL(/#place-/);
+    await expect(page.locator("[data-wedge][aria-expanded='true']")).toHaveCount(0);
+    await expect(page.locator("[data-detail]")).toHaveCount(0);
+  });
+
+  test("swaps to the next place with a photo over the hero the whole way", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    // Watch the hero through the cross-fade: how much of it the visible wedges
+    // cover between them. Two photos both at half opacity do not cover it — they
+    // let a quarter of the page's own ground through, which is the flash of white
+    // the owner saw on Next, in either theme.
+    const watching = page.evaluate(async () => {
+      const wedges = Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]"));
+      const coverage = () => {
+        const alphas = wedges.map((wedge) => {
+          const css = getComputedStyle(wedge);
+          return css.visibility === "hidden" ? 0 : Number(css.opacity);
+        });
+        return 1 - alphas.reduce((rest, alpha) => rest * (1 - alpha), 1);
+      };
+
+      let worst = 1;
+      const start = performance.now();
+      while (performance.now() - start < 500) {
+        worst = Math.min(worst, coverage());
+        await new Promise((done) => requestAnimationFrame(() => done(null)));
+      }
+      return worst;
+    });
+
+    await page.getByRole("button", { name: "Next place" }).click();
+
+    expect(await watching, "a photo over the hero throughout the swap").toBeGreaterThanOrEqual(0.98);
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
   });
 
   test("is a slim white scrim in light mode, and the dark one in dark mode", async ({ page }) => {

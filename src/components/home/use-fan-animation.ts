@@ -64,6 +64,8 @@ export function useFanAnimation({
   onClosed?: () => void;
 }) {
   const timeline = useRef<Timeline | null>(null);
+  /** Which swap is the latest one, so a finished fade cannot tidy up a newer one. */
+  const swapToken = useRef(0);
   const reduced = useRef(false);
   const parallaxTweens = useRef(new Map<number, (value: number) => void>());
 
@@ -171,6 +173,11 @@ export function useFanAnimation({
     const { wedges, photos, nudges, chips } = parts();
     const geo = current.current;
     const state = live.current;
+
+    // A swap may still be fading when the visitor closes: retire it first, so it
+    // cannot put a photo back on screen after the fan has been put away.
+    swapToken.current += 1;
+    gsap.killTweensOf(parts().wedges);
 
     gsap.killTweensOf(state.widths);
     gsap.killTweensOf(state.open);
@@ -404,23 +411,40 @@ export function useFanAnimation({
     state.open = state.open.map((_, i) => (i === index ? 1 : 0));
     render();
 
-    wedges.forEach((element, i) => {
-      if (i === index) return;
-      gsap.to(element, { autoAlpha: 0, duration: SWAP, ease: "power2.inOut", overwrite: "auto" });
-    });
-
     // Square on the hero first. While this place was one of the others it was
     // slid out along its own angle, and opening it where it stood left the
     // photo up to 60px off the hero — a strip of the page down one side (and
     // one behind the header), which is exactly the gap the owner photographed.
-    gsap.set(wedges[index], { zIndex: 5, filter: "brightness(1)", x: 0, y: 0 });
+    //
+    // Set here rather than tweened: a photo sliding into place while its wedge
+    // fades up shows the wedge's own light ground all along the edge it has not
+    // covered yet.
+    gsap.set(wedges[index], { zIndex: 6, filter: "brightness(1)", x: 0, y: 0, autoAlpha: 0 });
+    gsap.set(photos[index], { x: 0, y: 0, scale: 1 });
     nudges.forEach((element, i) => {
       takeOver(element);
       const rest = restNudge(element);
       setNudge(element, i === index ? 0 : rest.x, i === index ? 0 : rest.y);
     });
-    gsap.to(wedges[index], { autoAlpha: 1, duration: SWAP, ease: "power2.inOut", overwrite: "auto" });
-    gsap.to(photos[index], { x: 0, y: 0, scale: 1, duration: SWAP, ease: "power2.inOut" });
+
+    // The incoming photo fades in *over* the one it replaces, and that one stays
+    // fully opaque underneath until the fade is over. Fading the two at once let
+    // the hero's own ground through the middle of the swap — the flash of white
+    // the owner saw on Next and Previous, in either theme, whatever the photo.
+    const token = (swapToken.current += 1);
+    gsap.to(wedges[index], {
+      autoAlpha: 1,
+      duration: SWAP,
+      ease: "power2.inOut",
+      overwrite: "auto",
+      onComplete: () => {
+        if (swapToken.current !== token) return;
+        wedges.forEach((element, i) => {
+          if (i !== index) gsap.set(element, { autoAlpha: 0 });
+        });
+        gsap.set(wedges[index], { zIndex: 5 });
+      },
+    });
   });
 
   /** A small nudge of the photo toward the pointer, ±1% of the hero width. */

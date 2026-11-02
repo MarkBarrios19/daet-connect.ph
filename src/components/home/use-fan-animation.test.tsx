@@ -141,7 +141,15 @@ const OPEN = toClipPath(rectPolygon(WIDTH, HEIGHT), WIDTH, HEIGHT);
 
 type Api = ReturnType<typeof useFanAnimation>;
 
-function Harness({ onOpened, onClosed, api }: { onOpened?: () => void; onClosed?: () => void; api: { current: Api | null } }) {
+function Harness({
+  onOpened,
+  onClosed,
+  api,
+}: {
+  onOpened?: () => void;
+  onClosed?: () => void;
+  api: { current: Api | null };
+}) {
   const root = useRef<HTMLDivElement>(null);
   const fan = useFanAnimation({ root, geometry, onOpened, onClosed });
   api.current = fan;
@@ -259,9 +267,7 @@ describe("useFanAnimation", () => {
     act(() => api.current?.hover(1));
     act(() => api.current?.hover(null));
 
-    const tagTweens = records.to.filter((call) =>
-      Boolean((call.targets as HTMLElement).hasAttribute?.("data-chip")),
-    );
+    const tagTweens = records.to.filter((call) => Boolean((call.targets as HTMLElement).hasAttribute?.("data-chip")));
     expect(tagTweens.length).toBeGreaterThan(0);
 
     tagTweens.forEach((call) => {
@@ -340,17 +346,28 @@ describe("useFanAnimation", () => {
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
 
-  it("cross-fades to a neighbouring place when stepping", () => {
+  it("cross-fades to a neighbouring place over the photo it replaces", () => {
     const { api, wedges } = mount();
 
     act(() => api.current?.openAt(0));
     records.to.length = 0;
+    records.set.length = 0;
     act(() => api.current?.swapTo(3));
 
     expect(wedges[3].style.clipPath).toBe(OPEN);
     expect(wedges[0].style.clipPath).toBe(geometry.wedges[0].rest);
+
+    // The incoming photo starts hidden, with its photo already square on the hero:
+    // a photo sliding into place while its wedge fades up shows the wedge's own
+    // light ground along the edge it has not covered yet.
+    const before = tweensOn(records.set, wedges[3]).map((call) => call.vars);
+    expect(before).toContainEqual(expect.objectContaining({ autoAlpha: 0 }));
+
+    // Then it fades in over the outgoing photo, which is left alone and stays
+    // fully opaque underneath until the fade is done. Fading both at once let the
+    // hero's own ground through the middle of the swap — the flash the owner saw.
     expect(tweensOn(records.to, wedges[3])[0].vars.autoAlpha).toBe(1);
-    expect(tweensOn(records.to, wedges[0])[0].vars.autoAlpha).toBe(0);
+    expect(tweensOn(records.to, wedges[0])).toHaveLength(0);
     records.to.forEach((call) => expect(call.vars.duration).toBe(0.3));
   });
 

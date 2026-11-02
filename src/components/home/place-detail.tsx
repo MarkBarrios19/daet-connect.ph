@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import type { FanPlace } from "./fan-places";
 import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
@@ -52,6 +52,13 @@ export function PlaceDetail({
   // A phone opens the bar, not the whole card: the photo is the point, and the
   // words are one tap away. A desktop has room for both.
   const [collapsed, setCollapsed] = useState(phone);
+
+  // A window dragged from a phone's width to a desktop's keeps its React state, so
+  // the card has to follow the layout: folded on a phone, open on a desktop. It
+  // still folds and unfolds by hand in between.
+  useEffect(() => {
+    setCollapsed(phone);
+  }, [phone]);
   const position = index + 1;
 
   /**
@@ -171,7 +178,17 @@ export function PlaceDetail({
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--header-h)+0.5rem)] z-30 sm:top-[calc(var(--header-h)+1rem)]">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        data-detail-frame
+        className={
+          phone
+            ? "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8"
+            : // Flush to the left of the photo, as the owner asked: the cards hug the
+              // page's edge instead of sitting on its centred column and leaving a
+              // field of empty photo between them and it.
+              "w-full pl-3 sm:pl-4"
+        }
+      >
         {phone ? (
           card
         ) : (

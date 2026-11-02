@@ -216,6 +216,37 @@ describe("PlaceDetail", () => {
     ).not.toBeNull();
   });
 
+  it("stands its cards at the photo's left edge on a desktop, not on the page's column", () => {
+    renderDetail({ places: MAP_PLACES });
+
+    // The owner asked for the cards flush to the left: they hug the page's edge
+    // rather than sitting on its centred 7xl column.
+    const frame = document.querySelector("[data-detail-frame]") as HTMLElement;
+    expect(frame.className).toContain("pl-3");
+    expect(frame.className).not.toContain("mx-auto");
+    expect(frame.className).not.toContain("max-w-7xl");
+  });
+
+  it("unfolds with the layout when a narrow window is widened", () => {
+    const { rerender } = renderDetail({ phone: true });
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+
+    // The window grew: the card would otherwise stay folded on a desktop.
+    rerender(
+      <PlaceDetail
+        place={FAN_PLACES[2]}
+        index={2}
+        total={FAN_PLACES.length}
+        phone={false}
+        headingRef={createRef<HTMLHeadingElement>()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onPick={jest.fn()}
+      />,
+    );
+    expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
+  });
+
   it("puts the place's own photo, name and line on the map card", () => {
     const { container } = renderDetail({ places: MAP_PLACES });
 

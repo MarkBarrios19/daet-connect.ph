@@ -670,6 +670,27 @@ export function PlaceFan({
         )}
       </div>
 
+      {/* The way out, where a desktop's eye looks for it: the photo's top right.
+          A phone keeps its folded bar and its tap, so nothing new crowds it there. */}
+      {isOpen && !sheet && (
+        <button
+          type="button"
+          onClick={close}
+          aria-label="Back to the fan"
+          className="group absolute right-3 top-[calc(var(--header-h)+0.5rem)] z-40 flex h-11 items-center gap-1.5 rounded-full bg-surface/92 px-3.5 text-sm font-bold text-daet-ink ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:right-4 sm:top-[calc(var(--header-h)+1rem)] dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" aria-hidden>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"
+            />
+          </svg>
+          Back to the fan
+        </button>
+      )}
+
       <p role="status" aria-live="polite" className="sr-only">
         {announcement}
       </p>

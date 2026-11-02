@@ -340,6 +340,63 @@ describe("PlaceFan opening a place", () => {
     await until(() => expect(wedgeOffsetOf(4)).toEqual({ x: 0, y: 0 }));
   });
 
+  it("keeps a photo over the hero all through a step, so no ground shows through the swap", async () => {
+    hurry();
+    const { container } = renderFan();
+
+    /**
+     * How much of the hero the visible wedges cover, composited: two photos both
+     * at half opacity do not cover it, they let a quarter of the ground through.
+     */
+    const coverage = () => {
+      const alphas = Array.from(container.querySelectorAll<HTMLElement>("[data-wedge]")).map((wedge) =>
+        wedge.style.visibility === "hidden" ? 0 : Number(wedge.style.opacity || 1),
+      );
+      return 1 - alphas.reduce((rest, alpha) => rest * (1 - alpha), 1);
+    };
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    await waitFor(() => expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(container.querySelector("[data-wedge='2']") as HTMLElement).toHaveStyle({ opacity: "1" }),
+    );
+
+    // The cross-fade itself, at the speed a visitor sees it: the owner's flash of
+    // white was this moment, when the outgoing photo and the incoming one were
+    // both half there and the hero's own light ground showed between them.
+    gsap.globalTimeline.timeScale(1);
+    fireEvent.click(screen.getByRole("button", { name: "Next place" }));
+
+    const samples: number[] = [];
+    for (let frame = 0; frame < 12; frame += 1) {
+      gsap.ticker.tick();
+      samples.push(coverage());
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(Math.min(...samples)).toBeGreaterThanOrEqual(0.98);
+  });
+
+  it("puts a way back to the fan at the photo's top right on a desktop", () => {
+    const { container } = renderFan();
+    expect(screen.queryByRole("button", { name: "Back to the fan" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+    const back = screen.getByRole("button", { name: "Back to the fan" });
+    expect(back).toBeInTheDocument();
+    // Over the photo, at its right edge — not inside the card.
+    const row = container.querySelector("[data-detail]")!.parentElement!;
+    expect(row.contains(back)).toBe(false);
+
+    fireEvent.click(back);
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+    expect(window.location.hash).toBe("");
+    expect(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
   it("opens the place a map pin names on top of an open one, photo and all", async () => {
     hurry();
     const { container } = renderFan();
@@ -922,11 +979,7 @@ describe("PlaceFan on a phone", () => {
     expect(screen.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeInTheDocument();
     expect(window.location.hash).toBe("#place-first-rizal-monument");
     // The flick that stepped must not also count as a click on the new place.
-    expect(
-      screen.getByRole("button", {
-        name: "First Rizal Monument: close photo and details",
-      }),
-    ).toBeInTheDocument();
+    expect(container.querySelector("[data-wedge='3']")).toHaveAttribute("aria-expanded", "true");
 
     const next = container.querySelector("[data-wedge='3'] img") as HTMLImageElement;
     giveThePhotoAShape(next);
