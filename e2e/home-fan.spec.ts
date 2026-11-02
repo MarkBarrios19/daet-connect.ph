@@ -445,7 +445,14 @@ test.describe("home fan on a desktop", () => {
     const boxes = await items.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
     expect(boxes[1].x, "the columns start where the last one ends").toBeCloseTo(boxes[0].x + boxes[0].width, 0);
     expect(boxes[1].width, "three equal columns").toBeCloseTo(boxes[0].width, 0);
-    expect(await items.nth(1).evaluate((element) => getComputedStyle(element).borderLeftWidth), "a rule between them").toBe("1px");
+    // Tailwind's divide-x rules the inline end of every column but the last, so
+    // the line between one route and the next is the first column's right edge.
+    const rule = await items.nth(0).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { width: style.borderRightWidth, colour: style.borderRightColor };
+    });
+    expect(rule.width, "a rule between them").toBe("1px");
+    expect(rule.colour, "in the card's hairline").not.toBe("rgba(0, 0, 0, 0)");
 
     await expect(items.nth(0).locator("span").first()).toHaveText("01");
     await expect(items.nth(2).locator("span").first()).toHaveText("03");
