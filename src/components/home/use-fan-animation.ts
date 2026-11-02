@@ -191,7 +191,7 @@ export function useFanAnimation({
     wedges.forEach((element) => {
       gsap.set(element, { autoAlpha: 1, x: 0, y: 0, zIndex: 0, filter: "brightness(1)" });
     });
-    photos.forEach((element) => gsap.set(element, { x: 0, y: 0, scale: 1.15 }));
+    photos.forEach((element) => gsap.set(element, { x: 0, y: 0, xPercent: 0, scale: 1.15 }));
     nudges.forEach((element) => {
       takeOver(element);
       const rest = restNudge(element);
@@ -309,7 +309,7 @@ export function useFanAnimation({
         zIndex: (i: number) => (i === index ? 5 : 0),
       });
       gsap.set(wedges[index], { filter: "brightness(1)" });
-      gsap.set(photos[index], { x: 0, y: 0, scale: 1 });
+      gsap.set(photos[index], { x: 0, y: 0, xPercent: 0, scale: 1 });
       // Dead centre and covering: the photo fills the hero, with no empty
       // corner where it was still pushed out along its wedge.
       nudges.forEach((element, i) => {
@@ -398,8 +398,18 @@ export function useFanAnimation({
     tl.reverse();
   });
 
-  /** Next or previous while open: cross-fade, no folding back first. */
-  const swapTo = contextSafe((index: number) => {
+  /**
+   * Next or previous while open: the two photos travel as one strip, no folding
+   * back first.
+   *
+   * The incoming photo swipes in from the left for the next place and from the
+   * right for the previous one, and the photo it replaces leaves the other way.
+   * Both are a hero wide and their edges meet exactly at every frame, so the hero
+   * is covered end to end the whole way — no fade, no flash, nothing of the page's
+   * own ground between them. Timing and easing are the same as the cross-fade they
+   * replace, so the card's swap still feels like one move.
+   */
+  const swapTo = contextSafe((index: number, { from, direction = 1 }: { from?: number; direction?: number } = {}) => {
     const { wedges, photos, nudges } = parts();
     if (wedges.length === 0) return;
 
@@ -411,39 +421,81 @@ export function useFanAnimation({
     state.open = state.open.map((_, i) => (i === index ? 1 : 0));
     render();
 
+    const leaving = from !== undefined && from !== index ? from : null;
+
+    // Every other photo goes now: an older one left mid-slide would otherwise
+    // show the wedge's own ground through the part of its clip its photo has
+    // already left.
+    wedges.forEach((element, i) => {
+      if (i === index || i === leaving) return;
+      gsap.set(element, { autoAlpha: 0 });
+      gsap.set(element, { clearProps: "backgroundColor" });
+    });
+
     // Square on the hero first. While this place was one of the others it was
-    // slid out along its own angle, and opening it where it stood left the
-    // photo up to 60px off the hero — a strip of the page down one side (and
-    // one behind the header), which is exactly the gap the owner photographed.
-    //
-    // Set here rather than tweened: a photo sliding into place while its wedge
-    // fades up shows the wedge's own light ground all along the edge it has not
-    // covered yet.
-    gsap.set(wedges[index], { zIndex: 6, filter: "brightness(1)", x: 0, y: 0, autoAlpha: 0 });
-    gsap.set(photos[index], { x: 0, y: 0, scale: 1 });
+    // slid out along its own angle, and opening it where it stood left the photo
+    // up to 60px off the hero — a strip of the page down one side (and one behind
+    // the header), which is exactly the gap the owner photographed.
+    gsap.set(wedges[index], { zIndex: 6, filter: "brightness(1)", x: 0, y: 0, autoAlpha: 1 });
     nudges.forEach((element, i) => {
       takeOver(element);
       const rest = restNudge(element);
       setNudge(element, i === index ? 0 : rest.x, i === index ? 0 : rest.y);
     });
 
-    // The incoming photo fades in *over* the one it replaces, and that one stays
-    // fully opaque underneath until the fade is over. Fading the two at once let
-    // the hero's own ground through the middle of the swap — the flash of white
-    // the owner saw on Next and Previous, in either theme, whatever the photo.
+    /** Next swipes in from the left; previous from the right. */
+    const enter = direction >= 0 ? -100 : 100;
+    const leave = -enter;
+
+    const settle = () => {
+      wedges.forEach((element, i) => {
+        if (i === index) return;
+        gsap.set(element, { autoAlpha: 0 });
+        gsap.set(element, { clearProps: "backgroundColor" });
+      });
+      // Every photo back in its own frame, ready to be slid again.
+      photos.forEach((element) => gsap.set(element, { xPercent: 0 }));
+      gsap.set(wedges[index], { zIndex: 5 });
+      gsap.set(wedges[index], { clearProps: "backgroundColor" });
+    };
+
+    // The server renders each photo with `transform: scale(1.15)` on it. GSAP
+    // cannot read a one-argument `scale()` back, and a percentage translate mixed
+    // into that cache comes out as NaN, so the inline transform goes first and the
+    // photo is placed from scratch.
+    gsap.set(photos[index], { clearProps: "transform" });
+    if (leaving !== null) gsap.set(photos[leaving], { clearProps: "transform" });
+    gsap.set(photos[index], { x: 0, y: 0, scale: 1, xPercent: enter });
+
+    // Nothing to slide against, or a visitor who asked for less motion: the new
+    // photo is simply there, whole, and the old one is gone.
+    if (leaving === null || reduced.current) {
+      gsap.set(photos[index], { xPercent: 0 });
+      settle();
+      return;
+    }
+
+    // The incoming wedge is the top layer, so its own ground has to get out of the
+    // way: it would paint over the photo underneath while its photo is still off
+    // to the side. The photo beneath keeps its ground, and covers the gap.
+    gsap.set(wedges[index], { backgroundColor: "transparent" });
+
     const token = (swapToken.current += 1);
-    gsap.to(wedges[index], {
-      autoAlpha: 1,
+    gsap.to(photos[index], {
+      xPercent: 0,
       duration: SWAP,
       ease: "power2.inOut",
       overwrite: "auto",
       onComplete: () => {
         if (swapToken.current !== token) return;
-        wedges.forEach((element, i) => {
-          if (i !== index) gsap.set(element, { autoAlpha: 0 });
-        });
-        gsap.set(wedges[index], { zIndex: 5 });
+        settle();
       },
+    });
+    gsap.to(photos[leaving], {
+      xPercent: leave,
+      duration: SWAP,
+      ease: "power2.inOut",
+      overwrite: "auto",
     });
   });
 

@@ -447,41 +447,6 @@ test.describe("home fan on a desktop", () => {
     await expect(page.locator("[data-detail]")).toHaveCount(0);
   });
 
-  test("swaps to the next place with a photo over the hero the whole way", async ({ page }) => {
-    await visit(page, "/");
-    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
-
-    // Watch the hero through the cross-fade: how much of it the visible wedges
-    // cover between them. Two photos both at half opacity do not cover it — they
-    // let a quarter of the page's own ground through, which is the flash of white
-    // the owner saw on Next, in either theme.
-    const watching = page.evaluate(async () => {
-      const wedges = Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]"));
-      const coverage = () => {
-        const alphas = wedges.map((wedge) => {
-          const css = getComputedStyle(wedge);
-          return css.visibility === "hidden" ? 0 : Number(css.opacity);
-        });
-        return 1 - alphas.reduce((rest, alpha) => rest * (1 - alpha), 1);
-      };
-
-      let worst = 1;
-      const start = performance.now();
-      while (performance.now() - start < 500) {
-        worst = Math.min(worst, coverage());
-        await new Promise((done) => requestAnimationFrame(() => done(null)));
-      }
-      return worst;
-    });
-
-    await page.getByRole("button", { name: "Next place" }).click();
-
-    expect(await watching, "a photo over the hero throughout the swap").toBeGreaterThanOrEqual(0.98);
-    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
-  });
-
   test("is a slim white scrim in light mode, and the dark one in dark mode", async ({ page }) => {
     await visit(page, "/");
 
@@ -812,6 +777,94 @@ test.describe("home fan, motion on", () => {
 
       expect(await clipPathOf(page, index), `wedge ${index} widened`).not.toBe(before);
     }
+  });
+
+  test("swipes the next photo in beside the last, with no gap in the hero at any frame", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+    // Let the fold-in finish, so the only motion left is the swipe.
+    await page.waitForTimeout(700);
+
+    // Watch the hero through the swap: the two photos are a hero wide each, and
+    // their edges have to meet at every frame. A cross-fade used to leave a
+    // quarter of the page's own ground showing between them — the flash of white
+    // the owner saw on Next, in either theme.
+    const watching = page.evaluate(async () => {
+      const hero = document.querySelector("section[aria-labelledby='home-title']")!.getBoundingClientRect();
+      const visible = () =>
+        Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]"))
+          .filter((wedge) => wedge.style.visibility !== "hidden")
+          .map((wedge) => wedge.querySelector<HTMLElement>("[data-photo]"))
+          .filter((photo): photo is HTMLElement => Boolean(photo))
+          .map((photo) => photo.getBoundingClientRect())
+          .sort((a, b) => a.left - b.left);
+
+      const frames: Array<{ gap: number; covers: boolean; fromTheLeft: boolean | null }> = [];
+      const start = performance.now();
+      while (performance.now() - start < 600) {
+        const boxes = visible();
+        let gap = 0;
+        for (let i = 1; i < boxes.length; i += 1) {
+          gap = Math.max(gap, Math.abs(boxes[i].left - boxes[i - 1].right));
+        }
+        const leftmost = boxes[0];
+        const rightmost = boxes[boxes.length - 1];
+        frames.push({
+          gap,
+          covers: Boolean(leftmost && rightmost) && leftmost.left <= hero.left + 1 && rightmost.right >= hero.right - 1,
+          // A photo coming in from the left starts outside the hero's left edge.
+          fromTheLeft: boxes.length === 2 ? leftmost.left < hero.left - 1 : null,
+        });
+        await new Promise((done) => requestAnimationFrame(() => done(null)));
+      }
+      return frames;
+    });
+
+    await page.getByRole("button", { name: "Next place" }).click();
+    const frames = await watching;
+
+    const sliding = frames.filter((frame) => frame.fromTheLeft !== null);
+    expect(sliding.length, "two photos on the move").toBeGreaterThan(2);
+    for (const frame of sliding) {
+      expect(frame.gap, "the two photos' edges meet").toBeLessThanOrEqual(2);
+      expect(frame.covers, "the pair covers the hero end to end").toBe(true);
+    }
+    // Next swipes in from the left, as the owner asked.
+    expect(sliding[0].fromTheLeft, "the next photo comes in from the left").toBe(true);
+
+    await expect(page.getByRole("heading", { level: 2, name: "First Rizal Monument" })).toBeVisible();
+  });
+
+  test("swipes the previous photo in from the right", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+    await page.waitForTimeout(700);
+
+    const firstFrame = page.evaluate(async () => {
+      const hero = document.querySelector("section[aria-labelledby='home-title']")!.getBoundingClientRect();
+      const start = performance.now();
+      while (performance.now() - start < 300) {
+        const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]"))
+          .filter((wedge) => wedge.style.visibility !== "hidden")
+          .map((wedge) => wedge.querySelector<HTMLElement>("[data-photo]"))
+          .filter((photo): photo is HTMLElement => Boolean(photo))
+          .map((photo) => photo.getBoundingClientRect())
+          .sort((a, b) => a.left - b.left);
+        if (boxes.length === 2) return { fromTheRight: boxes[1].right > hero.right + 1 };
+        await new Promise((done) => requestAnimationFrame(() => done(null)));
+      }
+      return null;
+    });
+
+    await page.getByRole("button", { name: "Previous place" }).click();
+    const seen = await firstFrame;
+
+    expect(seen, "two photos on the move").not.toBeNull();
+    expect(seen!.fromTheRight, "the previous photo comes in from the right").toBe(true);
   });
 
   test("fits under the header at every size the owner checked", async ({ page }) => {

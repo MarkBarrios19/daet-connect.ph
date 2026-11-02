@@ -340,19 +340,15 @@ describe("PlaceFan opening a place", () => {
     await until(() => expect(wedgeOffsetOf(4)).toEqual({ x: 0, y: 0 }));
   });
 
-  it("keeps a photo over the hero all through a step, so no ground shows through the swap", async () => {
+  it("slides the next photo in beside the last, so the hero is never left uncovered", async () => {
     hurry();
     const { container } = renderFan();
 
-    /**
-     * How much of the hero the visible wedges cover, composited: two photos both
-     * at half opacity do not cover it, they let a quarter of the ground through.
-     */
-    const coverage = () => {
-      const alphas = Array.from(container.querySelectorAll<HTMLElement>("[data-wedge]")).map((wedge) =>
-        wedge.style.visibility === "hidden" ? 0 : Number(wedge.style.opacity || 1),
-      );
-      return 1 - alphas.reduce((rest, alpha) => rest * (1 - alpha), 1);
+    const photoOf = (wedge: number) => container.querySelector(`[data-wedge="${wedge}"] [data-photo]`) as HTMLElement;
+    /** The photo's sideways offset as a share of its own width, as GSAP writes it. */
+    const slideOf = (photo: HTMLElement) => {
+      const read = /translate\((-?[\d.]+)%/.exec(photo.style.transform);
+      return read ? Number(read[1]) : 0;
     };
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
@@ -361,20 +357,29 @@ describe("PlaceFan opening a place", () => {
       expect(container.querySelector("[data-wedge='2']") as HTMLElement).toHaveStyle({ opacity: "1" }),
     );
 
-    // The cross-fade itself, at the speed a visitor sees it: the owner's flash of
-    // white was this moment, when the outgoing photo and the incoming one were
-    // both half there and the hero's own light ground showed between them.
+    // The slide itself, at the speed a visitor sees it.
     gsap.globalTimeline.timeScale(1);
     fireEvent.click(screen.getByRole("button", { name: "Next place" }));
 
-    const samples: number[] = [];
+    const frames: Array<{ incoming: number; outgoing: number }> = [];
     for (let frame = 0; frame < 12; frame += 1) {
       gsap.ticker.tick();
-      samples.push(coverage());
+      frames.push({ incoming: slideOf(photoOf(3)), outgoing: slideOf(photoOf(2)) });
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
 
-    expect(Math.min(...samples)).toBeGreaterThanOrEqual(0.98);
+    // Both photos really travel, and in opposite directions: next swipes in from
+    // the left, pushing the one it replaces out to the right.
+    const moving = frames.filter((frame) => frame.incoming < -1 && frame.outgoing > 1);
+    // Two photos on the move, and in step with each other.
+    expect(moving.length).toBeGreaterThan(0);
+
+    // Their edges meet at every frame — the incoming photo's right edge is the
+    // outgoing photo's left edge — so the pair covers the hero end to end, with no
+    // strip of the page's own ground between them at any moment.
+    moving.forEach((frame) => {
+      expect(Math.abs(100 + frame.incoming - frame.outgoing)).toBeLessThanOrEqual(0.5);
+    });
   });
 
   it("puts a way back to the fan at the photo's top right on a desktop", () => {

@@ -346,29 +346,55 @@ describe("useFanAnimation", () => {
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
 
-  it("cross-fades to a neighbouring place over the photo it replaces", () => {
-    const { api, wedges } = mount();
+  it("swipes the next photo in from the left, and the one it replaces out to the right", () => {
+    const { api, wedges, photos } = mount();
 
     act(() => api.current?.openAt(0));
     records.to.length = 0;
     records.set.length = 0;
-    act(() => api.current?.swapTo(3));
+    act(() => api.current?.swapTo(3, { from: 0, direction: 1 }));
 
     expect(wedges[3].style.clipPath).toBe(OPEN);
     expect(wedges[0].style.clipPath).toBe(geometry.wedges[0].rest);
 
-    // The incoming photo starts hidden, with its photo already square on the hero:
-    // a photo sliding into place while its wedge fades up shows the wedge's own
-    // light ground along the edge it has not covered yet.
-    const before = tweensOn(records.set, wedges[3]).map((call) => call.vars);
-    expect(before).toContainEqual(expect.objectContaining({ autoAlpha: 0 }));
+    // The incoming photo starts a hero to the left of its frame, and is set there
+    // rather than tweened: nothing of the page shows behind a slide that starts
+    // where the eye can see it.
+    const before = tweensOn(records.set, photos[3]).map((call) => call.vars);
+    expect(before).toContainEqual(expect.objectContaining({ xPercent: -100 }));
 
-    // Then it fades in over the outgoing photo, which is left alone and stays
-    // fully opaque underneath until the fade is done. Fading both at once let the
-    // hero's own ground through the middle of the swap — the flash the owner saw.
-    expect(tweensOn(records.to, wedges[3])[0].vars.autoAlpha).toBe(1);
-    expect(tweensOn(records.to, wedges[0])).toHaveLength(0);
-    records.to.forEach((call) => expect(call.vars.duration).toBe(0.3));
+    // The two photos travel together — one to 0, the other to +100 — so their
+    // edges meet at every frame and the hero is covered end to end the whole way.
+    const swipes = records.to.filter((call) => call.kind === "to" && "xPercent" in call.vars);
+    expect(swipes).toHaveLength(2);
+    const [incoming, outgoing] = [tweensOn(swipes, photos[3])[0], tweensOn(swipes, photos[0])[0]];
+    expect(incoming.vars.xPercent).toBe(0);
+    expect(outgoing.vars.xPercent).toBe(100);
+    expect(incoming.vars.duration).toBe(outgoing.vars.duration);
+    expect(incoming.vars.ease).toBe(outgoing.vars.ease);
+
+    // Its own ground is taken out of the way for the length of the slide: the
+    // incoming wedge is the top layer, and an opaque one would paint over the
+    // photo beneath while its own is still off to the side.
+    expect(tweensOn(records.set, wedges[3]).map((call) => call.vars)).toContainEqual(
+      expect.objectContaining({ backgroundColor: "transparent" }),
+    );
+  });
+
+  it("swipes the previous photo in from the right, the other way round", () => {
+    const { api, photos } = mount();
+
+    act(() => api.current?.openAt(3));
+    records.to.length = 0;
+    records.set.length = 0;
+    act(() => api.current?.swapTo(2, { from: 3, direction: -1 }));
+
+    const before = tweensOn(records.set, photos[2]).map((call) => call.vars);
+    expect(before).toContainEqual(expect.objectContaining({ xPercent: 100 }));
+
+    const swipes = records.to.filter((call) => "xPercent" in call.vars);
+    expect(tweensOn(swipes, photos[2])[0].vars.xPercent).toBe(0);
+    expect(tweensOn(swipes, photos[3])[0].vars.xPercent).toBe(-100);
   });
 
   it("opens a place a link names instantly, with no morph", () => {
