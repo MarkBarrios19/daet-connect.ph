@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { checkA11y, visit } from "./fixtures";
+import { checkA11y, signInAs, visit } from "./fixtures";
 
 /**
  * The landing fan, at phone width and at desktop width.
@@ -323,6 +323,46 @@ test.describe("home fan on a phone", () => {
   });
 });
 
+/**
+ * A colour as sRGB bytes, whatever shape the browser serialises it in.
+ *
+ * A theme token can come back as `rgb(…)`, `oklch(…)` or `color(srgb …)`.
+ * Painting one pixel onto a canvas normalises all of them; the glass behind
+ * the hero is a photo, so the check is against the page ground underneath.
+ */
+async function srgb(locator: import("@playwright/test").Locator): Promise<[number, number, number]> {
+  return locator.evaluate((element) => {
+    const canvas = document.createElement("canvas").getContext("2d")!;
+    canvas.fillStyle = getComputedStyle(element).color;
+    canvas.fillRect(0, 0, 1, 1);
+    const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
+    return [r, g, b] as [number, number, number];
+  });
+}
+
+async function ground(page: import("@playwright/test").Page): Promise<[number, number, number]> {
+  return page.evaluate(() => {
+    const canvas = document.createElement("canvas").getContext("2d")!;
+    canvas.fillStyle = getComputedStyle(document.body).backgroundColor;
+    canvas.fillRect(0, 0, 1, 1);
+    const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
+    return [r, g, b] as [number, number, number];
+  });
+}
+
+/** WCAG contrast ratio between two colours. */
+function contrast(a: [number, number, number], b: [number, number, number]): number {
+  const luminance = ([r, g, bl]: [number, number, number]) => {
+    const channel = (value: number) => {
+      const s = value / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(bl);
+  };
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
 test.describe("home fan on a desktop", () => {
   test.use({
     viewport: { width: 1280, height: 900 },
@@ -335,6 +375,26 @@ test.describe("home fan on a desktop", () => {
 
     await expect(page.getByRole("link", { name: "Find a tour" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ask the travel guide" })).toBeVisible();
+  });
+
+test("the second hero button reads on the pale ground, in both themes", async ({ browser }) => {
+    // It was `onBlue`: white label, white outline, on a near-white hero — so
+    // the signed-in visitor's "My dashboard" was invisible until hover.
+    for (const colorScheme of ["light", "dark"] as const) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme });
+      await signInAs(context, "tourist");
+      const page = await context.newPage();
+      await page.goto("/", { waitUntil: "networkidle" });
+
+      const back = await ground(page);
+      for (const name of ["Find a tour", "My dashboard"]) {
+        const label = page.getByRole("link", { name, exact: true });
+        await expect(label).toBeVisible();
+        const ratio = contrast(await srgb(label), back);
+        expect(ratio, `${name} on the ${colorScheme} hero`).toBeGreaterThanOrEqual(4.5);
+      }
+      await context.close();
+    }
   });
 
   test("names a wedge when the mouse is over the fan", async ({ page }) => {

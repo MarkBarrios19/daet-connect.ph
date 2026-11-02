@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { openAssistant } from "@/lib/ui-overlay";
 import {
   DEFAULT_HERO_SIZE,
@@ -631,18 +631,18 @@ export function PlaceFan({
               <ButtonLink href="/tours/browse" size="lg">
                 Find a tour
               </ButtonLink>
+              {/* Both buttons sit on the hero's pale ground in light mode, so
+                  both carry the theme-aware outline: `onBlue` is white on
+                  white here (the label vanished). `onHeader` is ink in light
+                  and white in dark, which is exactly this ground. */}
               {signedIn ? (
-                <ButtonLink href="/dashboard" size="lg" variant="onBlue">
+                <ButtonLink href="/dashboard" size="lg" variant="onHeader">
                   My dashboard
                 </ButtonLink>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => openAssistant()}
-                  className="inline-flex min-h-12 items-center justify-center rounded-full px-7 text-base font-bold text-daet-ink ring-1 ring-inset ring-daet-ink/30 transition hover:bg-muted active:bg-muted-strong dark:text-white dark:ring-white/60 dark:hover:bg-white/10 dark:active:bg-white/20"
-                >
+                <Button type="button" size="lg" variant="onHeader" onClick={() => openAssistant()}>
                   Ask the travel guide
-                </button>
+                </Button>
               )}
             </div>
           </>

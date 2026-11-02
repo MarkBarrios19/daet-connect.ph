@@ -116,6 +116,18 @@ describe("PlaceFan", () => {
     expect(screen.getByRole("button", { name: "Ask the travel guide" })).toBeInTheDocument();
   });
 
+  it("keeps the hero's second button legible on the pale ground", () => {
+    // The outline used to be white on white: the label vanished in light mode.
+    // Ink in light, white in dark, so the button reads on either ground.
+    renderFan(false);
+
+    const assistant = screen.getByRole("button", { name: "Ask the travel guide" });
+    expect(assistant.className).toContain("text-daet-ink");
+    expect(assistant.className).toContain("dark:text-white");
+    expect(assistant.className).not.toMatch(/(^|\s)text-white(\s|$)/);
+    expect(assistant.className).not.toContain("ring-white/60");
+  });
+
   it("asks the assistant to open when that button is pressed", () => {
     const opened = jest.fn();
     window.addEventListener("daet:open-assistant", opened);
@@ -130,8 +142,13 @@ describe("PlaceFan", () => {
   it("shows My dashboard instead of the assistant once signed in", () => {
     renderFan(true);
 
-    expect(screen.getByRole("link", { name: "My dashboard" })).toHaveAttribute("href", "/dashboard");
+    const dashboard = screen.getByRole("link", { name: "My dashboard" });
+    expect(dashboard).toHaveAttribute("href", "/dashboard");
     expect(screen.queryByRole("button", { name: "Ask the travel guide" })).not.toBeInTheDocument();
+    // Same ground, same problem: the signed-in button is theme-aware too.
+    expect(dashboard.className).toContain("text-daet-ink");
+    expect(dashboard.className).toContain("dark:text-white");
+    expect(dashboard.className).not.toMatch(/(^|\s)text-white(\s|$)/);
   });
 
   it("names every wedge on screen for a mouse visitor to hover", () => {
