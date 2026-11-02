@@ -527,6 +527,41 @@ describe("PlaceFan on a phone", () => {
     jest.restoreAllMocks();
   });
 
+  it("stands the headline in the middle of the band the two fans leave", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    const headline = container.querySelector("[data-headline]") as HTMLElement;
+
+    // Nothing covers the hero in jsdom, so the band is centred on the box; the
+    // point is that the text sits between the fans, not riding up on the top one.
+    expect(headline.style.top).toBe(`${844 / 2}px`);
+    expect(headline.style.transform).toBe("translateY(-50%)");
+  });
+
+  it("mirrors the two fans about what the header and the tab bar leave visible", () => {
+    // The hero runs under the sticky header, and the dashboard's tab bar covers
+    // its foot: centring the pair on the whole box left the top fan taller by
+    // the header's height, which is what the owner saw on their phone.
+    const header = document.createElement("header");
+    header.getBoundingClientRect = () => ({ height: 56 }) as DOMRect;
+    const tabBar = document.createElement("nav");
+    tabBar.setAttribute("aria-label", "Dashboard");
+    tabBar.getBoundingClientRect = () => ({ height: 57 }) as DOMRect;
+    document.body.append(header, tabBar);
+
+    try {
+      setHeroSize(390, 844);
+      const { container } = renderFan();
+      const headline = container.querySelector("[data-headline]") as HTMLElement;
+
+      // The middle of what is left between the two: 56 at the top, 57 at the foot.
+      expect(headline.style.top).toBe(`${(56 + 844 - 57) / 2}px`);
+    } finally {
+      header.remove();
+      tabBar.remove();
+    }
+  });
+
   it("always shows the short names, since a finger cannot hover", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();

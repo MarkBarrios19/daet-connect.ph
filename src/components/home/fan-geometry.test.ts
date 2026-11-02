@@ -1,4 +1,5 @@
 import {
+  PHONE_BAND,
   DEFAULT_HERO_SIZE,
   HOVER_BUMP,
   SEAM_PX,
@@ -263,20 +264,42 @@ describe("phone layout", () => {
   });
 
   it("leaves the middle band clear for the headline", () => {
-    const middleTop = 0.479 * PHONE.height;
-    const middleBottom = 0.659 * PHONE.height;
+    const [top, bottom] = geo.fans.map((fan) => fan.vp[1]);
+    expect(bottom - top).toBeCloseTo(PHONE_BAND * PHONE.height, 6);
 
     geo.points.slice(0, 3).forEach((points) => {
       // The top fan spreads upward: it never reaches below its own apex.
       const lowest = Math.max(...points.map(([, y]) => y));
-      expect(lowest).toBeLessThanOrEqual(middleTop + 0.001);
+      expect(lowest).toBeLessThanOrEqual(top + 0.001);
     });
 
     geo.points.slice(3).forEach((points) => {
       // The bottom fan spreads downward from the lower apex.
       const highest = Math.min(...points.map(([, y]) => y));
-      expect(highest).toBeGreaterThanOrEqual(middleBottom - 0.001);
+      expect(highest).toBeGreaterThanOrEqual(bottom - 0.001);
     });
+  });
+
+  it("mirrors the two fans about the box when nothing covers it", () => {
+    const [top, bottom] = geo.fans.map((fan) => fan.vp[1]);
+
+    expect(top).toBeCloseTo(PHONE.height / 2 - (PHONE_BAND * PHONE.height) / 2, 6);
+    expect(bottom).toBeCloseTo(PHONE.height / 2 + (PHONE_BAND * PHONE.height) / 2, 6);
+  });
+
+  it("mirrors them about what the header and the tab bar leave visible", () => {
+    // The hero starts under the sticky header and its foot sits under the tab
+    // bar, so centring the pair on the whole box makes the top fan taller by
+    // exactly the header's height — which is what the owner saw on a phone.
+    const insets = { top: 56, bottom: 57 };
+    const covered = fanGeometry(PHONE.width, PHONE.height, "phone", { insets });
+    const [top, bottom] = covered.fans.map((fan) => fan.vp[1]);
+
+    const above = top - insets.top;
+    const below = PHONE.height - insets.bottom - bottom;
+    expect(above).toBeCloseTo(below, 6);
+    // And the band between them is centred on that visible strip.
+    expect((top + bottom) / 2).toBeCloseTo((insets.top + PHONE.height - insets.bottom) / 2, 6);
   });
 });
 

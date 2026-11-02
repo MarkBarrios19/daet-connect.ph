@@ -108,6 +108,42 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByText("Tap a place to see it")).toBeVisible();
   });
 
+  test("mirrors its two fans about the headline", async ({ page }) => {
+    await visit(page, "/");
+
+    const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
+    const header = (await page.locator("header").first().boundingBox())!;
+    const headline = (await page.locator("[data-headline]").boundingBox())!;
+    const tabBar = page.locator('nav[aria-label="Dashboard"]');
+    const tabHeight = (await tabBar.count()) > 0 ? (await tabBar.first().boundingBox())!.height : 0;
+
+    // Each wedge's clip-path starts at the point its fan radiates from, as a
+    // percentage of the hero's box: the first three point up, the last three down.
+    const apexes = await page.evaluate(() => {
+      const apexOf = (element: Element) => {
+        const match = /polygon\((-?[\d.]+)% (-?[\d.]+)%/.exec((element as HTMLElement).style.clipPath);
+        return match ? Number(match[2]) : null;
+      };
+      const wedges = Array.from(document.querySelectorAll("[data-wedge]"));
+      return { top: apexOf(wedges[0]), bottom: apexOf(wedges[3]) };
+    });
+    expect(apexes.top).not.toBeNull();
+    expect(apexes.bottom).not.toBeNull();
+
+    const topApex = hero.y + (apexes.top! / 100) * hero.height;
+    const bottomApex = hero.y + (apexes.bottom! / 100) * hero.height;
+    const foot = hero.y + hero.height - tabHeight;
+
+    // The space above the text matches the space below it …
+    const above = topApex - (header.y + header.height);
+    const below = foot - bottomApex;
+    expect(Math.abs(above - below), `fans ${above.toFixed(0)}px / ${below.toFixed(0)}px`).toBeLessThanOrEqual(2);
+
+    // … and the text sits dead centre in the band they leave.
+    const textMiddle = headline.y + headline.height / 2;
+    expect(Math.abs(textMiddle - (topApex + bottomApex) / 2), "headline centred").toBeLessThanOrEqual(3);
+  });
+
   test("opens a folded bar on a phone, keeps the map at the bottom, and closes again", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", { name: "Bagasbas Beach: open photo and details" });

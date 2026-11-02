@@ -9,6 +9,7 @@ import {
   fanGeometry,
   midVector,
   pointAboveHeadline,
+  type FanInsets,
   type FanLayout,
 } from "./fan-geometry";
 import type { FanPlace } from "./fan-places";
@@ -60,6 +61,10 @@ export function PlaceFan({
   // Where the fan's point should be. Null until the headline has been measured,
   // which leaves the server's standing value in place.
   const [pointY, setPointY] = useState<number | null>(null);
+  // What covers the hero's top and foot: the sticky header sits over it, and the
+  // dashboard's tab bar over its bottom, so the two phone fans mirror each other
+  // about what is left.
+  const [insets, setInsets] = useState<FanInsets>({ top: 0, bottom: 0 });
   const [announcement, setAnnouncement] = useState("");
 
   useEffect(() => {
@@ -80,6 +85,15 @@ export function PlaceFan({
       // screen can't push the point past the middle of the hero.
       const headlineTop = headlineRef.current?.offsetTop ?? 0;
       setPointY(Math.round(pointAboveHeadline(headlineTop, height)));
+
+      // The sticky bar the hero starts under, and the tab bar fixed over its
+      // foot: both take visible room, so the fans are centred on neither.
+      const header = document.querySelector("header");
+      const tabBar = document.querySelector('nav[aria-label="Dashboard"]');
+      const top = header?.getBoundingClientRect().height ?? 0;
+      const bottom =
+        tabBar && getComputedStyle(tabBar).display !== "none" ? tabBar.getBoundingClientRect().height : 0;
+      setInsets((was) => (was.top === top && was.bottom === bottom ? was : { top, bottom }));
 
       setSize({ width, height });
       // A landscape phone keeps one fan of six; anything else under 768 is two.
@@ -104,9 +118,16 @@ export function PlaceFan({
 
   const geometry = useMemo(
     () =>
-      fanGeometry(size.width, size.height, layout, pointY === null ? {} : { vpY: pointY }),
-    [size.width, size.height, layout, pointY],
+      fanGeometry(size.width, size.height, layout, {
+        ...(pointY === null ? {} : { vpY: pointY }),
+        insets,
+      }),
+    [size.width, size.height, layout, pointY, insets],
   );
+
+  /** The band between the phone's two fans, where the headline stands. */
+  const bandCentre =
+    geometry.fans.length === 2 ? (geometry.fans[0].vp[1] + geometry.fans[1].vp[1]) / 2 : null;
 
   const slugs = useMemo(() => places.map((place) => place.slug), [places]);
   const { openSlug, open: openInUrl, close: closeInUrl } = usePlaceHash(slugs);
@@ -412,7 +433,13 @@ export function PlaceFan({
         ref={headlineRef}
         data-headline
         className={`pointer-events-none absolute inset-x-0 z-10 px-4 text-center ${isOpen ? "opacity-0" : ""}`}
-        style={onPhone ? { top: "49%" } : { bottom: "7%" }}
+        style={
+          onPhone && bandCentre !== null
+            ? // Centred in the band the two fans leave, so the space above the
+              // text matches the space below it.
+              { top: bandCentre, transform: "translateY(-50%)" }
+            : { bottom: "7%" }
+        }
       >
         <h1
           id="home-title"

@@ -39,6 +39,22 @@ export const DEFAULT_HERO_SIZE = { width: 1440, height: 900 } as const;
 /** The fan's standing point, as a fraction of the hero's height. */
 const DEFAULT_VP_Y = 0.578;
 
+/**
+ * The clear band between the phone's two fans, as a fraction of the hero's
+ * height: wide enough for the headline and its line of hint.
+ */
+export const PHONE_BAND = 0.18;
+
+/** What covers the hero's top and foot, in pixels, on the box it is drawn in. */
+export interface FanInsets {
+  /** The sticky header, which the hero sits under. */
+  top: number;
+  /** The dashboard's tab bar, fixed to the bottom of the screen. */
+  bottom: number;
+}
+
+const NO_INSETS: FanInsets = { top: 0, bottom: 0 };
+
 const toRad = (degrees: number) => (degrees * Math.PI) / 180;
 const toDeg = (radians: number) => (radians * 180) / Math.PI;
 
@@ -191,11 +207,24 @@ export interface FanGeometry {
  * placed as the mock-up has them: the top pair spread upward, the bottom ones
  * downward, leaving the middle band for the headline.
  */
-function fansFor(layout: FanLayout, width: number, height: number, vpY?: number): FanSpan[] {
+export function fansFor(
+  layout: FanLayout,
+  width: number,
+  height: number,
+  vpY?: number,
+  insets: FanInsets = NO_INSETS,
+): FanSpan[] {
   if (layout === "phone") {
+    // The two fans mirror each other about the part of the hero a visitor can
+    // actually see. Centring them on the whole box instead left the top fan
+    // taller than the bottom one by exactly the header's height — the hero
+    // starts under the sticky bar — and the tab bar takes as much again off the
+    // foot, so the band between them sat low and the headline rode up on it.
+    const band = PHONE_BAND * height;
+    const centre = (insets.top + (height - insets.bottom)) / 2;
     return [
-      { vp: [0.5 * width, 0.479 * height], a0: 188, a1: 352, from: 0, count: 3 },
-      { vp: [0.5 * width, 0.659 * height], a0: 8, a1: 172, from: 3, count: 3 },
+      { vp: [0.5 * width, centre - band / 2], a0: 188, a1: 352, from: 0, count: 3 },
+      { vp: [0.5 * width, centre + band / 2], a0: 8, a1: 172, from: 3, count: 3 },
     ];
   }
 
@@ -265,9 +294,9 @@ export function fanGeometry(
   width: number,
   height: number,
   layout: FanLayout = "desktop",
-  options: { vpY?: number } = {},
+  options: { vpY?: number; insets?: FanInsets } = {},
 ): FanGeometry {
-  const fans = fansFor(layout, width, height, options.vpY);
+  const fans = fansFor(layout, width, height, options.vpY, options.insets);
   const radius = RADIUS_FACTOR * Math.hypot(width, height);
   const gap = SEAM_PX[layout];
 
