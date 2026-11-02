@@ -174,6 +174,10 @@ const SHAPES = {
   plate: "M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
   warning: "M12 4L2 20h20zM12 10v4M12 17v.01",
   tip: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
+  // How people reach Daet (src/lib/getting-here.ts).
+  bus: "M4 5h16a1 1 0 0 1 1 1v9H3V6a1 1 0 0 1 1-1zM3 11h18M7 15v3M17 15v3M7 9h10",
+  plane: "M21 4L3 11l7 2.4L13.4 21zM10 13.4L21 4",
+  van: "M3 7h10l4 4v5H3zM3 11.5h14M6 16v3M15 16v3",
 } as const;
 
 export type IconName = keyof typeof SHAPES;

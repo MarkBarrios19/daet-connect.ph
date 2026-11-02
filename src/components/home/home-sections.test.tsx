@@ -35,6 +35,26 @@ describe("GettingHere", () => {
     });
   });
 
+  it("draws the routes as one band: numbered, ruled between, outlined once", () => {
+    // The owner's reference (image-47): a single outlined card, a rule between
+    // one column and the next, a number and an icon at the top of each — not
+    // three loose cards that happen to sit in a row.
+    const { container } = render(<GettingHere />);
+
+    const band = container.querySelector("[data-routes]") as HTMLElement;
+    expect(band).toBeInTheDocument();
+    expect(band.className).toContain("card-edge");
+    expect(band.className).toContain("rounded-2xl");
+
+    const items = Array.from(band.querySelectorAll("li"));
+    expect(items).toHaveLength(3);
+    expect(items.map((item) => item.querySelector("span")?.textContent)).toEqual(["01", "02", "03"]);
+    items.forEach((item) => expect(item.querySelector("svg")).not.toBeNull());
+    // The rules are the list's own dividers: one band, not three boxes.
+    expect(band.querySelector("ul")!.className).toContain("divide-x");
+    expect(items[0].className).not.toContain("rounded-2xl");
+  });
+
   it("ends with the check-before-you-travel line", () => {
     render(<GettingHere />);
 

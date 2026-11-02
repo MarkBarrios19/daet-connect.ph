@@ -6,18 +6,23 @@
  * departure times are stated as fact — schedules change and the point of the
  * closing line is that they must be checked.
  */
-export type TravelBy = { title: string; text: string };
+import type { IconName } from "@/components/ui/icons";
+
+export type TravelBy = { title: string; text: string; icon: IconName };
 
 export const GETTING_HERE: TravelBy[] = [
   {
+    icon: "bus",
     title: "By bus",
     text: "Direct buses run from Metro Manila, from Cubao and from PITX, to the Daet Integrated Terminal in Lag-on. Plan on about 7 to 10 hours, depending on traffic. Changing buses at Lucena is often cheaper.",
   },
   {
+    icon: "plane",
     title: "By plane",
     text: "There are no scheduled flights to Daet. Fly from Manila to Naga Airport in Pili, Camarines Sur, then take a van or bus to Daet, about 2 to 3 hours more.",
   },
   {
+    icon: "van",
     title: "By van",
     text: "Vans leave Naga's westbound van terminal for Daet Central Terminal through the day, roughly 5 AM to 5 PM. The ride takes about 2 hours.",
   },

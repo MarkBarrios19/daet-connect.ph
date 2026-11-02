@@ -424,6 +424,36 @@ test.describe("home fan on a desktop", () => {
     hasTouch: false,
   });
 
+  test("draws the three ways to Daet as one outlined band", async ({ page }) => {
+    // The owner's reference (image-47): a single outlined card with a rule
+    // between the columns, each column numbered and carrying its own vehicle —
+    // rather than three loose cards that happen to sit in a row.
+    await visit(page, "/");
+    await page.evaluate(() =>
+      document.querySelector("#home-getting-here")?.scrollIntoView({ block: "center", behavior: "instant" }),
+    );
+
+    const band = page.locator("[data-routes]");
+    await expect(band).toBeVisible();
+    const items = band.locator("li");
+    await expect(items).toHaveCount(3);
+
+    const shadow = await band.evaluate((element) => getComputedStyle(element).boxShadow);
+    expect(shadow, "one outline around the whole band").toContain("inset");
+    expect(shadow, "a step heavier than a hairline").toContain("1.5px");
+
+    const boxes = await items.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+    expect(boxes[1].x, "the columns start where the last one ends").toBeCloseTo(boxes[0].x + boxes[0].width, 0);
+    expect(boxes[1].width, "three equal columns").toBeCloseTo(boxes[0].width, 0);
+    expect(await items.nth(1).evaluate((element) => getComputedStyle(element).borderLeftWidth), "a rule between them").toBe("1px");
+
+    await expect(items.nth(0).locator("span").first()).toHaveText("01");
+    await expect(items.nth(2).locator("span").first()).toHaveText("03");
+    for (const item of [items.nth(0), items.nth(1), items.nth(2)]) {
+      await expect(item.locator("svg").first()).toBeVisible();
+    }
+  });
+
   test("keeps the headline's links", async ({ page }) => {
     await visit(page, "/");
 

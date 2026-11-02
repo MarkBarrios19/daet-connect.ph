@@ -155,6 +155,9 @@ test("the light ground is white, and the cards on it carry a thin outline", asyn
   const card = page.locator("section[aria-labelledby='faq-more']");
   const shadow = await card.evaluate((element) => getComputedStyle(element).boxShadow);
   expect(shadow, "a hairline drawn inside the card's own edge").toContain("inset");
+  // Asked for thicker after the first cut: 1.5px rather than a hairline you have
+  // to look for.
+  expect(shadow, "the edge is a step heavier").toContain("1.5px");
 });
 
 test.describe("on a phone", () => {

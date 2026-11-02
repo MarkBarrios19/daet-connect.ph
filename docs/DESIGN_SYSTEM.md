@@ -16,7 +16,7 @@ This is the frontend redesign's rulebook. It follows the team's **UI & Mobile-Fi
 
 ## House style
 
-- **Cards:** white on the white ground, with **a hairline and no resting shadow** — the `card-edge` utility (an inset 1px `--color-hairline`). The light ground is white (sampled from the owner's FAQ reference, image-46), so the tone step that used to separate a card is gone and the edge does that work instead. A card that already draws its own border or ring keeps it. Shadows (`shadow-[var(--shadow-float)]`) are only for things that float: menus, dialogs, toasts, the bottom bars.
+- **Cards:** white on the white ground, with **a visible hairline and no resting shadow** — the `card-edge` utility (an inset 1.5px `--color-hairline`, `#d3dae5` in light). The light ground is white (sampled from the owner's FAQ reference, image-46), so the tone step that used to separate a card is gone and the edge does that work instead; the owner asked for that edge a step heavier after seeing it (image-48 against image-47). A card that already draws its own border or ring keeps it. Rules *between* things (FAQ rows, the Getting to Daet band's columns) use `border-hairline` / `divide-hairline` at 1px. Shadows (`shadow-[var(--shadow-float)]`) are only for things that float: menus, dialogs, toasts, the bottom bars.
 - **No eyebrow labels** above headings. A date or context goes under the title (`CardHeader description`).
 - **No small uppercase letter-spaced labels.** Use sentence case at a readable size.
 - **No emoji as icons.** Use `LineIcon` (`src/components/ui/icons.tsx`), `TabIcon` or `CategoryIcon`.
