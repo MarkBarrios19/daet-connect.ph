@@ -58,7 +58,7 @@ export default async function NotificationsPage() {
               <li key={row.id}>
                 <Link
                   href={safeNotificationLink(row.link)}
-                  className={`flex gap-3 rounded-2xl p-4 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99] ${row.read_at ? "bg-surface" : "bg-blue-50 dark:bg-blue-950/40"}`}
+                  className={`flex gap-3 rounded-2xl p-4 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99] ${row.read_at ? "card-edge bg-surface" : "bg-blue-50 dark:bg-blue-950/40"}`}
                 >
                   <LineIcon name={notificationIcon(row.type)} className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                   <span className="min-w-0 flex-1">

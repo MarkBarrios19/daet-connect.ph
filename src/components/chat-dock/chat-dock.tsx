@@ -8,7 +8,7 @@ import { AiAvatar } from "@/components/chat/ai-avatar";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { LineIcon } from "@/components/ui/icons";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import { dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, setDockActive } from "@/components/chat-dock/dock-bus";
+import { dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, setDockActive, setDockBusy } from "@/components/chat-dock/dock-bus";
 
 const STORAGE_KEY = "daet-dock-v1";
 const WIDE = "(min-width: 1024px)";
@@ -51,6 +51,16 @@ export function ChatDock() {
     return () => setDockActive(false);
   }, [active]);
 
+  // Tell the floating assistant pill whether a window is on screen: it sits in
+  // the corner an open window occupies, so it stands down until the dock folds
+  // back into heads.
+  const hasWindow = state.open.length > 0;
+  useEffect(() => {
+    if (!active) return;
+    setDockBusy(hasWindow);
+    return () => setDockBusy(false);
+  }, [active, hasWindow]);
+
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -74,7 +84,9 @@ export function ChatDock() {
   const setTitle = (id: string, value: string) => setState((s) => (s.titles[id] === value ? s : { ...s, titles: { ...s.titles, [id]: value } }));
 
   return (
-    <div aria-label="Open chats" role="region" className="pointer-events-none fixed bottom-0 right-24 z-40 hidden items-end gap-3 lg:flex print:hidden">
+    // z-[900]: above every layer the page itself paints (the map's mini card is
+    // z-[800], the header z-40). The dock is site chrome, not page content.
+    <div aria-label="Open chats" role="region" className="pointer-events-none fixed bottom-0 right-24 z-[900] hidden items-end gap-3 lg:flex print:hidden">
       {[...state.open].reverse().map((id) => (
         <div key={id} className="pointer-events-auto flex h-[30rem] w-[22rem] flex-col overflow-hidden rounded-t-2xl bg-surface shadow-[var(--shadow-float)]">
           {id === "ai" ? (

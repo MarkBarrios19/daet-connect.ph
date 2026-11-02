@@ -154,6 +154,7 @@ const SHAPES = {
   moon: "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z",
   monitor: "M3 5h18v11H3zM8 20h8M12 16v4",
   close: "M6 6l12 12M18 6L6 18",
+  plus: "M12 5v14M5 12h14",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
   image: "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9.5a1.5 1.5 0 1 0 0-.01",
   pin: "M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21zM12 7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
@@ -173,6 +174,10 @@ const SHAPES = {
   plate: "M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
   warning: "M12 4L2 20h20zM12 10v4M12 17v.01",
   tip: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
+  // How people reach Daet (src/lib/getting-here.ts).
+  bus: "M4 5h16a1 1 0 0 1 1 1v9H3V6a1 1 0 0 1 1-1zM3 11h18M7 15v3M17 15v3M7 9h10",
+  plane: "M21 4L3 11l7 2.4L13.4 21zM10 13.4L21 4",
+  van: "M3 7h10l4 4v5H3zM3 11.5h14M6 16v3M15 16v3",
 } as const;
 
 export type IconName = keyof typeof SHAPES;

@@ -51,7 +51,7 @@ export function Modal({
         // Clicking the backdrop (the dialog element itself) closes it.
         if (event.target === event.currentTarget) onClose();
       }}
-      className="m-0 mt-auto w-full max-w-none rounded-t-2xl bg-surface p-0 text-daet-ink shadow-[var(--shadow-float)] backdrop:bg-slate-950/60 sm:m-auto sm:max-w-lg sm:rounded-2xl"
+      className="m-0 mt-auto w-full max-w-none rounded-t-2xl card-edge bg-surface p-0 text-daet-ink shadow-[var(--shadow-float)] backdrop:bg-slate-950/60 sm:m-auto sm:max-w-lg sm:rounded-2xl"
     >
       <div className="p-5 sm:p-6">
         <h2 id={titleId} className="text-lg font-bold">

@@ -115,7 +115,7 @@ export default async function TouristDashboardPage() {
       </div>
 
       {next ? (
-        <section aria-labelledby="next-trip" className="mb-6 grid overflow-hidden rounded-2xl bg-surface md:grid-cols-[1.2fr_1fr]">
+        <section aria-labelledby="next-trip" className="mb-6 grid overflow-hidden rounded-2xl card-edge bg-surface md:grid-cols-[1.2fr_1fr]">
           <div className="bg-blue-600 p-5 text-white sm:p-8">
             <p className="font-semibold">{next.tour_date === today ? "Today" : "Your next trip"}</p>
             <h2 id="next-trip" className="mt-1 font-[family-name:var(--font-display)] text-3xl font-semibold leading-tight sm:text-4xl">

@@ -82,7 +82,7 @@ export function PlannerApp({
 
           {message ? <Notice variant="error">{message}</Notice> : null}
 
-          <section aria-labelledby="trip-details" className="space-y-8 rounded-2xl bg-surface p-5 sm:p-6">
+          <section aria-labelledby="trip-details" className="space-y-8 rounded-2xl card-edge bg-surface p-5 sm:p-6">
             <h2 id="trip-details" className="font-display text-2xl font-semibold text-daet-ink">
               Or set the details
             </h2>

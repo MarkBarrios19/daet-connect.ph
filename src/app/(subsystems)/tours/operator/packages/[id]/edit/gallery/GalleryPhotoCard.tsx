@@ -237,7 +237,7 @@ export function GalleryPhotoCard({
                 type="button"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => setEditing(false)}
-                className="flex-1 rounded-2xl bg-surface px-2 py-1 text-xs font-medium text-daet-ink/80 transition hover:bg-muted"
+                className="flex-1 rounded-2xl card-edge bg-surface px-2 py-1 text-xs font-medium text-daet-ink/80 transition hover:bg-muted"
               >
                 Cancel
               </button>

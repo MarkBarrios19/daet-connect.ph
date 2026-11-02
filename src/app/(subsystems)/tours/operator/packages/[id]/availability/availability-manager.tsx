@@ -93,7 +93,7 @@ export function AvailabilityList({ packageId, rows }: { packageId: string; rows:
   return (
     <div>
       {result ? <Notice variant={result.tone} className="mb-3">{result.text}</Notice> : null}
-      <ul className="divide-y divide-daet-ink/10 rounded-2xl bg-surface">
+      <ul className="divide-y divide-daet-ink/10 rounded-2xl card-edge bg-surface">
         {rows.map((row) => {
           const left = seatsLeft(row);
           return (

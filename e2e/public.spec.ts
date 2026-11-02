@@ -13,6 +13,7 @@ test.describe("public pages", () => {
     "/tours/events/e1000000-0000-4000-8000-000000000001",
     "/tours/merch",
     "/tours/plan",
+    "/tours/faq",
     "/login",
     "/signup",
     "/forgot-password",

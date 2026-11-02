@@ -18,6 +18,9 @@ const VARIANTS = {
   // For use on a blue-600 panel.
   inverse: "bg-surface text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 active:bg-blue-100 dark:active:bg-blue-900/40",
   onBlue: "text-white ring-1 ring-inset ring-white/60 hover:bg-blue-700 active:bg-blue-800",
+  // For use on the header: ink on the white bar, white on the dark one.
+  onHeader:
+    "text-daet-ink ring-1 ring-inset ring-daet-ink/25 hover:bg-muted active:bg-muted-strong dark:text-white dark:ring-white/45 dark:hover:bg-white/10 dark:active:bg-white/20",
 } as const;
 
 const SIZES = {

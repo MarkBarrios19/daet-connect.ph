@@ -40,6 +40,27 @@ export function fromPrice(variants: Variant[] | null | undefined): { amount: num
   return { amount: Number(perPerson ? chosen.price_per_pax : chosen.flat_price), perPerson };
 }
 
+/**
+ * The cheapest amount on any price variant, and whether that amount is per
+ * person — "from ₱3,799 per person". Null when the operator has set no price at
+ * all, so a card can leave the price out rather than invent one.
+ */
+export function cheapestPrice(
+  variants: Variant[] | null | undefined,
+): { price: number; perPerson: boolean } | null {
+  const priced = (variants ?? [])
+    .map((variant) => ({
+      amount: Number(variant.price_per_pax ?? variant.flat_price),
+      perPerson: Number(variant.price_per_pax) > 0,
+    }))
+    .filter((variant) => Number.isFinite(variant.amount) && variant.amount > 0);
+
+  if (priced.length === 0) return null;
+
+  const cheapest = priced.reduce((lowest, variant) => (variant.amount < lowest.amount ? variant : lowest));
+  return { price: cheapest.amount, perPerson: cheapest.perPerson };
+}
+
 type Slot = { available_date: string; capacity_total: number | null; capacity_booked: number | null };
 
 /** The first date from `today` with a seat left, or null. */

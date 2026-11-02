@@ -7,8 +7,14 @@ import "./globals.css";
 
 // Fraunces (display) and Public Sans (text), both SIL Open Font License 1.1,
 // served from this site so pages do not wait on a third-party font host.
+//
+// Fraunces is the variable file, not a single weight: the display utilities set
+// 900, and the font's optical-size axis turns that up into the tight,
+// high-contrast cut the owner asked for — the same weight is stroke-heavy and
+// narrow at 6rem, and stays readable down at section-heading sizes. Its licence
+// ships beside it (`fonts/Fraunces-OFL.txt`); see docs/FONTS.md.
 const display = localFont({
-  src: [{ path: "./fonts/Fraunces-600.ttf", weight: "600", style: "normal" }],
+  src: [{ path: "./fonts/Fraunces-Variable.woff2", weight: "100 900", style: "normal" }],
   variable: "--font-fraunces",
   display: "swap",
   fallback: ["Georgia", "Times New Roman", "serif"],
@@ -46,6 +52,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         {/* Applies a saved Light/Dark choice before the first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Marks the document as scripted before the first paint, so the
+            one-time section reveal can hide a section without ever hiding it
+            from a visitor whose browser runs no JavaScript. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
       </head>
       <body>
         <FeedbackProvider>{children}</FeedbackProvider>

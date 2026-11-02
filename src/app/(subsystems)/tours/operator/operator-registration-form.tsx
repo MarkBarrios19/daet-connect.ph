@@ -231,7 +231,7 @@ export function OperatorRegistrationForm({
         </div>
       </div>
 
-      <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="rounded-2xl bg-surface p-5 sm:p-8">
+      <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="rounded-2xl card-edge bg-surface p-5 sm:p-8">
         {rejectionReason ? (
           <Notice variant="warning" title="A few updates are needed before approval" className="mb-6">
             {rejectionReason}

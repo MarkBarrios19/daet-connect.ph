@@ -134,7 +134,7 @@ export function LiveShareCard({ bookingId, operatorName, operatorPhone, meetingP
         : "Your guide's location appears when the tour starts.";
 
   return (
-    <section aria-labelledby="live-title" className="mb-6 rounded-2xl bg-surface p-5 sm:p-6">
+    <section aria-labelledby="live-title" className="mb-6 rounded-2xl card-edge bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 id="live-title" className="text-xl font-bold text-daet-ink">
           Find your guide

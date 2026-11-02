@@ -251,6 +251,15 @@ http.createServer((req, res) => {
       ]);
     if (url.pathname === "/rest/v1/rpc/tours_request_guide_swap") return send(200, "5a000000-0000-4000-8000-000000000009");
     if (url.pathname === "/rest/v1/rpc/tours_decide_guide_swap" || url.pathname === "/rest/v1/rpc/tours_cancel_guide_swap") return send(200, null);
+    if (url.pathname === "/rest/v1/rpc/tours_accreditation_counts") {
+      // The home page's counts: anonymous cannot read the tables, only these numbers.
+      return send(200, [
+        {
+          operators: tables.tours_operators.filter((o) => o.accreditation_status === "approved").length,
+          guides: tables.tours_guides.filter((g) => g.accreditation_status === "approved").length,
+        },
+      ]);
+    }
     if (url.pathname === "/rest/v1/rpc/tours_badge_lookup") return send(200, [{ status: "approved", full_name: "Jeremiah Sabihon", photo_url: null, approved_at: "2026-10-16T13:18:25Z" }]);
     if (url.pathname === "/__reset_live") { live = freshLive(); return send(200, { ok: true }); }
     if (url.pathname.startsWith("/rest/v1/rpc/tours_live_")) {

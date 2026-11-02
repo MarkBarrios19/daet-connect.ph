@@ -62,8 +62,13 @@ export function SiteHeader({
   const workLinks = signedIn && !explorer ? tabs.map((tab) => ({ href: tab.href, label: tab.label === "Home" ? "Dashboard" : tab.label })) : [];
 
   return (
-    <header className="relative z-40 bg-surface print:hidden">
-      <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-3 sm:min-h-20 sm:px-6 lg:px-8">
+    // The bar stays at the top of the screen and is a scrim in both themes: white
+    // at 80% with ink text in light mode, 80% ink with white text in dark mode,
+    // each over a blur so the hero's photos read through it without turning the
+    // label edges to noise. Light mode also keeps the one resting elevation the
+    // design system allows (see --shadow-header).
+    <header className="sticky top-0 z-40 bg-surface/80 text-daet-ink shadow-header backdrop-blur-md dark:bg-slate-950/80 dark:text-white dark:shadow-none print:hidden">
+      <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-1 px-3 sm:min-h-[3.8rem] sm:px-6 lg:px-8">
         <MobileMenu
           showTheme={!signedIn}
           groups={[
@@ -79,7 +84,7 @@ export function SiteHeader({
         <nav aria-label="Main navigation" className="hidden min-w-0 items-center gap-1 md:flex">
           {explorer ? (
             <>
-              <SiteNavLink href={PLAN_LINK.href} className="text-blue-700! dark:text-blue-300!">
+              <SiteNavLink href={PLAN_LINK.href} className="text-blue-700! dark:text-blue-200!">
                 <LineIcon name="sparkle" className="mr-2 h-5 w-5" />
                 {PLAN_LINK.label}
               </SiteNavLink>
@@ -121,12 +126,14 @@ export function SiteHeader({
           ) : (
             <>
               <ThemeToggle className="hidden md:grid" />
-              <ButtonLink href="/login" variant="secondary" className="whitespace-nowrap px-4!">
+              {/* Signing up is the header's one filled button; signing in is the
+                  quiet way in, so the call to action reads at a glance. */}
+              <ButtonLink href="/login" variant="onHeader" className="whitespace-nowrap px-4!">
                 Sign in
               </ButtonLink>
               {/* A wrapper hides it on phones; on the link itself "hidden" would fight the button's inline-flex. */}
               <span className="hidden sm:contents">
-                <ButtonLink href="/signup" className="whitespace-nowrap px-5">
+                <ButtonLink href="/signup" size="lg" className="whitespace-nowrap">
                   Sign up
                 </ButtonLink>
               </span>

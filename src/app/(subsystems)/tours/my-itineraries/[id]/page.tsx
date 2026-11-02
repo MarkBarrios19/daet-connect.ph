@@ -44,7 +44,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
           ← My itineraries
         </Link>
         <h1 className="display-2 mt-1 text-daet-ink">{itinerary.title}</h1>
-        {itinerary.summary ? <p className="mt-3 rounded-2xl bg-surface p-4 text-base leading-7 text-daet-ink">{itinerary.summary}</p> : null}
+        {itinerary.summary ? <p className="mt-3 rounded-2xl card-edge bg-surface p-4 text-base leading-7 text-daet-ink">{itinerary.summary}</p> : null}
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Opening hours can change; check each place before you go.</p>
 
         <div className="mt-6">

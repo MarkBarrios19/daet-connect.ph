@@ -212,7 +212,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
           {/* The departure line: where to be, how long it takes, what it costs. */}
           <dl className="mt-6 grid gap-2 sm:grid-cols-3">
             {facts.map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-surface p-4">
+              <div key={label} className="rounded-2xl card-edge bg-surface p-4">
                 <dt className="text-sm font-semibold text-daet-ink/75">{label}</dt>
                 <dd className="mt-1 text-lg font-bold leading-snug text-daet-ink">{value}</dd>
               </div>
@@ -311,7 +311,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
           ) : null}
 
           {operatorName ? (
-            <section aria-labelledby="operator" className="mt-12 rounded-2xl bg-surface p-5 sm:p-6">
+            <section aria-labelledby="operator" className="mt-12 rounded-2xl card-edge bg-surface p-5 sm:p-6">
               <h2 id="operator" className="text-2xl font-semibold text-daet-ink">Run by {operatorName}</h2>
               <p className="mt-2 flex flex-wrap items-center gap-2 text-daet-ink/80">
                 <ShieldCheckIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" /> Accredited by the Daet Tourism Office
@@ -330,7 +330,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
               <p className="text-sm text-daet-ink/75">Only travellers who finished this trip can review it.</p>
             </div>
             {rating ? (
-              <div className="mt-4 grid gap-6 rounded-2xl bg-surface p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:p-6">
+              <div className="mt-4 grid gap-6 rounded-2xl card-edge bg-surface p-5 sm:grid-cols-[auto_1fr] sm:items-center sm:p-6">
                 <div className="sm:pr-4">
                   <p className="font-[family-name:var(--font-display)] text-6xl font-semibold leading-none text-daet-ink">{rating.average.toFixed(1)}</p>
                   <Stars value={rating.average} />
@@ -359,7 +359,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
 
         {/* Booking panel: beside the content on wide screens, a bar at the bottom on phones. */}
         <aside aria-label="Book this trip" className="hidden lg:block">
-          <div className="sticky top-6 rounded-2xl bg-surface p-6">
+          <div className="sticky top-6 rounded-2xl card-edge bg-surface p-6">
             <p className="text-sm font-semibold text-daet-ink/75">From</p>
             <p className="text-4xl font-bold text-daet-ink">{formatPeso(displayPrice)}</p>
             <p className="text-daet-ink/80">{priceLabel}</p>

@@ -25,7 +25,7 @@ export function MerchCard({ item }: { item: MerchItem }) {
   const href = item.contact_info ? contactHref(item.contact_info) : null;
 
   return (
-    <article className="flex w-full flex-col overflow-hidden rounded-2xl bg-surface">
+    <article className="flex w-full flex-col overflow-hidden rounded-2xl card-edge bg-surface">
       <div className="relative aspect-[4/3] overflow-hidden bg-blue-50 dark:bg-blue-950/40 min-[420px]:aspect-square">
         {item.image_url ? (
           <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />

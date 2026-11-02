@@ -65,7 +65,7 @@ export function ProofReview({ proofs }: { proofs: ReviewableProof[] }) {
       {result ? <Notice variant={result.tone} className="mb-3">{result.text}</Notice> : null}
       <ul className="space-y-3">
         {proofs.map((proof) => (
-          <li key={proof.id} className="rounded-2xl bg-surface p-3 text-sm">
+          <li key={proof.id} className="rounded-2xl card-edge bg-surface p-3 text-sm">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="text-base font-bold text-daet-ink">{peso(proof.amount)}</span>
               <span className="text-daet-ink/70">

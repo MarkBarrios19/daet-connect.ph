@@ -22,7 +22,7 @@ export default async function EditAttractionPage({ params }: { params: Promise<{
     <PageFrame adminNav>
       <div className="mx-auto max-w-2xl">
         <AdminPageHeading title="Edit attraction" backHref="/tours/admin/attractions" backLabel="All attractions" />
-        <div className="rounded-2xl bg-surface p-5 sm:p-8">
+        <div className="rounded-2xl card-edge bg-surface p-5 sm:p-8">
           <AttractionForm attraction={toAttraction(data as Record<string, unknown>)} />
         </div>
       </div>

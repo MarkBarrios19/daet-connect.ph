@@ -91,7 +91,7 @@ export default async function AdminGuideQueuePage({ searchParams }: { searchPara
         Government ID files are highly sensitive. Open them only when needed for verification. Links expire after 3 minutes; do not forward or retain copies outside approved systems.
       </Notice>
       {guides.length === 0 ? (
-        <section className="rounded-2xl bg-surface px-6 py-14 text-center">
+        <section className="rounded-2xl card-edge bg-surface px-6 py-14 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-green-50 dark:bg-green-950/40 text-2xl text-green-700 dark:text-green-300" aria-hidden="true">✓</span>
           <h2 className="mt-4 text-xl font-bold text-daet-ink">No pending guide applications</h2>
           <p className="mt-2 text-sm text-daet-ink/70">You’re all caught up on this page.</p>

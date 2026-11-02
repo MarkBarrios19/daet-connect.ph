@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { ChatDock } from "@/components/chat-dock/chat-dock";
+import { RevealObserver } from "@/components/ui/reveal-observer";
 import { RoleTabBar } from "@/components/ui/role-tab-bar";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { SiteHeader } from "@/components/ui/site-header";
@@ -48,6 +49,7 @@ export async function PageFrame({
   const account = viewer ? { initial: viewer.initial, name: viewer.name } : undefined;
   return (
     <div className="min-h-screen">
+      <RevealObserver />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-blue-600 focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"

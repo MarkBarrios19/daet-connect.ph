@@ -104,7 +104,7 @@ export default async function BookPackagePage({ params }: PageProps) {
         </nav>
 
         {/* Package Header */}
-        <div className="mb-8 rounded-2xl bg-surface p-6">
+        <div className="mb-8 rounded-2xl card-edge bg-surface p-6">
           <div className="flex gap-6">
             {pkg.cover_image_url && (
               <img

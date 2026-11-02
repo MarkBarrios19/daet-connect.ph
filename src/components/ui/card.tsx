@@ -2,11 +2,12 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/components/ui/cn";
 
 /**
- * Cards use rounded-2xl per the team UI standard. They sit white on the
- * slate-50 ground with no border and no shadow: the tone step separates them.
+ * Cards use rounded-2xl per the team UI standard. They sit white on a white
+ * ground with no resting shadow, and carry the `card-edge` hairline so the edge
+ * — not a tone step — separates them (owner's note on image-46).
  */
 export function Card({ className, padded = true, ...props }: ComponentProps<"div"> & { padded?: boolean }) {
-  return <div className={cn("rounded-2xl bg-surface", padded && "p-5 sm:p-6", className)} {...props} />;
+  return <div className={cn("rounded-2xl card-edge bg-surface", padded && "p-5 sm:p-6", className)} {...props} />;
 }
 
 /** A card's heading, with an optional one-line description under it and an action on the right. */

@@ -101,7 +101,7 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
             const photoKey = attraction.photo_url ? null : matchPlacePhoto(attraction.name);
             return (
               <li key={attraction.id} data-reveal>
-                <Link href={`/tours/attractions/${attraction.slug}`} className="group flex h-full flex-col overflow-hidden rounded-2xl bg-surface transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99]">
+                <Link href={`/tours/attractions/${attraction.slug}`} className="group flex h-full flex-col overflow-hidden rounded-2xl card-edge bg-surface transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.99]">
                   <div className="relative aspect-[16/10] overflow-hidden bg-blue-50 dark:bg-blue-950/40">
                     {attraction.photo_url ? (
                       <img src={attraction.photo_url} alt="" loading="lazy" className="h-full w-full object-cover" />
@@ -136,7 +136,7 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
       {pins.length > 0 ? (
         <section aria-labelledby="places-map" className="mt-16">
           <h2 id="places-map" className="text-2xl font-semibold text-daet-ink sm:text-3xl">Where they are</h2>
-          <div className="mt-4 overflow-hidden rounded-2xl bg-surface">
+          <div className="mt-4 overflow-hidden rounded-2xl card-edge bg-surface">
             <RouteMap points={pins} title="Map of the listed places" />
           </div>
         </section>

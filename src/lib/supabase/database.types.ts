@@ -2473,6 +2473,13 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
+      tours_accreditation_counts: {
+        Args: never
+        Returns: {
+          guides: number
+          operators: number
+        }[]
+      }
       tours_badge_lookup: {
         Args: { p_guide_id: string }
         Returns: {

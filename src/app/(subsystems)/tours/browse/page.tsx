@@ -5,7 +5,7 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { PackageCard } from "./package-card";
+import { PackageCard } from "@/components/tours/package-card";
 import { toSummary, type RatingSummary } from "@/lib/tours/reviews";
 import { PackageFilters } from "./package-filters";
 import { placePhoto } from "@/lib/tours/trip-board";

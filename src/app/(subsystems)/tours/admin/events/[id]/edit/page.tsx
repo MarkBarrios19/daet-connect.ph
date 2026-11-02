@@ -22,7 +22,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
     <PageFrame adminNav>
       <div className="mx-auto max-w-2xl">
         <AdminPageHeading title="Edit event" backHref="/tours/admin/events" backLabel="All events" />
-        <div className="rounded-2xl bg-surface p-5 sm:p-8">
+        <div className="rounded-2xl card-edge bg-surface p-5 sm:p-8">
           <EventForm event={event} attractions={attractions ?? []} />
         </div>
       </div>

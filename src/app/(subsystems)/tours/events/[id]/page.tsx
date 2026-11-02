@@ -65,7 +65,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <LineIcon name="arrowRight" className="h-4 w-4 rotate-180" /> Back to the calendar
         </Link>
 
-        <article className="overflow-hidden rounded-2xl bg-surface">
+        <article className="overflow-hidden rounded-2xl card-edge bg-surface">
           {event.image_url ? (
             <div className="aspect-video bg-blue-50 dark:bg-blue-950/40">
               <img src={event.image_url} alt={event.title} className="h-full w-full object-cover" />
@@ -166,7 +166,7 @@ function EventTours({ tours, attractionName }: { tours: EventTour[]; attractionN
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {tours.map((tour) => (
             <li key={tour.id}>
-              <Link href={`/tours/packages/${tour.id}`} className="flex h-full gap-3 rounded-2xl bg-surface p-3">
+              <Link href={`/tours/packages/${tour.id}`} className="flex h-full gap-3 rounded-2xl card-edge bg-surface p-3">
                 <div className="h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-daet-forest to-daet-leaf">
                   {tour.cover_image_url ? <img src={tour.cover_image_url} alt="" className="h-full w-full object-cover" /> : null}
                 </div>

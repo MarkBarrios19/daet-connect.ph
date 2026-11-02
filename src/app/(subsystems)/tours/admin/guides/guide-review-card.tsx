@@ -48,7 +48,7 @@ export function GuideReviewCard({ guide }: { guide: GuideAdminRecord }) {
   const locked = pending || state.status === "success";
 
   return (
-    <article className="rounded-2xl bg-surface p-5 sm:p-7">
+    <article className="rounded-2xl card-edge bg-surface p-5 sm:p-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <span className="inline-flex rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-3 py-1 text-xs font-bold text-yellow-900 dark:text-yellow-200">Pending guide review</span>

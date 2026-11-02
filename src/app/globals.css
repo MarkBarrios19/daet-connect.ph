@@ -32,12 +32,44 @@
   /* Neutral surfaces that follow the theme (see the dark values below). Use
      these instead of bg-white / bg-slate-50 / -100 / -200 / -300. */
   --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
+  /* White, sampled from the owner's FAQ reference (image-46): the light ground is
+     the card's own white, so every card carries a hairline instead of relying on
+     a tone step. See `card-edge` below. */
+  --color-canvas: #ffffff;
   --color-muted: #f1f5f9;
+  /* The hairline that separates white cards from the white ground, and the rules
+     between the questions on the FAQ page. The owner asked for it a step more
+     visible than the first cut (image-48 against image-47): darker, and drawn
+     1.5px in `card-edge`, so a card's edge reads at a glance instead of only when
+     looked for. */
+  --color-hairline: #d3dae5;
+  /* The "Booking, in three moves" band is the owner's postcard: a cream frame
+     with semicircular bites taken out of it, a photograph in its left half and
+     a flat cyan panel on the right. Frame and field are sampled from the
+     owner's reference (image-52: cream rgb(232 215 185), cyan rgb(29 180 247)).
+     In dark mode the frame turns to the page's own off-white — the owner's note
+     after seeing it (image-50): the dark ridge disappeared into the dark
+     ground, so the frame takes the heading's colour there instead. The values
+     there are then pulled back a step (image-56, "optimize colors for dark
+     mode"): the panel was 375k pixels of neon on a near-black page, so it and
+     the frame are dimmed until the card sits in the theme instead of glaring
+     out of it — see the dark block below for the numbers and the contrast.
+     The cyan panel is *printed*: its copy stays dark in both themes (an ink
+     that does not switch), because white on that cyan is 2.3:1 — well under
+     AA — while this ink is 7.5:1. */
+  --color-ticket-frame: #e8d7b9;
+  --color-ticket-field: #1db4f7;
+  --color-ticket-ink: #0f172a;
+  /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
+     arrived yet reads as land rather than as a white flash. */
+  --color-map-ground: #f2efe9;
   --color-muted-strong: #e2e8f0;
   --color-line: #cbd5e1;
   /* Only for things that float above the page: menus, dialogs, the bottom booking bar. */
   --shadow-float: 0 12px 32px rgba(15, 23, 42, 0.18);
+  /* The one resting shadow: the header, which is pinned over the page's content
+     and needs to separate from it (owner's note on the light-mode bar). */
+  --shadow-header: 0 1px 3px rgba(15, 23, 42, 0.08);
   /* Motion. Strong curves (the built-in ones are too weak): ease-out for
      things entering or leaving, ease-in-out for on-screen movement, the
      drawer curve for sheets. These replace Tailwind's ease-out/ease-in-out. */
@@ -58,6 +90,16 @@
     color-scheme: light;
     background: var(--color-canvas);
     color: var(--color-daet-ink);
+    /* The header's own height, so the hero can run up under it and still end
+       exactly at the fold. Keep in step with site-header.tsx's
+       min-h-14 / sm:min-h-[3.8rem]. */
+    --header-h: 3.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    :root {
+      --header-h: 3.8rem;
+    }
   }
 
   * {
@@ -66,7 +108,7 @@
 
   h1,
   h2 {
-    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+    font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.02em;
     text-wrap: balance;
@@ -105,6 +147,111 @@
   }
 }
 
+/* The card edge.
+ *
+ * The light ground is white now (image-46), so a white card has no tone step to
+ * separate it: it carries this hairline instead, on the owner's note — "give the
+ * cards a light thin outline". An inset shadow draws it inside the card's own
+ * radius, so it costs no layout, and it is one class rather than a border on
+ * every card, so a card can still add its own ring or float shadow without the
+ * two fighting. */
+@utility card-edge {
+  box-shadow: inset 0 0 0 1.5px var(--color-hairline);
+}
+
+/* The postcard band (owner's SVG image-49, palette from image-52).
+ *
+ * The band is drawn as a frame with a row of semicircular bites taken out of it:
+ * the bites are a mask rather than paint, so what shows through them is the page
+ * itself — the white ground in light, near-black in dark — and the edge keeps
+ * working in both themes. The mask is on a decorative layer behind the content,
+ * so nothing a visitor reads is ever clipped, and a browser without masks falls
+ * back to a plain square frame.
+ *
+ * The sizes follow the SVG's own proportions: its frame is 51px wide and 39px
+ * tall at 1919px, with 35px and 24px bites — which would swallow a phone, so
+ * both scale with the viewport. The pitches are the SVG's too (one bite every
+ * ~98.5px along the top, ~99.5px down the sides), kept as multiples of the bite
+ * so the spacing stays even at every width. */
+@utility ticket-band {
+  --ticket-frame-x: clamp(14px, 2.7vw, 51px);
+  --ticket-frame-y: clamp(13px, 2vw, 39px);
+  --ticket-bite-x: calc(var(--ticket-frame-x) * 0.686);
+  --ticket-bite-y: calc(var(--ticket-frame-y) * 0.615);
+  padding: var(--ticket-frame-y) var(--ticket-frame-x);
+}
+
+@utility ticket-frame {
+  /* Only where the mask can be composited: on anything older the band keeps a
+     plain square frame rather than losing its edge altogether. */
+  @supports (mask-composite: intersect) {
+    mask-image:
+      radial-gradient(circle var(--ticket-bite-y) at 50% 0, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-y) at 50% 100%, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-x) at 0 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-x) at 100% 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px));
+    mask-size:
+      calc(var(--ticket-bite-y) * 4.1) 100%,
+      calc(var(--ticket-bite-y) * 4.1) 100%,
+      100% calc(var(--ticket-bite-x) * 2.84),
+      100% calc(var(--ticket-bite-x) * 2.84);
+    mask-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    mask-composite: intersect;
+  }
+}
+
+/* Paper, not paint: the postcard is a printed thing (owner's note on image-52,
+ * and the noise they sent with it), so the ridge, the photograph and the cyan
+ * panel all carry the same surface — nothing else on the band does.
+ *
+ * The grain is the owner's own noise filter: fractal turbulence lit by a
+ * distant light (feSpecularLighting), which is what gives it a raised, stucco
+ * texture rather than a flat speckle. It is one 700px tile, repeated, laid over
+ * whatever is beneath it in the overlay blend. Each surface sets its own
+ * opacity, because the same grain reads stronger on cream than on cyan. */
+@utility ticket-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 700' width='700' height='700'%3E%3Cdefs%3E%3Cfilter id='n' x='-20%25' y='-20%25' width='140%25' height='140%25' color-interpolation-filters='linearRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.125' numOctaves='4' seed='15' stitchTiles='stitch'/%3E%3CfeSpecularLighting surfaceScale='28' specularConstant='0.7' specularExponent='20' lighting-color='%237957A8'%3E%3CfeDistantLight azimuth='3' elevation='48'/%3E%3C/feSpecularLighting%3E%3C/filter%3E%3C/defs%3E%3Crect width='700' height='700' fill='transparent'/%3E%3Crect width='700' height='700' fill='%237957a8' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 700px 700px;
+  mix-blend-mode: overlay;
+}
+
+/* A hair of blur so the ridge does not look cut out with scissors. It sits on
+ * the wrapper *around* the masked layer, so it softens the scalloped edge the
+ * mask has already drawn — the one thing the mask itself cannot do, since a
+ * filter on an element runs before its mask. Only the decorative layer carries
+ * this; nothing a visitor reads is touched. */
+@utility ticket-ridge {
+  filter: blur(0.75px);
+}
+
+/* A question's answer draws itself open (image-46).
+ *
+ * Native <details> still does the opening, this is only the transition: the
+ * answer's block grows from nothing to its own height. That needs `auto` to be
+ * interpolatable, which is what `interpolate-size` is for — where a browser has
+ * neither, the answer simply appears, exactly as it did before. */
+@supports (interpolate-size: allow-keywords) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  details[data-faq]::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 280ms var(--ease-out),
+      opacity 180ms var(--ease-out),
+      content-visibility 280ms allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+
+  details[data-faq][open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
 /* Dark theme values. Raised cards stay one tone lighter than the ground, as in
    light mode. Brand blue fills, green/yellow fills and text-white keep their
    light values: they pass contrast on both grounds. */
@@ -116,8 +263,18 @@
     --color-surface: #111a2e;
     --color-canvas: #0b1220;
     --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
     --color-muted-strong: #26324d;
     --color-line: #334160;
+    --color-hairline: #2b3a57;
+    /* The postcard, dimmed for the dark ground: the frame is an off-white a
+       step under the heading's, and the field a step deeper than the
+       reference's cyan, which was the largest light area on the page. Both
+       keep the card's own ink readable — 6.1:1 for the titles, 4.9:1 for the
+       body copy at 85%. */
+    --color-ticket-frame: #cdd6e3;
+    --color-ticket-field: #10a2dc;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -128,8 +285,13 @@
       --color-surface: #111a2e;
       --color-canvas: #0b1220;
       --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
       --color-muted-strong: #26324d;
       --color-line: #334160;
+      --color-hairline: #2b3a57;
+      --color-ticket-frame: #cdd6e3;
+      --color-ticket-field: #10a2dc;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -142,10 +304,14 @@
     --color-daet-ink: #0f172a;
     --color-daet-sand: #eff6ff;
     --color-surface: #ffffff;
-    --color-canvas: #f8fafc;
+    --color-canvas: #ffffff;
     --color-muted: #f1f5f9;
     --color-muted-strong: #e2e8f0;
     --color-line: #cbd5e1;
+    --color-hairline: #d3dae5;
+    --color-ticket-frame: #e8d7b9;
+    --color-ticket-field: #1db4f7;
+    --color-ticket-ink: #0f172a;
   }
 }
 
@@ -164,44 +330,60 @@
   }
 }
 
-/* Display sizes: large and tight. Mobile first; they scale with the viewport. */
+/* Display sizes: large and tight. Mobile first; they scale with the viewport.
+   The family comes from --font-display and nothing else, so changing the display
+   face (a licensed Migra, say) is one line here plus the font file; docs/FONTS.md
+   has the steps.
+   Fraunces' 900 with optical sizing on is the weight the owner picked: at 6rem
+   the opsz axis gives it the high-contrast, tight cut of a display Didone, while
+   the same face stays legible at 1.75rem. WONK 0 turns off its quirkier
+   letterforms, SOFT 0 keeps the terminals crisp. */
 @utility display-1 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
   font-size: clamp(2.5rem, 9vw, 6rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
 }
 
 @utility display-2 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
   font-size: clamp(1.75rem, 5vw, 3rem);
   line-height: 1.05;
   letter-spacing: -0.025em;
 }
 
-/* Section entrance: parts marked data-reveal rise into place as they scroll
-   into view (heading, then text, then picture via --reveal-index). Pure CSS,
-   scroll-driven; browsers without view timelines simply show the content, so
-   nothing can stay hidden. */
-@keyframes daet-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* Scrollbars inside panels, not the page. Windows' default light scrollbars in a
+   dark chat panel are a white slab with arrows; this keeps them a hairline in
+   whichever theme is on, and Firefox + Chromium both honour it. */
+@utility scrollbar-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
 }
 
-@supports (animation-timeline: view()) {
-  [data-reveal] {
-    animation: daet-reveal linear both;
-    animation-timeline: view();
-    animation-range: entry calc(var(--reveal-index, 0) * 6%) entry calc(45% + var(--reveal-index, 0) * 6%);
-  }
+/* Section entrance: a part marked data-reveal rises into place once, the first
+   time it reaches the viewport, and then stays put (heading, then text, then
+   picture, via --reveal-index). The observer in reveal-observer.tsx sets
+   data-revealed and stops watching. It used to be a scroll-linked animation,
+   which left whatever was part-way into the view part-way transparent — a
+   half-faded ghost that also failed contrast.
+
+   The hidden state needs `html.js`, which the root layout adds before the first
+   paint, so a visitor without JavaScript is never given content that only a
+   script could bring back. */
+html.js [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+[data-reveal] {
+  transition:
+    opacity 300ms var(--ease-out),
+    transform 300ms var(--ease-out);
+  transition-delay: calc(var(--reveal-index, 0) * 60ms);
 }
 
 @keyframes daet-drift {
@@ -277,8 +459,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The reveal still happens, it just doesn't move: opacity only, and at once. */
+  html.js [data-reveal]:not([data-revealed]) {
+    transform: none;
+  }
+
   [data-reveal] {
-    animation: none !important;
+    transition-delay: 0s;
   }
 
   .drift {

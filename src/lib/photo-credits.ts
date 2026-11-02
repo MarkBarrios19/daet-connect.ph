@@ -92,6 +92,45 @@ export const PHOTOS = {
     licenceUrl: BY_SA_4,
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Saint_John_the_Baptist_Church_(Daet),_May_2024.jpg",
   },
+  // The four hero photos below came from the owner on 2026-11-01 and are
+  // temporary: the creator and licence are deliberately blank until the owner
+  // supplies them before launch. Don't fill them in from a search.
+  calaguasHillside: {
+    src: "/photos/hero/calaguas-hillside.jpg",
+    alt: "A grassy hilltop path on Calaguas above a turquoise bay, white beaches and nipa huts",
+    title: "[replace before launch]",
+    creator: "[replace before launch]",
+    licence: "",
+    licenceUrl: "",
+    sourceUrl: "",
+  },
+  rizalMonumentPark: {
+    src: "/photos/hero/rizal-monument-park.jpg",
+    alt: "The white Rizal monument in Daet, a pylon topped with a gold star, inside a red and white balustrade under shade trees",
+    title: "[replace before launch]",
+    creator: "[replace before launch]",
+    licence: "",
+    licenceUrl: "",
+    sourceUrl: "",
+  },
+  daetHeritageCenter: {
+    src: "/photos/hero/daet-heritage-center.jpg",
+    alt: "The green-trimmed Daet Heritage Center, with a giant painted pineapple and woven baskets in front",
+    title: "[replace before launch]",
+    creator: "[replace before launch]",
+    licence: "",
+    licenceUrl: "",
+    sourceUrl: "",
+  },
+  cathedralHolyTrinity: {
+    src: "/photos/hero/cathedral-holy-trinity.jpg",
+    alt: "The Cathedral of the Holy Trinity in Daet, a red and stone facade beside a crowned rotunda",
+    title: "[replace before launch]",
+    creator: "[replace before launch]",
+    licence: "",
+    licenceUrl: "",
+    sourceUrl: "",
+  },
 } satisfies Record<string, PhotoCredit>;
 
 export type PhotoKey = keyof typeof PHOTOS;
