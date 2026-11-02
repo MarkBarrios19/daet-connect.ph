@@ -27,7 +27,9 @@ const STEPS: ReadonlyArray<{ title: string; text: string; icon: IconName }> = [
  *
  * A cream frame bitten along every edge, softened and grained like printed
  * paper; the photograph filling the left half with the heading on it; the three
- * moves on a flat cyan panel on the right. The frame's cream, the cyan and the
+ * moves on a flat cyan panel on the right. On a phone the halves stack, so the
+ * heading goes to the foot of the picture, centred, with the scrim under it —
+ * there is no cyan panel beside it to sit against. The frame's cream, the cyan and the
  * dark copy on it are the reference's palette (see the tokens in globals.css);
  * in dark mode the frame takes the page's off-white, because the owner's note
  * on image-50 was that a dark ridge disappeared into the dark ground.
@@ -64,14 +66,21 @@ export function BookingSteps() {
             className="object-cover"
           />
           <div aria-hidden="true" className="ticket-noise pointer-events-none absolute inset-0 opacity-25" />
+          {/* The scrim follows the words: up from the bottom while the heading is
+              centred at the foot of the picture, and from the top right once the
+              two halves sit side by side. */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(205deg,rgba(15,23,42,0.82),rgba(15,23,42,0.34)_42%,transparent_68%)]"
+            className="absolute inset-0 bg-[linear-gradient(to_top,rgba(15,23,42,0.86),rgba(15,23,42,0.36)_38%,transparent_66%)] md:hidden"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 hidden bg-[linear-gradient(205deg,rgba(15,23,42,0.82),rgba(15,23,42,0.34)_42%,transparent_68%)] md:block"
           />
           <h2
             id="home-how"
             data-reveal
-            className="display-2 absolute right-5 top-8 max-w-md text-right text-white sm:right-10 sm:top-12 lg:right-14"
+            className="display-2 absolute inset-x-0 bottom-8 px-5 text-center text-white md:bottom-auto md:left-auto md:right-10 md:top-12 md:max-w-md md:px-0 md:text-right lg:right-14"
           >
             Booking, in three moves
           </h2>

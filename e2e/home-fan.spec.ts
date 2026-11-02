@@ -404,14 +404,20 @@ test.describe("home fan on a phone", () => {
     await expect(photo.locator("img")).toHaveAttribute("src", /rizal-monument-park/);
     await expect(photo.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
 
-    // The heading is set right, at the picture's right edge.
+    // On a phone the halves are stacked, so the heading goes to the foot of the
+    // picture, centred, rather than sitting against a panel beside it.
     const heading = await photo.locator("h2").evaluate((element) => {
       const box = element.getBoundingClientRect();
       const half = (element.parentElement as HTMLElement).getBoundingClientRect();
-      return { align: getComputedStyle(element).textAlign, gap: Math.round(half.right - box.right) };
+      return {
+        align: getComputedStyle(element).textAlign,
+        offCentre: Math.round((box.left + box.right) / 2 - (half.left + half.right) / 2),
+        gapToFoot: Math.round(half.bottom - box.bottom),
+      };
     });
-    expect(heading.align, "set right").toBe("right");
-    expect(heading.gap, "at the picture's right edge").toBeLessThanOrEqual(24);
+    expect(heading.align, "centred").toBe("center");
+    expect(Math.abs(heading.offCentre), "in the middle of the picture").toBeLessThanOrEqual(1);
+    expect(heading.gapToFoot, "at its foot").toBeLessThanOrEqual(40);
 
     // The right half is the reference's cyan, carrying dark copy: white on it
     // is 2.3:1, under AA, so the panel is printed in ink in both themes.
@@ -510,6 +516,16 @@ test.describe("home fan on a desktop", () => {
     // The photograph fills its half, and the steps are all in the panel.
     await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
     await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
+
+    // Beside a panel, the heading is set right against it instead.
+    const heading = await page.locator("[data-ticket-photo] h2").evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
+      return { align: getComputedStyle(element).textAlign, gap: Math.round(half.right - box.right), top: Math.round(box.top - half.top) };
+    });
+    expect(heading.align, "set right").toBe("right");
+    expect(heading.gap, "at the picture's right edge").toBeLessThanOrEqual(60);
+    expect(heading.top, "at the top of it, not the foot").toBeLessThan(80);
   });
 
   test("draws the three ways to Daet as one outlined band", async ({ page }) => {

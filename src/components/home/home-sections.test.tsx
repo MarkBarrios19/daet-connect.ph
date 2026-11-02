@@ -115,8 +115,11 @@ describe("BookingSteps", () => {
     const heading = photo.querySelector("h2") as HTMLElement;
     expect(heading.textContent).toBe("Booking, in three moves");
     expect(heading.className).toContain("text-white");
-    // Set right, against the cyan panel.
-    expect(heading.className).toContain("text-right");
+    // Centred at the foot of the picture on a phone, set right against the
+    // cyan panel once the halves sit side by side.
+    expect(heading.className).toContain("text-center");
+    expect(heading.className).toContain("bottom-8");
+    expect(heading.className).toContain("md:text-right");
     // The placeholder box is gone: the photograph is in its place.
     expect(band.textContent).not.toContain("image here");
 
