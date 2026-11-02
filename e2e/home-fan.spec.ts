@@ -400,6 +400,17 @@ test.describe("home fan on a desktop", () => {
       await page.locator("[data-map-place]").evaluate((element) => Number(getComputedStyle(element).zIndex)),
       "over the map's own panes",
     ).toBeGreaterThanOrEqual(800);
+
+    // What shows through in the moment before a tile arrives is OpenStreetMap's own
+    // land colour, not the page's near-white — and the tiles do not fade in from it.
+    const ground = await page
+      .locator("[data-place-map] [role='region']")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(ground, "the map's own ground").toBe("rgb(242, 239, 233)");
+    expect(
+      await page.locator("[data-place-map] .leaflet-container").evaluate((element) => element.className),
+      "no tile fade-in",
+    ).not.toContain("leaflet-fade-anim");
     await expect(page.locator("[data-place-map] [data-viewing]")).toHaveText(/Viewing\s+Bagasbas Beach/);
 
     // The way out sits at the photo's top right, on the image itself.

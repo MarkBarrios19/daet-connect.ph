@@ -34,6 +34,9 @@
   --color-surface: #ffffff;
   --color-canvas: #f8fafc;
   --color-muted: #f1f5f9;
+  /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
+     arrived yet reads as land rather than as a white flash. */
+  --color-map-ground: #f2efe9;
   --color-muted-strong: #e2e8f0;
   --color-line: #cbd5e1;
   /* Only for things that float above the page: menus, dialogs, the bottom booking bar. */
@@ -129,6 +132,8 @@
     --color-surface: #111a2e;
     --color-canvas: #0b1220;
     --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
     --color-muted-strong: #26324d;
     --color-line: #334160;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
@@ -141,6 +146,8 @@
       --color-surface: #111a2e;
       --color-canvas: #0b1220;
       --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
       --color-muted-strong: #26324d;
       --color-line: #334160;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);

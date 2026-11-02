@@ -27,11 +27,19 @@ function pageIsDark(): boolean {
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
 /** Stops on a labelled map (the itinerary): dark dots, and a white pin for the picked one. */
-const STOP_DOT = "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-slate-900 text-xs font-extrabold text-white";
-const STOP_PIN = "grid h-8 w-8 place-items-center rounded-full border-2 border-slate-900 bg-white text-sm font-extrabold text-slate-900";
-const LABEL_HALO = "text-slate-900 [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_0_6px_#fff] dark:text-slate-100 dark:[text-shadow:0_0_2px_#0f172a,0_0_4px_#0f172a]";
+const STOP_DOT =
+  "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-slate-900 text-xs font-extrabold text-white";
+const STOP_PIN =
+  "grid h-8 w-8 place-items-center rounded-full border-2 border-slate-900 bg-white text-sm font-extrabold text-slate-900";
+const LABEL_HALO =
+  "text-slate-900 [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_0_6px_#fff] dark:text-slate-100 dark:[text-shadow:0_0_2px_#0f172a,0_0_4px_#0f172a]";
 
-function markerElement(m: FreeMapMarker, active: boolean, labels: boolean, onClick?: (id: string) => void): HTMLElement {
+function markerElement(
+  m: FreeMapMarker,
+  active: boolean,
+  labels: boolean,
+  onClick?: (id: string) => void,
+): HTMLElement {
   // With a click handler the marker is a button that picks the stop; otherwise a link or a picture.
   const el = document.createElement(onClick ? "button" : m.href ? "a" : "div");
   if (onClick) {
@@ -210,6 +218,10 @@ export function FreeMap({
             scrollWheelZoom: false,
             zoomControl: false,
             attributionControl: true,
+            // An arriving tile fades in from the map's own ground. On a small card
+            // that fade is a pulse of blank paper every time the camera moves a
+            // level — the flash the owner saw after Next. Tiles simply appear now.
+            fadeAnimation: false,
           });
         } catch {
           giveUp();
@@ -224,6 +236,11 @@ export function FreeMap({
             attribution: MAP_ATTRIBUTION,
             crossOrigin: true,
             detectRetina: true,
+            // Tiles are only swapped once a zoom animation has finished, and the
+            // level already on screen is kept well past the edges: the new tiles
+            // arrive behind the old ones instead of over a hole.
+            updateWhenZooming: false,
+            keepBuffer: 3,
           })
           .addTo(map);
 
@@ -300,7 +317,9 @@ export function FreeMap({
       // Shrink-wrapped, so a percentage shift is a shift by the marker's own size;
       // the icon box itself is 0×0, so Leaflet's own anchor maths is out of it.
       const anchor = document.createElement("div");
-      anchor.className = pin ? "inline-block -translate-x-1/2 -translate-y-full" : "inline-block -translate-x-1/2 -translate-y-1/2";
+      anchor.className = pin
+        ? "inline-block -translate-x-1/2 -translate-y-full"
+        : "inline-block -translate-x-1/2 -translate-y-1/2";
       anchor.append(element);
       const marker = lib
         .marker([m.lat, m.lng], {
@@ -389,19 +408,31 @@ export function FreeMap({
     };
   }, [focusId, ready]);
 
-  // Reframe when asked.
+  // Reframe when asked — but never over a focus. A focus is a camera move of its
+  // own, and two of them at once fight: each takes the zoom somewhere new, each
+  // pulls a fresh level of tiles, and the card flashes blank twice in a row.
   useEffect(() => {
-    if (!ready || !mapRef.current) return;
+    if (!ready || !mapRef.current || focusId) return;
     fit(mapRef.current, pointsOf(latest.current.markers, latest.current.lines), animateFit && !firstFit.current);
     firstFit.current = false;
-  }, [fitKey, ready, animateFit]);
+  }, [fitKey, ready, animateFit, focusId]);
 
   if (markers.length === 0 && lines.length === 0) return null;
-  if (mode === "sketch") return <SketchMap markers={markers} lines={lines} title={title} focusId={focusId} pins={labels} />;
+  if (mode === "sketch")
+    return <SketchMap markers={markers} lines={lines} title={title} focusId={focusId} pins={labels} />;
 
   return (
     <figure>
-      <div ref={container} role="region" aria-label={title} className={`w-full overflow-hidden rounded-2xl bg-muted ${className}`} />
+      {/* The ground is the map's own land colour, not the page's near-white: it is
+          what shows in the moment before a tile arrives. Inline, because Leaflet's
+          own stylesheet paints `.leaflet-container` grey. */}
+      <div
+        ref={container}
+        role="region"
+        aria-label={title}
+        className={`w-full overflow-hidden rounded-2xl ${className}`}
+        style={{ background: "var(--color-map-ground)" }}
+      />
       <ul className="sr-only">
         {markers.map((m) => (
           <li key={m.id}>{m.title}</li>

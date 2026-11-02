@@ -30,11 +30,16 @@ const offenders = (test: (line: string) => boolean) =>
 // Pictographic emoji only; typographic marks (★ ✓ ✕ → ·) are fine.
 const EMOJI = /[\u{1F300}-\u{1FAFF}☕⚙⚠⛔✅⭐⏰-⏳✈✏✉❌]/u;
 
-// The one line in free-map.tsx allowed a white background: the picked-stop pin (STOP_PIN).
-const PIN_LINE =
-  readFileSync(join(process.cwd(), "src/components/maps/free-map.tsx"), "utf8")
-    .split("\n")
-    .findIndex((line) => line.startsWith("const STOP_PIN =")) + 1;
+// The one line in free-map.tsx allowed a white background: the picked-stop pin
+// (STOP_PIN). Prettier wraps that long class string onto the line after the
+// `const`, so the licence follows the `bg-white` itself rather than the `const`.
+const PIN_LINE = (() => {
+  const lines = readFileSync(join(process.cwd(), "src/components/maps/free-map.tsx"), "utf8").split("\n");
+  const start = lines.findIndex((line) => line.startsWith("const STOP_PIN ="));
+  const end = lines.findIndex((line, index) => index > start && line.trim().endsWith('";'));
+  const white = lines.slice(start, end + 1).findIndex((line) => line.includes("bg-white"));
+  return start + white + 1;
+})();
 
 describe("design rules", () => {
   it("uses line icons, not emoji", () => {

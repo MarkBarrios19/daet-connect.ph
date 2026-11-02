@@ -19,6 +19,8 @@ const mockState: {
   pane: { style: { filter: string } };
   map: { emit: (event: string) => void } | null;
   layer: { emit: (event: string) => void } | null;
+  mapOptions: Record<string, unknown>;
+  tileOptions: Record<string, unknown>;
 } = {
   fail: false,
   tiles: [],
@@ -29,6 +31,8 @@ const mockState: {
   pane: { style: { filter: "" } },
   map: null,
   layer: null,
+  mapOptions: {},
+  tileOptions: {},
 };
 
 // Leaflet is a browser library; this stands in for the parts FreeMap uses and
@@ -54,8 +58,9 @@ jest.mock("leaflet", () => {
 
   class MockMap extends Emitter {
     zoom = 12;
-    constructor() {
+    constructor(options: Record<string, unknown> = {}) {
       super();
+      mockState.mapOptions = options;
       if (mockState.fail) throw new Error("no container");
       mockState.map = this;
     }
@@ -83,10 +88,11 @@ jest.mock("leaflet", () => {
   }
 
   class MockTileLayer extends Emitter {
-    constructor(url: string, options: { attribution?: string }) {
+    constructor(url: string, options: Record<string, unknown> & { attribution?: string }) {
       super();
       mockState.tiles.push(url);
       mockState.attributions.push(options.attribution ?? "");
+      mockState.tileOptions = options;
       mockState.layer = this;
     }
   }
@@ -110,7 +116,7 @@ jest.mock("leaflet", () => {
   }
 
   return {
-    map: () => new MockMap(),
+    map: (_element: unknown, options: Record<string, unknown>) => new MockMap(options),
     tileLayer: (url: string, options: { attribution?: string }) => new MockTileLayer(url, options),
     marker: (_latlng: unknown, options: { icon: { html: HTMLElement } }) => new MockMarker(_latlng, options),
     polyline: () => new MockPolyline(),
@@ -133,6 +139,8 @@ beforeEach(() => {
   mockState.polylineCount = 0;
   mockState.map = null;
   mockState.layer = null;
+  mockState.mapOptions = {};
+  mockState.tileOptions = {};
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     value: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
@@ -203,6 +211,48 @@ describe("FreeMap", () => {
     expect(mockState.camera.slice(before).some(([kind]) => kind === "setView")).toBe(false);
   });
 
+  it("leaves the camera to the focus, and only reframes when nothing is focused", async () => {
+    const { rerender } = render(
+      <FreeMap markers={markers} title="Route map" fitKey="a" focusId="a" onMarkerClick={() => {}} />,
+    );
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+    await waitFor(() => expect(mockState.camera.some(([kind]) => kind === "flyTo")).toBe(true));
+
+    // Stepping to the next place moves the focus and the framing key together.
+    const before = mockState.camera.length;
+    rerender(<FreeMap markers={markers} title="Route map" fitKey="b" focusId="b" onMarkerClick={() => {}} />);
+    await waitFor(() => expect(mockState.camera.filter(([kind]) => kind === "flyTo")).toHaveLength(2));
+
+    // One camera move, not two. A fit on top of the flight takes the zoom somewhere
+    // else a moment later and pulls a second level of tiles over the first — the
+    // second of the two blank flashes the owner photographed.
+    expect(mockState.camera.slice(before).some(([kind]) => kind === "fitBounds")).toBe(false);
+
+    // With nothing focused ("Show all"), the framing comes back.
+    const beforeShowAll = mockState.camera.length;
+    rerender(<FreeMap markers={markers} title="Route map" fitKey="all" focusId={null} onMarkerClick={() => {}} />);
+    await waitFor(() =>
+      expect(mockState.camera.slice(beforeShowAll).some(([kind]) => kind === "fitBounds")).toBe(true),
+    );
+  });
+
+  it("paints the map's own ground under the tiles, and never fades one in from it", async () => {
+    const { container } = render(<FreeMap markers={markers} title="Route map" />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+
+    // What shows in the moment before a tile arrives is the map's ground, not the
+    // page's near-white: Leaflet's own grey is overridden inline, and the token is
+    // the OpenStreetMap land colour (see globals.css).
+    const region = container.querySelector("[role='region']") as HTMLElement;
+    expect(region.style.background).toBe("var(--color-map-ground)");
+
+    // A tile that appears instantly, the level already on screen kept while the new
+    // one is fetched, and a generous buffer past the edges.
+    expect(mockState.mapOptions.fadeAnimation).toBe(false);
+    expect(mockState.tileOptions.updateWhenZooming).toBe(false);
+    expect(Number(mockState.tileOptions.keepBuffer)).toBeGreaterThanOrEqual(2);
+  });
+
   it("labels stops with their name and kind, and draws the picked one as a pin", async () => {
     const labelled = markers.map((m) => (m.id === "b" ? { ...m, subtitle: "Beach" } : m));
     const { rerender } = render(<FreeMap markers={labelled} title="Route map" labels onMarkerClick={() => {}} />);
@@ -236,7 +286,11 @@ describe("FreeMap", () => {
   it("jumps instead of flying when the device asks for less motion", async () => {
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
-      value: (query: string) => ({ matches: query.includes("reduced-motion"), addEventListener() {}, removeEventListener() {} }),
+      value: (query: string) => ({
+        matches: query.includes("reduced-motion"),
+        addEventListener() {},
+        removeEventListener() {},
+      }),
     });
     const { rerender } = render(<FreeMap markers={markers} title="Route map" />);
     await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
