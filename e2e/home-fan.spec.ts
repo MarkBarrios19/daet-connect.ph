@@ -791,13 +791,15 @@ test.describe("the open place", () => {
   test("folds the photo away with the exit animation, even after stepping twice", async ({ page }) => {
     await visit(page, "/");
 
-    // The shape this wedge has at rest, before anything is opened: the fold has
-    // to come all the way back to it.
+    // The shape this wedge settles on with the keyboard on it, which is where
+    // the fold has to come all the way back to: a close hands focus to the wedge
+    // it came from, and focus widens the slice.
     const wedge = page.getByRole("button", { name: "Calaguas: open photo and details" });
+    await wedge.focus();
+    await page.waitForTimeout(600);
     const restClip = await wedge.evaluate((element) => (element as HTMLElement).style.clipPath);
     expect(restClip).toContain("polygon");
 
-    await wedge.focus();
     await page.keyboard.press("Enter");
     await expect(inPanel(page)).toBeVisible();
     await page.waitForTimeout(900);
@@ -837,7 +839,8 @@ test.describe("the open place", () => {
 
     // And it does land: the fan is its own shape again, with nothing mid-flight
     // left behind.
-    await page.waitForTimeout(900);
+    // Long enough for the fold to land and for focus to widen the slice again.
+    await page.waitForTimeout(1400);
     const after = await read();
     expect(after.clip, "the wedge is back in the fan").toBe(restClip);
     expect(after.headline, "the headline is back").toBe(1);
