@@ -9,6 +9,7 @@ import { PlacePanels, type PlacePanel } from "@/components/home/place-panels";
 import { PlaceFan } from "@/components/home/place-fan";
 import { FAN_PLACES } from "@/components/home/fan-places";
 import { AskBand } from "@/components/home/ask-band";
+import { BookingSteps } from "@/components/home/booking-steps";
 import { GettingHere } from "@/components/home/getting-here";
 import { HomeFaq } from "@/components/home/home-faq";
 import { HomeMap, type MapPlace } from "@/components/home/home-map";
@@ -244,29 +245,8 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* How booking works: the page's one full-colour band. */}
-      <section aria-labelledby="home-how" className="mt-20 bg-blue-600 py-16 text-white sm:mt-32 sm:py-24">
-        <div className={`${WRAP} grid gap-10 lg:grid-cols-[1fr_1.4fr]`}>
-          <h2 id="home-how" data-reveal className="display-2">
-            Booking, in three moves
-          </h2>
-          <ol className="space-y-8">
-            {[
-              ["Pick a trip and a date.", "The meeting point, start time and cancellation terms are on the trip's page before you book."],
-              ["Send your request.", "The operator confirms, then you pay by GCash, Maya or card, or upload a bank receipt."],
-              ["Show your ticket QR.", "Your guide scans it at the meeting point, and the boat goes."],
-            ].map(([title, text], index) => (
-              <li key={title} data-reveal style={{ "--reveal-index": index } as React.CSSProperties} className="grid grid-cols-[auto_1fr] gap-4">
-                <LineIcon name={(["calendar", "check", "ticket"] as const)[index]} className="mt-1 h-7 w-7" />
-                <div>
-                  <p className="text-2xl font-bold">{title}</p>
-                  <p className="mt-1 text-lg text-blue-50">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      {/* How booking works: the page's one full-colour band, drawn as a ticket. */}
+      <BookingSteps />
 
       {/* All on one map: only the places that have coordinates are pinned, and
           a pin opens that place in the fan at the top of the page. */}

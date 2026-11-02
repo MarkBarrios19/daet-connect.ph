@@ -353,6 +353,45 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Places to start" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Trips you can book" })).toBeVisible();
   });
+
+  test("draws the booking band as a ticket, with a white half for the photograph", async ({ page }) => {
+    // The owner's SVG (image-49): a frame bitten along every edge, the blue
+    // field inside it, and the left half white where the photograph goes.
+    await visit(page, "/");
+
+    const band = page.locator("[data-ticket]");
+    await expect(band).toBeVisible();
+    await band.scrollIntoViewIfNeeded();
+
+    // One gradient per edge, composited by intersection, over the SVG's navy —
+    // and a mask rather than paint, so what shows through the bites is the page
+    // itself on the white ground and on the dark one alike.
+    const frame = await band
+      .locator("[aria-hidden='true']")
+      .first()
+      .evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          bites: style.maskImage.split("radial-gradient").length - 1,
+          composite: style.maskComposite,
+          paint: style.backgroundColor,
+        };
+      });
+    expect(frame.bites, "one bite per edge").toBe(4);
+    expect(frame.composite, "all four layers intersected").toBe("intersect");
+    expect(frame.paint, "the owner's navy frame").toBe("rgb(16, 0, 86)");
+
+    // The white half and the blue one. The blue is the house blue-600 rather
+    // than the SVG's #406FFF, which is under AA against white body copy.
+    const halves = await band
+      .locator("[data-ticket-panel]")
+      .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor));
+    expect(halves).toEqual(["rgb(255, 255, 255)", "rgb(21, 93, 252)"]);
+
+    // The words are the owner's, and the photograph's place says what it is.
+    await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
+    await expect(band.locator("[data-booking-photo]")).toContainText("image here");
+  });
 });
 
 /**
@@ -422,6 +461,26 @@ test.describe("home fan on a desktop", () => {
     viewport: { width: 1280, height: 900 },
     isMobile: false,
     hasTouch: false,
+  });
+
+  test("splits the booking band: the words on the left, the three moves on the right", async ({ page }) => {
+    await visit(page, "/");
+    await page.evaluate(() =>
+      document.querySelector("#home-how")?.scrollIntoView({ block: "center", behavior: "instant" }),
+    );
+
+    const halves = page.locator("[data-ticket-panel]");
+    await expect(halves).toHaveCount(2);
+    const left = await halves.nth(0).boundingBox();
+    const right = await halves.nth(1).boundingBox();
+    expect(left && right, "both halves are on the page").toBeTruthy();
+    expect(right!.x, "side by side, not stacked").toBeGreaterThanOrEqual(left!.x + left!.width - 1);
+    expect(left!.y, "on the same line").toBeCloseTo(right!.y, 0);
+    expect(left!.width, "half each").toBeCloseTo(right!.width, 0);
+
+    // The photograph's place is in the white half, the steps in the blue one.
+    await expect(halves.nth(0).locator("[data-booking-photo]")).toBeVisible();
+    await expect(halves.nth(1).getByRole("listitem")).toHaveCount(3);
   });
 
   test("draws the three ways to Daet as one outlined band", async ({ page }) => {

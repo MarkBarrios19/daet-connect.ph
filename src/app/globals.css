@@ -43,6 +43,12 @@
      1.5px in `card-edge`, so a card's edge reads at a glance instead of only when
      looked for. */
   --color-hairline: #d3dae5;
+  /* The "Booking, in three moves" band is a ticket (the owner's SVG, image-49):
+     a navy frame with semicircular bites taken out of it, the blue field inside,
+     and a white half on the left for the photograph. This is the frame's own
+     navy. The field inside keeps the house blue-600 rather than the SVG's
+     #406FFF, which measures 4.25:1 against white body text — under AA. */
+  --color-ticket-frame: #100056;
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
   --color-map-ground: #f2efe9;
@@ -140,6 +146,47 @@
  * two fighting. */
 @utility card-edge {
   box-shadow: inset 0 0 0 1.5px var(--color-hairline);
+}
+
+/* The ticket band (owner's SVG, image-49).
+ *
+ * The band is drawn as a frame with a row of semicircular bites taken out of it:
+ * the bites are a mask rather than paint, so what shows through them is the page
+ * itself — white on the light ground, near-black on the dark one — and the edge
+ * keeps working in both themes. The mask is on a decorative layer behind the
+ * content, so nothing a visitor reads is ever clipped, and a browser without
+ * masks falls back to a plain square frame.
+ *
+ * The sizes follow the SVG's own proportions: its frame is 51px wide and 39px
+ * tall at 1919px, with 35px and 24px bites — which would swallow a phone, so
+ * both scale with the viewport. The pitches are the SVG's too (one bite every
+ * ~98.5px along the top, ~99.5px down the sides), kept as multiples of the bite
+ * so the spacing stays even at every width. */
+@utility ticket-band {
+  --ticket-frame-x: clamp(14px, 2.7vw, 51px);
+  --ticket-frame-y: clamp(13px, 2vw, 39px);
+  --ticket-bite-x: calc(var(--ticket-frame-x) * 0.686);
+  --ticket-bite-y: calc(var(--ticket-frame-y) * 0.615);
+  padding: var(--ticket-frame-y) var(--ticket-frame-x);
+}
+
+@utility ticket-frame {
+  /* Only where the mask can be composited: on anything older the band keeps a
+     plain square frame rather than losing its edge altogether. */
+  @supports (mask-composite: intersect) {
+    mask-image:
+      radial-gradient(circle var(--ticket-bite-y) at 50% 0, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-y) at 50% 100%, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-x) at 0 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px)),
+      radial-gradient(circle var(--ticket-bite-x) at 100% 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px));
+    mask-size:
+      calc(var(--ticket-bite-y) * 4.1) 100%,
+      calc(var(--ticket-bite-y) * 4.1) 100%,
+      100% calc(var(--ticket-bite-x) * 2.84),
+      100% calc(var(--ticket-bite-x) * 2.84);
+    mask-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    mask-composite: intersect;
+  }
 }
 
 /* A question's answer draws itself open (image-46).

@@ -6,6 +6,7 @@ import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AskBand } from "./ask-band";
+import { BookingSteps } from "./booking-steps";
 import { GettingHere } from "./getting-here";
 import { HomeMap, type MapPlace } from "./home-map";
 import { GETTING_HERE, GETTING_HERE_CHECK, GETTING_HERE_SOURCES } from "@/lib/getting-here";
@@ -78,6 +79,53 @@ describe("GettingHere", () => {
 
     expect(copy).not.toMatch(/₱|\bPHP\b|\bpesos\b/);
     expect(copy).not.toMatch(/\b\d{1,2}:\d{2}\b/);
+  });
+});
+
+describe("BookingSteps", () => {
+  it("is the owner's ticket: one navy frame, a white half and a blue half", () => {
+    // The owner's SVG (image-49): a frame bitten along every edge, the blue
+    // field inside it, and the left half white for the photograph.
+    const { container } = render(<BookingSteps />);
+
+    const band = container.querySelector("[data-ticket]") as HTMLElement;
+    expect(band).toBeInTheDocument();
+    expect(band.className).toContain("ticket-band");
+
+    // The frame is a decorative layer behind the words, masked into the bites,
+    // so nothing a visitor reads is ever clipped by it.
+    const frame = band.firstElementChild as HTMLElement;
+    expect(frame.getAttribute("aria-hidden")).toBe("true");
+    expect(frame.className).toContain("ticket-frame");
+    expect(frame.className).toContain("bg-ticket-frame");
+
+    const words = band.querySelector('[data-ticket-panel="words"]') as HTMLElement;
+    const steps = band.querySelector('[data-ticket-panel="steps"]') as HTMLElement;
+    expect(words.className).toContain("bg-surface");
+    expect(steps.className).toContain("bg-blue-600");
+
+    // The heading and the photograph's place are in the white half …
+    expect(words.querySelector("h2")?.textContent).toBe("Booking, in three moves");
+    expect(words.querySelector("[data-booking-photo]")).not.toBeNull();
+    // … and the three moves, word for word, in the blue one.
+    const items = Array.from(steps.querySelectorAll("ol > li"));
+    expect(items).toHaveLength(3);
+    expect(items.map((item) => item.querySelector("p")?.textContent)).toEqual([
+      "Pick a trip and a date.",
+      "Send your request.",
+      "Show your ticket QR.",
+    ]);
+  });
+
+  it("says where the photograph goes instead of showing one", () => {
+    // No fabricated stand-in: the owner is supplying the photo, so the space
+    // says so in words until it lands.
+    const { container } = render(<BookingSteps />);
+    const photo = container.querySelector("[data-booking-photo]") as HTMLElement;
+
+    expect(photo.textContent).toContain("image here");
+    expect(photo.textContent).toContain("[placeholder:");
+    expect(photo.querySelector("img")).toBeNull();
   });
 });
 
