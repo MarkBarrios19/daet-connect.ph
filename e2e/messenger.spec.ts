@@ -85,16 +85,22 @@ test.describe("desktop chat heads", () => {
     await signInAs(context, "tourist");
     await page.goto("/", { waitUntil: "networkidle" });
 
-    // Park the map in the lower middle of the screen. (The hero hides the pill
-    // while it is on screen, so scrolling is what brings the pill back too.)
-    await page.evaluate(() => {
-      const figure = document.querySelector("#home-map")?.closest("section")?.querySelector("figure");
-      if (figure) window.scrollTo(0, figure.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.35);
-    });
-    await page.getByRole("button", { name: "Daet AI assistant", exact: true }).click();
-
+    // Scroll past the hero, which hides the floating pill while it is on screen,
+    // then open the assistant from the pill: signed in on a wide screen, that
+    // lands in the dock.
+    await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 1.5, behavior: "instant" }));
+    const pill = page.getByRole("button", { name: "Daet AI assistant", exact: true });
+    await expect(pill).toBeVisible();
+    await pill.click();
     const dock = page.getByRole("region", { name: "Open chats" });
     await expect(dock.getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
+
+    // The pill sits where an open window lands, so it stands down.
+    await expect(pill).toBeHidden();
+
+    // Park the map across the middle of the screen, under the window.
+    await page.locator("#home-map").scrollIntoViewIfNeeded();
+    await page.locator(".leaflet-container").first().waitFor({ state: "visible" });
 
     // The map owns a stacking context, so its panes stay inside it.
     const isolation = await page.evaluate(() => {
@@ -102,6 +108,10 @@ test.describe("desktop chat heads", () => {
       return host ? getComputedStyle(host).isolation : "missing";
     });
     expect(isolation).toBe("isolate");
+    await page.evaluate(() => {
+      const box = document.querySelector(".leaflet-container")?.getBoundingClientRect();
+      if (box) window.scrollTo({ top: window.scrollY + box.top - window.innerHeight * 0.35, behavior: "instant" });
+    });
 
     // And where the two overlap, the dock is what the visitor sees.
     const dockBox = (await dock.locator("section").first().boundingBox())!;
