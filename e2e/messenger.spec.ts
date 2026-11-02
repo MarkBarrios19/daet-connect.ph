@@ -64,13 +64,13 @@ test.describe("desktop chat heads", () => {
     await dock.getByRole("button", { name: "Minimise Bagasbas Sunrise Surf Lesson" }).click();
     await expect(dock.getByRole("button", { name: "Open chat: Bagasbas Sunrise Surf Lesson" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Daet AI assistant" }).click();
+    await page.getByRole("button", { name: "Daet AI assistant", exact: true }).click();
     await expect(dock.getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
     await checkA11y(page, "chat dock");
 
     // The floating pill sits where an open window lands, so it stands down
     // instead of overlapping the panel's corner.
-    await expect(page.getByRole("button", { name: "Daet AI assistant" })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Daet AI assistant", exact: true })).toBeHidden();
 
     // A narrow window must never scroll its conversation sideways.
     const list = dock.getByRole("list", { name: "Conversation" }).first();
@@ -84,23 +84,39 @@ test.describe("desktop chat heads", () => {
     // and the attribution all sat on top of a chat the visitor was reading.
     await signInAs(context, "tourist");
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "Daet AI assistant" }).click();
-    await expect(page.getByRole("region", { name: "Open chats" }).getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
 
-    await page.locator("#home-map").scrollIntoViewIfNeeded();
-    await expect(page.locator(".leaflet-container").first()).toBeVisible();
+    // Park the map in the lower middle of the screen. (The hero hides the pill
+    // while it is on screen, so scrolling is what brings the pill back too.)
+    await page.evaluate(() => {
+      const figure = document.querySelector("#home-map")?.closest("section")?.querySelector("figure");
+      if (figure) window.scrollTo(0, figure.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.35);
+    });
+    await page.getByRole("button", { name: "Daet AI assistant", exact: true }).click();
 
+    const dock = page.getByRole("region", { name: "Open chats" });
+    await expect(dock.getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
+
+    // The map owns a stacking context, so its panes stay inside it.
     const isolation = await page.evaluate(() => {
       const host = document.querySelector(".leaflet-container")?.closest("[role='region']");
       return host ? getComputedStyle(host).isolation : "missing";
     });
     expect(isolation).toBe("isolate");
 
-    // And nothing in the page outranks the dock itself.
-    const zIndex = await page.evaluate(() => {
-      const dock = document.querySelector("[aria-label='Open chats']");
-      return dock ? getComputedStyle(dock).zIndex : null;
-    });
-    expect(Number(zIndex)).toBeGreaterThanOrEqual(800);
+    // And where the two overlap, the dock is what the visitor sees.
+    const dockBox = (await dock.locator("section").first().boundingBox())!;
+    const mapBox = (await page.locator(".leaflet-container").first().boundingBox())!;
+    const left = Math.max(dockBox.x, mapBox.x);
+    const right = Math.min(dockBox.x + dockBox.width, mapBox.x + mapBox.width);
+    const top = Math.max(dockBox.y, mapBox.y);
+    const bottom = Math.min(dockBox.y + dockBox.height, mapBox.y + mapBox.height);
+    expect(right - left, "the dock and the map overlap sideways").toBeGreaterThan(0);
+    expect(bottom - top, "the dock and the map overlap vertically").toBeGreaterThan(0);
+
+    const onTop = await page.evaluate(
+      ({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest("[aria-label='Open chats']")),
+      { x: left + (right - left) / 2, y: top + (bottom - top) / 2 },
+    );
+    expect(onTop, "the dock paints above the map").toBe(true);
   });
 });
