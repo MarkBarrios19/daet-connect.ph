@@ -21,6 +21,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EVENT_COLUMNS, MERCH_COLUMNS, type MerchItem, type TourEvent } from "@/lib/tours/promo-validation";
 
 const WRAP = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
+const SECTION = `${WRAP} py-20 sm:py-28 lg:py-36`;
 
 // One open at a time; the copy restates what this page and the place pages already say.
 const PANELS: PlacePanel[] = (
@@ -197,11 +198,11 @@ export default async function HomePage() {
       <PlaceFan places={FAN_PLACES} mapPlaces={mapPlaces} signedIn={!!user} />
 
       {/* Places: one panel open at a time, the rest narrow and grey. */}
-      <section aria-labelledby="home-places" className={`${WRAP} pt-16 sm:pt-24`}>
+      <section aria-labelledby="home-places" className={SECTION}>
         <h2 id="home-places" data-reveal className="display-2 text-daet-ink">
           Places to start
         </h2>
-        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-6 mt-3 max-w-2xl text-lg text-daet-ink sm:mb-8">
+        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-8 mt-3 max-w-2xl text-lg text-daet-ink sm:mb-10">
           Islands out by boat, the surf beach, and the old town where Rizal got his first monument.
         </p>
         <PlacePanels panels={PANELS} />
@@ -209,7 +210,7 @@ export default async function HomePage() {
 
       {/* Trips you can book: the newest published packages, drawn with the same
           photo-first card the browse page uses. */}
-      <section aria-labelledby="home-trips" className={`${WRAP} pt-20 sm:pt-32`}>
+      <section aria-labelledby="home-trips" className={SECTION}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 id="home-trips" data-reveal className="display-2 text-daet-ink">
             Trips you can book
@@ -218,7 +219,7 @@ export default async function HomePage() {
             All trips <LineIcon name="arrowRight" className="h-5 w-5" />
           </Link>
         </div>
-        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-6 mt-3 max-w-2xl text-lg text-daet-ink">
+        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-8 mt-3 max-w-2xl text-lg text-daet-ink sm:mb-10">
           Every operator is verified by the Daet Tourism Office.
         </p>
         {trips.length > 0 ? (
@@ -237,7 +238,7 @@ export default async function HomePage() {
       </section>
 
       {/* What's on: dated rows. */}
-      <section aria-labelledby="home-events" className={`${WRAP} pt-20 sm:pt-32`}>
+      <section aria-labelledby="home-events" className={SECTION}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 id="home-events" data-reveal className="display-2 text-daet-ink">
             What&apos;s on Daet.
@@ -247,7 +248,7 @@ export default async function HomePage() {
           </Link>
         </div>
         {upcomingEvents.length > 0 ? (
-          <ul className="mt-6 grid gap-3 md:grid-cols-2">
+          <ul className="mt-8 grid gap-3 sm:mt-10 md:grid-cols-2">
             {upcomingEvents.map((event) => (
               <li key={event.id} data-reveal>
                 <EventCard event={event} />
@@ -255,7 +256,7 @@ export default async function HomePage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-6 rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">
+          <p className="mt-8 rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink sm:mt-10">
             No events are posted yet. The <Link href="/tours/events" className="font-bold text-blue-700 dark:text-blue-300 underline">calendar</Link> lists the
             festivals and seasons through the year.
           </p>
@@ -272,13 +273,13 @@ export default async function HomePage() {
           map card does this work, nine tenths of a viewport tall, and a second
           map below the fold only repeats it. Hidden from `md` up rather than not
           built, so the pins are still there when a window is narrowed. */}
-      <section aria-labelledby="home-map" className={`${WRAP} pt-20 sm:pt-32 md:hidden`}>
+      <section aria-labelledby="home-map" className={`${SECTION} md:hidden`}>
         {/* A phone reaches this by scrolling; scroll-margin keeps the heading
             clear of the sticky header when it lands. */}
         <h2 id="home-map" data-reveal className="display-2 scroll-mt-[calc(var(--header-h)+1.5rem)] text-daet-ink">
           All on one map
         </h2>
-        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-6 mt-3 max-w-2xl text-lg text-daet-ink">
+        <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mb-8 mt-3 max-w-2xl text-lg text-daet-ink sm:mb-10">
           {mapPlaces.length > 1
             ? "Tap a pin to see that place at the top of the page."
             : "The map grows as the Tourism Office pins each place."}
@@ -291,7 +292,7 @@ export default async function HomePage() {
       </section>
 
       {/* Who runs the tours: an ink band with the Tourism Office's own counts. */}
-      <section aria-labelledby="home-people" className="mt-20 bg-slate-950 py-14 text-white sm:mt-32 sm:py-16">
+      <section aria-labelledby="home-people" className="my-20 bg-slate-950 py-16 text-white sm:my-28 sm:py-24 md:mt-56 lg:my-36 lg:mt-72">
         <div className={`${WRAP} flex flex-col gap-6 md:flex-row md:items-center md:justify-between`}>
           <div>
             <h2 id="home-people" data-reveal className="display-2">
@@ -332,7 +333,7 @@ export default async function HomePage() {
       <GettingHere />
 
       {featuredMerch.length > 0 ? (
-        <section aria-labelledby="home-merch" className={`${WRAP} pt-20 sm:pt-32`}>
+        <section aria-labelledby="home-merch" className={SECTION}>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 id="home-merch" data-reveal className="display-2 text-daet-ink">
               Take Daet home
@@ -341,7 +342,7 @@ export default async function HomePage() {
               All souvenirs <LineIcon name="arrowRight" className="h-5 w-5" />
             </Link>
           </div>
-          <ul className="mt-6 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-8 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:mt-10 sm:gap-6 lg:grid-cols-4">
             {featuredMerch.map((item) => (
               <li key={item.id} data-reveal className="flex">
                 <MerchCard item={item} />
@@ -352,7 +353,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* For operators and guides: a picture of their working world, and two ways in. */}
-      <section aria-labelledby="home-ops" className={`${WRAP} pt-20 sm:pt-32`}>
+      <section aria-labelledby="home-ops" className={SECTION}>
         <div className="grid items-center gap-8 overflow-hidden rounded-2xl card-edge bg-surface lg:grid-cols-2">
           <div className="relative aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[420px]">
             <Image src={PHOTOS.mercedesPort.src} alt={PHOTOS.mercedesPort.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
