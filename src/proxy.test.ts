@@ -6,10 +6,10 @@ jest.mock("@supabase/ssr", () => ({ createServerClient: jest.fn() }));
 
 const mockCreateClient = createServerClient as unknown as jest.Mock;
 
-function request(path: string, method = "GET") {
+function request(path: string, method = "GET", cookie = "sb-project-auth-token=base64-session") {
   return new NextRequest(new URL(path, "https://daet.test"), {
     method,
-    headers: { host: "daet.test", "x-forwarded-proto": "https", cookie: "sb-project-auth-token=base64-session" },
+    headers: { host: "daet.test", "x-forwarded-proto": "https", cookie },
   });
 }
 
@@ -39,6 +39,28 @@ describe("the session refresher", () => {
     // A refresh in front of POST /auth/logout re-wrote the very cookie the route
     // was deleting, and the browser kept a session the visitor had ended.
     expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it("takes a sign-in code that landed on the root to the route that exchanges it", async () => {
+    // Supabase falls back to the project's Site URL when it will not accept the
+    // address it was given, which drops `?code=` on the home page. When this
+    // browser holds the verifier, the code is still good — finish the sign-in.
+    const response = await proxy(
+      request("/?code=8f14e45f-ceea-467f-a1ce-45d1b6a2e1f0", "GET", "sb-project-auth-token-code-verifier=verifier"),
+    );
+
+    expect(response?.headers.get("location")).toBe(
+      "https://daet.test/auth/callback?code=8f14e45f-ceea-467f-a1ce-45d1b6a2e1f0",
+    );
+    // Nothing to refresh on the way: the callback ends or replaces the session.
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it("leaves a code on the root alone when this browser did not start the sign-in", async () => {
+    const response = await proxy(request("/?code=8f14e45f-ceea-467f-a1ce-45d1b6a2e1f0"));
+
+    expect(response?.headers.get("location")).toBeNull();
+    expect(getUser).toHaveBeenCalled();
   });
 
   it("does nothing at all when Supabase is not configured", async () => {

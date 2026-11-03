@@ -61,6 +61,21 @@ describe("Continue with Google", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
+  it("comes back to the host the visitor is on, even when the site has another address configured", async () => {
+    // NEXT_PUBLIC_APP_URL names the address emails must use. It must not move a
+    // sign-in: the PKCE verifier is a cookie for the host the flow started on,
+    // and a code delivered to another host could never be exchanged (round 47).
+    process.env.NEXT_PUBLIC_APP_URL = "https://daet-connect-ph.vercel.app";
+    const client = clientWith(AUTHORIZE);
+
+    await GET(request());
+
+    expect(client.auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: expect.objectContaining({ redirectTo: "https://daet.test/auth/callback" }),
+    });
+  });
+
   it("carries the PKCE verifier cookie to the redirect", async () => {
     clientWith(AUTHORIZE);
 

@@ -1,4 +1,4 @@
-import { authCallbackUrl, authOrigin, clientIp, isHostname } from "@/lib/auth/request";
+import { authCallbackUrl, authOrigin, clientIp, isHostname, requestOrigin } from "@/lib/auth/request";
 
 function requestHeaders(values: Record<string, string>) {
   return { get: (name: string) => values[name.toLowerCase()] ?? null };
@@ -65,6 +65,41 @@ describe("the origin email links are built from", () => {
   it("builds the callback on that origin and nothing else", () => {
     expect(authCallbackUrl("https://daet.ph/")).toBe("https://daet.ph/auth/callback");
     expect(authCallbackUrl("http://localhost:3101")).toBe("http://localhost:3101/auth/callback");
+  });
+});
+
+describe("the origin a sign-in round trip stays on", () => {
+  const env = process.env;
+
+  beforeEach(() => {
+    process.env = { ...env };
+    delete process.env.NEXT_PUBLIC_APP_URL;
+  });
+
+  afterAll(() => {
+    process.env = env;
+  });
+
+  it("is the host the flow started on, whatever the site is configured to be", () => {
+    // The PKCE verifier is a cookie for this host. A configured app URL that
+    // names another address of the same site sent the code somewhere the cookie
+    // did not exist, and every exchange failed (owner's report, round 47).
+    process.env.NEXT_PUBLIC_APP_URL = "https://daet-connect-ph.vercel.app";
+    expect(requestOrigin(requestHeaders({ host: "daet.test", "x-forwarded-proto": "https" }))).toBe("https://daet.test");
+  });
+
+  it("believes x-forwarded-host, keeps the port, and reads a LAN address as plain HTTP", () => {
+    expect(
+      requestOrigin(requestHeaders({ "x-forwarded-host": "preview.example", host: "internal:3000", "x-forwarded-proto": "https" })),
+    ).toBe("https://preview.example");
+    expect(requestOrigin(requestHeaders({ "x-forwarded-host": "localhost:3101", host: "localhost:3101" }))).toBe(
+      "http://localhost:3101",
+    );
+  });
+
+  it("falls back to the configured site when the host is not a host", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://daet-connect.ph";
+    expect(requestOrigin(requestHeaders({ host: "evil.example/steal" }))).toBe("https://daet-connect.ph");
   });
 });
 

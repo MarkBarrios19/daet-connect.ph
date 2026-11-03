@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEFAULT_AFTER_AUTH, NEXT_COOKIE } from "@/lib/auth/next-cookie";
 import { AUTH_LIMITS, takeAttempt, tooManyMessage } from "@/lib/auth/rate-limit";
-import { authCallbackUrl, authOrigin, clientIp } from "@/lib/auth/request";
+import { authCallbackUrl, clientIp, requestOrigin } from "@/lib/auth/request";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
@@ -17,7 +17,12 @@ export const dynamic = "force-dynamic";
  * URL, which has to match the project's allow list exactly.
  */
 export async function GET(request: NextRequest) {
-  const origin = authOrigin(request.headers);
+  // The origin the visitor is on, not the configured app address: the PKCE
+  // verifier this flow writes is a cookie for this host, so the code has to come
+  // back to it. Sending it to another address of the same site — which is what
+  // NEXT_PUBLIC_APP_URL does when it names a different alias — left every
+  // exchange without a verifier, and Google sign-in "did not work" (round 47).
+  const origin = requestOrigin(request.headers);
   const next = safeNextPath(request.nextUrl.searchParams.get("next"), DEFAULT_AFTER_AUTH);
 
   if (!isSupabaseConfigured()) {

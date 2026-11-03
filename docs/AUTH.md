@@ -54,11 +54,25 @@ Google ──► /auth/oauth ──► Google ──► /auth/callback ───
   `prompt=select_account`, and only ever follows a URL on the configured Supabase
   origin. The PKCE verifier cookie is written onto the redirect response
   explicitly — without that the callback would arrive with nothing to exchange.
+
+  **The round trip stays on the host it started on.** `redirectTo` is built from
+  the request's own host (`requestOrigin`), never from `NEXT_PUBLIC_APP_URL`:
+  the verifier is a cookie *for that host*, so a code delivered to another alias
+  of the same site can never be exchanged, and the visitor is left signed out
+  with nothing to read. `NEXT_PUBLIC_APP_URL` is for the links in emails, which
+  have to work on whatever device the inbox is on. Both hosts must appear in
+  Supabase's redirect allow list, with the scheme (`https://…`), or Supabase
+  refuses the redirect and drops the code on the Site URL instead.
 - **Callback** (`src/app/auth/callback/route.ts`) accepts `?code=` (default
   templates) and `?token_hash=&type=` (`.TokenHash` templates), exchanges on the
   server, and redirects to the remembered page. Codes and tokens never stay in
   the address bar. Failures go to `/login` or `/forgot-password` with a sentence
-  that says what to do next.
+  that says what to do next — a cancelled Google prompt, a provider still
+  switched off in the dashboard, credentials Google refused and an unconfirmed
+  address each get their own. A code that still lands on the site's root (which
+  is what Supabase's Site URL fallback does) is handed to the callback by
+  `src/proxy.ts`, but only when this browser holds the verifier, so it can
+  actually be exchanged.
 - **Resend** (`src/app/verify-email/actions.ts`) always answers the same thing,
   whatever the address is or whether Supabase accepted it.
 - **Sign-out** (`src/app/auth/logout/route.ts`) ends every session of the account,
@@ -121,12 +135,21 @@ confirmation check on. These are the steps, in order.
 1. **Confirm email ON.** Authentication → Sign In / Providers → Email →
    *Confirm email*. This is the setting the old migration told you to switch off.
 2. **URL configuration.** Authentication → URL Configuration:
-   - Site URL: `https://<your-domain>`
-   - Redirect URLs: `https://<your-domain>/auth/callback`,
-     `http://localhost:3000/auth/callback`, and, on Vercel,
-     `https://*-<your-team>.vercel.app/auth/callback`.
-   One path serves every email; no `?next=` is ever added to a link, so exact
-   entries are enough.
+   - Site URL: the address visitors actually use, with its scheme —
+     `https://daet-connect-ph.vercel.app` for this project.
+   - Redirect URLs, **each written as a full URL with `https://`** (an entry that
+     is only a hostname never matches, and Supabase then falls back to the Site
+     URL, dropping the sign-in code on the home page):
+
+     ```
+     https://daet-connect-ph.vercel.app/**
+     https://daet-connect-ph-<team>.vercel.app/**
+     https://daet-*-<team>.vercel.app/**      # preview deployments
+     http://localhost:3000/**
+     ```
+
+   Every alias the site is browsed at has to be listed, because a Google
+   round trip comes back to the host it started on.
 3. **Google provider.** Google Cloud Console → APIs & Services → Credentials →
    *Create OAuth client ID* → Web application:
    - Authorised JavaScript origin: `https://<your-domain>`
@@ -159,9 +182,32 @@ confirmation check on. These are the steps, in order.
    (Have I Been Pwned check), and keep the minimum length at 8 or higher.
 7. **Rate limits.** Authentication → Rate Limits: no looser than 2 sign-ups/min,
    30 verifications/min, 2 emails/hour per address.
-8. **`NEXT_PUBLIC_APP_URL`** in production env (`.env.example` has it). Without
+8. **`NEXT_PUBLIC_APP_URL`** in production env (`.env.example` has it). It fixes
+   the address used in the links Supabase sends (confirmation, reset, resend), so
+   a mail is never built from a header alone. It does **not** move a Google
+   sign-in: that round trip always returns to the host the visitor is on. Without
    it the app falls back to the request's host, which is correct but one proxy
    configuration away from being wrong.
+
+## 5a. An account made before Google sign-in was switched on
+
+Nothing special is needed, and nothing is lost. When Google reports an address
+that already belongs to an account — with that email confirmed, which the sign-up
+flow requires — Supabase attaches the Google identity to **that** account instead
+of making a second one. The visitor keeps their bookings, messages and role, and
+can still sign in with their password. This has happened in the live project:
+`tellmemaya25@gmail.com`, `tellmemaya25.4@gmail.com` and `barlanjayson968@gmail.com`
+each carry both an `email` and a `google` identity on one user id.
+
+Two things it will not do:
+
+- **A different Google address is a different person.** Signing in with
+  `someone-else@gmail.com` creates a new account with that address; Google has
+  not proved anything about the older one. To reach the older account, sign in
+  with the Google address that matches it, or use the password.
+- **An unconfirmed address is not linked.** The account has to have confirmed its
+  email first (`mailer_autoconfirm` is off). The sign-in form says so when it
+  sees an unconfirmed account, and `/verify-email` can send a fresh link.
 
 Nothing about Google's client secret or Supabase's keys is stored in this repo;
 `.env.example` lists only what the app itself reads.

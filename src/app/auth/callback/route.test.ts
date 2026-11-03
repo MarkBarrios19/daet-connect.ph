@@ -36,6 +36,81 @@ function location(response: Response) {
   return response.headers.get("location") ?? "";
 }
 
+describe("the callback's own address", () => {
+  const env = process.env;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    process.env = {
+      ...env,
+      NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      NEXT_PUBLIC_APP_URL: "https://daet-connect-ph.vercel.app",
+    };
+  });
+  afterAll(() => {
+    process.env = env;
+  });
+
+  it("finishes the sign-in on the host the code arrived on, not the configured site", async () => {
+    clientWith();
+
+    const response = await GET(request("/auth/callback?code=one-time-code", "/tours/me"));
+
+    // Moving the visitor to another alias mid-sign-in is how a Google round trip
+    // ended up somewhere its verifier cookie was never written (round 47).
+    expect(location(response)).toBe("https://daet.test/tours/me");
+  });
+});
+
+describe("what a failed Google sign-in says", () => {
+  const env = process.env;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    process.env = { ...env, NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon" };
+  });
+  afterAll(() => {
+    process.env = env;
+  });
+
+  const said = async (path: string) => {
+    const response = await GET(request(path));
+    const url = new URL(location(response));
+    return { path: url.pathname, message: url.searchParams.get("message") ?? "" };
+  };
+
+  it("says it was cancelled when the visitor closes the Google prompt", async () => {
+    clientWith();
+    const { path, message } = await said("/auth/callback?error=access_denied&error_description=User+denied+access");
+    expect(path).toBe("/login");
+    expect(message).toMatch(/cancelled/i);
+  });
+
+  it("says Google is not switched on when the provider is still off in the dashboard", async () => {
+    clientWith();
+    const { message } = await said(
+      "/auth/callback?error=server_error&error_description=Unsupported+provider%3A+provider+is+not+enabled",
+    );
+    expect(message).toMatch(/not switched on/i);
+    expect(message).toMatch(/email and password/i);
+  });
+
+  it("says Google refused when the client credentials are wrong", async () => {
+    clientWith();
+    const { message } = await said("/auth/callback?error=server_error&error_description=Unable+to+exchange+external+code");
+    expect(message).toMatch(/did not accept that sign-in/i);
+  });
+
+  it("keeps the email-link sentence for anything it cannot name", async () => {
+    clientWith();
+    const { path, message } = await said("/auth/callback?error=server_error&error_description=Something+odd");
+    expect(path).toBe("/login");
+    expect(message).toMatch(/could not be used in this browser/i);
+    expect(message).not.toMatch(/something odd/i);
+  });
+});
+
 describe("the email-link callback", () => {
   const env = process.env;
   beforeEach(() => {
