@@ -2,6 +2,8 @@
  * @jest-environment jsdom
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -160,6 +162,20 @@ describe("BookingSteps", () => {
 
     // The placeholder box is gone: the photograph is in its place.
     expect(band.textContent).not.toContain("image here");
+  });
+
+  it("keeps the owner's lettering, with its grain at half the strength it arrived at", () => {
+    // The artwork carries its own grain: feTurbulence clipped to the letters and
+    // flooded with black. It came at 0.27 alpha and the owner asked for half of
+    // that on this band (image-72). Reading the file is the only way to see it —
+    // the filter never reaches the DOM — and it catches the asset being replaced
+    // by the original.
+    const lettering = readFileSync(join(process.cwd(), "public/ticket/booking-in-3-moves.svg"), "utf8");
+    const grain = /flood-color="rgba\(0, 0, 0, ([\d.]+)\)"/.exec(lettering);
+
+    // The flood's alpha: the strength of every grain in the letters.
+    expect(grain).not.toBeNull();
+    expect(Number(grain![1])).toBeCloseTo(0.135, 3);
   });
 });
 
