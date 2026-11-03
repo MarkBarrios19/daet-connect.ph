@@ -50,6 +50,32 @@ test.describe("dark mode", () => {
     await context.close();
   });
 
+  test("the way back to the top is white on the dark paper and blue on the light one", async ({ browser }) => {
+    // The arrow is the page's one action-shaped control, so it is the brand's
+    // blue on light paper and white on the dark (owner's note, image-80).
+    const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    const up = page.getByRole("button", { name: "Back to top" });
+    await expect(up).toHaveCount(0);
+    await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 2, behavior: "instant" }));
+    await expect(up).toBeVisible();
+
+    const arrow = up.locator("svg");
+    const ink = () => arrow.evaluate((element) => getComputedStyle(element).color);
+
+    expect(await ink(), "white on the dark paper").toBe("rgb(255, 255, 255)");
+
+    // The same page, switched to the light theme.
+    await page.evaluate(() => {
+      document.documentElement.dataset.theme = "light";
+    });
+    expect(await ink(), "the brand's blue on light paper").toBe("rgb(29, 78, 216)");
+
+    await context.close();
+  });
+
   test("the phone menu switches theme, and the choice survives a reload", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     expect(await canvas(page)).toBe(LIGHT_CANVAS);

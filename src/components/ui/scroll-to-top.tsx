@@ -16,6 +16,10 @@ import { useEffect, useState } from "react";
  * floating chat button, and it sits at `z-30`: under the header, under the
  * dashboard's tab bar, over the page.
  *
+ * The arrow is the page's blue on light paper and white on the dark one (owner's
+ * note, image-80): the brand's own blue rather than the ink, so the one moving
+ * thing on the page is the one thing that is action-coloured.
+ *
  * `raised` lifts it clear of that tab bar, which a signed-in visitor has at the
  * foot of a phone's screen (role-tab-bar.tsx); AssistantWidget does the same
  * thing with its own pill.
@@ -49,7 +53,7 @@ export function ScrollToTop({ raised = false }: { raised?: boolean }) {
       type="button"
       onClick={toTop}
       aria-label="Back to top"
-      className={`fixed left-1/2 z-30 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full bg-surface/92 text-daet-ink ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong print:hidden dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900 dark:active:bg-white/20 ${
+      className={`fixed left-1/2 z-30 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full bg-surface/92 text-blue-700 ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong print:hidden dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900 dark:active:bg-white/20 ${
         raised
           ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-6"
           : "bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6"

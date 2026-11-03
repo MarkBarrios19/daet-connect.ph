@@ -69,6 +69,19 @@ describe("ScrollToTop", () => {
     expect(button.className).toContain("env(safe-area-inset-bottom)");
   });
 
+  it("colours the arrow blue on light paper and white on the dark one", () => {
+    // The arrow is the action, so it takes the brand's blue rather than the ink
+    // (owner's note, image-80), and the dark paper keeps it white.
+    render(<ScrollToTop />);
+    scrollTo(1400);
+    const button = screen.getByRole("button", { name: "Back to top" });
+
+    expect(button).toHaveClass("text-blue-700");
+    expect(button).toHaveClass("dark:text-white");
+    // …not the ink it used to be.
+    expect(button.className).not.toMatch(/(^|\s)text-daet-ink(\s|$)/);
+  });
+
   it("scrolls the page back to the top, smoothly by default", () => {
     const scroll = stubScroll();
     render(<ScrollToTop />);
