@@ -43,11 +43,14 @@ export function PlaceMapPanel({
   place,
   places,
   onPick,
+  height,
   className = "",
 }: {
   place: MapCardPlace;
   places: MapPoint[];
   onPick: (slug: string) => void;
+  /** The card's height while the map is out, as a plain CSS length. */
+  height?: string;
   className?: string;
 }) {
   const [showAll, setShowAll] = useState(false);
@@ -135,12 +138,15 @@ export function PlaceMapPanel({
   return (
     <div
       data-place-map
+      // A folded card is a different box, not the same box shortened: the key
+      // makes React build it fresh, so no height can be inherited by it.
+      key={collapsed ? "folded" : "open"}
       data-collapsed={collapsed ? "true" : "false"}
-      // The card's height is the caller's, as a variable, because folding it
-      // means going back to the header bar's own height — and `auto` is the one
-      // height that undoes it. React does not reliably clear an inline height
-      // when the style prop goes away, so the folded case says `auto` out loud.
-      style={{ height: collapsed ? "auto" : "var(--map-h, auto)" }}
+      // The height is the caller's, and it is a plain length — not a variable —
+      // because Chromium kept laying the card out at its expanded height after
+      // the inline style went back to `auto` (caught in CI, three times over:
+      // inline `auto`, one 44px child, and a 733px box).
+      style={{ height: collapsed ? "auto" : height }}
       className={`pointer-events-auto flex flex-col self-start overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
     >
       <div className="flex shrink-0 items-center gap-2 px-3 py-2">

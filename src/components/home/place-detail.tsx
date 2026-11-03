@@ -199,14 +199,15 @@ export function PlaceDetail({
             {/* A tall card, not a band: the owner asked for the map at about
                 nine tenths of the viewport (image-61), and for it to fold away
                 again when they want the photo (image-63). So the height is
-                handed over as a variable the card applies while it is open —
-                the card's top is the header plus the frame's own gap, so taking
+                handed over as a value the card applies while it is open — the
+                card's top is the header plus the frame's own gap, so taking
                 that off the height leaves its bottom edge on the 90% line. */}
             <PlaceMapPanel
               place={place}
               places={places}
               onPick={onPick}
-              className="w-[24rem] shrink-0 [--map-h:calc(90svh-var(--header-h)-1rem)]"
+              height="calc(90svh - var(--header-h) - 1rem)"
+              className="w-[24rem] shrink-0"
             />
             <div className="w-[18rem] shrink-0">{card}</div>
           </div>

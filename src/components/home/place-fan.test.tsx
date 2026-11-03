@@ -713,8 +713,8 @@ describe("PlaceFan's hero", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
     const panel = container.querySelector("[data-place-map]") as HTMLElement;
-    // The height travels as a variable, because folding the card has to undo it.
-    expect(panel.className).toContain("[--map-h:calc(90svh-var(--header-h)-1rem)]");
+    // The height travels from the caller, because folding the card has to undo it.
+    expect(panel.style.height).toContain("90svh");
     expect(panel.className).toContain("w-[24rem]");
     expect(panel.className).toContain("flex-col");
 
@@ -740,24 +740,29 @@ describe("PlaceFan's hero", () => {
     expect(fold).toHaveAttribute("aria-expanded", "true");
     expect(fold).toHaveAttribute("aria-controls", "place-map-body");
     expect(panel.getAttribute("data-collapsed")).toBe("false");
-    expect(panel.style.height).toBe("var(--map-h, auto)");
+    expect(panel.style.height).toContain("90svh");
     expect(panel.querySelector("[data-map-body]")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Show all" })).toBeInTheDocument();
 
     fireEvent.click(fold);
 
     expect(screen.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
-    expect(panel.getAttribute("data-collapsed")).toBe("true");
-    // Back to the bar's own height: the caller's variable is let go.
-    expect(panel.style.height).toBe("auto");
-    expect(panel.querySelector("[data-map-body]")).toBeNull();
+    // The folded card is a new box, not the old one shortened: that is how the
+    // height the caller gave it cannot survive the fold.
+    const folded = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(folded).not.toBe(panel);
+    expect(folded.getAttribute("data-collapsed")).toBe("true");
+    expect(folded.style.height).toBe("auto");
+    expect(folded.querySelector("[data-map-body]")).toBeNull();
     // "Show all" acts on a map nobody can see, so it goes with it.
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
     // The bar itself stays: it still says which place is open.
-    expect(panel.querySelector("[data-viewing]")).toHaveTextContent("Bagasbas Beach");
+    expect(folded.querySelector("[data-viewing]")).toHaveTextContent("Bagasbas Beach");
 
     fireEvent.click(screen.getByRole("button", { name: "Show the map" }));
-    expect(panel.querySelector("[data-map-body]")).not.toBeNull();
+    const reopened = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(reopened.querySelector("[data-map-body]")).not.toBeNull();
+    expect(reopened.style.height).toContain("90svh");
   });
 
   it("leaves a wheel over the open place's map to the map, which zooms with it", () => {
