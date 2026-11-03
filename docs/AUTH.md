@@ -122,7 +122,14 @@ confirmation check on. These are the steps, in order.
      users can sign in; publish it before evaluation.
    Then Supabase → Authentication → Providers → Google: paste the client ID and
    secret, enable. The secret belongs in the dashboard, never in this repo.
-4. **Email templates.** Authentication → Email Templates. Replace the link in
+4. **A mail server that can reach strangers.** Authentication → SMTP Settings.
+   Supabase's built-in email service only delivers to addresses on your own team
+   and is capped at a couple of messages an hour — fine for testing your own
+   address, useless for real visitors. Point it at a transactional provider
+   (Resend, Brevo, SendGrid, Amazon SES) with a verified sending domain before
+   you turn confirmations on for the public. Until then, sign-up is honest: it
+   says to check the inbox, and no link arrives.
+5. **Email templates.** Authentication → Email Templates. Replace the link in
    *Confirm signup*, *Magic Link*, *Reset password* and *Change email address*
    with the `{{ .TokenHash }}` form, so a link also works on a second device:
 
@@ -133,11 +140,11 @@ confirmation check on. These are the steps, in order.
    `type=recovery` for *Reset password*, `type=email_change` for *Change email
    address*. The app accepts this shape and the default `{{ .ConfirmationURL }}`
    shape.
-5. **Passwords.** Authentication → Passwords → *Leaked password protection* ON
+6. **Passwords.** Authentication → Passwords → *Leaked password protection* ON
    (Have I Been Pwned check), and keep the minimum length at 8 or higher.
-6. **Rate limits.** Authentication → Rate Limits: no looser than 2 sign-ups/min,
+7. **Rate limits.** Authentication → Rate Limits: no looser than 2 sign-ups/min,
    30 verifications/min, 2 emails/hour per address.
-7. **`NEXT_PUBLIC_APP_URL`** in production env (`.env.example` has it). Without
+8. **`NEXT_PUBLIC_APP_URL`** in production env (`.env.example` has it). Without
    it the app falls back to the request's host, which is correct but one proxy
    configuration away from being wrong.
 

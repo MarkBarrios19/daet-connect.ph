@@ -22,7 +22,8 @@ Three settings make this work, and none of them can live in this repository:
 
 1. **Authentication → Sign In / Providers → Email → Confirm email: ON.** With it off, anyone can claim any address; the app detects that and refuses the session, but the project should be configured properly.
 2. **Authentication → URL Configuration:** Site URL plus `/auth/callback` on every host you deploy to (`http://localhost:3000/auth/callback`, `https://<your-domain>/auth/callback`, and the Vercel preview wildcard).
-3. **Authentication → Providers → Google:** a Google Cloud OAuth client with `https://<project-ref>.supabase.co/auth/v1/callback` as its authorised redirect URI, pasted into Supabase. The client secret stays in the dashboard.
+3. **Authentication → SMTP Settings:** a transactional mail provider — Supabase's built-in service only delivers to your own team's addresses.
+4. **Authentication → Providers → Google:** a Google Cloud OAuth client with `https://<project-ref>.supabase.co/auth/v1/callback` as its authorised redirect URI, pasted into Supabase. The client secret stays in the dashboard.
 
 `docs/AUTH.md` has the full checklist (including the `{{ .TokenHash }}` email templates, leaked-password protection and rate limits), the audit that led here, the validation rules and the rate windows.
 
