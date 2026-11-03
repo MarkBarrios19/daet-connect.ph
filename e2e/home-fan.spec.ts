@@ -615,8 +615,10 @@ test.describe("home fan on a desktop", () => {
     const sizeOf = (locator: import("@playwright/test").Locator) =>
       locator.evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
 
-    const footerSize = await sizeOf(page.locator("footer").getByText("CONNECT-Daet", { exact: true }));
-    const headerSize = await sizeOf(page.locator("header").getByText("CONNECT-Daet", { exact: true }).first());
+    const footerSize = await sizeOf(page.locator("footer p").filter({ hasText: "CONNECT-Daet" }).first());
+    // The header's wordmark is a link whose accessible name carries its own
+    // "home", so it is not an exact text match: find it by role.
+    const headerSize = await sizeOf(page.getByRole("banner").getByRole("link", { name: /connect-daet/i }).first());
 
     expect(footerSize, "no billboard").toBeLessThanOrEqual(24);
     expect(Math.abs(footerSize - headerSize), "the header's own size").toBeLessThanOrEqual(2);
