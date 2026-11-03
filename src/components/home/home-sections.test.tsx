@@ -104,10 +104,17 @@ describe("BookingSteps", () => {
     expect(paper.className).toContain("bg-ticket-frame");
     // The grain is the owner's noise, at a tenth of what the reference carried.
     expect(paper.querySelector(".ticket-noise")?.className).toContain("opacity-[0.06]");
-    // And the perforation is drawn where the ticket is torn, not on a phone.
+    // The bites on the edge are worked out from the seam the band measures for
+    // itself (ticket-seam), which is what puts them on the left and right edges
+    // of a stacked ticket instead of its top and bottom.
+    expect(paper.className).toContain("ticket-seam");
+    // And the perforation is drawn where the ticket is torn — at 56% of the
+    // paper, right of the middle, so the lettering centred on the band crosses
+    // it — and not on a phone, where the tear runs across.
     const perf = shape.querySelector("[data-ticket-perf]") as HTMLElement;
     expect(perf.className).toContain("border-dashed");
-    expect(perf.className).toContain("left-1/2");
+    expect(perf.className).toContain("border-ticket-perf");
+    expect(perf.className).toContain("left-[56%]");
     expect(perf.className).toContain("hidden");
     expect(perf.className).toContain("md:block");
 
@@ -124,10 +131,13 @@ describe("BookingSteps", () => {
     expect((art.querySelector("img") as HTMLImageElement).getAttribute("src")).toBe(
       "/ticket/booking-in-3-moves.svg",
     );
-    // Between the halves on a phone; centred on the band once they sit side by
-    // side, which is what keeps it off the words on the card beside it.
-    expect(art.className).toContain("md:absolute");
-    expect(art.className).toContain("md:left-1/2");
+    // On the seam between the halves on a phone, half on the photograph and half
+    // on the card below it; centred on the band once they sit side by side,
+    // which is what keeps it off the words on the card beside it.
+    expect(art.className).toContain("ticket-seam");
+    expect(art.className).toContain("top-[var(--ticket-seam)]");
+    expect(art.className).toContain("left-1/2");
+    expect(art.className).toContain("md:top-1/2");
 
     // The right half is the warm white card with the three moves, word for word.
     const panel = band.querySelector("[data-ticket-panel]") as HTMLElement;

@@ -385,8 +385,52 @@ test.describe("home fan on a phone", () => {
 
     // The words the lettering shows are the band's heading.
     await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
+
+    // Stacked, the ticket is torn across it (the owner's phone design, image-68):
+    // the photograph and the card of moves meet, the pair of bites is on the left
+    // and right edges level with that line, and the lettering straddles it.
+    const photo = (await band.locator("[data-ticket-photo]").boundingBox())!;
+    const panel = (await band.locator("[data-ticket-panel]").boundingBox())!;
+    const art = (await band.locator("[data-ticket-art]").boundingBox())!;
+    const card = (await band.boundingBox())!;
+
+    expect(panel.y - (photo.y + photo.height), "the halves meet, no gap").toBeLessThanOrEqual(1.5);
+    expect(Math.abs(art.y + art.height / 2 - panel.y), "the lettering, on the seam").toBeLessThanOrEqual(2);
+
+    const holes = await maskHoles(band);
+    // The corners sit at nought, so the pair that is not at an edge of the paper
+    // vertically is the one the stacked layout moved onto the sides.
+    const stacked = holes.filter((hole) => hole.yUnit === "px" && hole.y > 1);
+    expect(stacked, "a bite on each side, not on the top and bottom").toHaveLength(2);
+    const [left, right] = [...stacked].sort((a, b) => a.x - b.x);
+    expect(left.x, "biting the left edge").toBeLessThanOrEqual(0.5);
+    expect(right.xUnit === "%" ? right.x : Number.NaN, "and the right one").toBeGreaterThanOrEqual(99);
+    expect(Math.abs(left.y - (panel.y - card.y)), "level with the seam").toBeLessThanOrEqual(2);
+    expect(Math.abs(right.y - left.y), "the pair on one line").toBeLessThanOrEqual(0.5);
   });
 });
+
+/**
+ * The holes `ticket-shape` masks out of the paper, as points in its own box.
+ *
+ * Chromium writes the mask back with the custom properties resolved, so this
+ * reads the geometry the browser actually used rather than the one in the file:
+ * `radial-gradient(circle 12px at 0px 253.5px, …)`.
+ */
+async function maskHoles(
+  band: import("@playwright/test").Locator,
+): Promise<Array<{ x: number; xUnit: string; y: number; yUnit: string }>> {
+  const mask = await band
+    .locator("[data-ticket-shape] .ticket-shape")
+    .evaluate((element) => getComputedStyle(element).maskImage);
+
+  return [...mask.matchAll(/at\s+(-?[\d.]+)(px|%)?\s+(-?[\d.]+)(px|%)?/g)].map((match) => ({
+    x: Number(match[1]),
+    xUnit: match[2] ?? "px",
+    y: Number(match[3]),
+    yUnit: match[4] ?? "px",
+  }));
+}
 
 /**
  * A colour as sRGB bytes, whatever shape the browser serialises it in.
@@ -480,6 +524,22 @@ test.describe("home fan on a desktop", () => {
     expect(Math.abs(artCentre - bandCentre), "the lettering, centred on the band").toBeLessThanOrEqual(2);
     expect(art.y + art.height / 2, "and down its middle").toBeCloseTo(photo.y + photo.height / 2, 0);
     expect(art.x + art.width, "clear of the card the words are set on").toBeLessThan(panel.x + 8);
+
+    // The tear is where the owner draws it — 56% across the paper, right of the
+    // lettering's middle — and the bites in the top and bottom edges are on that
+    // same line, so the lettering crosses the tear instead of hiding it.
+    const perforation = (await page.locator("[data-ticket-perf]").boundingBox())!;
+    expect(
+      Math.abs(perforation.x + perforation.width / 2 - (card.x + card.width * 0.56)),
+      "the tear, at 56% of the paper",
+    ).toBeLessThanOrEqual(2);
+
+    const holes = await maskHoles(page.locator("[data-ticket]"));
+    const percent = (value: number, unit: string) => (unit === "%" ? value : value === 0 ? 0 : Number.NaN);
+    const edges = holes.filter(
+      (hole) => percent(hole.x, hole.xUnit) === 56 && [0, 100].includes(percent(hole.y, hole.yUnit)),
+    );
+    expect(edges, "a bite in each of the top and bottom edges, on the tear").toHaveLength(2);
 
     await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
     await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);

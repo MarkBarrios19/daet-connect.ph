@@ -19,10 +19,9 @@ test.describe("dark mode", () => {
   });
 
   test("the ticket sits in the dark theme instead of blazing out of it", async ({ browser }) => {
-    // The owner's note on image-56 ("optimize colors for dark mode") carried
-    // over to the ticket of image-62: the reference's cream is the lightest
-    // thing on the page, so in dark mode the shape takes a card tone a step off
-    // the ground and the panel a shade under that.
+    // The owner's own dark band (image-67): the paper is a slate blue well off
+    // the near-black page — not the reference's cream — and the card of moves
+    // sits under it, darker than the paper it is printed on.
     const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
@@ -30,13 +29,13 @@ test.describe("dark mode", () => {
     const paper = await page
       .locator("[data-ticket-shape] .ticket-shape")
       .evaluate((element) => getComputedStyle(element).backgroundColor);
-    expect(paper, "a card tone, not the reference's cream").toBe("rgb(21, 32, 54)");
+    expect(paper, "the owner's slate paper, not the reference's cream").toBe("rgb(51, 69, 97)");
 
     const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [
       getComputedStyle(element).backgroundColor,
       getComputedStyle(element).color,
     ]);
-    expect(field, "a shade under the ticket, not its white").toBe("rgb(27, 39, 64)");
+    expect(field, "under the paper, not its white").toBe("rgb(22, 38, 72)");
     expect(ink, "the theme's own ink on it").toBe("rgb(226, 232, 240)");
 
     // And the photograph is seated in the theme with a fifth of the page's
