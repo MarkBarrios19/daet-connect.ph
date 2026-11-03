@@ -134,8 +134,9 @@ Starting with the `[exists]` rows means the page can ship without inventing a si
   somewhere to point. Metadata: `title: "Common questions"`, a description written from the top
   three questions, `robots` default.
 - **A home section** — the six strongest questions (book, pay, cancel, getting here, weather,
-  Calaguas-how-long) in the compact form of the same component, placed after "All on one map"
-  and before `AskBand`, ending with "All questions → `/tours/faq`". The home page currently has no
+  Calaguas-how-long) in the compact form of the same component, ending with "All questions →
+  `/tours/faq`". It closed the page from the start and still does: the owner moved it below the
+  "Run tours in Daet?" band (image-88), which is where it sits now. The home page currently has no
   FAQ at all, and this is where the pre-booking doubt actually happens.
 - **Not** a modal or a drawer: the content has to be indexable and linkable (`/tours/faq#cancel`).
 

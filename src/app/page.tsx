@@ -249,10 +249,15 @@ export default async function HomePage() {
       <BookingSteps />
 
       {/* All on one map: only the places that have coordinates are pinned, and
-          a pin opens that place in the fan at the top of the page. */}
-      <section aria-labelledby="home-map" className={`${WRAP} pt-20 sm:pt-32`}>
-        {/* The hero's "Open on the map" jumps here; scroll-margin keeps the
-            heading clear of the sticky header when it lands. */}
+          a pin opens that place in the fan at the top of the page.
+
+          Phones only (owner's note, image-87): on a desktop the open place's own
+          map card does this work, nine tenths of a viewport tall, and a second
+          map below the fold only repeats it. Hidden from `md` up rather than not
+          built, so the pins are still there when a window is narrowed. */}
+      <section aria-labelledby="home-map" className={`${WRAP} pt-20 sm:pt-32 md:hidden`}>
+        {/* A phone reaches this by scrolling; scroll-margin keeps the heading
+            clear of the sticky header when it lands. */}
         <h2 id="home-map" data-reveal className="display-2 scroll-mt-[calc(var(--header-h)+1.5rem)] text-daet-ink">
           All on one map
         </h2>
@@ -267,10 +272,6 @@ export default async function HomePage() {
           <p className="rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">[placeholder: no place has coordinates yet]</p>
         )}
       </section>
-
-      {/* The questions that block a booking, in the owner's two-column layout.
-          Six answered ones here; the full list is on /tours/faq. */}
-      <HomeFaq />
 
       {/* The one place the page says "just ask". */}
       <AskBand />
@@ -363,6 +364,12 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* The questions that block a booking, in the owner's two-column layout,
+          closing the page — after the band that asks operators and guides in
+          (owner's note, image-88). Six answered ones here; the full list is on
+          /tours/faq. */}
+      <HomeFaq />
     </PageFrame>
   );
 }

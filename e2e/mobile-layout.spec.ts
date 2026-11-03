@@ -28,12 +28,17 @@ test.describe("mobile layout at 360px", () => {
     await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 2, behavior: "instant" }));
     await expect(up).toBeVisible();
 
-    // Centred at the foot of the screen, a thumb's width off the edge.
+    // In the bottom-right corner, directly over the assistant pill (owner's note,
+    // image-91): same right edge, stacked on top of it.
     const box = (await up.boundingBox())!;
     const viewport = page.viewportSize()!;
-    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
-    expect(viewport.height - (box.y + box.height), "under the last thing on the screen").toBeGreaterThan(8);
-    expect(viewport.height - (box.y + box.height), "and on it").toBeLessThan(48);
+    expect(viewport.width - (box.x + box.width), "a thumb's width off the right edge").toBeGreaterThan(8);
+    expect(viewport.width - (box.x + box.width), "and on it").toBeLessThan(32);
+
+    const pill = (await page.getByRole("button", { name: "Daet AI assistant", exact: true }).boundingBox())!;
+    expect(Math.abs(box.x + box.width - (pill.x + pill.width)), "the same right edge").toBeLessThanOrEqual(2);
+    expect(box.y + box.height, "clear of the pill's top edge").toBeLessThanOrEqual(pill.y);
+    expect(pill.y - (box.y + box.height), "and close to it").toBeLessThan(16);
 
     await up.click();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(2);

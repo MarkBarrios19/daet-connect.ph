@@ -16,6 +16,11 @@ import { useEffect, useState } from "react";
  * floating chat button, and it sits at `z-30`: under the header, under the
  * dashboard's tab bar, over the page.
  *
+ * It stands in the bottom-right corner, directly over the "Daet AI assistant"
+ * pill, rather than centred (owner's note, image-91). Both are 44–48px circles
+ * on the same right edge, so they stack instead of competing for the same strip
+ * of page: the pill keeps the corner, this sits on top of it.
+ *
  * The arrow is the page's blue on light paper and white on the dark one (owner's
  * note, image-80): the brand's own blue rather than the ink, so the one moving
  * thing on the page is the one thing that is action-coloured.
@@ -53,10 +58,14 @@ export function ScrollToTop({ raised = false }: { raised?: boolean }) {
       type="button"
       onClick={toTop}
       aria-label="Back to top"
-      className={`fixed left-1/2 z-30 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full bg-surface/92 text-blue-700 ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong print:hidden dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900 dark:active:bg-white/20 ${
+      className={`fixed right-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-surface/92 text-blue-700 ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong print:hidden dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900 dark:active:bg-white/20 ${
+        // Clear of the assistant pill, which is 48px tall and sits 1rem off the
+        // foot of a phone, 1.5rem on a wide screen: this lands half a rem above
+        // its top edge either way. With a tab bar the pill steps down to 5rem —
+        // and off a phone's screen entirely — so the corner is the tab bar's.
         raised
-          ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-6"
-          : "bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6"
+          ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-20"
+          : "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-20"
       }`}
     >
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

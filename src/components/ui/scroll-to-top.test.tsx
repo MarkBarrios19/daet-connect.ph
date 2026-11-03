@@ -56,17 +56,37 @@ describe("ScrollToTop", () => {
     expect(screen.queryByRole("button", { name: "Back to top" })).not.toBeInTheDocument();
   });
 
-  it("is a 44px target at the foot of the page", () => {
+  it("is a 44px target in the bottom-right corner, over the assistant pill", () => {
     const button = (() => {
       render(<ScrollToTop />);
       scrollTo(1400);
       return screen.getByRole("button", { name: "Back to top" });
     })();
 
-    // A thumb-sized target, centred and fixed, not a link in the flow.
-    expect(button).toHaveClass("h-11", "w-11", "fixed", "left-1/2");
+    // A thumb-sized target, fixed and right-aligned — not a link in the flow, and
+    // not the page's centreline any more (owner's note, image-91).
+    expect(button).toHaveClass("h-11", "w-11", "fixed", "right-4");
+    expect(button.className).not.toContain("left-1/2");
     // Clear of a phone's bottom edge, and lifted over a dashboard's tab bar.
     expect(button.className).toContain("env(safe-area-inset-bottom)");
+  });
+
+  it("stands above the assistant pill on both counts of the corner", () => {
+    // The pill is 48px tall, 1rem off a phone's foot and 1.5rem on a wide screen;
+    // this clears it by half a rem either way. With a tab bar the pill steps down
+    // to 5rem, and the tab bar is the thing to clear.
+    const { unmount } = render(<ScrollToTop />);
+    scrollTo(1400);
+    const alone = screen.getByRole("button", { name: "Back to top" });
+    expect(alone.className).toContain("bottom-[calc(4.5rem+env(safe-area-inset-bottom))]");
+    expect(alone).toHaveClass("sm:bottom-20");
+    unmount();
+
+    render(<ScrollToTop raised />);
+    scrollTo(1400);
+    const raised = screen.getByRole("button", { name: "Back to top" });
+    expect(raised.className).toContain("bottom-[calc(5rem+env(safe-area-inset-bottom))]");
+    expect(raised).toHaveClass("sm:bottom-20");
   });
 
   it("colours the arrow blue on light paper and white on the dark one", () => {

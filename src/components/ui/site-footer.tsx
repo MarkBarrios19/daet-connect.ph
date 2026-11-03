@@ -62,7 +62,10 @@ export function SiteFooter({ credits = [], compact = false, className = "" }: { 
             </nav>
           ))}
         </div>
-        <p className="mt-14 font-[family-name:var(--font-display)] text-[clamp(2.5rem,11vw,10rem)] font-semibold leading-[0.9] tracking-[-0.04em] text-white">
+        {/* The wordmark at the header's own size, not a full-bleed headline
+            (owner's note, image-90): the close of the page should read as the
+            same name that opened it, not as a second billboard. */}
+        <p className="mt-14 font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight text-white sm:text-xl">
           CONNECT-Daet
         </p>
         <p className="mt-4 max-w-2xl text-slate-300">

@@ -88,36 +88,42 @@ describe("PlaceDetail", () => {
     expect(screen.getByText(FAN_PLACES[2].text)).toBeInTheDocument();
   });
 
-  it("links to the map, and to the trips near it", () => {
-    renderDetail();
+  it("links to Google Maps at the place's own coordinates, and to the trips near it", () => {
+    // "Open on the map" became "Open in Google Maps" (owner's note, image-92):
+    // the visitor who wants directions wants them in the app they already have.
+    renderDetail({ places: MAP_PLACES });
 
-    // "See the place" became "Open on the map" at the owner's request: the photo
-    // already shows the place, and the map is where the pins open it again.
-    expect(screen.getByRole("link", { name: "Open on the map" })).toHaveAttribute("href", "#home-map");
+    const maps = screen.getByRole("link", { name: /open in google maps/i });
+    expect(maps).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=14.131583,122.985083");
+    expect(maps).toHaveAttribute("target", "_blank");
+    expect(maps).toHaveAttribute("rel", "noopener noreferrer");
+    // Named for what it does: a new tab has to be announced, not discovered.
+    expect(maps).toHaveAccessibleName(/opens in a new tab/i);
+
     expect(screen.getByRole("link", { name: "Trips near here" })).toHaveAttribute("href", FAN_PLACES[2].toursHref);
   });
 
-  it("scrolls to the map without dropping the place it is showing", () => {
-    const original = Element.prototype.scrollIntoView;
-    const scrollIntoView = jest.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    // jsdom lays nothing out, so give the page the element the card points at.
-    const map = document.createElement("h2");
-    map.id = "home-map";
-    document.body.appendChild(map);
+  it("searches Google Maps by name when the place has no pin yet", () => {
+    // Nothing to give Google but the place's name, and a button that says it
+    // opens a map must still open one.
+    renderDetail({ places: [] });
 
-    try {
-      renderDetail();
-      fireEvent.click(screen.getByRole("link", { name: "Open on the map" }));
+    expect(screen.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
+      "href",
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Bagasbas Beach, Daet, Camarines Norte")}`,
+    );
+  });
 
-      expect(scrollIntoView).toHaveBeenCalledTimes(1);
-      // The hash is what holds this card open: changing it would close the
-      // place on the way to the map.
-      expect(window.location.hash).toBe("");
-    } finally {
-      map.remove();
-      Element.prototype.scrollIntoView = original;
-    }
+  it("leaves the place open behind Google Maps", () => {
+    // An external link is a navigation away; the hash is what holds this card
+    // open, so nothing here may touch it on the way out.
+    renderDetail({ places: MAP_PLACES });
+
+    const maps = screen.getByRole("link", { name: /open in google maps/i });
+    fireEvent.click(maps);
+
+    expect(window.location.hash).toBe("");
+    expect(screen.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeInTheDocument();
   });
 
   it("reports the step buttons to the handlers", () => {
@@ -144,7 +150,7 @@ describe("PlaceDetail", () => {
 
     const body = document.getElementById("place-detail-body") as HTMLElement;
     expect(body).not.toHaveAttribute("hidden");
-    expect(screen.getByRole("link", { name: "Open on the map" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /open in google maps/i })).toBeVisible();
 
     const fold = screen.getByRole("button", {
       name: "Hide the place's details",
