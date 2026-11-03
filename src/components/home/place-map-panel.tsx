@@ -54,6 +54,11 @@ export function PlaceMapPanel({
   className?: string;
 }) {
   const [showAll, setShowAll] = useState(false);
+  // The card over the map follows the pin: tapping the pin it points at folds the
+  // card away, and tapping it again brings it back (owner's note, image-81). The
+  // card sits over the map the visitor is working in, so the pin under it has to
+  // be able to put it out of the way.
+  const [cardOpen, setCardOpen] = useState(true);
   // The map folds away to its header bar, so the photo behind it comes back
   // (owner's note on image-63, "make the maps collapsible"). It keeps the
   // visitor's choice while they step through the places.
@@ -62,7 +67,26 @@ export function PlaceMapPanel({
   const tail = useRef<HTMLSpanElement>(null);
 
   // Stepping to another place is a fresh focus, even if the last one was "Show all".
-  useEffect(() => setShowAll(false), [place.slug]);
+  useEffect(() => {
+    setShowAll(false);
+    setCardOpen(true);
+  }, [place.slug]);
+
+  /**
+   * A pin on the map.
+   *
+   * The pin the card points at is a switch: one tap folds the card away, the next
+   * brings it back. Any other pin opens that place, which brings the card back
+   * with it — the card belongs to whichever place is showing.
+   */
+  const pickPin = (slug: string) => {
+    if (slug === place.slug) {
+      setCardOpen((open) => !open);
+      return;
+    }
+    setCardOpen(true);
+    onPick(slug);
+  };
 
   /**
    * Sit the card above the pin and point its tail at it (image-42).
@@ -216,7 +240,7 @@ export function PlaceMapPanel({
             focusId={showAll || !pinned ? null : place.slug}
             fitKey={showAll ? "all" : place.slug}
             animateFit
-            onMarkerClick={onPick}
+            onMarkerClick={pickPin}
             onFocusPoint={trackPin}
             // Room above the pin for the card *and* the pin's own photo, and the
             // wheel zooms: this map is what the visitor is working in.
@@ -234,8 +258,15 @@ export function PlaceMapPanel({
             ref={card}
             data-map-place
             data-anchored="false"
+            // Kept in the page while it is folded away, rather than unmounted:
+            // its position over the pin is measured from its own box, and a card
+            // built again would have to be measured and placed a second time —
+            // on a map that may not have moved since.
+            data-open={cardOpen ? "true" : "false"}
             aria-hidden="true"
-            className="pointer-events-none absolute z-[800] w-52"
+            className={`pointer-events-none absolute z-[800] w-52 origin-bottom transition-[opacity,scale] duration-200 ease-out ${
+              cardOpen ? "" : "scale-90 opacity-0"
+            }`}
             style={{ left: "0.75rem", top: "0.75rem" }}
           >
             {/* The tail: a rotated square on the card's own ground, so the card
