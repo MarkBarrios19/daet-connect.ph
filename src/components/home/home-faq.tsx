@@ -12,7 +12,7 @@ import { HOME_FAQ } from "@/lib/faq";
  */
 export function HomeFaq() {
   return (
-    <section aria-labelledby="home-faq" className="mx-auto w-full max-w-7xl px-4 pt-20 sm:px-6 sm:pt-32 lg:px-8">
+    <section aria-labelledby="home-faq" className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] lg:gap-12">
         <div>
           <h2 id="home-faq" data-reveal className="display-2 text-daet-ink">

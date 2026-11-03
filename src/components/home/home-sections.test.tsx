@@ -9,6 +9,7 @@ import { act, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { BookingSteps } from "./booking-steps";
 import { GettingHere } from "./getting-here";
+import { HomeFaq } from "./home-faq";
 import { HomeMap, type MapPlace } from "./home-map";
 import { GETTING_HERE, GETTING_HERE_CHECK, GETTING_HERE_SOURCES } from "@/lib/getting-here";
 import { PHOTOS } from "@/lib/photo-credits";
@@ -227,5 +228,30 @@ describe("HomeMap", () => {
 
     expect(window.location.hash).toBe("#place-first-rizal-monument");
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+  });
+});
+
+describe("Home section breathing room", () => {
+  it("gives every section top and bottom vertical breathing room", () => {
+    const { container: gettingHere } = render(<GettingHere />);
+    const gettingSection = gettingHere.querySelector("section[aria-labelledby='home-getting-here']") as HTMLElement;
+    expect(gettingSection.className).toContain("py-20");
+    expect(gettingSection.className).toContain("sm:py-28");
+    expect(gettingSection.className).toContain("lg:py-36");
+
+    const { container: faq } = render(<HomeFaq />);
+    const faqSection = faq.querySelector("section[aria-labelledby='home-faq']") as HTMLElement;
+    expect(faqSection.className).toContain("py-20");
+    expect(faqSection.className).toContain("sm:py-28");
+    expect(faqSection.className).toContain("lg:py-36");
+
+    const { container: ticket } = render(<BookingSteps />);
+    const ticketSection = ticket.querySelector("section[aria-labelledby='home-how']") as HTMLElement;
+    expect(ticketSection.className).toContain("my-20");
+    expect(ticketSection.className).toContain("sm:my-28");
+    expect(ticketSection.className).toContain("lg:my-36");
+
+    const homePage = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
+    expect(homePage).toContain('const SECTION = `${WRAP} py-20 sm:py-28 lg:py-36`');
   });
 });
