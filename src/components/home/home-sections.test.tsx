@@ -84,49 +84,56 @@ describe("GettingHere", () => {
 });
 
 describe("BookingSteps", () => {
-  it("is the owner's postcard: a cream frame, the photograph and the cyan panel", () => {
-    // The owner's references: the SVG's bitten frame (image-49), the palette of
-    // image-52, and the photograph itself filling the left half.
+  it("is the owner's ticket: their shape, their lettering, the photograph and the three moves", () => {
+    // The owner's design (image-62) and the two SVGs they sent with it: one
+    // ticket shape with a bite out of its top and bottom edges and a dashed
+    // perforation down the middle, the lettering straddling that seam, the
+    // photograph inset in the left half and the three moves on the right.
     const { container } = render(<BookingSteps />);
 
     const band = container.querySelector("[data-ticket]") as HTMLElement;
     expect(band).toBeInTheDocument();
-    expect(band.className).toContain("ticket-band");
 
-    // The ridge is a decorative layer behind the words: softened, masked into
-    // the bites, grained — and never in front of anything a visitor reads.
-    const ridge = band.firstElementChild as HTMLElement;
-    expect(ridge.getAttribute("aria-hidden")).toBe("true");
-    expect(ridge.className).toContain("ticket-ridge");
-    const frame = ridge.querySelector("[data-ticket-frame]") as HTMLElement;
-    expect(frame.className).toContain("ticket-frame");
-    expect(frame.className).toContain("bg-ticket-frame");
-    // The owner's noise is the card's surface: the ridge, the photograph and
-    // the cyan panel, and nothing else on the band.
-    expect(frame.querySelector(".ticket-noise")).not.toBeNull();
-    expect((band.querySelector("[data-ticket-photo]") as HTMLElement).querySelector(".ticket-noise")).not.toBeNull();
-    expect((band.querySelector("[data-ticket-panel]") as HTMLElement).querySelector(".ticket-noise")).not.toBeNull();
+    // The ticket is a decorative layer behind everything, in the theme's own
+    // colour, bitten by a mask so its circles stay circles at any width.
+    const shape = band.querySelector("[data-ticket-shape]") as HTMLElement;
+    expect(shape.getAttribute("aria-hidden")).toBe("true");
+    expect(shape.className).toContain("absolute");
+    const paper = shape.querySelector(".ticket-shape") as HTMLElement;
+    expect(paper.className).toContain("ticket-shape");
+    expect(paper.className).toContain("bg-ticket-frame");
+    // The grain is the owner's noise, at a tenth of what the reference carried.
+    expect(paper.querySelector(".ticket-noise")?.className).toContain("opacity-[0.06]");
+    // And the perforation is drawn where the ticket is torn, not on a phone.
+    const perf = shape.querySelector("[data-ticket-perf]") as HTMLElement;
+    expect(perf.className).toContain("border-dashed");
+    expect(perf.className).toContain("left-1/2");
+    expect(perf.className).toContain("hidden");
+    expect(perf.className).toContain("md:block");
 
-    // The left half is the photograph, full bleed, with the heading on it.
+    // The photograph, inset from the ticket's edge, with the same paper on it.
     const photo = band.querySelector("[data-ticket-photo]") as HTMLElement;
     const image = photo.querySelector("img") as HTMLImageElement;
     expect(image.getAttribute("src")).toContain("rizal-monument-park");
     expect(image.getAttribute("alt")).toBe(PHOTOS.rizalMonumentPark.alt);
-    const heading = photo.querySelector("h2") as HTMLElement;
-    expect(heading.textContent).toBe("Booking, in three moves");
-    expect(heading.className).toContain("text-white");
-    // Centred at the foot of the picture on a phone, set right against the
-    // cyan panel once the halves sit side by side.
-    expect(heading.className).toContain("text-center");
-    expect(heading.className).toContain("bottom-8");
-    expect(heading.className).toContain("md:text-right");
-    // The placeholder box is gone: the photograph is in its place.
-    expect(band.textContent).not.toContain("image here");
+    expect(photo.querySelector(".ticket-noise")).not.toBeNull();
+    expect(photo.className).toContain("rounded-[1.25rem]");
 
-    // The right half is the cyan panel with the three moves, word for word.
+    // The lettering is the owner's file, not a redrawn one.
+    const art = band.querySelector("[data-ticket-art]") as HTMLElement;
+    expect((art.querySelector("img") as HTMLImageElement).getAttribute("src")).toBe(
+      "/ticket/booking-in-3-moves.svg",
+    );
+    // Between the halves on a phone; centred on the band once they sit side by
+    // side, which is what keeps it off the words on the card beside it.
+    expect(art.className).toContain("md:absolute");
+    expect(art.className).toContain("md:left-1/2");
+
+    // The right half is the warm white card with the three moves, word for word.
     const panel = band.querySelector("[data-ticket-panel]") as HTMLElement;
-    expect(panel.className).toContain("bg-ticket-field");
-    expect(panel.className).toContain("text-ticket-ink");
+    expect(panel.className).toContain("bg-ticket-panel");
+    expect(panel.className).toContain("text-daet-ink");
+    expect(panel.querySelector(".ticket-noise")).not.toBeNull();
     const items = Array.from(panel.querySelectorAll("ol > li"));
     expect(items).toHaveLength(3);
     expect(items.map((item) => item.querySelector("p")?.textContent)).toEqual([
@@ -134,6 +141,15 @@ describe("BookingSteps", () => {
       "Send your request.",
       "Show your ticket QR.",
     ]);
+
+    // What the lettering says for the eye, the heading says for a screen reader.
+    const heading = band.querySelector("h2") as HTMLElement;
+    expect(heading.id).toBe("home-how");
+    expect(heading.className).toContain("sr-only");
+    expect(heading.textContent).toBe("Booking, in three moves");
+
+    // The placeholder box is gone: the photograph is in its place.
+    expect(band.textContent).not.toContain("image here");
   });
 });
 

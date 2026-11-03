@@ -43,23 +43,17 @@
      1.5px in `card-edge`, so a card's edge reads at a glance instead of only when
      looked for. */
   --color-hairline: #d3dae5;
-  /* The "Booking, in three moves" band is the owner's postcard: a cream frame
-     with semicircular bites taken out of it, a photograph in its left half and
-     a flat cyan panel on the right. Frame and field are sampled from the
-     owner's reference (image-52: cream rgb(232 215 185), cyan rgb(29 180 247)).
-     In dark mode the frame turns to the page's own off-white — the owner's note
-     after seeing it (image-50): the dark ridge disappeared into the dark
-     ground, so the frame takes the heading's colour there instead. The values
-     there are then pulled back a step (image-56, "optimize colors for dark
-     mode"): the panel was 375k pixels of neon on a near-black page, so it and
-     the frame are dimmed until the card sits in the theme instead of glaring
-     out of it — see the dark block below for the numbers and the contrast.
-     The cyan panel is *printed*: its copy stays dark in both themes (an ink
-     that does not switch), because white on that cyan is 2.3:1 — well under
-     AA — while this ink is 7.5:1. */
+  /* The "Booking, in three moves" band is the owner's ticket (image-62): one
+     printed shape with a bite out of the top and bottom edges and a perforation
+     down the middle, a photograph inset into its left half and the three moves
+     on a card of nearly the page's own white on the right. Both colours are
+     sampled from that reference — the ticket's cream and the card's warm white.
+     In dark mode the ticket turns a card tone a step off the page's ground and
+     the panel a shade under it: the reference is the lightest thing on the page
+     and 375k pixels of it would glare on a near-black ground (the owner's note
+     on image-56, "optimize colors for dark mode"). */
   --color-ticket-frame: #e8d7b9;
-  --color-ticket-field: #1db4f7;
-  --color-ticket-ink: #0f172a;
+  --color-ticket-panel: #faf6ef;
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
   --color-map-ground: #f2efe9;
@@ -159,50 +153,43 @@
   box-shadow: inset 0 0 0 1.5px var(--color-hairline);
 }
 
-/* The postcard band (owner's SVG image-49, palette from image-52).
+/* The ticket's edge (owner's shape, image-62).
  *
- * The band is drawn as a frame with a row of semicircular bites taken out of it:
- * the bites are a mask rather than paint, so what shows through them is the page
- * itself — the white ground in light, near-black in dark — and the edge keeps
- * working in both themes. The mask is on a decorative layer behind the content,
- * so nothing a visitor reads is ever clipped, and a browser without masks falls
- * back to a plain square frame.
+ * Six bites out of one shape: a quarter circle at each corner and a half circle
+ * in the middle of the top and bottom edges, where the perforation runs into
+ * them. They are masks of fixed radii rather than one stretched SVG — the
+ * owner's note on image-64 was that the circles came out deformed, because a
+ * 1925×556 shape told to fill a wider band turns every circle into a capsule.
+ * A mask keeps them circles at any size, which is what "keep it responsive"
+ * asks for, and it is on a decorative layer *behind* the content, so nothing a
+ * visitor reads is clipped. A browser without mask compositing falls back to a
+ * plain rounded shape rather than losing the card.
  *
- * The sizes follow the SVG's own proportions: its frame is 51px wide and 39px
- * tall at 1919px, with 35px and 24px bites — which would swallow a phone, so
- * both scale with the viewport. The pitches are the SVG's too (one bite every
- * ~98.5px along the top, ~99.5px down the sides), kept as multiples of the bite
- * so the spacing stays even at every width. */
-@utility ticket-band {
-  --ticket-frame-x: clamp(14px, 2.7vw, 51px);
-  --ticket-frame-y: clamp(13px, 2vw, 39px);
-  --ticket-bite-x: calc(var(--ticket-frame-x) * 0.686);
-  --ticket-bite-y: calc(var(--ticket-frame-y) * 0.615);
-  padding: var(--ticket-frame-y) var(--ticket-frame-x);
-}
+ * The radii follow the SVG's own proportions at its height: the corner bites
+ * are 44 of its 556, the edge ones 25 — clamped so a phone does not lose a
+ * third of the card to its own scallops.
+ */
+@utility ticket-shape {
+  --ticket-corner: clamp(16px, 2.4vw, 28px);
+  --ticket-notch: clamp(10px, 1.5vw, 16px);
+  border-radius: clamp(10px, 1.2vw, 16px);
 
-@utility ticket-frame {
-  /* Only where the mask can be composited: on anything older the band keeps a
-     plain square frame rather than losing its edge altogether. */
   @supports (mask-composite: intersect) {
     mask-image:
-      radial-gradient(circle var(--ticket-bite-y) at 50% 0, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
-      radial-gradient(circle var(--ticket-bite-y) at 50% 100%, transparent calc(var(--ticket-bite-y) - 0.5px), #000 calc(var(--ticket-bite-y) + 0.5px)),
-      radial-gradient(circle var(--ticket-bite-x) at 0 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px)),
-      radial-gradient(circle var(--ticket-bite-x) at 100% 50%, transparent calc(var(--ticket-bite-x) - 0.5px), #000 calc(var(--ticket-bite-x) + 0.5px));
-    mask-size:
-      calc(var(--ticket-bite-y) * 4.1) 100%,
-      calc(var(--ticket-bite-y) * 4.1) 100%,
-      100% calc(var(--ticket-bite-x) * 2.84),
-      100% calc(var(--ticket-bite-x) * 2.84);
-    mask-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+      radial-gradient(circle var(--ticket-corner) at 0 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 0 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-notch) at 50% 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-notch) at 50% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      linear-gradient(#000, #000);
     mask-composite: intersect;
   }
 }
 
-/* Paper, not paint: the postcard is a printed thing (owner's note on image-52,
- * and the noise they sent with it), so the ridge, the photograph and the cyan
- * panel all carry the same surface — nothing else on the band does.
+/* Paper, not paint: the band is a printed ticket (owner's note on image-52, and
+ * the noise they sent with it), so the photograph and the panel behind the three
+ * moves both carry the same surface — nothing else on the band does.
  *
  * The grain is the owner's own noise filter: fractal turbulence lit by a
  * distant light (feSpecularLighting), which is what gives it a raised, stucco
@@ -213,15 +200,6 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 700' width='700' height='700'%3E%3Cdefs%3E%3Cfilter id='n' x='-20%25' y='-20%25' width='140%25' height='140%25' color-interpolation-filters='linearRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.125' numOctaves='4' seed='15' stitchTiles='stitch'/%3E%3CfeSpecularLighting surfaceScale='28' specularConstant='0.7' specularExponent='20' lighting-color='%237957A8'%3E%3CfeDistantLight azimuth='3' elevation='48'/%3E%3C/feSpecularLighting%3E%3C/filter%3E%3C/defs%3E%3Crect width='700' height='700' fill='transparent'/%3E%3Crect width='700' height='700' fill='%237957a8' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 700px 700px;
   mix-blend-mode: overlay;
-}
-
-/* A hair of blur so the ridge does not look cut out with scissors. It sits on
- * the wrapper *around* the masked layer, so it softens the scalloped edge the
- * mask has already drawn — the one thing the mask itself cannot do, since a
- * filter on an element runs before its mask. Only the decorative layer carries
- * this; nothing a visitor reads is touched. */
-@utility ticket-ridge {
-  filter: blur(0.75px);
 }
 
 /* Wayra, for the hero's two buttons.
@@ -320,13 +298,11 @@
     --color-muted-strong: #26324d;
     --color-line: #334160;
     --color-hairline: #2b3a57;
-    /* The postcard, dimmed for the dark ground: the frame is an off-white a
-       step under the heading's, and the field a step deeper than the
-       reference's cyan, which was the largest light area on the page. Both
-       keep the card's own ink readable — 6.1:1 for the titles, 4.9:1 for the
-       body copy at 85%. */
-    --color-ticket-frame: #cdd6e3;
-    --color-ticket-field: #10a2dc;
+    /* The ticket, seated in the dark ground: a card tone a step off it, and the
+       panel a step under that. The photograph is washed with the ground rather
+       than left blazing. */
+    --color-ticket-frame: #152036;
+    --color-ticket-panel: #1b2740;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -342,8 +318,8 @@
       --color-muted-strong: #26324d;
       --color-line: #334160;
       --color-hairline: #2b3a57;
-      --color-ticket-frame: #cdd6e3;
-      --color-ticket-field: #10a2dc;
+      --color-ticket-frame: #152036;
+      --color-ticket-panel: #1b2740;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -362,8 +338,7 @@
     --color-line: #cbd5e1;
     --color-hairline: #d3dae5;
     --color-ticket-frame: #e8d7b9;
-    --color-ticket-field: #1db4f7;
-    --color-ticket-ink: #0f172a;
+    --color-ticket-panel: #faf6ef;
   }
 }
 

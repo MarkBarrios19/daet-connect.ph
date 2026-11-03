@@ -354,80 +354,37 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Trips you can book" })).toBeVisible();
   });
 
-  test("is the owner's postcard: a grained cream frame, the photograph and the cyan panel", async ({ page }) => {
-    // The owner's references: the SVG's bitten frame (image-49), image-52's
-    // palette, and the photograph itself filling the left half.
+  test("is the owner's ticket: their lettering across the perforation, the photograph and the three moves", async ({ page }) => {
+    // The owner's reference (image-62) and the two SVGs that came with it.
     await visit(page, "/");
 
     const band = page.locator("[data-ticket]");
     await expect(band).toBeVisible();
     await band.scrollIntoViewIfNeeded();
 
-    // The ridge: a hair of blur on the wrapper, one gradient per edge on the
-    // masked layer, all four intersected, in the reference's cream — and a mask
-    // rather than paint, so what shows through the bites is the page.
-    const ridge = await band.evaluate((element) => {
-      const wrapper = element.firstElementChild as HTMLElement;
-      const frame = wrapper.querySelector("[data-ticket-frame]") as HTMLElement;
-      const grain = frame.firstElementChild as HTMLElement;
-      const style = getComputedStyle(frame);
-      return {
-        blur: getComputedStyle(wrapper).filter,
-        bites: style.maskImage.split("radial-gradient").length - 1,
-        composite: style.maskComposite,
-        paint: style.backgroundColor,
-        grain: getComputedStyle(grain).backgroundImage.includes("feSpecularLighting"),
-      };
-    });
-    expect(ridge.bites, "one bite per edge").toBe(4);
-    expect(ridge.composite.split(",").map((value) => value.trim()), "all four layers intersected").toEqual([
-      "intersect",
-      "intersect",
-      "intersect",
-      "intersect",
-    ]);
-    expect(ridge.paint, "the reference's cream").toBe("rgb(232, 215, 185)");
-    expect(ridge.blur, "a hair of blur on the ridge").toContain("blur");
-    expect(ridge.grain, "and the owner's noise on it").toBe(true);
+    // The ticket is the theme's cream, not a colour baked into a file: that is
+    // what lets it turn over in dark mode.
+    const paint = await band
+      .locator("[data-ticket-shape] .ticket-shape")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(paint, "the reference's cream").toBe("rgb(232, 215, 185)");
 
-    // The same noise is the card's surface: the ridge, the photograph, the panel.
-    const surfaces = await band.evaluate((element) =>
-      ["[data-ticket-frame]", "[data-ticket-photo]", "[data-ticket-panel]"].map((selector) => {
-        const layer = element.querySelector(`${selector} .ticket-noise`) as HTMLElement | null;
-        return layer ? getComputedStyle(layer).backgroundImage.includes("feSpecularLighting") : false;
-      }),
-    );
-    expect(surfaces, "ridge, photograph, panel").toEqual([true, true, true]);
+    // The photograph is in the ticket, and the owner's lettering is the file
+    // they sent — noise and drop shadow included.
+    await expect(band.locator("[data-ticket-photo] img")).toHaveAttribute("src", /rizal-monument-park/);
+    await expect(band.locator("[data-ticket-art] img")).toHaveAttribute("src", "/ticket/booking-in-3-moves.svg");
+    await expect(band.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
 
-    // The left half is the photograph, full bleed, with the heading on it.
-    const photo = band.locator("[data-ticket-photo]");
-    await expect(photo.locator("img")).toHaveAttribute("src", /rizal-monument-park/);
-    await expect(photo.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
-
-    // On a phone the halves are stacked, so the heading goes to the foot of the
-    // picture, centred, rather than sitting against a panel beside it.
-    const heading = await photo.locator("h2").evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
-      return {
-        align: getComputedStyle(element).textAlign,
-        offCentre: Math.round((box.left + box.right) / 2 - (half.left + half.right) / 2),
-        gapToFoot: Math.round(half.bottom - box.bottom),
-      };
-    });
-    expect(heading.align, "centred").toBe("center");
-    expect(Math.abs(heading.offCentre), "in the middle of the picture").toBeLessThanOrEqual(1);
-    expect(heading.gapToFoot, "at its foot").toBeLessThanOrEqual(40);
-
-    // The right half is the reference's cyan, carrying dark copy: white on it
-    // is 2.3:1, under AA, so the panel is printed in ink in both themes.
-    const panel = band.locator("[data-ticket-panel]");
-    const [field, ink] = await panel.evaluate((element) => [
-      getComputedStyle(element).backgroundColor,
-      getComputedStyle(element).color,
-    ]);
-    expect(field, "the reference's cyan").toBe("rgb(29, 180, 247)");
+    // The panel is the warm white from the reference, and its copy is the
+    // theme's ink: dark on that cream is 15:1.
+    const [field, ink] = await band
+      .locator("[data-ticket-panel]")
+      .evaluate((element) => [getComputedStyle(element).backgroundColor, getComputedStyle(element).color]);
+    expect(field, "the reference's warm white").toBe("rgb(250, 246, 239)");
     expect(ink, "dark copy on it").toBe("rgb(15, 23, 42)");
+
+    // The words the lettering shows are the band's heading.
+    await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
   });
 });
 
@@ -500,32 +457,32 @@ test.describe("home fan on a desktop", () => {
     hasTouch: false,
   });
 
-  test("splits the booking band: the photograph on the left, the three moves on the right", async ({ page }) => {
+  test("splits the booking band: the photograph on the left, the three moves on the right, the lettering across the seam", async ({ page }) => {
     await visit(page, "/");
     await page.evaluate(() =>
       document.querySelector("#home-how")?.scrollIntoView({ block: "center", behavior: "instant" }),
     );
 
-    const photo = await page.locator("[data-ticket-photo]").boundingBox();
-    const panel = await page.locator("[data-ticket-panel]").boundingBox();
-    expect(photo && panel, "both halves are on the page").toBeTruthy();
-    expect(panel!.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo!.x + photo!.width - 1);
-    expect(photo!.y, "on the same line").toBeCloseTo(panel!.y, 0);
-    expect(photo!.width, "half each").toBeCloseTo(panel!.width, 0);
+    const photo = (await page.locator("[data-ticket-photo]").boundingBox())!;
+    const panel = (await page.locator("[data-ticket-panel]").boundingBox())!;
+    const art = (await page.locator("[data-ticket-art]").boundingBox())!;
+    const card = (await page.locator("[data-ticket]").boundingBox())!;
 
-    // The photograph fills its half, and the steps are all in the panel.
+    // The owner's layout: the picture in the wider left half, the three moves on
+    // the narrower right one, and the lettering centred on the band — clear of
+    // the words on the card (their note on image-64).
+    expect(panel.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo.x + photo.width - 1);
+    expect(photo.y, "on the same line").toBeCloseTo(panel.y, 0);
+    expect(photo.width, "the picture's half is the wider one").toBeGreaterThan(panel.width);
+
+    const artCentre = art.x + art.width / 2;
+    const bandCentre = card.x + card.width / 2;
+    expect(Math.abs(artCentre - bandCentre), "the lettering, centred on the band").toBeLessThanOrEqual(2);
+    expect(art.y + art.height / 2, "and down its middle").toBeCloseTo(photo.y + photo.height / 2, 0);
+    expect(art.x + art.width, "clear of the card the words are set on").toBeLessThan(panel.x + 8);
+
     await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
     await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
-
-    // Beside a panel, the heading is set right against it instead.
-    const heading = await page.locator("[data-ticket-photo] h2").evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
-      return { align: getComputedStyle(element).textAlign, gap: Math.round(half.right - box.right), top: Math.round(box.top - half.top) };
-    });
-    expect(heading.align, "set right").toBe("right");
-    expect(heading.gap, "at the picture's right edge").toBeLessThanOrEqual(60);
-    expect(heading.top, "at the top of it, not the foot").toBeLessThan(80);
   });
 
   test("runs the headline a tenth smaller, the buttons 5% bigger, and sweeps Wayra on hover", async ({ page }) => {
@@ -679,6 +636,45 @@ test.describe("home fan on a desktop", () => {
     expect(map.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
     expect(map.width, "a card, not a column").toBeLessThanOrEqual(420);
 
+    // The owner's note (image-61): nine tenths of the viewport tall, the map
+    // filling it, rather than a 16rem band in the corner of the screen. The
+    // card's top is the header plus the frame's gap and its height takes that
+    // back off, so its bottom edge lands on the 90% line.
+    const viewport = page.viewportSize()!;
+    expect(map.y + map.height, "its bottom edge on the 90% line").toBeGreaterThan(viewport.height * 0.88);
+    expect(map.y + map.height, "its bottom edge on the 90% line").toBeLessThan(viewport.height * 0.92);
+    // Not the leaflet container first: it only exists once the map has booted,
+    // and this part is about the room the card gives it.
+    const mapBody = (await page.locator("[data-place-map] [data-map-body]").boundingBox())!;
+    expect(mapBody.height, "the map fills the card").toBeGreaterThan(map.height - 60);
+    expect(mapBody.height, "far past the old 16rem band").toBeGreaterThan(256);
+
+    // And the map itself has to fill that room. A percentage height inside a
+    // flex item that grows from no basis resolves against nothing in Chrome, so
+    // a `h-full` map came out zero tall and took the wheel zoom with it.
+    await expect(page.locator("[data-place-map] .leaflet-container")).toHaveCount(1);
+    const leaflet = (await page.locator("[data-place-map] .leaflet-container").boundingBox())!;
+    expect(leaflet.height, "the map itself fills the room").toBeGreaterThan(mapBody.height - 4);
+
+    // And it folds (owner's note on image-63): the map goes, the bar that names
+    // the place stays, and the card gives the photo behind it back.
+    await page.getByRole("button", { name: "Hide the map" }).click();
+    await expect(page.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("[data-place-map] [data-map-body]")).toHaveCount(0);
+    const folded = (await page.locator("[data-place-map]").boundingBox())!;
+    expect(folded.height, "a bar, not a column").toBeLessThan(72);
+    expect(folded.width, "still the card's width").toBeCloseTo(map.width, 0);
+    await expect(page.locator("[data-place-map] [data-viewing]")).toContainText("Bagasbas Beach");
+    // "Show all" acts on a map, so it goes with it.
+    await expect(page.getByRole("button", { name: "Show all" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Show the map" }).click();
+    await expect(page.locator("[data-place-map] [data-map-body]")).toHaveCount(1);
+    expect((await page.locator("[data-place-map]").boundingBox())!.height, "the column comes back").toBeCloseTo(
+      map.height,
+      0,
+    );
+
     expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
     expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);
     // No card under it any more: the row is the map and the place, nothing else.
@@ -810,10 +806,13 @@ test.describe("home fan on a desktop", () => {
         const hero = document.querySelector("section[aria-labelledby='home-title']") as HTMLElement;
         const headline = document.getElementById("home-title") as HTMLElement;
         const guide = hero.querySelector("[data-headline] button") as HTMLElement | null;
+        const below = document.querySelector("section[aria-labelledby='home-places'] h2") as HTMLElement | null;
 
         return {
           ground: rgb(getComputedStyle(hero).backgroundColor),
+          page: rgb(getComputedStyle(document.body).backgroundColor),
           headline: rgb(getComputedStyle(headline).color),
+          belowHeading: below ? rgb(getComputedStyle(below).color) : null,
           guide: guide ? rgb(getComputedStyle(guide).color) : null,
         };
       });
@@ -824,7 +823,9 @@ test.describe("home fan on a desktop", () => {
 
     const light = await readHero();
     expect(isNear(light.ground, [255, 255, 255]), "the page's own ground, no dark band").toBe(true);
+    expect(isNear(light.ground, light.page), "the hero and the page are one colour").toBe(true);
     expect(isNear(light.headline, [15, 23, 42]), "ink on it").toBe(true);
+    expect(isNear(light.headline, light.belowHeading ?? []), "the same ink as the headings below").toBe(true);
     // White-on-white was the bug in the mock: this button has to carry ink here.
     expect(isNear(light.guide ?? [], [15, 23, 42]), "the guide button keeps an edge on light").toBe(true);
 
@@ -832,8 +833,12 @@ test.describe("home fan on a desktop", () => {
     await visit(page, "/");
 
     const dark = await readHero();
-    expect(isNear(dark.ground, [15, 23, 42]), "the dark ground the fan had").toBe(true);
-    expect(isNear(dark.headline, [255, 255, 255]), "white on it").toBe(true);
+    // The page's own ground in dark mode, not the lighter slate band the hero
+    // used to sit on (image-59), and the headings' off-white rather than white.
+    expect(isNear(dark.ground, [11, 18, 32]), "the page's own ground, no lighter band").toBe(true);
+    expect(isNear(dark.ground, dark.page), "the hero and the page are one colour").toBe(true);
+    expect(isNear(dark.headline, [226, 232, 240]), "the theme's ink, as below").toBe(true);
+    expect(isNear(dark.headline, dark.belowHeading ?? []), "the same ink as the headings below").toBe(true);
   });
 
   test("takes 'Open on the map' to the map, leaving the place open", async ({ page }) => {

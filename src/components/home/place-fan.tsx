@@ -252,8 +252,16 @@ export function PlaceFan({
     closedAt.current = Date.now();
     closeInUrl();
     setAnnouncement("");
-    // lastOpen stays put: the fan's close animation reads it to put focus back
-    // on the wedge the panel came from.
+    // The card goes with the close, and the heading inside it had focus: hand it
+    // back to the wedge the panel came from *now*, not when the animation ends. A
+    // fold-back that is interrupted (a wheel, a step, a URL change) never reaches
+    // its completion callback, and focus would be left on the body with the next
+    // arrow key going nowhere. The wedge that was open is the one still on
+    // screen, so it can take focus at any point of the animation.
+    const index = lastOpen.current;
+    if (index !== null) wedgeRefs.current[index]?.focus();
+    // lastOpen stays put: the close animation reads it too, and repeating the
+    // focus once the fan has settled costs nothing.
     closeAnimation();
   }, [closeInUrl, closeAnimation]);
 
@@ -465,7 +473,10 @@ export function PlaceFan({
       // page, or the visitor is stuck on a full screen of photo: no scroll, no
       // pull to refresh, and no way out but a tap they have to guess at.
       style={sheet && isOpen ? { touchAction: "pan-y" } : undefined}
-      className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas dark:bg-slate-900"
+      // The hero is the page's own ground in both themes (owner's note on
+      // image-59: one background, not a lighter band above a darker page), and
+      // its words are the theme's ink, so they match the headings below it.
+      className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas"
     >
       <div role="group" aria-label="Places in Daet" className="absolute inset-0 z-0">
         {places.map((place, index) => {
@@ -527,7 +538,7 @@ export function PlaceFan({
                 if (!box) return;
                 parallax(index, ((event.clientX - box.left) / box.width - 0.5) * 0.02 * box.width);
               }}
-              className={`group absolute inset-0 m-0 block border-0 bg-canvas p-0 text-left dark:bg-slate-900 ${
+              className={`group absolute inset-0 m-0 block border-0 bg-canvas p-0 text-left ${
                 openIndex >= 0 ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
               }`}
             >
@@ -611,7 +622,7 @@ export function PlaceFan({
           // image-57); the utility multiplies its own clamp by this.
           style={{ "--display-scale": 0.9 } as React.CSSProperties}
           className={
-            onPhone || tight ? "display-2 text-daet-ink dark:text-white" : "display-1 text-daet-ink dark:text-white"
+            onPhone || tight ? "display-2 text-daet-ink" : "display-1 text-daet-ink"
           }
         >
           {/* The lead-in runs a step smaller than the statement under it, as in
@@ -627,7 +638,7 @@ export function PlaceFan({
         ) : (
           <>
             {!tight && (
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-daet-ink/80 dark:text-white/90 sm:text-base">
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-daet-ink/80 sm:text-base">
                 Beaches, islands and old-town walks, with operators and guides verified by the Daet Tourism Office.
               </p>
             )}

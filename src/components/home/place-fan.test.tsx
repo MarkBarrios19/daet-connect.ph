@@ -701,6 +701,70 @@ describe("PlaceFan's hero", () => {
     expect(container.querySelector("#place-detail")?.className ?? "").not.toContain("overscroll-contain");
   });
 
+  it("stands the map card at nine tenths of the viewport, the map filling it", () => {
+    // The owner's note on image-61: the map was a 16rem band in the corner of a
+    // tall screen. The card's height is the caller's now — off the viewport, past
+    // the header and the frame's gap — and the map takes all of it bar the header
+    // row, so it is a column rather than a strip.
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const panel = container.querySelector("[data-place-map]") as HTMLElement;
+    // The height travels from the caller, because folding the card has to undo it.
+    expect(panel.style.height).toContain("90svh");
+    expect(panel.className).toContain("w-[24rem]");
+    expect(panel.className).toContain("flex-col");
+
+    const mapBody = panel.querySelector("[data-map-body]") as HTMLElement;
+    expect(mapBody.className).toContain("min-h-[16rem]");
+    // Nothing left over from the fixed band.
+    expect(panel.querySelector(".h-64")).toBeNull();
+  });
+
+  it("folds the map card away to its header, and gives the photo back", () => {
+    // The owner's note on image-63: the map is a column now, so it needs a way
+    // out of the way. Folding drops the map itself — and with it the wheel, the
+    // pids and the pins — leaving the "Viewing" bar the card is named for.
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const panel = container.querySelector("[data-place-map]") as HTMLElement;
+    const fold = screen.getByRole("button", { name: "Hide the map" });
+
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    expect(fold).toHaveAttribute("aria-controls", "place-map-body");
+    expect(panel.getAttribute("data-collapsed")).toBe("false");
+    expect(panel.style.height).toContain("90svh");
+    expect(panel.querySelector("[data-map-body]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Show all" })).toBeInTheDocument();
+
+    fireEvent.click(fold);
+
+    expect(screen.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
+    // The folded card is a new box, not the old one shortened: that is how the
+    // height the caller gave it cannot survive the fold.
+    const folded = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(folded).not.toBe(panel);
+    expect(folded.getAttribute("data-collapsed")).toBe("true");
+    expect(folded.style.height).toBe("auto");
+    expect(folded.querySelector("[data-map-body]")).toBeNull();
+    // "Show all" acts on a map nobody can see, so it goes with it.
+    expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
+    // The bar itself stays: it still says which place is open.
+    expect(folded.querySelector("[data-viewing]")).toHaveTextContent("Bagasbas Beach");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the map" }));
+    const reopened = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(reopened.querySelector("[data-map-body]")).not.toBeNull();
+    expect(reopened.style.height).toContain("90svh");
+  });
+
   it("leaves a wheel over the open place's map to the map, which zooms with it", () => {
     // The card's map zooms with the wheel, so a wheel over it is someone looking
     // at the place — not someone asking to leave the hero.
@@ -732,28 +796,27 @@ describe("PlaceFan's hero", () => {
     expect(lines[1].className).not.toContain("text-[0.85em]");
   });
 
-  it("is a white page under an ink headline in light mode, and dark under a white one in dark mode", () => {
-    // Rewritten from "stays dark under its white headline in either theme": the
-    // owner's mock (image-4) shows the light hero as a white page with the
-    // headline in ink, so the ground follows the theme now. The seams between
-    // wedges are the ground showing through, so they come out white on white
-    // and slate on slate rather than as stray lines. `bg-canvas` is the page's own
-    // ground in light mode, so the hero has no seam against the sections below.
+  it("sits on the page's own ground, under a headline in the theme's ink", () => {
+    // The owner's note on image-59: the hero was a lighter navy band above a
+    // darker page, and its words were white where every heading below them is
+    // the theme's ink. So neither is overridden for the dark theme any more —
+    // the ground is `bg-canvas` and the words are `text-daet-ink`, which switch
+    // with the theme by themselves. The seams between the wedges are the ground
+    // showing through, so they have to follow it.
     const { container } = renderFan();
     const section = container.querySelector("section") as HTMLElement;
 
     expect(section.className).toContain("bg-canvas");
-    expect(section.className).toContain("dark:bg-slate-900");
+    expect(section.className).not.toContain("dark:bg-slate-900");
     expect(section.className).not.toContain("bg-daet-ink");
     container.querySelectorAll("[data-wedge]").forEach((wedge) => {
       expect(wedge.className).toContain("bg-canvas");
-      expect(wedge.className).toContain("dark:bg-slate-900");
+      expect(wedge.className).not.toContain("dark:bg-slate-900");
     });
 
     const title = container.querySelector("#home-title") as HTMLElement;
-    // Ink on a white page; white on the dark one.
     expect(title.className).toContain("text-daet-ink");
-    expect(title.className).toContain("dark:text-white");
+    expect(title.className).not.toContain("dark:text-white");
   });
 
   it("keeps the full headline and its subline on a roomy desktop", () => {

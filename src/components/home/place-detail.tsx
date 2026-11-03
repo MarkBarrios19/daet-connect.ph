@@ -196,7 +196,19 @@ export function PlaceDetail({
           // fact" — and the owner asked for it to go: every place would have
           // shown the Tourism Office's placeholder until someone wrote one.
           <div className="flex items-start gap-3">
-            <PlaceMapPanel place={place} places={places} onPick={onPick} className="w-[24rem] shrink-0" />
+            {/* A tall card, not a band: the owner asked for the map at about
+                nine tenths of the viewport (image-61), and for it to fold away
+                again when they want the photo (image-63). So the height is
+                handed over as a value the card applies while it is open — the
+                card's top is the header plus the frame's own gap, so taking
+                that off the height leaves its bottom edge on the 90% line. */}
+            <PlaceMapPanel
+              place={place}
+              places={places}
+              onPick={onPick}
+              height="calc(90svh - var(--header-h) - 1rem)"
+              className="w-[24rem] shrink-0"
+            />
             <div className="w-[18rem] shrink-0">{card}</div>
           </div>
         )}

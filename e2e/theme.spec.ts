@@ -18,32 +18,29 @@ test.describe("dark mode", () => {
     await context.close();
   });
 
-  test("the postcard's ridge turns off-white in dark mode, and its panel stays cyan", async ({ browser }) => {
-    // The owner's note on image-50: the navy ridge disappeared into the dark
-    // ground. It takes the heading's off-white instead; the cyan panel and its
-    // dark ink are printed, so they read the same in both themes.
+  test("the ticket sits in the dark theme instead of blazing out of it", async ({ browser }) => {
+    // The owner's note on image-56 ("optimize colors for dark mode") carried
+    // over to the ticket of image-62: the reference's cream is the lightest
+    // thing on the page, so in dark mode the shape takes a card tone a step off
+    // the ground and the panel a shade under that.
     const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     await page.goto("/", { waitUntil: "networkidle" });
 
-    const frame = await page
-      .locator("[data-ticket-frame]")
+    const paper = await page
+      .locator("[data-ticket-shape] .ticket-shape")
       .evaluate((element) => getComputedStyle(element).backgroundColor);
-    // Off-white, a step under the heading's #e2e8f0 so the card sits in the
-    // theme instead of glowing out of it (the owner's note on image-56).
-    expect(frame, "off-white, dimmed for the dark ground").toBe("rgb(205, 214, 227)");
+    expect(paper, "a card tone, not the reference's cream").toBe("rgb(21, 32, 54)");
 
     const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [
       getComputedStyle(element).backgroundColor,
       getComputedStyle(element).color,
     ]);
-    // The reference's cyan, a step deeper: it was the largest light area on the
-    // page, and white on it would be 2.3:1.
-    expect(field, "a deeper cyan").toBe("rgb(16, 162, 220)");
-    expect(ink, "its dark copy, unchanged").toBe("rgb(15, 23, 42)");
+    expect(field, "a shade under the ticket, not its white").toBe("rgb(27, 39, 64)");
+    expect(ink, "the theme's own ink on it").toBe("rgb(226, 232, 240)");
 
-    // And the photograph is set into the theme with a fifth of the page's ground
-    // (the layer is display:none in light mode).
+    // And the photograph is seated in the theme with a fifth of the page's
+    // ground (the layer is display:none in light mode).
     const scrim = await page.locator("[data-ticket-photo] > div").first().evaluate((element) => ({
       display: getComputedStyle(element).display,
       paint: getComputedStyle(element).backgroundColor,
