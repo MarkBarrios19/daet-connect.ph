@@ -1045,6 +1045,48 @@ describe("PlaceFan on a phone", () => {
     expect(window.location.hash).toBe("#place-bagasbas-beach");
   });
 
+  it("takes the pointer only once the hand has moved, so the photo still hears its own click", () => {
+    // A captured pointer is retargeted to the hero, and the click and
+    // double-click that follow are retargeted with it — which is how the two
+    // ways back to the fan (a tap, a double-click) silently stopped working in a
+    // browser while jsdom, which has no capture, kept passing.
+    const capture = jest.fn();
+    const release = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
+      configurable: true,
+      writable: true,
+      value: capture,
+    });
+    Object.defineProperty(HTMLElement.prototype, "releasePointerCapture", {
+      configurable: true,
+      writable: true,
+      value: release,
+    });
+
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
+    const image = container.querySelector("[data-wedge='2'] img") as HTMLImageElement;
+    giveThePhotoAShape(image);
+
+    // A press and a release on the spot: no capture.
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    expect(capture).not.toHaveBeenCalled();
+    fireEvent.pointerUp(image, { clientX: 300, clientY: 400, pointerId: 1 });
+    expect(release).not.toHaveBeenCalled();
+
+    // A drag takes it, so the pan keeps following a hand that leaves the photo.
+    fireEvent.pointerDown(image, { clientX: 300, clientY: 400, pointerId: 2 });
+    fireEvent.pointerMove(image, { clientX: 200, clientY: 400, pointerId: 2 });
+    expect(capture).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(image, { clientX: 200, clientY: 400, pointerId: 2 });
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
   it("does not close the place when a drag lets go", () => {
     setHeroSize(390, 844);
     const { container } = renderFan();
