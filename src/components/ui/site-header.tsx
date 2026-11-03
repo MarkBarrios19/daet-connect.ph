@@ -51,7 +51,7 @@ export function SiteHeader({
   /** The signed-in user's role tabs (the bottom bar on phones). */
   tabs?: Tab[];
   /** Who is signed in, for the avatar. */
-  account?: { initial: string; name: string };
+  account?: { initial: string; name: string; avatarUrl?: string | null };
 }) {
   const explorer = !signedIn || !role || role === "tourist";
   const destinations = explorer ? DESTINATION_LINKS : [];
@@ -121,7 +121,7 @@ export function SiteHeader({
               {account ? (
                 // Tourists on phones use the You tab instead.
                 <span className={explorer ? "hidden sm:contents" : "contents"}>
-                  <AccountMenu initial={account.initial} name={account.name} links={accountLinks(role, tabs)} />
+                  <AccountMenu initial={account.initial} name={account.name} avatarUrl={account.avatarUrl} links={accountLinks(role, tabs)} />
                 </span>
               ) : null}
             </>

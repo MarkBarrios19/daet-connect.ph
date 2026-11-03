@@ -37,6 +37,11 @@ export const AUTH_LIMITS = {
   resetIp: { limit: 10, windowMs: 60 * 60_000 },
   resetEmail: { limit: 3, windowMs: 15 * 60_000 },
   oauthIp: { limit: 30, windowMs: 10 * 60_000 },
+  /** Changing a password re-types the current one: the guessing case again. */
+  changePasswordUser: { limit: 5, windowMs: 15 * 60_000 },
+  changePasswordIp: { limit: 20, windowMs: 15 * 60_000 },
+  /** Photo uploads: a disk-filling guard rather than a guessing one. */
+  avatarUser: { limit: 20, windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimit>;
 
 /** Count one attempt against `key`, and say whether it is allowed. */

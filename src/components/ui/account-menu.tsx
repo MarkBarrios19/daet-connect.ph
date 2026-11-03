@@ -16,13 +16,34 @@ function unreadLabel(count: number) {
   return count ? `, ${count} unread ${count === 1 ? "chat" : "chats"}` : "";
 }
 
-function Avatar({ initial, unread, small = false, ring = false }: { initial: string; unread: number; small?: boolean; ring?: boolean }) {
+/**
+ * The round face beside the account: the person's photo when they have one, the
+ * first letter of their name when they do not (owner's note: keep it round).
+ *
+ * A plain <img>, not next/image: this is on every page, the photo is a few
+ * kilobytes, and nothing should stand between a visitor and it. The image is
+ * decorative — the button already carries the name — so `alt=""` and the letter
+ * stays underneath, which is also what shows if the photo fails to load.
+ */
+function Avatar({
+  initial,
+  unread,
+  small = false,
+  ring = false,
+  src,
+}: {
+  initial: string;
+  unread: number;
+  small?: boolean;
+  ring?: boolean;
+  src?: string | null;
+}) {
   return (
     <span
       aria-hidden="true"
-      className={`relative grid place-items-center rounded-full bg-blue-700 font-bold text-white ${small ? "h-[1.625rem] w-[1.625rem] text-[13px]" : "h-10 w-10 text-base"} ${ring ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-surface" : ""}`}
+      className={`relative grid place-items-center overflow-hidden rounded-full bg-blue-700 font-bold text-white ${small ? "h-[1.625rem] w-[1.625rem] text-[13px]" : "h-10 w-10 text-base"} ${ring ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-surface" : ""}`}
     >
-      {initial}
+      {src ? <img src={src} alt="" width={small ? 26 : 40} height={small ? 26 : 40} className="h-full w-full object-cover" /> : initial}
       {unread ? (
         <span className={`absolute rounded-full border-2 border-surface bg-yellow-500 ${small ? "-right-1 -top-[3px] h-2.5 w-2.5" : "right-0 top-0 h-3 w-3"}`} />
       ) : null}
@@ -35,7 +56,20 @@ function Avatar({ initial, unread, small = false, ring = false }: { initial: str
  * unread chats. It opens a short menu with the user's own pages, Dark mode and
  * Sign out. `tab` is the phone version, the last tab of the bottom bar.
  */
-export function AccountMenu({ initial, name, links, variant = "header" }: { initial: string; name: string; links: AccountLink[]; variant?: "header" | "tab" }) {
+export function AccountMenu({
+  initial,
+  name,
+  links,
+  variant = "header",
+  avatarUrl = null,
+}: {
+  initial: string;
+  name: string;
+  links: AccountLink[];
+  variant?: "header" | "tab";
+  /** The account photo, when there is one; the initial is the fallback. */
+  avatarUrl?: string | null;
+}) {
   const { open, setOpen, toggle, rootRef, buttonRef } = usePopover(`account-${variant}`);
   const unread = useUnreadChats();
   const pathname = usePathname() ?? "";
@@ -60,7 +94,7 @@ export function AccountMenu({ initial, name, links, variant = "header" }: { init
             : "grid h-12 w-12 place-items-center rounded-full transition-[background-color,scale] duration-150 ease-out hover:bg-muted active:scale-95"
         }
       >
-        <Avatar initial={initial} unread={unread} small={tab} ring={tab && open} />
+        <Avatar initial={initial} unread={unread} small={tab} ring={tab && open} src={avatarUrl} />
         {tab ? (
           <>
             <span aria-hidden="true">You</span>

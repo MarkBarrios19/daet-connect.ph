@@ -115,6 +115,9 @@ export const fullNameSchema = z
 /** The email-only forms: reset, resend, and the sign-in fallback. */
 export const emailOnlySchema = z.object({ email: emailSchema });
 
+/** The account page's name field: the same name rules the sign-up form uses. */
+export const profileNameSchema = z.object({ fullName: fullNameSchema });
+
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string({ error: "Enter your password." }).min(1, "Enter your password."),
@@ -134,6 +137,30 @@ export const newPasswordSchema = z
   .refine((value) => value.password === value.confirm, {
     path: ["confirm"],
     message: "The two passwords do not match.",
+  });
+
+/**
+ * Changing a password from the account page, where the person is already
+ * signed in: the current one is typed again so an unlocked laptop cannot be
+ * used to take the account, and the new one follows the same policy as sign-up
+ * and reset.
+ */
+export const changePasswordSchema = z
+  .object({
+    current: z
+      .string({ error: "Type your current password." })
+      .min(1, "Type your current password.")
+      .max(PASSWORD_MAX, `Passwords are at most ${PASSWORD_MAX} characters.`),
+    password: passwordSchema,
+    confirm: z.string({ error: "Type the new password again." }),
+  })
+  .refine((value) => value.password === value.confirm, {
+    path: ["confirm"],
+    message: "The two passwords do not match.",
+  })
+  .refine((value) => value.current !== value.password, {
+    path: ["password"],
+    message: "That is your current password. Choose a new one.",
   });
 
 export type SignInInput = z.infer<typeof signInSchema>;

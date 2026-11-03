@@ -51,8 +51,11 @@ export function roleTabs(role: string | null): Tab[] {
  * the dashboard.
  */
 export function accountLinks(role: string | null | undefined, tabs: Tab[]): Tab[] {
-  const links: Tab[] = [];
-  if (role === "operator") links.push({ href: "/tours/operator/settings", label: "Settings" });
+  // Everyone's own page comes first: one name, one photo, one password, for
+  // tourists and staff alike. The operator's payment details stay their own
+  // page, under a label that cannot be mistaken for it.
+  const links: Tab[] = [{ href: "/settings", label: "Profile settings" }];
+  if (role === "operator") links.push({ href: "/tours/operator/settings", label: "Payment settings" });
   if (!role || role === "tourist") links.push({ href: "/tours/my-bookings", label: "Bookings" });
   links.push({ href: "/tours/messages", label: "Messages" });
   if (tabs[0]) links.push({ href: tabs[0].href, label: "Dashboard" });

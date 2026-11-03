@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import {
+  accountLinks,
   activeTab,
   bookingsByDay,
   cancellationRate,
@@ -33,6 +34,33 @@ describe("roleTabs / activeTab", () => {
     expect(activeTab(tabs, "/tours/admin/events")).toBe("/tours/admin");
     expect(activeTab(tabs, "/tours/administrator")).toBeNull();
     expect(activeTab(roleTabs("operator"), "/tours/operator/bookings/abc")).toBe("/tours/operator/bookings");
+  });
+});
+
+describe("accountLinks", () => {
+  it("puts the person's own page first, for every role", () => {
+    for (const role of ["tourist", "operator", "guide", "admin", null] as const) {
+      expect(accountLinks(role, roleTabs(role))[0]).toEqual({ href: "/settings", label: "Profile settings" });
+    }
+  });
+
+  it("keeps the operator's payment page, named so it cannot be mistaken for the profile", () => {
+    const labels = accountLinks("operator", roleTabs("operator")).map((link) => link.label);
+    expect(labels).toContain("Payment settings");
+    expect(labels).not.toContain("Settings");
+  });
+
+  it("still ends with the dashboard, and keeps bookings for tourists", () => {
+    expect(accountLinks("tourist", roleTabs("tourist")).map((link) => link.href)).toEqual([
+      "/settings",
+      "/tours/my-bookings",
+      "/tours/messages",
+      "/tours/me",
+    ]);
+    expect(accountLinks("guide", roleTabs("guide")).at(-1)).toEqual({
+      href: "/tours/guide/dashboard",
+      label: "Dashboard",
+    });
   });
 });
 

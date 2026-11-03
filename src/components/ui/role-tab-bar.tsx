@@ -11,7 +11,13 @@ import { activeTab, type Tab } from "@/lib/tours/dashboards";
  * Bottom tab bar on phones for signed-in users; hidden from sm up, where the
  * header has room. With `account` the last tab is You, the account menu.
  */
-export function RoleTabBar({ tabs, account }: { tabs: Tab[]; account?: { initial: string; name: string; links: Tab[] } }) {
+export function RoleTabBar({
+  tabs,
+  account,
+}: {
+  tabs: Tab[];
+  account?: { initial: string; name: string; avatarUrl?: string | null; links: Tab[] };
+}) {
   const pathname = usePathname() ?? "";
   const current = activeTab(tabs, pathname);
   if (tabs.length === 0) return null;
@@ -43,7 +49,7 @@ export function RoleTabBar({ tabs, account }: { tabs: Tab[]; account?: { initial
         })}
         {account ? (
           <li>
-            <AccountMenu variant="tab" initial={account.initial} name={account.name} links={account.links} />
+            <AccountMenu variant="tab" initial={account.initial} name={account.name} avatarUrl={account.avatarUrl} links={account.links} />
           </li>
         ) : null}
       </ul>

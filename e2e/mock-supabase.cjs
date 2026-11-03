@@ -20,6 +20,17 @@ const LIVE_BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
 const freshLive = () => ({ session: null, positions: [], consents: [], flares: [] });
 let live = freshLive();
 
+// The profile page writes here; a saved name or photo has to survive the next
+// request, the way a row in Postgres would. /__reset_account clears it.
+const freshAccount = () => ({ full_name: "Juan Dela Cruz", avatar_url: null, uploads: 0 });
+let account = freshAccount();
+
+// A 1x1 PNG, so the header's photo is a real image the browser can decode.
+const AVATAR_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
 function build(role) {
 const BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
   const operator = { id: "op-1", profile_id: "9b7e5a5e-0000-4000-8000-000000000001", business_name: "Bagasbas Coast Tours", accreditation_status: "approved", accreditation_notes: null, contact_phone: "0917 555 0101", gcash_number: "0917 555 0101", gcash_name: "Maya Santos", bank_name: "BPI", bank_account_number: "1234-5678-90", bank_account_name: "Bagasbas Coast Tours", payment_instructions: "Please include your booking reference in the notes.", created_at: "2026-01-01T00:00:00Z" };
@@ -207,14 +218,14 @@ const BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
     tours_live_consents: live.consents,
     tours_live_flares: live.flares,
     tours_bookings: role === "operator" ? [booking, later, pendingB, cancelled] : [booking, later, pendingB, paidB, doneB], tours_packages: [pkg], tours_package_availability: availability, _event_availability: eventAvailability, tours_cancellations: cancellations, tours_payments: payments, tours_payment_proofs: proofs, tours_operators: [operator],
-    tours_guides: guides, profiles: [{ id: "9b7e5a5e-0000-4000-8000-000000000001", role, full_name: "Juan Dela Cruz" }],
+    tours_guides: guides, profiles: [{ id: "9b7e5a5e-0000-4000-8000-000000000001", role, full_name: account.full_name, avatar_url: account.avatar_url }],
     tours_events: events, tours_merchandise: role === "operator" ? merch.filter((m) => m.submitted_by_operator_id) : merch,
     // R6: the operator sees one pending swap request from the guide on today's booking.
     tours_guide_swap_requests: role === "operator" ? [{ id: "5a000000-0000-4000-8000-000000000001", booking_id: BID, from_guide_id: guides[0].id, to_guide_id: null, reason: "My boat license renewal is on that day.", status: "pending", decision_note: null, created_at: "2026-10-28T08:00:00Z" }] : [],
   };
   return { tables, analytics, inbox, header, user };
   }
-  const user = { id: "9b7e5a5e-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "juan@example.ph", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" };
+  const user = { id: "9b7e5a5e-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "juan@example.ph", app_metadata: { providers: ["email"] }, user_metadata: { full_name: account.full_name }, created_at: "2026-01-01T00:00:00Z" };
   
 const authLog = [];
 let bodyBuffer = "";
@@ -228,6 +239,15 @@ http.createServer((req, res) => {
     const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     const role = /^e2e-(tourist|operator|guide|admin)$/.test(token) ? token.slice(4) : "anon";
     const { tables, analytics, inbox, header, user } = build(role);
+    if (url.pathname === "/auth/v1/user" && req.method === "PUT") {
+      if (role === "anon") return send(401, { message: "not signed in" });
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      // The account page sends either a new name (data) or a new password.
+      record({ kind: "update-user", name: payload.data?.full_name ?? null, password: Boolean(payload.password) });
+      if (typeof payload.data?.full_name === "string") account.full_name = payload.data.full_name;
+      return send(200, { ...user, user_metadata: { full_name: account.full_name } });
+    }
     if (url.pathname === "/auth/v1/user") return role === "anon" ? send(401, { message: "not signed in" }) : send(200, user);
 
     // ---------------------------------------------------------------- auth --
@@ -380,6 +400,16 @@ http.createServer((req, res) => {
     }
     if (url.pathname === "/rest/v1/rpc/tours_badge_lookup") return send(200, [{ status: "approved", full_name: "Jeremiah Sabihon", photo_url: null, approved_at: "2026-10-16T13:18:25Z" }]);
     if (url.pathname === "/__reset_live") { live = freshLive(); return send(200, { ok: true }); }
+    if (url.pathname === "/__reset_account") { account = freshAccount(); return send(200, { ok: true }); }
+    if (url.pathname === "/storage/v1/object/public/tours-avatars/" || url.pathname.startsWith("/storage/v1/object/public/tours-avatars/")) {
+      res.writeHead(200, { "content-type": "image/png", "cache-control": "public, max-age=60", ...cors });
+      return res.end(AVATAR_PNG);
+    }
+    if (req.method === "POST" && url.pathname.startsWith("/storage/v1/object/tours-avatars/")) {
+      account.uploads += 1;
+      return send(200, { Key: url.pathname.replace("/storage/v1/object/", ""), Id: crypto.randomUUID() });
+    }
+    if (req.method === "DELETE" && url.pathname.startsWith("/storage/v1/object/tours-avatars")) return send(200, []);
     if (url.pathname.startsWith("/rest/v1/rpc/tours_live_")) {
       let args = {};
       try { args = JSON.parse(body || "{}"); } catch { args = {}; }
@@ -424,6 +454,14 @@ http.createServer((req, res) => {
       return send(404, { message: "unknown live rpc" });
     }
     const table = url.pathname.replace("/rest/v1/", "");
+    if (table === "profiles" && req.method === "PATCH") {
+      let patch = {};
+      try { patch = JSON.parse(body || "{}"); } catch { patch = {}; }
+      if (typeof patch.full_name === "string") account.full_name = patch.full_name;
+      if ("avatar_url" in patch) account.avatar_url = patch.avatar_url;
+      const row = { id: "9b7e5a5e-0000-4000-8000-000000000001", role, full_name: account.full_name, avatar_url: account.avatar_url };
+      return send(200, (req.headers.accept || "").includes("vnd.pgrst.object") ? row : [row]);
+    }
     // Like PostgREST: guides and operators link to profiles twice (profile_id,
     // reviewed_by), so an embed that doesn't name its foreign key is refused.
     if ((table === "tours_guides" || table === "tours_operators") && /(^|[,(\s])profiles\s*\(/.test(url.searchParams.get("select") || "")) {
