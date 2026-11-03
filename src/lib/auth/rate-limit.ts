@@ -16,8 +16,7 @@
 export type RateLimit = { limit: number; windowMs: number };
 
 export type RateLimitResult =
-  | { ok: true; remaining: number }
-  | { ok: false; retryAfterSeconds: number };
+  { ok: true; remaining: number } | { ok: false; retryAfterSeconds: number };
 
 const buckets = new Map<string, number[]>();
 
@@ -37,16 +36,28 @@ export const AUTH_LIMITS = {
   resetIp: { limit: 10, windowMs: 60 * 60_000 },
   resetEmail: { limit: 3, windowMs: 15 * 60_000 },
   oauthIp: { limit: 30, windowMs: 10 * 60_000 },
+  /** Changing a password re-types the current one: the guessing case again. */
+  changePasswordUser: { limit: 5, windowMs: 15 * 60_000 },
+  changePasswordIp: { limit: 20, windowMs: 15 * 60_000 },
+  /** Photo uploads: a disk-filling guard rather than a guessing one. */
+  avatarUser: { limit: 20, windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimit>;
 
 /** Count one attempt against `key`, and say whether it is allowed. */
-export function takeAttempt(key: string, { limit, windowMs }: RateLimit, now = Date.now()): RateLimitResult {
+export function takeAttempt(
+  key: string,
+  { limit, windowMs }: RateLimit,
+  now = Date.now(),
+): RateLimitResult {
   const cutoff = now - windowMs;
   const hits = (buckets.get(key) ?? []).filter((at) => at > cutoff);
 
   if (hits.length >= limit) {
     buckets.set(key, hits);
-    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + windowMs - now) / 1000));
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((hits[0] + windowMs - now) / 1000),
+    );
     return { ok: false, retryAfterSeconds };
   }
 

@@ -70,7 +70,8 @@ const COMMON_PASSWORDS = new Set([
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 const NAME_SHAPE = /^[\p{L}\p{M}][\p{L}\p{M}'.,\- ]*$/u;
 /** Bidi overrides and other format characters have no place in a name. */
-const INVISIBLE = /[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/;
+const INVISIBLE =
+  /[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/;
 
 /**
  * Email: trimmed, lower-cased, and only what an address can be. Lower-casing is
@@ -83,7 +84,10 @@ export const emailSchema = z
   .min(3, "Enter your email address.")
   .max(EMAIL_MAX, `That email address is longer than ${EMAIL_MAX} characters.`)
   .regex(EMAIL_SHAPE, "Enter a valid email address, like juan@example.com.")
-  .refine((value) => value.length - value.lastIndexOf("@") - 1 <= EMAIL_MAX, "Enter a valid email address.")
+  .refine(
+    (value) => value.length - value.lastIndexOf("@") - 1 <= EMAIL_MAX,
+    "Enter a valid email address.",
+  )
   .transform((value) => value.toLowerCase());
 
 /**
@@ -95,8 +99,14 @@ export const passwordSchema = z
   .string({ error: "Choose a password." })
   .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
   .max(PASSWORD_MAX, `Use ${PASSWORD_MAX} characters or fewer.`)
-  .refine((value) => value.trim().length > 0, "A password cannot be only spaces.")
-  .refine((value) => new Set(value).size > 2, "Use a password with more than two different characters.")
+  .refine(
+    (value) => value.trim().length > 0,
+    "A password cannot be only spaces.",
+  )
+  .refine(
+    (value) => new Set(value).size > 2,
+    "Use a password with more than two different characters.",
+  )
   .refine(
     (value) => !COMMON_PASSWORDS.has(value.toLowerCase()),
     "That password is on the list of the most common ones. Choose something only you would know.",
@@ -108,16 +118,27 @@ export const fullNameSchema = z
   .trim()
   .min(2, "Enter your full name.")
   .max(80, "Keep your name to 80 characters or fewer.")
-  .refine((value) => !INVISIBLE.test(value), "Remove the hidden characters from your name.")
-  .refine((value) => NAME_SHAPE.test(value), "Use letters, spaces, hyphens, dots and commas for your name.")
+  .refine(
+    (value) => !INVISIBLE.test(value),
+    "Remove the hidden characters from your name.",
+  )
+  .refine(
+    (value) => NAME_SHAPE.test(value),
+    "Use letters, spaces, hyphens, dots and commas for your name.",
+  )
   .transform((value) => value.replace(/\s+/g, " "));
 
 /** The email-only forms: reset, resend, and the sign-in fallback. */
 export const emailOnlySchema = z.object({ email: emailSchema });
 
+/** The account page's name field: the same name rules the sign-up form uses. */
+export const profileNameSchema = z.object({ fullName: fullNameSchema });
+
 export const signInSchema = z.object({
   email: emailSchema,
-  password: z.string({ error: "Enter your password." }).min(1, "Enter your password."),
+  password: z
+    .string({ error: "Enter your password." })
+    .min(1, "Enter your password."),
 });
 
 export const signUpSchema = z.object({
@@ -134,6 +155,30 @@ export const newPasswordSchema = z
   .refine((value) => value.password === value.confirm, {
     path: ["confirm"],
     message: "The two passwords do not match.",
+  });
+
+/**
+ * Changing a password from the account page, where the person is already
+ * signed in: the current one is typed again so an unlocked laptop cannot be
+ * used to take the account, and the new one follows the same policy as sign-up
+ * and reset.
+ */
+export const changePasswordSchema = z
+  .object({
+    current: z
+      .string({ error: "Type your current password." })
+      .min(1, "Type your current password.")
+      .max(PASSWORD_MAX, `Passwords are at most ${PASSWORD_MAX} characters.`),
+    password: passwordSchema,
+    confirm: z.string({ error: "Type the new password again." }),
+  })
+  .refine((value) => value.password === value.confirm, {
+    path: ["confirm"],
+    message: "The two passwords do not match.",
+  })
+  .refine((value) => value.current !== value.password, {
+    path: ["password"],
+    message: "That is your current password. Choose a new one.",
   });
 
 export type SignInInput = z.infer<typeof signInSchema>;
@@ -164,7 +209,10 @@ export function fieldErrorsOf(error: z.ZodError): Record<string, string> {
  * How strong the password looks, for the hint under the field. This is advice
  * for the visitor, never a gate: the schema above decides.
  */
-export function passwordScore(password: string): { score: 0 | 1 | 2 | 3 | 4; label: string } {
+export function passwordScore(password: string): {
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+} {
   if (!password) return { score: 0, label: "" };
   let score = 0;
   if (password.length >= PASSWORD_MIN) score += 1;
@@ -173,5 +221,8 @@ export function passwordScore(password: string): { score: 0 | 1 | 2 | 3 | 4; lab
   if (/\d/.test(password) && /[^A-Za-z0-9]/.test(password)) score += 1;
   if (COMMON_PASSWORDS.has(password.toLowerCase())) score = Math.min(score, 1);
   const clamped = Math.max(0, Math.min(4, score)) as 0 | 1 | 2 | 3 | 4;
-  return { score: clamped, label: ["Weak", "Weak", "Fair", "Good", "Strong"][clamped] };
+  return {
+    score: clamped,
+    label: ["Weak", "Weak", "Fair", "Good", "Strong"][clamped],
+  };
 }
