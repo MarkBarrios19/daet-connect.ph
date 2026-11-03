@@ -54,6 +54,9 @@
      on image-56, "optimize colors for dark mode"). */
   --color-ticket-frame: #e8d7b9;
   --color-ticket-panel: #faf6ef;
+  /* The tear: white dashes on the cream (owner's design, image-67). In dark mode
+     it is the lettering's own cyan, which is what marks the tear there. */
+  --color-ticket-perf: rgb(255 255 255 / 0.9);
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
   --color-map-ground: #f2efe9;
@@ -156,22 +159,35 @@
 /* The ticket's edge (owner's shape, image-62).
  *
  * Six bites out of one shape: a quarter circle at each corner and a half circle
- * in the middle of the top and bottom edges, where the perforation runs into
- * them. They are masks of fixed radii rather than one stretched SVG — the
- * owner's note on image-64 was that the circles came out deformed, because a
- * 1925×556 shape told to fill a wider band turns every circle into a capsule.
- * A mask keeps them circles at any size, which is what "keep it responsive"
- * asks for, and it is on a decorative layer *behind* the content, so nothing a
- * visitor reads is clipped. A browser without mask compositing falls back to a
- * plain rounded shape rather than losing the card.
+ * on the edge where the ticket is torn. They are masks of fixed radii rather
+ * than one stretched SVG — the owner's note on image-64 was that the circles
+ * came out deformed, because a 1925x556 shape told to fill a wider band turns
+ * every circle into a capsule. A mask keeps them circles at any size, which is
+ * what "keep it responsive" asks for, and it is on a decorative layer *behind*
+ * the content, so nothing a visitor reads is clipped. A browser without mask
+ * compositing falls back to a plain rounded shape rather than losing the card.
+ *
+ * The pair of edge bites follows the tear. A wide band is torn across its right
+ * third (56% of its width, where the perforation runs and where the owner's
+ * lettering crosses it), so the bites sit on the top and bottom edges on that
+ * line; on a phone the halves stack and the tear runs across the paper, so they
+ * move to the left and right edges, level with the seam between the photograph
+ * and the card (their design, image-68). `ticket-seam` is where that line is.
  *
  * The radii follow the SVG's own proportions at its height: the corner bites
  * are 44 of its 556, the edge ones 25 — clamped so a phone does not lose a
  * third of the card to its own scallops.
  */
 @utility ticket-shape {
-  --ticket-corner: clamp(16px, 2.4vw, 28px);
-  --ticket-notch: clamp(10px, 1.5vw, 16px);
+  /* Measured off the owner's two bands (image-67): off a 1286px paper the corner
+     bites are 34px across the radius and the edge ones 26. */
+  --ticket-corner: clamp(11px, 2.6vw, 34px);
+  --ticket-bite: clamp(10px, 1.9vw, 26px);
+  /* The two edge bites, where the tear leaves the paper: on the tear's own line,
+     which the owner draws at 56% of the paper — right of the middle, so the
+     lettering centred on the band crosses it rather than sitting behind it. */
+  --ticket-bite-a: 56% 0;
+  --ticket-bite-b: 56% 100%;
   border-radius: clamp(10px, 1.2vw, 16px);
 
   @supports (mask-composite: intersect) {
@@ -180,11 +196,34 @@
       radial-gradient(circle var(--ticket-corner) at 100% 0, #0000 calc(100% - 0.5px), #000 100%),
       radial-gradient(circle var(--ticket-corner) at 0 100%, #0000 calc(100% - 0.5px), #000 100%),
       radial-gradient(circle var(--ticket-corner) at 100% 100%, #0000 calc(100% - 0.5px), #000 100%),
-      radial-gradient(circle var(--ticket-notch) at 50% 0, #0000 calc(100% - 0.5px), #000 100%),
-      radial-gradient(circle var(--ticket-notch) at 50% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-bite) at var(--ticket-bite-a), #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-bite) at var(--ticket-bite-b), #0000 calc(100% - 0.5px), #000 100%),
       linear-gradient(#000, #000);
     mask-composite: intersect;
   }
+
+  /* Stacked, the ticket is torn across: the bites leave the top and bottom edges
+     for the left and right ones, level with the seam. 48rem is Tailwind's md. */
+  @media (width < 48rem) {
+    --ticket-bite-a: 0 var(--ticket-seam);
+    --ticket-bite-b: 100% var(--ticket-seam);
+  }
+}
+
+/* Where the phone's ticket is torn.
+ *
+ * Stacked, the seam is under the photograph: the card's top padding, the 4:3
+ * photograph, and half the gap down to the card of moves. The band is an
+ * inline-size container, so `cqw` is its own width — the length comes out of the
+ * layout at run time, and the bites on the edges and the lettering both land on
+ * it at any width. Keep the three custom properties in step with the classes
+ * that use them (booking-steps.tsx), and the 4:3 here with the photograph's own
+ * `aspect-[4/3]`.
+ */
+@utility ticket-seam {
+  --ticket-seam: calc(
+    var(--ticket-pad-y) + 0.75 * (100cqw - 2 * var(--ticket-pad-x)) + var(--ticket-gap) / 2
+  );
 }
 
 /* Paper, not paint: the band is a printed ticket (owner's note on image-52, and
@@ -298,11 +337,14 @@
     --color-muted-strong: #26324d;
     --color-line: #334160;
     --color-hairline: #2b3a57;
-    /* The ticket, seated in the dark ground: a card tone a step off it, and the
-       panel a step under that. The photograph is washed with the ground rather
-       than left blazing. */
-    --color-ticket-frame: #152036;
-    --color-ticket-panel: #1b2740;
+    /* The ticket, seated in the dark ground (the owner's own dark band,
+       image-67): the paper is a slate blue well off the near-black page, and the
+       card of moves sits under it, darker than the paper it is printed on. The
+       tear is the lettering's cyan. The photograph is washed with the ground
+       rather than left blazing. */
+    --color-ticket-frame: #334561;
+    --color-ticket-panel: #162648;
+    --color-ticket-perf: #14a9de;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -318,8 +360,9 @@
       --color-muted-strong: #26324d;
       --color-line: #334160;
       --color-hairline: #2b3a57;
-      --color-ticket-frame: #152036;
-      --color-ticket-panel: #1b2740;
+      --color-ticket-frame: #334561;
+      --color-ticket-panel: #162648;
+      --color-ticket-perf: #14a9de;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -339,6 +382,7 @@
     --color-hairline: #d3dae5;
     --color-ticket-frame: #e8d7b9;
     --color-ticket-panel: #faf6ef;
+    --color-ticket-perf: rgb(255 255 255 / 0.9);
   }
 }
 
