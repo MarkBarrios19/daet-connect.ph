@@ -354,80 +354,38 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Trips you can book" })).toBeVisible();
   });
 
-  test("is the owner's postcard: a grained cream frame, the photograph and the cyan panel", async ({ page }) => {
-    // The owner's references: the SVG's bitten frame (image-49), image-52's
-    // palette, and the photograph itself filling the left half.
+  test("is the owner's ticket: their lettering across the perforation, the photograph and the three moves", async ({ page }) => {
+    // The owner's reference (image-62) and the two SVGs that came with it.
     await visit(page, "/");
 
     const band = page.locator("[data-ticket]");
     await expect(band).toBeVisible();
     await band.scrollIntoViewIfNeeded();
 
-    // The ridge: a hair of blur on the wrapper, one gradient per edge on the
-    // masked layer, all four intersected, in the reference's cream — and a mask
-    // rather than paint, so what shows through the bites is the page.
-    const ridge = await band.evaluate((element) => {
-      const wrapper = element.firstElementChild as HTMLElement;
-      const frame = wrapper.querySelector("[data-ticket-frame]") as HTMLElement;
-      const grain = frame.firstElementChild as HTMLElement;
-      const style = getComputedStyle(frame);
-      return {
-        blur: getComputedStyle(wrapper).filter,
-        bites: style.maskImage.split("radial-gradient").length - 1,
-        composite: style.maskComposite,
-        paint: style.backgroundColor,
-        grain: getComputedStyle(grain).backgroundImage.includes("feSpecularLighting"),
-      };
-    });
-    expect(ridge.bites, "one bite per edge").toBe(4);
-    expect(ridge.composite.split(",").map((value) => value.trim()), "all four layers intersected").toEqual([
-      "intersect",
-      "intersect",
-      "intersect",
-      "intersect",
-    ]);
-    expect(ridge.paint, "the reference's cream").toBe("rgb(232, 215, 185)");
-    expect(ridge.blur, "a hair of blur on the ridge").toContain("blur");
-    expect(ridge.grain, "and the owner's noise on it").toBe(true);
+    // The shape is the theme's cream, not a colour baked into the file: that is
+    // what lets the same ticket turn over in dark mode.
+    const paint = await band
+      .locator("[data-ticket-shape] path")
+      .first()
+      .evaluate((element) => getComputedStyle(element).fill);
+    expect(paint, "the reference's cream").toBe("rgb(232, 215, 185)");
 
-    // The same noise is the card's surface: the ridge, the photograph, the panel.
-    const surfaces = await band.evaluate((element) =>
-      ["[data-ticket-frame]", "[data-ticket-photo]", "[data-ticket-panel]"].map((selector) => {
-        const layer = element.querySelector(`${selector} .ticket-noise`) as HTMLElement | null;
-        return layer ? getComputedStyle(layer).backgroundImage.includes("feSpecularLighting") : false;
-      }),
-    );
-    expect(surfaces, "ridge, photograph, panel").toEqual([true, true, true]);
+    // The photograph is in the ticket, and the owner's lettering is the file
+    // they sent — noise and drop shadow included.
+    await expect(band.locator("[data-ticket-photo] img")).toHaveAttribute("src", /rizal-monument-park/);
+    await expect(band.locator("[data-ticket-art] img")).toHaveAttribute("src", "/ticket/booking-in-3-moves.svg");
+    await expect(band.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
 
-    // The left half is the photograph, full bleed, with the heading on it.
-    const photo = band.locator("[data-ticket-photo]");
-    await expect(photo.locator("img")).toHaveAttribute("src", /rizal-monument-park/);
-    await expect(photo.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
-
-    // On a phone the halves are stacked, so the heading goes to the foot of the
-    // picture, centred, rather than sitting against a panel beside it.
-    const heading = await photo.locator("h2").evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
-      return {
-        align: getComputedStyle(element).textAlign,
-        offCentre: Math.round((box.left + box.right) / 2 - (half.left + half.right) / 2),
-        gapToFoot: Math.round(half.bottom - box.bottom),
-      };
-    });
-    expect(heading.align, "centred").toBe("center");
-    expect(Math.abs(heading.offCentre), "in the middle of the picture").toBeLessThanOrEqual(1);
-    expect(heading.gapToFoot, "at its foot").toBeLessThanOrEqual(40);
-
-    // The right half is the reference's cyan, carrying dark copy: white on it
-    // is 2.3:1, under AA, so the panel is printed in ink in both themes.
-    const panel = band.locator("[data-ticket-panel]");
-    const [field, ink] = await panel.evaluate((element) => [
-      getComputedStyle(element).backgroundColor,
-      getComputedStyle(element).color,
-    ]);
-    expect(field, "the reference's cyan").toBe("rgb(29, 180, 247)");
+    // The panel is the warm white from the reference, and its copy is the
+    // theme's ink: dark on that cream is 15:1.
+    const [field, ink] = await band
+      .locator("[data-ticket-panel]")
+      .evaluate((element) => [getComputedStyle(element).backgroundColor, getComputedStyle(element).color]);
+    expect(field, "the reference's warm white").toBe("rgb(250, 246, 239)");
     expect(ink, "dark copy on it").toBe("rgb(15, 23, 42)");
+
+    // The words the lettering shows are the band's heading.
+    await expect(band.getByRole("heading", { level: 2 })).toHaveText("Booking, in three moves");
   });
 });
 
@@ -500,32 +458,29 @@ test.describe("home fan on a desktop", () => {
     hasTouch: false,
   });
 
-  test("splits the booking band: the photograph on the left, the three moves on the right", async ({ page }) => {
+  test("splits the booking band: the photograph on the left, the three moves on the right, the lettering across the seam", async ({ page }) => {
     await visit(page, "/");
     await page.evaluate(() =>
       document.querySelector("#home-how")?.scrollIntoView({ block: "center", behavior: "instant" }),
     );
 
-    const photo = await page.locator("[data-ticket-photo]").boundingBox();
-    const panel = await page.locator("[data-ticket-panel]").boundingBox();
-    expect(photo && panel, "both halves are on the page").toBeTruthy();
-    expect(panel!.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo!.x + photo!.width - 1);
-    expect(photo!.y, "on the same line").toBeCloseTo(panel!.y, 0);
-    expect(photo!.width, "half each").toBeCloseTo(panel!.width, 0);
+    const photo = (await page.locator("[data-ticket-photo]").boundingBox())!;
+    const panel = (await page.locator("[data-ticket-panel]").boundingBox())!;
+    const art = (await page.locator("[data-ticket-art]").boundingBox())!;
 
-    // The photograph fills its half, and the steps are all in the panel.
+    // The owner's layout: the picture in the wider left half, the three moves on
+    // the narrower right one, and the lettering over the perforation between
+    // them — starting on the picture and ending on the card.
+    expect(panel.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo.x + photo.width - 1);
+    expect(photo.y, "on the same line").toBeCloseTo(panel.y, 0);
+    expect(photo.width, "the picture's half is the wider one").toBeGreaterThan(panel.width);
+    expect(art.x, "the lettering starts on the picture").toBeLessThan(photo.x + photo.width);
+    expect(art.x + art.width, "and ends on the card").toBeGreaterThan(panel.x);
+    expect(art.y, "sitting on the seam, not above it").toBeGreaterThan(photo.y);
+    expect(art.y + art.height, "sitting on the seam, not below it").toBeLessThan(photo.y + photo.height);
+
     await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
     await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);
-
-    // Beside a panel, the heading is set right against it instead.
-    const heading = await page.locator("[data-ticket-photo] h2").evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      const half = (element.parentElement as HTMLElement).getBoundingClientRect();
-      return { align: getComputedStyle(element).textAlign, gap: Math.round(half.right - box.right), top: Math.round(box.top - half.top) };
-    });
-    expect(heading.align, "set right").toBe("right");
-    expect(heading.gap, "at the picture's right edge").toBeLessThanOrEqual(60);
-    expect(heading.top, "at the top of it, not the foot").toBeLessThan(80);
   });
 
   test("runs the headline a tenth smaller, the buttons 5% bigger, and sweeps Wayra on hover", async ({ page }) => {
@@ -698,6 +653,25 @@ test.describe("home fan on a desktop", () => {
     await expect(page.locator("[data-place-map] .leaflet-container")).toHaveCount(1);
     const leaflet = (await page.locator("[data-place-map] .leaflet-container").boundingBox())!;
     expect(leaflet.height, "the map itself fills the room").toBeGreaterThan(mapBody.height - 4);
+
+    // And it folds (owner's note on image-63): the map goes, the bar that names
+    // the place stays, and the card gives the photo behind it back.
+    await page.getByRole("button", { name: "Hide the map" }).click();
+    await expect(page.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("[data-place-map] [data-map-body]")).toHaveCount(0);
+    const folded = (await page.locator("[data-place-map]").boundingBox())!;
+    expect(folded.height, "a bar, not a column").toBeLessThan(72);
+    expect(folded.width, "still the card's width").toBeCloseTo(map.width, 0);
+    await expect(page.locator("[data-place-map] [data-viewing]")).toContainText("Bagasbas Beach");
+    // "Show all" acts on a map, so it goes with it.
+    await expect(page.getByRole("button", { name: "Show all" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Show the map" }).click();
+    await expect(page.locator("[data-place-map] [data-map-body]")).toHaveCount(1);
+    expect((await page.locator("[data-place-map]").boundingBox())!.height, "the column comes back").toBeCloseTo(
+      map.height,
+      0,
+    );
 
     expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
     expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);

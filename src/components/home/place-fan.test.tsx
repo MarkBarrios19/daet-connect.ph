@@ -713,7 +713,8 @@ describe("PlaceFan's hero", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
     const panel = container.querySelector("[data-place-map]") as HTMLElement;
-    expect(panel.className).toContain("h-[calc(90svh-var(--header-h)-1rem)]");
+    // The height travels as a variable, because folding the card has to undo it.
+    expect(panel.className).toContain("[--map-h:calc(90svh-var(--header-h)-1rem)]");
     expect(panel.className).toContain("w-[24rem]");
     expect(panel.className).toContain("flex-col");
 
@@ -721,6 +722,39 @@ describe("PlaceFan's hero", () => {
     expect(mapBody.className).toContain("min-h-[16rem]");
     // Nothing left over from the fixed band.
     expect(panel.querySelector(".h-64")).toBeNull();
+  });
+
+  it("folds the map card away to its header, and gives the photo back", () => {
+    // The owner's note on image-63: the map is a column now, so it needs a way
+    // out of the way. Folding drops the map itself — and with it the wheel, the
+    // pids and the pins — leaving the "Viewing" bar the card is named for.
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const panel = container.querySelector("[data-place-map]") as HTMLElement;
+    const fold = screen.getByRole("button", { name: "Hide the map" });
+
+    expect(fold).toHaveAttribute("aria-expanded", "true");
+    expect(fold).toHaveAttribute("aria-controls", "place-map-body");
+    expect(panel.getAttribute("data-collapsed")).toBe("false");
+    expect(panel.querySelector("[data-map-body]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Show all" })).toBeInTheDocument();
+
+    fireEvent.click(fold);
+
+    expect(screen.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
+    expect(panel.getAttribute("data-collapsed")).toBe("true");
+    expect(panel.querySelector("[data-map-body]")).toBeNull();
+    // "Show all" acts on a map nobody can see, so it goes with it.
+    expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
+    // The bar itself stays: it still says which place is open.
+    expect(panel.querySelector("[data-viewing]")).toHaveTextContent("Bagasbas Beach");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the map" }));
+    expect(panel.querySelector("[data-map-body]")).not.toBeNull();
   });
 
   it("leaves a wheel over the open place's map to the map, which zooms with it", () => {
