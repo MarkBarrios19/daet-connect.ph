@@ -141,7 +141,7 @@ export function PlaceMapPanel({
       // height that undoes it. React does not reliably clear an inline height
       // when the style prop goes away, so the folded case says `auto` out loud.
       style={{ height: collapsed ? "auto" : "var(--map-h, auto)" }}
-      className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
+      className={`pointer-events-auto flex flex-col self-start overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
     >
       <div className="flex shrink-0 items-center gap-2 px-3 py-2">
         <svg
