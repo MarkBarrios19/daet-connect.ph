@@ -159,11 +159,12 @@ export function PlaceMapPanel({
           nine tenths of the viewport (image-61), so the header row is fixed and
           the map is the rest of the card.
 
-          The map is a flex child, not a `h-full` one: a percentage height inside
-          a flex item that grows from no basis resolves against nothing in
-          Chrome, and the container came out zero tall (caught in CI). Sizing it
-          by flex is one rule and no arithmetic. */}
-      <div data-map-body className="relative flex min-h-[16rem] flex-1 flex-col">
+          The map fills this box by being pinned to it, not by a height: the map
+          is wrapped in a <figure> of its own, so `h-full` or `flex-1` would size
+          it against that figure's auto height and come out zero tall — which is
+          exactly what CI caught, twice, before the wheel-zoom test lost its map.
+          Pinned to the positioned wrapper, its box is the wrapper's box. */}
+      <div data-map-body className="relative min-h-[16rem] flex-1">
         <FreeMap
           markers={markers}
           title={`Map showing ${place.name} and the other places in the fan`}
@@ -178,7 +179,7 @@ export function PlaceMapPanel({
           // wheel zooms: this map is what the visitor is working in.
           focusOffsetY={76}
           wheelZoom
-          className="min-h-0 flex-1"
+          className="absolute inset-0"
         />
 
         {/* The place itself, over the map: its photo, its name, the line about
