@@ -30,6 +30,17 @@ describe("the origin email links are built from", () => {
     expect(authOrigin(headers)).toBe("http://localhost:3101");
   });
 
+  it("reads a LAN address as the plain-HTTP development server it is", () => {
+    // next dev speaks http; guessing https here built email links that 404'd.
+    expect(authOrigin(requestHeaders({ host: "192.168.1.20:3000" }))).toBe("http://192.168.1.20:3000");
+    expect(authOrigin(requestHeaders({ host: "10.0.0.7:3000" }))).toBe("http://10.0.0.7:3000");
+  });
+
+  it("still assumes TLS for a deployed host, and for the unusual port", () => {
+    expect(authOrigin(requestHeaders({ host: "daet-connect.ph" }))).toBe("https://daet-connect.ph");
+    expect(authOrigin(requestHeaders({ host: "daet-connect.ph:443" }))).toBe("https://daet-connect.ph:443");
+  });
+
   it("refuses a host that is not only a host — no path, no credentials, no newline", () => {
     for (const host of ["evil.example/steal", "evil.example@daet.ph", "evil.example\nX: y", "a b", ""]) {
       expect(authOrigin(requestHeaders({ host, "x-forwarded-proto": "https" }))).toBe("http://localhost:3000");

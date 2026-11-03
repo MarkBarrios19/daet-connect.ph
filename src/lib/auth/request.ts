@@ -21,12 +21,25 @@ export function authOrigin(headerList: HeaderLike): string {
   if (configured && isSafeOrigin(configured)) return configured.replace(/\/+$/, "");
 
   const host = (headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "").split(",")[0].trim();
-  const proto =
-    headerList.get("x-forwarded-proto") ??
-    (/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(host) ? "http" : "https");
+  const proto = headerList.get("x-forwarded-proto") ?? guessProtocol(host);
 
   if (!isHostname(host)) return "http://localhost:3000";
   return `${proto === "http" ? "http" : "https"}://${host}`;
+}
+
+const PRIVATE_HOST = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
+
+/**
+ * Which scheme a request without `x-forwarded-proto` arrived on. Localhost and
+ * private addresses are being developed against (`next dev` speaks plain HTTP);
+ * so is anything on a port other than 443. Everything else is a deployment
+ * behind a TLS proxy that failed to say so, and HTTPS is the safe answer.
+ */
+function guessProtocol(host: string): "http" | "https" {
+  if (PRIVATE_HOST.test(host)) return "http";
+  const port = /:(\d{1,5})$/.exec(host)?.[1];
+  if (port && port !== "443") return "http";
+  return "https";
 }
 
 /** `https://daet.ph` yes; `https://evil.example/` with a path, no. */

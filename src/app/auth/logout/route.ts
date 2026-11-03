@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { authOrigin } from "@/lib/auth/request";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +7,11 @@ export const dynamic = "force-dynamic";
  * End the session.
  *
  * POST only — a link that signs you out can be planted in any page — and only
- * from our own origin. The session cookies are also SameSite=Lax, so a request
- * from another site arrives without them; this check is the second lock.
+ * from this site. SameSite=Lax already keeps a cross-site POST from carrying the
+ * cookies, so this check is the second lock, and it is deliberately about the
+ * host and not the scheme: a preview deployment, a LAN address and a custom
+ * domain are all the same site, and a comparison of full origins signed people
+ * out of nothing at all.
  */
 export async function POST(request: NextRequest) {
   if (!fromThisSite(request)) {
@@ -20,11 +22,19 @@ export async function POST(request: NextRequest) {
     // The cleared auth cookies come back through this list and are put on the
     // reply, so the browser forgets the session even if the page is not reloaded.
     const written: CookieToSet[] = [];
-    const supabase = await createSupabaseServerClient({ onCookiesSet: (list) => written.push(...list) });
+    const onCookiesSet = (list: CookieToSet[]) => written.push(...list);
+    const supabase = await createSupabaseServerClient({ onCookiesSet });
+
     // Ending every session of this account, not only this browser's copy: a
     // shared or lost phone should not keep its access.
     const { error } = await supabase.auth.signOut({ scope: "global" });
-    if (error) console.error("sign-out failed", error.code, error.message);
+    if (error) {
+      // The auth service could not be reached or refused. The visitor asked to
+      // be signed out, so the session in this browser ends regardless — that
+      // costs nothing and is the half of the request we can always honour.
+      console.error("global sign-out failed, ending the local session instead", error.code, error.message);
+      await supabase.auth.signOut({ scope: "local" });
+    }
 
     const response = NextResponse.json({ success: true });
     for (const { name, value, options } of written) response.cookies.set(name, value, options);
@@ -36,15 +46,45 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Is this POST from a page of this site?
+ *
+ * The hosts we accept are the ones this request actually arrived on — a proxy
+ * forwards the original in `x-forwarded-host`, a direct request carries it in
+ * `host` — plus the configured site, if any. Only the host is compared: an
+ * `http://` LAN address and an `https://` deployment of the same host are the
+ * same site, and a scheme guess is exactly how this check went wrong before.
+ */
 function fromThisSite(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
-  // A browser always sends Origin on a cross-site POST and on same-origin POSTs
-  // from fetch; a missing one is a non-browser client, which has no session
-  // cookie to protect and nothing to gain.
+  // A browser sends Origin on a same-origin fetch, and on every cross-site POST.
+  // A missing one is a non-browser client: it carries no session cookie, so
+  // there is nothing here to protect from it.
   if (!origin) return true;
+
+  let originHost: string;
   try {
-    return new URL(origin).origin === new URL(authOrigin(request.headers)).origin;
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+  if (!originHost) return false;
+
+  const allowed = new Set<string>();
+  const add = (value: string | null | undefined) => {
+    const first = value?.split(",")[0]?.trim();
+    if (!first) return;
+    try {
+      allowed.add(new URL(first.includes("://") ? first : `https://${first}`).host);
+    } catch {
+      // Not a host we can read; it simply grants nothing.
+    }
+  };
+
+  add(request.headers.get("x-forwarded-host"));
+  add(request.headers.get("host"));
+  add(request.nextUrl.host);
+  add(process.env.NEXT_PUBLIC_APP_URL);
+
+  return allowed.has(originHost);
 }

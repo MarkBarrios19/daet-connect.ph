@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { visit } from "./fixtures";
+import { signInAs, visit } from "./fixtures";
 
 const MOCK = "http://127.0.0.1:54329";
 const PASSWORD = "Bagasbas-Waves-2026";
@@ -152,5 +152,26 @@ test.describe("signing up, signing in and proving the address", () => {
     expect(await hasSession(page)).toBe(true);
     const verify = (await authLog(page)).find((entry) => entry.kind === "verify");
     expect(verify?.kind).toBe("verify");
+  });
+});
+
+test.describe("signing out", () => {
+  // The account menu lives in the header from `xl` up; below that the same menu
+  // is the last tab of the bottom bar.
+  test.use({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
+
+  test("signs out from the account menu and forgets the session", async ({ page, context }) => {
+    await signInAs(context, "tourist");
+    await visit(page, "/");
+    expect(await hasSession(page)).toBe(true);
+
+    await page.getByRole("button", { name: /your account/i }).click();
+    await page.getByRole("button", { name: "Sign out" }).click();
+
+    // Home, with no session left — this is the path that failed with a preview
+    // host and a production NEXT_PUBLIC_APP_URL configured.
+    await expect(page).toHaveURL(/localhost:3101\/?$/, { timeout: 15_000 });
+    expect(await hasSession(page)).toBe(false);
+    await expect(page.getByRole("button", { name: /your account/i })).toHaveCount(0);
   });
 });
