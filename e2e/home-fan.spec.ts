@@ -165,6 +165,40 @@ test.describe("home fan on a phone", () => {
     await expect(page).not.toHaveURL(/#place-/);
   });
 
+  test("opens the place where the visitor is standing, not further down the page", async ({ page }) => {
+    await visit(page, "/");
+
+    // Someone already a screen down taps a wedge — a deep link the browser
+    // restored a scroll position for, Back into a place, or a page they had
+    // scrolled. The photo is what opens, so the page comes back to it. It used to
+    // be left half-scrolled with the sheet floating over "Places to start"
+    // (owner's screenshot, image-79).
+    await page.evaluate(() => window.scrollTo(0, 900));
+    expect(await page.evaluate(() => window.scrollY), "scrolled away to start with").toBeGreaterThan(400);
+
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+    await expect(page).toHaveURL(/#place-bagasbas-beach/);
+    await expect.poll(() => page.evaluate(() => window.scrollY), { message: "the page is home" }).toBe(0);
+
+    // The hero, whole, with the sheet at its foot — not a band of it at the top.
+    const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(hero.y).toBeLessThanOrEqual(96);
+    expect(hero.y + hero.height).toBeGreaterThan(viewport.height * 0.6);
+
+    // Stepping to the next place and closing keep the page where it is.
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => window.scrollY), "still home after a step").toBe(0);
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
+    expect(await page.evaluate(() => window.scrollY), "still home after closing").toBe(0);
+  });
+
   test("opens a folded sheet at the foot of the phone, with the photo above it", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", {
