@@ -607,6 +607,9 @@ export function PlaceFan({
       >
         <h1
           id="home-title"
+          // A tenth smaller than the display size it is set in (owner's note on
+          // image-57); the utility multiplies its own clamp by this.
+          style={{ "--display-scale": 0.9 } as React.CSSProperties}
           className={
             onPhone || tight ? "display-2 text-daet-ink dark:text-white" : "display-1 text-daet-ink dark:text-white"
           }
@@ -631,7 +634,14 @@ export function PlaceFan({
             {/* Behind an open place this row is invisible, so it must not be
                 tabbable either — the heading above it stays readable. */}
             <div className="pointer-events-auto mt-4 flex flex-wrap justify-center gap-3" inert={isOpen}>
-              <ButtonLink href="/tours/browse" size="lg">
+              {/* Both carry the Wayra sweep (see globals.css): the solid one
+                  fills a step deeper, the outlined one fills with ink and flips
+                  its label to the page's own ground. */}
+              <ButtonLink
+                href="/tours/browse"
+                size="xl"
+                className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
+              >
                 Find a tour
               </ButtonLink>
               {/* Both buttons sit on the hero's pale ground in light mode, so
@@ -639,11 +649,22 @@ export function PlaceFan({
                   white here (the label vanished). `onHeader` is ink in light
                   and white in dark, which is exactly this ground. */}
               {signedIn ? (
-                <ButtonLink href="/dashboard" size="lg" variant="onHeader">
+                <ButtonLink
+                  href="/dashboard"
+                  size="xl"
+                  variant="onHeader"
+                  className="wayra [--wayra-fill:var(--color-daet-ink)] [--wayra-ink:var(--color-canvas)]"
+                >
                   My dashboard
                 </ButtonLink>
               ) : (
-                <Button type="button" size="lg" variant="onHeader" onClick={() => openAssistant()}>
+                <Button
+                  type="button"
+                  size="xl"
+                  variant="onHeader"
+                  className="wayra [--wayra-fill:var(--color-daet-ink)] [--wayra-ink:var(--color-canvas)]"
+                  onClick={() => openAssistant()}
+                >
                   Ask the travel guide
                 </Button>
               )}

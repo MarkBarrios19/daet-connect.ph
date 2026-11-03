@@ -224,6 +224,58 @@
   filter: blur(0.75px);
 }
 
+/* Wayra, for the hero's two buttons.
+ *
+ * Extracted from the button set the owner pointed at (Codepen OJJZLzX, the
+ * "Wayra" block, from codrops/ButtonStylesInspiration): a slab a button-and-a-
+ * half wide, hinged at the bottom-left corner and laid back 45 degrees out of
+ * sight, swings up to fill the button on hover. The original's own colours are
+ * #37474f → #3f51b5; here the fill and the label it needs are per-button
+ * variables, so one mechanics rule serves both the solid and the outlined
+ * button — and both take it on focus-visible too, not only on hover.
+ *
+ * Everything stays inside the button: `isolation` makes it a stacking context,
+ * so the slab's -1 sits above the button's own fill and under its label without
+ * a wrapper span, and `overflow: hidden` clips it to the pill. */
+@utility wayra {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 150%;
+    height: 100%;
+    background: var(--wayra-fill, currentColor);
+    z-index: -1;
+    transform-origin: 0% 100%;
+    transform: rotate(-45deg) translate3d(0, -3em, 0);
+    transition:
+      transform 300ms var(--ease-out),
+      background-color 300ms var(--ease-out);
+  }
+
+  &:hover::before,
+  &:focus-visible::before {
+    transform: rotate(0deg);
+  }
+
+  /* The label has to sit on the slab once it lands. */
+  &:hover,
+  &:focus-visible {
+    color: var(--wayra-ink, currentColor);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wayra::before {
+    transition: none;
+  }
+}
+
 /* A question's answer draws itself open (image-46).
  *
  * Native <details> still does the opening, this is only the transition: the
@@ -342,7 +394,10 @@
   font-family: var(--font-display);
   font-weight: 900;
   font-variation-settings: "SOFT" 0, "WONK" 0;
-  font-size: clamp(2.5rem, 9vw, 6rem);
+  /* --display-scale lets one heading run a little smaller than the size it is
+     set in (the hero, on the owner's note: 10% off, image-57), without a second
+     copy of the whole utility that could drift from this one. */
+  font-size: calc(var(--display-scale, 1) * clamp(2.5rem, 9vw, 6rem));
   line-height: 0.95;
   letter-spacing: -0.03em;
 }
@@ -351,7 +406,7 @@
   font-family: var(--font-display);
   font-weight: 900;
   font-variation-settings: "SOFT" 0, "WONK" 0;
-  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-size: calc(var(--display-scale, 1) * clamp(1.75rem, 5vw, 3rem));
   line-height: 1.05;
   letter-spacing: -0.025em;
 }

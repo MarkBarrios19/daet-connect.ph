@@ -128,6 +128,24 @@ describe("PlaceFan", () => {
     expect(assistant.className).not.toContain("ring-white/60");
   });
 
+  it("runs the headline a tenth smaller and gives both hero buttons the Wayra sweep", () => {
+    // Owner's notes on the hero (image-57, image-58): the statement 10% down,
+    // the buttons 5% up, and the Wayra slab on hover (globals.css).
+    renderFan(false);
+
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.style.getPropertyValue("--display-scale")).toBe("0.9");
+
+    ["Find a tour", "Ask the travel guide"].forEach((name) => {
+      const control = screen.getByRole(name === "Find a tour" ? "link" : "button", { name });
+      expect(control.className).toContain("wayra");
+      // lg + 5%, and a fill and label the sweep can use.
+      expect(control.className).toContain("min-h-[3.15rem]");
+      expect(control.className).toContain("--wayra-fill");
+      expect(control.className).toContain("--wayra-ink");
+    });
+  });
+
   it("asks the assistant to open when that button is pressed", () => {
     const opened = jest.fn();
     window.addEventListener("daet:open-assistant", opened);

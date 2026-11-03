@@ -528,6 +528,38 @@ test.describe("home fan on a desktop", () => {
     expect(heading.top, "at the top of it, not the foot").toBeLessThan(80);
   });
 
+  test("runs the headline a tenth smaller, the buttons 5% bigger, and sweeps Wayra on hover", async ({ page }) => {
+    // Owner's notes on the hero (image-57, image-58). Wayra is the Codepen pen
+    // they pointed at: a slab hinged at the button's bottom-left corner, laid
+    // back 45 degrees out of sight, swung up to fill the button on hover.
+    await visit(page, "/");
+
+    // display-1's clamp tops out at 6rem (96px) at this width; a tenth down.
+    const size = await page.locator("#home-title").evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+    expect(size, "the statement, 10% smaller").toBeCloseTo(86.4, 0);
+
+    const solid = page.getByRole("link", { name: "Find a tour" });
+    const box = (await solid.boundingBox())!;
+    expect(box.height, "the buttons, 5% bigger than lg's 48px").toBeCloseTo(50.4, 0);
+
+    const atRest = await solid.evaluate((element) => getComputedStyle(element, "::before").transform);
+    expect(atRest, "the slab, laid back 45 degrees out of sight").toContain("0.707");
+
+    await solid.hover();
+    await page.waitForTimeout(400);
+    const landed = await solid.evaluate((element) => getComputedStyle(element, "::before").transform);
+    expect(landed, "swung up to fill the button").toBe("matrix(1, 0, 0, 1, 0, 0)");
+
+    // The outlined button fills with ink, so its label flips to the page's ground.
+    const ghost = page.getByRole("button", { name: "Ask the travel guide" });
+    const inkBefore = await ghost.evaluate((element) => getComputedStyle(element).color);
+    await ghost.hover();
+    await page.waitForTimeout(400);
+    const inkAfter = await ghost.evaluate((element) => getComputedStyle(element).color);
+    expect(inkAfter, "white on the ink slab").not.toBe(inkBefore);
+    expect(inkAfter).toBe("rgb(255, 255, 255)");
+  });
+
   test("draws the three ways to Daet as one outlined band", async ({ page }) => {
     // The owner's reference (image-47): a single outlined card with a rule
     // between the columns, each column numbered and carrying its own vehicle —

@@ -26,6 +26,10 @@ const VARIANTS = {
 const SIZES = {
   md: "min-h-11 px-6 text-sm",
   lg: "min-h-12 px-7 text-base",
+  // lg, five per cent bigger in every direction (the owner's note on the hero's
+  // two buttons, image-58): 48 → 50.4px tall, 28 → 29.4px of side padding,
+  // 16 → 16.8px of label.
+  xl: "min-h-[3.15rem] px-[1.8375rem] text-[1.05rem]",
   icon: "h-11 w-11 text-lg",
 } as const;
 
