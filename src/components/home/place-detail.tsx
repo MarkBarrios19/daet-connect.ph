@@ -68,17 +68,18 @@ export function PlaceDetail({
   const position = index + 1;
 
   /**
-   * "Open on the map" scrolls to the map further down the page, where the pins
-   * open a place in this same fan. It leaves the hash alone on purpose: the hash
-   * is what holds this card open, so changing it would close the place the
-   * visitor is looking at on their way there.
+   * "Open in Google Maps", not a jump down the page (owner's note, image-92).
+   *
+   * The old link scrolled to the map section, which is now a phone's section
+   * only — and the visitor who wants directions wants them in the maps app they
+   * already have, with the trip to it planned. The place's own coordinates come
+   * from the places table; a place the Tourism Office has not pinned yet is
+   * searched for by name instead, so the button is never a dead end.
    */
-  const onOpenMap = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    const map = document.getElementById("home-map");
-    if (!map) return;
-    event.preventDefault();
-    map.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const point = places.find((candidate) => candidate.slug === place.slug);
+  const googleMapsHref = point
+    ? `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, Daet, Camarines Norte`)}`;
 
   /** A 44px circle in the card's header: ink in light, white in dark. */
   const step =
@@ -179,11 +180,17 @@ export function PlaceDetail({
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {/* A plain anchor, so it still works with the script off; the
-                    handler scrolls without changing the hash, which would close
-                    the place the visitor is standing on. */}
-          <a href="#home-map" onClick={onOpenMap} className={buttonClasses({ size: "md" })}>
-            Open on the map
+          {/* A plain anchor to Google's own Maps URL, so it works with the script
+              off and on a phone hands over to the Maps app. The place stays open
+              behind it: nothing here touches the hash. */}
+          <a
+            href={googleMapsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClasses({ size: "md" })}
+          >
+            Open in Google Maps
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
           <ButtonLink href={place.toursHref} variant="secondary" size="md">
             Trips near here

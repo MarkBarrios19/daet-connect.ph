@@ -83,12 +83,13 @@ test.describe("desktop chat heads", () => {
     // they escaped it and painted over the dock: the panel's header, its messages
     // and the attribution all sat on top of a chat the visitor was reading.
     await signInAs(context, "tourist");
-    await page.goto("/", { waitUntil: "networkidle" });
+    // A page with a full-width map: the home page's own map is a phone's section
+    // now (owner's note, image-87), so this leans on the places page, whose map
+    // runs the width of the page's column.
+    await page.goto("/tours/attractions", { waitUntil: "networkidle" });
 
-    // Scroll past the hero, which hides the floating pill while it is on screen,
-    // then open the assistant from the pill: signed in on a wide screen, that
-    // lands in the dock.
-    await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 1.5, behavior: "instant" }));
+    // Open the assistant from the pill: signed in on a wide screen, that lands in
+    // the dock.
     const pill = page.getByRole("button", { name: "Daet AI assistant", exact: true });
     await expect(pill).toBeVisible();
     await pill.click();
@@ -99,7 +100,7 @@ test.describe("desktop chat heads", () => {
     await expect(pill).toBeHidden();
 
     // Park the map across the middle of the screen, under the window.
-    await page.locator("#home-map").scrollIntoViewIfNeeded();
+    await page.locator(".leaflet-container").first().scrollIntoViewIfNeeded();
     await page.locator(".leaflet-container").first().waitFor({ state: "visible" });
 
     // The map owns a stacking context, so its panes stay inside it.

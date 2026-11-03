@@ -112,6 +112,24 @@ test.describe("home fan on a phone", () => {
     await expect(page.getByText("Tap a place to see it")).toBeVisible();
   });
 
+  test("keeps the one map, and closes the page with the questions", async ({ page }) => {
+    await visit(page, "/");
+
+    // A phone keeps the pins section (owner's note, image-87).
+    await expect(page.locator("section[aria-labelledby='home-map']")).toBeVisible();
+
+    // And the questions now come after the band that asks operators and guides
+    // in, rather than straight after the map (owner's note, image-88).
+    const faqFollowsTheBand = await page.evaluate(() => {
+      const faq = document.querySelector("section[aria-labelledby='home-faq']");
+      const ops = document.querySelector("section[aria-labelledby='home-ops']");
+      if (!faq || !ops) return null;
+      // DOCUMENT_POSITION_PRECEDING on the ops node means ops comes first.
+      return (faq.compareDocumentPosition(ops) & Node.DOCUMENT_POSITION_PRECEDING) !== 0;
+    });
+    expect(faqFollowsTheBand, "the questions follow the band").toBe(true);
+  });
+
   test("mirrors its two fans about the headline", async ({ page }) => {
     await visit(page, "/");
 
@@ -581,6 +599,29 @@ test.describe("home fan on a desktop", () => {
     await expect(page.getByRole("group", { name: "Places in Daet" })).toBeVisible();
   });
 
+  test("leaves the map section to phones", async ({ page }) => {
+    // The open place's own map card does this work on a desktop, nine tenths of
+    // a viewport tall; a second map below the fold only repeats it (image-87).
+    await visit(page, "/");
+
+    await expect(page.locator("section[aria-labelledby='home-map']")).toBeHidden();
+  });
+
+  test("closes the page with the wordmark at the header's own size", async ({ page }) => {
+    // Not a full-bleed billboard (owner's note, image-90): the close of the page
+    // reads as the same name that opened it, at the same size.
+    await visit(page, "/");
+
+    const sizeOf = (locator: import("@playwright/test").Locator) =>
+      locator.evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+
+    const footerSize = await sizeOf(page.locator("footer").getByText("CONNECT-Daet", { exact: true }));
+    const headerSize = await sizeOf(page.locator("header").getByText("CONNECT-Daet", { exact: true }).first());
+
+    expect(footerSize, "no billboard").toBeLessThanOrEqual(24);
+    expect(Math.abs(footerSize - headerSize), "the header's own size").toBeLessThanOrEqual(2);
+  });
+
   test("splits the booking band: the photograph on the left, the three moves on the right, the lettering across the seam", async ({ page }) => {
     await visit(page, "/");
     await page.evaluate(() =>
@@ -756,7 +797,11 @@ test.describe("home fan on a desktop", () => {
     await page.keyboard.press("Enter");
 
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
-    await expect(inPanel(page).getByRole("link", { name: "Open on the map" })).toHaveAttribute("href", "#home-map");
+    // "Open in Google Maps" (owner's note, image-92), at this place's own
+    // coordinates, in a new tab — the place stays open behind it.
+    const maps = inPanel(page).getByRole("link", { name: /open in google maps/i });
+    await expect(maps).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=14.131583,122.985083");
+    await expect(maps).toHaveAttribute("target", "_blank");
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await checkA11y(page, "home, a place open, desktop");
 
@@ -981,15 +1026,18 @@ test.describe("home fan on a desktop", () => {
     expect(isNear(dark.headline, dark.belowHeading ?? []), "the same ink as the headings below").toBe(true);
   });
 
-  test("takes 'Open on the map' to the map, leaving the place open", async ({ page }) => {
+  test("sends the visitor to Google Maps, leaving the place open", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
     await page.keyboard.press("Enter");
 
-    await page.getByRole("link", { name: "Open on the map" }).click();
-
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
-    // The hash still holds the place, so scrolling back up finds it open.
+    const maps = page.getByRole("link", { name: /open in google maps/i });
+    await expect(maps).toBeVisible();
+    await expect(maps).toHaveAttribute("rel", /noopener/);
+    // Nothing jumps down the page: the map section below is a phone's section
+    // now, and this button is about directions, not about our own map.
+    await expect(page.getByRole("link", { name: "Open on the map" })).toHaveCount(0);
+    expect(await page.evaluate(() => window.scrollY), "still on the photo").toBeLessThan(80);
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
   });
@@ -1776,12 +1824,8 @@ test.describe("a pin opens a place from further down the page", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
 
-    // A phone opens the card folded to a bar, so its link is one tap away.
-    const show = page.getByRole("button", { name: "Show the place's details" });
-    if (await show.count()) await show.click();
-    await page.getByRole("link", { name: "Open on the map" }).click();
-    // Down at the map, whether or not this browser honoured the card's own
-    // smooth scroll — the map has to be on screen for it to mount at all.
+    // Down to the map. A phone still has it — it is the one screen that does —
+    // and it has to be on screen for the map to mount at all.
     await page.locator("#home-map").scrollIntoViewIfNeeded();
 
     // The pin's name is the place's own name from the places table, which is
