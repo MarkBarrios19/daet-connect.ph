@@ -65,13 +65,15 @@ test.describe("dark mode", () => {
     const arrow = up.locator("svg");
     const ink = () => arrow.evaluate((element) => getComputedStyle(element).color);
 
-    expect(await ink(), "white on the dark paper").toBe("rgb(255, 255, 255)");
+    // The button eases its colour over 150ms, so each reading waits for the
+    // colour to settle rather than catching it on the way.
+    await expect.poll(ink, { message: "white on the dark paper" }).toBe("rgb(255, 255, 255)");
 
     // The same page, switched to the light theme.
     await page.evaluate(() => {
       document.documentElement.dataset.theme = "light";
     });
-    expect(await ink(), "the brand's blue on light paper").toBe("rgb(29, 78, 216)");
+    await expect.poll(ink, { message: "the brand's blue on light paper" }).toBe("rgb(29, 78, 216)");
 
     await context.close();
   });
