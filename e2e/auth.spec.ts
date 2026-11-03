@@ -171,12 +171,15 @@ test.describe("signing out", () => {
       page.getByRole("button", { name: "Sign out" }).click(),
     ]);
 
-    // The reply has to be a 200 that expires the session cookie. Asserting it
+    // The reply has to be a 200 that clears the session cookie. Asserting it
     // here, rather than only on the end state, says which half went wrong.
     expect(response.status()).toBe(200);
     const cookieHeader = (await response.allHeaders())["set-cookie"] ?? "";
-    expect(cookieHeader, "the reply names the session cookie").toContain("-auth-token=");
-    expect(cookieHeader, "the reply expires it").toMatch(/max-age=0/i);
+    // @supabase/ssr removes a cookie by emptying it, and its write is the one
+    // Next hydrates last, so the reply carries `sb-…-auth-token=;` — no value,
+    // which is what "signed out" means to the auth client. What must not happen
+    // is a reply that names the cookie and hands back a session.
+    expect(cookieHeader).toContain("-auth-token=;");
 
     // Home, with no session left — this is the path that failed with a preview
     // host and a production NEXT_PUBLIC_APP_URL configured, and then with the

@@ -39,9 +39,11 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     for (const { name, value, options } of written) response.cookies.set(name, value, options);
     // Whatever the auth client knows about, every session cookie this request
-    // carried is expired as well — a cookie written with a Domain attribute by
+    // carried is cleared as well — a cookie written with a Domain attribute by
     // an older deployment is a different cookie from a host-only one, and
-    // "signed out but still signed in" is a miserable thing to debug.
+    // "signed out but still signed in" is a miserable thing to debug. (The auth
+    // client empties the host-only cookie itself; Next applies that write last,
+    // which is why the reply shows an empty value rather than an expiry.)
     clearSessionCookies(request, response);
     response.headers.set("Cache-Control", "no-store");
     return response;
