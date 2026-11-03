@@ -38,11 +38,31 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true });
     for (const { name, value, options } of written) response.cookies.set(name, value, options);
+    // Whatever the auth client knows about, every session cookie this request
+    // carried is expired as well — a cookie written with a Domain attribute by
+    // an older deployment is a different cookie from a host-only one, and
+    // "signed out but still signed in" is a miserable thing to debug.
+    clearSessionCookies(request, response);
     response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
     console.error("sign-out threw", error);
     return NextResponse.json({ success: false, error: "Sign out failed" }, { status: 500 });
+  }
+}
+
+/** `sb-<ref>-auth-token` and its chunked `.0`, `.1` forms. */
+const SESSION_COOKIE = /^sb-.*-auth-token(\.\d+)?$/;
+
+function clearSessionCookies(request: NextRequest, response: NextResponse) {
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim();
+  const hostPart = host.split(":")[0];
+  const domainAllowed = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(hostPart);
+
+  for (const cookie of request.cookies.getAll()) {
+    if (!SESSION_COOKIE.test(cookie.name)) continue;
+    response.cookies.set(cookie.name, "", { maxAge: 0, path: "/" });
+    if (domainAllowed) response.cookies.set(cookie.name, "", { maxAge: 0, path: "/", domain: hostPart });
   }
 }
 

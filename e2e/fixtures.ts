@@ -3,7 +3,15 @@ import { expect, type BrowserContext, type Page } from "@playwright/test";
 
 export type Role = "tourist" | "operator" | "guide" | "admin";
 
-/** Sign in by planting a Supabase session cookie; the mock maps the token to a role. */
+/**
+ * Sign in by planting a Supabase session cookie; the mock maps the token to a
+ * role.
+ *
+ * The cookie is host-only (`url`, no `domain`), exactly as `@supabase/ssr`
+ * writes it. A cookie planted with `domain: "localhost"` is a *different* cookie
+ * from the host-only one the app later clears, so a sign-out test would leave it
+ * behind and fail for a reason that only exists in the harness.
+ */
 export async function signInAs(context: BrowserContext, role: Role) {
   const session = {
     access_token: `e2e-${role}`,
@@ -14,7 +22,11 @@ export async function signInAs(context: BrowserContext, role: Role) {
     user: { id: "9b7e5a5e-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "juan@example.ph", app_metadata: {}, user_metadata: {} },
   };
   await context.addCookies([
-    { name: "sb-127-auth-token", value: "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url"), domain: "localhost", path: "/" },
+    {
+      name: "sb-127-auth-token",
+      value: "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url"),
+      url: "http://localhost:3101",
+    },
   ]);
 }
 

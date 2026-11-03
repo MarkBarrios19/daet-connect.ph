@@ -7,10 +7,12 @@ jest.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: jest.fn(
 
 const mockClient = createSupabaseServerClient as jest.MockedFunction<typeof createSupabaseServerClient>;
 
-function request(origin?: string, host = "daet.test") {
+function request(origin?: string, host = "daet.test", sessionCookies: string[] = []) {
   const headers: Record<string, string> = { host, "x-forwarded-proto": "https" };
   if (origin) headers.origin = origin;
-  return new NextRequest(new URL("/auth/logout", `https://${host}`), { method: "POST", headers });
+  const built = new NextRequest(new URL("/auth/logout", `https://${host}`), { method: "POST", headers });
+  for (const name of sessionCookies) built.cookies.set(name, "base64-session");
+  return built;
 }
 
 /** A client whose sign-out calls are recorded, and which writes cleared cookies. */
@@ -129,6 +131,27 @@ describe("signing out", () => {
     expect(signOut).toHaveBeenNthCalledWith(2, { scope: "local" });
     expect(response.status).toBe(200);
     expect(response.cookies.get("sb-project-auth-token")?.value).toBe("");
+  });
+
+  it("expires every session cookie the request carried, however it was scoped", async () => {
+    clientWith();
+
+    const response = await POST(request("https://daet.test", "daet.test", ["sb-project-auth-token", "sb-project-auth-token.0"]));
+
+    for (const name of ["sb-project-auth-token", "sb-project-auth-token.0"]) {
+      const cleared = response.cookies.get(name);
+      expect(cleared?.value).toBe("");
+      expect(cleared?.maxAge).toBe(0);
+    }
+  });
+
+  it("leaves cookies that are not sessions alone", async () => {
+    clientWith();
+
+    const response = await POST(request("https://daet.test", "daet.test", ["sb-project-auth-token-code-verifier", "theme"]));
+
+    expect(response.cookies.get("theme")).toBeUndefined();
+    expect(response.cookies.get("sb-project-auth-token-code-verifier")).toBeUndefined();
   });
 
   it("does not report success when it could not even build the client", async () => {
