@@ -15,10 +15,14 @@ async function clearAuthLog(page: Page) {
   await page.request.get(`${MOCK}/testing/auth-log/clear`);
 }
 
-/** Is there a Supabase session cookie for this browser? */
+/**
+ * Is there a Supabase *session* cookie for this browser? Not just any `sb-…`
+ * cookie: sign-up legitimately leaves a `-code-verifier` behind, which is what
+ * proves the confirmation link belongs to this browser.
+ */
 async function hasSession(page: Page): Promise<boolean> {
   const cookies = await page.context().cookies();
-  return cookies.some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
+  return cookies.some((cookie) => /^sb-.*-auth-token(\.\d+)?$/.test(cookie.name) && cookie.value.length > 0);
 }
 
 test.describe("signing up, signing in and proving the address", () => {
@@ -96,7 +100,9 @@ test.describe("signing up, signing in and proving the address", () => {
     await page.getByLabel("Password").fill("not-the-password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByRole("alert")).toContainText("That email and password do not match an account.");
+    // Next renders its own route announcer with role="alert", so pick ours out
+    // by its words rather than by the role alone.
+    await expect(page.getByRole("alert").filter({ hasText: "do not match an account" })).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
     expect(await hasSession(page)).toBe(false);
   });
