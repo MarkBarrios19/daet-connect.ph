@@ -524,8 +524,13 @@ test.describe("home fan on a desktop", () => {
 
   test("goes back to the fan on a double-click, and leaves it alone on one", async ({ page }) => {
     await visit(page, "/");
-    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).click();
+    // A wedge at rest is a thin sliver, so its middle is not a place a pointer
+    // can reach: the keyboard opens it, as the other fan tests do.
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+    // Let the fold-in land before the pointer goes anywhere near the photo.
+    await page.waitForTimeout(800);
 
     // Right of the cards, which hug the photo's left edge: the photo itself.
     const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
