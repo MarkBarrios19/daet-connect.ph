@@ -34,33 +34,44 @@ jest.mock("@/components/maps/free-map", () => ({
   ),
 }));
 
-/** The seeded coordinates, as the places table has them. */
+/**
+ * The rows the places table gives the page: each place's own coordinates, the
+ * town it is in, and — for now — no pin confirmed by the Tourism Office.
+ */
 const MAP_PLACES: MapPoint[] = [
   {
     slug: "tinaga-island-calaguas",
-    name: "Calaguas",
+    name: "Tinaga Island (Calaguas)",
     lat: 14.4692,
     lng: 122.945,
+    municipality: "Vinzons",
   },
   {
     slug: "apuao-grande-island",
-    name: "Apuao sandbar",
+    name: "Apuao Grande Island",
     lat: 14.0823,
     lng: 123.1048,
+    municipality: "Mercedes",
   },
   {
     slug: "bagasbas-beach",
     name: "Bagasbas Beach",
     lat: 14.131583,
     lng: 122.985083,
+    municipality: "Daet",
   },
   {
     slug: "first-rizal-monument",
-    name: "First Rizal Monument",
+    name: "First José Rizal Monument",
     lat: 14.1131,
     lng: 122.9545,
+    municipality: "Daet",
   },
 ];
+
+/** A Maps search URL the way URLSearchParams writes one: spaces +, commas %2C. */
+const mapsSearch = (query: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query).replace(/%20/g, "+")}`;
 
 const renderDetail = (overrides: Partial<React.ComponentProps<typeof PlaceDetail>> = {}) => {
   const handlers = { onPrev: jest.fn(), onNext: jest.fn(), onPick: jest.fn() };
@@ -88,13 +99,16 @@ describe("PlaceDetail", () => {
     expect(screen.getByText(FAN_PLACES[2].text)).toBeInTheDocument();
   });
 
-  it("links to Google Maps at the place's own coordinates, and to the trips near it", () => {
+  it("sends a confirmed pin to Google Maps as the place's coordinates", () => {
     // "Open on the map" became "Open in Google Maps" (owner's note, image-92):
     // the visitor who wants directions wants them in the app they already have.
-    renderDetail({ places: MAP_PLACES });
+    // A pin the Tourism Office has confirmed is exact, so Google gets it.
+    renderDetail({
+      places: [{ ...MAP_PLACES[2], verified: true }],
+    });
 
     const maps = screen.getByRole("link", { name: /open in google maps/i });
-    expect(maps).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=14.131583,122.985083");
+    expect(maps).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=14.131583%2C122.985083");
     expect(maps).toHaveAttribute("target", "_blank");
     expect(maps).toHaveAttribute("rel", "noopener noreferrer");
     // Named for what it does: a new tab has to be announced, not discovered.
@@ -103,14 +117,44 @@ describe("PlaceDetail", () => {
     expect(screen.getByRole("link", { name: "Trips near here" })).toHaveAttribute("href", FAN_PLACES[2].toursHref);
   });
 
-  it("searches Google Maps by name when the place has no pin yet", () => {
+  it("searches the open place by name in its own town while its pin is unconfirmed", () => {
+    // Owner's note (image-93): the button has to open the place that was
+    // clicked. An unconfirmed pin is an approximation from public sources and
+    // Google Maps drops its pin exactly where it is told, so it is not sent.
+    renderDetail({ places: MAP_PLACES });
+
+    expect(screen.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
+      "href",
+      mapsSearch("Bagasbas Beach, Daet, Camarines Norte"),
+    );
+  });
+
+  it("looks for Apuao in Mercedes and Calaguas in Vinzons, never in Daet", () => {
+    // Neither island is in Daet, and the fan's own short names ("Apuao
+    // sandbar", "Calaguas") are not what Google indexes: the row's name and
+    // town are, with the office's bracketed aside left off.
+    const { unmount } = renderDetail({ place: FAN_PLACES[0], index: 0, places: MAP_PLACES });
+    expect(screen.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
+      "href",
+      mapsSearch("Tinaga Island, Vinzons, Camarines Norte"),
+    );
+    unmount();
+
+    renderDetail({ place: FAN_PLACES[1], index: 1, places: MAP_PLACES });
+    expect(screen.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
+      "href",
+      mapsSearch("Apuao Grande Island, Mercedes, Camarines Norte"),
+    );
+  });
+
+  it("searches the fan's own name and town when the table has no row", () => {
     // Nothing to give Google but the place's name, and a button that says it
     // opens a map must still open one.
     renderDetail({ places: [] });
 
     expect(screen.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
       "href",
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Bagasbas Beach, Daet, Camarines Norte")}`,
+      mapsSearch("Bagasbas Beach, Daet, Camarines Norte"),
     );
   });
 
@@ -342,7 +386,7 @@ describe("PlaceDetail", () => {
 
     // Any other pin is a place to open, and the card belongs to whichever place
     // is showing — so it comes back rather than staying folded.
-    fireEvent.click(pins.getByRole("button", { name: "Calaguas" }));
+    fireEvent.click(pins.getByRole("button", { name: "Tinaga Island (Calaguas)" }));
     expect(onPick).toHaveBeenCalledWith("tinaga-island-calaguas");
     expect(card).toHaveAttribute("data-open", "true");
   });
@@ -367,8 +411,8 @@ describe("PlaceDetail", () => {
     expect(map).toHaveAttribute("data-focus", "bagasbas-beach");
     // Every place with coordinates is on it, so a visitor can see where this one
     // sits among the rest.
-    expect(screen.getByRole("button", { name: "Calaguas" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "First Rizal Monument" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tinaga Island (Calaguas)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "First José Rizal Monument" })).toBeInTheDocument();
   });
 
   it("shows all the places when asked, and goes back to the place on the next step", () => {
@@ -401,7 +445,7 @@ describe("PlaceDetail", () => {
   it("opens a place picked on the map", () => {
     const { onPick } = renderDetail({ places: MAP_PLACES });
 
-    fireEvent.click(screen.getByRole("button", { name: "Calaguas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tinaga Island (Calaguas)" }));
 
     expect(onPick).toHaveBeenCalledWith("tinaga-island-calaguas");
   });

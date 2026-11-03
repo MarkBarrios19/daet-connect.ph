@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { FreeMap } from "@/components/maps/free-map";
 import type { FreeMapMarker } from "@/components/maps/map-types";
 
-export type MapPlace = { slug: string; name: string; lat: number; lng: number; subtitle?: string };
+export type MapPlace = {
+  slug: string;
+  name: string;
+  lat: number;
+  lng: number;
+  subtitle?: string;
+  /** The town the place is in, and whether its pin is confirmed: the open
+   *  place's "Open in Google Maps" uses both. */
+  municipality?: string | null;
+  verified?: boolean;
+};
 
 /**
  * All six places on one map. A pin opens that place in the fan at the top of

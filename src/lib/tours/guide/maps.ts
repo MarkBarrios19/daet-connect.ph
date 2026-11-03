@@ -32,3 +32,45 @@ export function mapsPlaceUrl(target: MapsTarget): string {
   const params = new URLSearchParams({ api: "1", query: mapsQuery(target) });
   return clip(`https://www.google.com/maps/search/?${params.toString()}`);
 }
+
+/** What a place page needs to hand Google Maps the right place. */
+export type PlaceMapsTarget = {
+  /** The place's own name, as the Tourism Office keeps it. */
+  name: string;
+  /** The town it is in: Daet, Vinzons, Mercedes… Never assumed to be Daet. */
+  municipality?: string | null;
+  point?: LatLng | null;
+  /** True only when the Tourism Office has confirmed the pin itself. */
+  pinConfirmed?: boolean;
+};
+
+/**
+ * A place's own name, without the aside the office keeps beside it.
+ *
+ * "Tinaga Island (Calaguas)" is one island with a cross-reference in brackets;
+ * Google indexes the name, not the aside, and asking for the whole string is
+ * how a search ends up falling back to the whole province.
+ */
+export function plainPlaceName(name: string): string {
+  const bare = name.replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  return bare || name.trim();
+}
+
+/**
+ * "Open in Google Maps" for a place — at *that* place, never at a neighbour's.
+ *
+ * A pin only goes to Google as coordinates when the Tourism Office has
+ * confirmed it (owner's note, image-93: the button has to land where the place
+ * is). The rest are approximations taken from public sources and can sit a
+ * kilometre out; Google Maps drops its pin exactly where it is told, so an
+ * unconfirmed pin would send the visitor to the wrong spot. Those are searched
+ * for by name in their own town instead, which lands on Google's record of the
+ * place itself.
+ */
+export function placeMapsUrl(place: PlaceMapsTarget): string {
+  return mapsPlaceUrl({
+    point: place.pinConfirmed ? (place.point ?? null) : null,
+    name: plainPlaceName(place.name),
+    area: place.municipality?.trim() || null,
+  });
+}
