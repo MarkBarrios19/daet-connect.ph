@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEFAULT_AFTER_AUTH, NEXT_COOKIE, nextPathFrom } from "@/lib/auth/next-cookie";
-import { authOrigin } from "@/lib/auth/request";
+import { requestOrigin } from "@/lib/auth/request";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
 
@@ -30,7 +30,9 @@ type TokenType = (typeof TOKEN_TYPES)[number];
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const origin = authOrigin(request.headers);
+  // Stay on the host the code arrived on: its verifier cookie lives here, and a
+  // visitor should not be moved to another address of the site mid-sign-in.
+  const origin = requestOrigin(request.headers);
   const rememberedNext = nextPathFrom(request.cookies.get(NEXT_COOKIE)?.value, DEFAULT_AFTER_AUTH);
 
   if (!isSupabaseConfigured()) {
@@ -41,8 +43,10 @@ export async function GET(request: NextRequest) {
   // redirecting anywhere else.
   const errorCode = searchParams.get("error_code") ?? searchParams.get("error");
   if (errorCode) {
-    console.error("auth callback returned an error", errorCode, searchParams.get("error_description"));
-    return failure(origin, rememberedNext);
+    const description = searchParams.get("error_description");
+    console.error("auth callback returned an error", errorCode, description);
+    const said = explained(errorCode, description);
+    return said ? redirectTo(origin, "/login", said) : failure(origin, rememberedNext);
   }
 
   const code = searchParams.get("code");
@@ -79,6 +83,31 @@ export async function GET(request: NextRequest) {
     console.error("auth callback threw", error);
     return failure(origin, rememberedNext);
   }
+}
+
+/**
+ * The failures worth naming.
+ *
+ * A cancelled Google prompt and a provider still switched off in the dashboard
+ * both arrive here, and both were answered with "that link could not be used in
+ * this browser" — advice about email links, for a sign-in the visitor had just
+ * cancelled or never had the chance to start.
+ */
+function explained(code: string, description: string | null): string | null {
+  const detail = (description ?? "").toLowerCase();
+  if (code === "access_denied") {
+    return "Google sign-in was cancelled. Try again, or sign in with your email and password.";
+  }
+  if (detail.includes("provider is not enabled") || code === "provider_not_enabled") {
+    return "Google sign-in is not switched on for this site yet. Please sign in with your email and password.";
+  }
+  if (detail.includes("unable to exchange external code") || detail.includes("invalid_client")) {
+    return "Google did not accept that sign-in. Please try again, or sign in with your email and password.";
+  }
+  if (detail.includes("email not confirmed") || code === "email_not_confirmed") {
+    return "This account has not confirmed its email address yet. Open the link we sent you, then sign in.";
+  }
+  return null;
 }
 
 function isTokenType(value: string | null): value is TokenType {

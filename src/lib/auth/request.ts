@@ -27,6 +27,25 @@ export function authOrigin(headerList: HeaderLike): string {
   return `${proto === "http" ? "http" : "https"}://${host}`;
 }
 
+/**
+ * The origin this request actually arrived on, ignoring NEXT_PUBLIC_APP_URL.
+ *
+ * Sign-in codes are bound to the browser that started them: the PKCE verifier is
+ * a cookie on the host the flow began on, and Supabase will only redirect back to
+ * that host if it is in the project's allow list. Building the Google redirect
+ * from the configured app URL instead sent the code to whichever address the
+ * environment names — a different host from the one the visitor was using, where
+ * no verifier cookie exists — and the exchange failed every time (owner's report,
+ * round 47). Email links are the opposite case: they are opened on whatever
+ * device the inbox is on, so those keep using `authOrigin`.
+ */
+export function requestOrigin(headerList: HeaderLike): string {
+  const host = (headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "").split(",")[0].trim();
+  if (!isHostname(host)) return authOrigin(headerList);
+  const proto = headerList.get("x-forwarded-proto") ?? guessProtocol(host);
+  return `${proto === "http" ? "http" : "https"}://${host}`;
+}
+
 const PRIVATE_HOST = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
 
 /**

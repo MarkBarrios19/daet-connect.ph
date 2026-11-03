@@ -13,6 +13,19 @@ import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/supabase/en
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) return NextResponse.next({ request });
 
+  // A sign-in code that arrives at the site's root is still a sign-in this
+  // browser can finish: Supabase falls back to the project's Site URL when it
+  // will not accept the address it was handed, and the code lands on `/`. The
+  // verifier that proves the code is ours is a cookie here, so hand it to the
+  // route that exchanges it instead of dropping the visitor home signed out with
+  // nothing to read.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && request.nextUrl.pathname === "/" && hasSignInVerifier(request)) {
+    const exchange = new URL("/auth/callback", request.nextUrl.origin);
+    exchange.searchParams.set("code", code);
+    return NextResponse.redirect(exchange);
+  }
+
   // The auth routes end or replace the session themselves, and a silent refresh
   // in front of them fights that: on `POST /auth/logout` the refresh wrote a
   // fresh session cookie onto the same response the route was deleting it from,
@@ -51,3 +64,8 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|api/webhooks|api/notifications/push|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|ics|mjs)$).*)",
   ],
 };
+
+/** `sb-<ref>-auth-token-code-verifier`, the cookie that binds a code to a browser. */
+function hasSignInVerifier(request: NextRequest): boolean {
+  return request.cookies.getAll().some(({ name }) => /^sb-.*-auth-token-code-verifier$/.test(name));
+}
