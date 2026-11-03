@@ -59,6 +59,12 @@ export function PlaceDetail({
   useEffect(() => {
     setCollapsed(phone);
   }, [phone]);
+
+  // A new place folds the sheet back to its peek on a phone: a step is someone
+  // asking to see the next photo, and an open sheet covers half of it.
+  useEffect(() => {
+    if (phone) setCollapsed(true);
+  }, [phone, place.slug]);
   const position = index + 1;
 
   /**
@@ -189,6 +195,7 @@ export function PlaceDetail({
 
   return (
     <div
+      data-detail-layer
       className={`pointer-events-none absolute inset-x-0 z-30 ${
         phone
           ? // A phone's card is a sheet at the foot of the photo (image-74), so

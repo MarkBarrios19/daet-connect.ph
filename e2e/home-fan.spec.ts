@@ -1604,8 +1604,16 @@ const edgesOfOpenPhoto = (page: import("@playwright/test").Page) =>
     if (!open || !hero) return { left: "no place open", right: "no place open" };
 
     const box = hero.getBoundingClientRect();
+    // Whatever is over the photo — the desktop's cards at the top, a phone's
+    // sheet at the foot — sits somewhere on the hero. Read the glass above it,
+    // and never higher than a quarter of the way down, which is still the photo
+    // on every phone.
+    const layer = document.querySelector("[data-detail-layer]");
+    const ceiling = layer ? layer.getBoundingClientRect().top - 24 : box.bottom;
+    const y = Math.max(box.top + box.height * 0.25, Math.min(box.top + box.height * 0.72, ceiling));
+
     const at = (x: number) => {
-      const hit = document.elementFromPoint(x, box.top + box.height * 0.72);
+      const hit = document.elementFromPoint(x, y);
       return hit?.closest("[data-wedge]") === open ? "photo" : "page";
     };
 

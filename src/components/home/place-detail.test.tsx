@@ -208,6 +208,31 @@ describe("PlaceDetail", () => {
     });
   });
 
+  it("folds its sheet back to a peek when the place changes on a phone", () => {
+    const { rerender } = renderDetail({ phone: true });
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the place's details" }));
+    expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
+
+    // The next place arrives: a phone shows its photo, so the sheet goes back to
+    // the peek rather than staying open over half of it.
+    rerender(
+      <PlaceDetail
+        place={FAN_PLACES[0]}
+        index={0}
+        total={FAN_PLACES.length}
+        phone
+        headingRef={createRef<HTMLHeadingElement>()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onPick={jest.fn()}
+      />,
+    );
+
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    expect(screen.getByRole("button", { name: "Show the place's details" })).toBeInTheDocument();
+  });
+
   it("leads with the map card, and stands the place card beside it", () => {
     const { container } = renderDetail({ places: MAP_PLACES });
 
