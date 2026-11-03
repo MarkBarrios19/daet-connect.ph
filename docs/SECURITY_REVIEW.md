@@ -41,6 +41,7 @@ The repository is public, so anyone could sign in as the Tourism Office admin. F
 | Signed QR | HMAC-SHA256 tokens with expiry, verified server-side (`src/lib/tours/qr-token.ts`, tests) |
 | Webhook | PayMongo signature verified with a timing-safe compare and timestamp tolerance (`src/lib/paymongo/signature.ts`, tests); replay-safe (event id primary key, unique `(provider, provider_ref)`), covered by `supabase/tests/integration.sql` |
 | Private chats | Guide–tourist chats exclude the operator; operator–guide chats need both sides accredited; Tourism Office chats are the operator plus admins. Admins can read other chats but not post. Checked in `supabase/tests/integration.sql` | Messaging channels migration |
+| Sign-up, sign-in, Google, email verification | Rebuilt on 2026-11-03: email confirmation is required (the app refuses a session issued without it), sign-up no longer reveals whether an address exists, input is validated with one shared schema, auth replies are rate-limited and time-flattened, and Google OAuth runs on the PKCE flow. Audit, decisions and the remaining dashboard steps are in `docs/AUTH.md` | `src/lib/auth/*`, `src/app/auth/*`, `e2e/auth.spec.ts` |
 | Open redirect after login | Fixed in F12: `?next=` accepted any URL (`/login?next=https://evil.example`). Now only same-site paths, via `safeNextPath` (tests) |
 | Privilege escalation | Fixed in F10: users could set their own `profiles.role`; browser updates are now limited to `full_name` and `avatar_url` |
 | RLS per role | `supabase/tests/integration.sql`: 31 checks across anon, tourist, operator, guide and admin. **31 pass** on the live project (rolled back) |
@@ -54,7 +55,7 @@ The repository is public, so anyone could sign in as the Tourism Office admin. F
 | Chats | One per booking per kind, per operator–guide pair and per operator; opened only through the `tours_open_*_conversation` RPCs | Messaging channels migration |
 | Reviews | One per completed booking | F8 |
 | Points | Once per `(source, ref_id)`; trip plans max 3 a day | F10 |
-| Sign-up / sign-in / OTP | Supabase Auth's built-in rate limits | Dashboard → Authentication → Rate Limits (review the defaults before evaluation) |
+| Sign-up / sign-in / OTP | Supabase Auth's built-in rate limits, **plus** the app's own windows (sign-in 20/IP and 6/account per 10–15 min; sign-up 10/IP per hour; resend and reset 3/address and 10/IP per hour) | `src/lib/auth/rate-limit.ts` (2026-11-03 auth rework) |
 
 ## Supabase advisors
 

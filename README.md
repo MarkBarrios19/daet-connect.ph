@@ -14,9 +14,18 @@ The app expects the existing `get_my_role()` RPC to return the signed-in user's 
 
 The existing schema should enforce at most one operator application per `user_id` (including rejected applications, which are updated on resubmission). The action checks current status and uses a conditional update, but database uniqueness is still required to prevent simultaneous first submissions from creating duplicates.
 
-## Password reset
+## Sign in, sign up, Google and email verification
 
-`/forgot-password` emails a reset link through Supabase Auth. In the Supabase dashboard (Authentication, URL Configuration) add `<your site URL>/auth/callback` to the allowed redirect URLs, or the link will be rejected. The link lands on `/auth/callback`, which signs the visitor in with the one-time code and sends them to `/reset-password`.
+`/signup` creates an account that is **not usable until its email is confirmed**; `/login` signs in with a password or with Google, and `/verify-email` sends a confirmation link again. Every link in an email lands on `/auth/callback`, which exchanges it on the server and forwards the visitor to a same-site page. `/forgot-password` and `/reset-password` complete the set.
+
+Three settings make this work, and none of them can live in this repository:
+
+1. **Authentication → Sign In / Providers → Email → Confirm email: ON.** With it off, anyone can claim any address; the app detects that and refuses the session, but the project should be configured properly.
+2. **Authentication → URL Configuration:** Site URL plus `/auth/callback` on every host you deploy to (`http://localhost:3000/auth/callback`, `https://<your-domain>/auth/callback`, and the Vercel preview wildcard).
+3. **Authentication → SMTP Settings:** a transactional mail provider — Supabase's built-in service only delivers to your own team's addresses.
+4. **Authentication → Providers → Google:** a Google Cloud OAuth client with `https://<project-ref>.supabase.co/auth/v1/callback` as its authorised redirect URI, pasted into Supabase. The client secret stays in the dashboard.
+
+`docs/AUTH.md` has the full checklist (including the `{{ .TokenHash }}` email templates, leaked-password protection and rate limits), the audit that led here, the validation rules and the rate windows.
 
 ## Existing schema integration
 

@@ -1,0 +1,42 @@
+-- ============================================================================
+-- REQUIRE EMAIL CONFIRMATION (replaces APPLY_THIS_disable_email_confirm.sql)
+-- ============================================================================
+--
+-- A Supabase project has a switch that decides whether a new account can sign
+-- in before it has clicked the link in its confirmation email. With the switch
+-- OFF, anyone can register any address — a stranger's, a colleague's, an
+-- official's — and use the site as that person. The app now refuses such a
+-- session at both sign-up and sign-in, so an unconfigured project cannot be
+-- used, but the project should be configured properly as well.
+--
+-- 1. Dashboard → Authentication → Sign In / Providers → Email:
+--      "Confirm email" must be ON.
+-- 2. Dashboard → Authentication → URL Configuration:
+--      Site URL                https://<your-domain>
+--      Redirect URLs           https://<your-domain>/auth/callback
+--                              http://localhost:3000/auth/callback
+--                              https://*-<your-team>.vercel.app/auth/callback
+--    Every link the app emails uses exactly that one path; the callback reads
+--    where to go next from a cookie, so no other URL is needed.
+-- 3. Dashboard → Authentication → Email Templates: for each template, prefer
+--    {{ .TokenHash }} over {{ .ConfirmationURL }} so a link also works when it
+--    is opened on a different device than the one that asked for it:
+--      <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup">
+--    (use type=recovery for "Reset password", type=email_change for "Change
+--    email address"). The app accepts both shapes of link.
+-- 4. Dashboard → Authentication → Passwords: turn on "Leaked password
+--    protection" so Supabase also checks against Have I Been Pwned.
+-- 5. Authentication → Rate Limits: the app adds its own per-IP and per-address
+--    windows, but keep Supabase's defaults no looser than:
+--      email sign-ups 2/min, token verifications 30/min, emails 2/hour.
+--
+-- This file deliberately changes no data. The earlier script mass-confirmed
+-- every unconfirmed account with an UPDATE; accounts it already touched stay
+-- confirmed (they were verified by that script, not by their owners), and
+-- nothing here re-opens or re-closes them.
+--
+-- Optional, read-only: who is still waiting for a link?
+--   SELECT email, created_at
+--   FROM auth.users
+--   WHERE email_confirmed_at IS NULL AND created_at > now() - interval '7 days'
+--   ORDER BY created_at DESC;
