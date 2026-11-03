@@ -61,6 +61,21 @@ Google ──► /auth/oauth ──► Google ──► /auth/callback ───
   that says what to do next.
 - **Resend** (`src/app/verify-email/actions.ts`) always answers the same thing,
   whatever the address is or whether Supabase accepted it.
+- **Sign-out** (`src/app/auth/logout/route.ts`) ends every session of the account,
+  and ends the one in this browser even if the auth service cannot be reached.
+  Its same-site check compares the *host* the request arrived on, not the whole
+  origin: a preview deployment, a LAN address and a custom domain are the same
+  site, and comparing origins signed nobody out of anything.
+
+  The session refresher in `src/proxy.ts` skips `/auth/oauth`, `/auth/callback`
+  and `/auth/logout`: those three end or replace the session themselves, and a
+  refresh in front of them wrote a fresh cookie onto the same response a sign-out
+  was deleting it from — the visitor stayed signed in after clicking Sign out.
+
+  Two variables decide which host email links name: `NEXT_PUBLIC_APP_URL` if it
+  is set, otherwise the request's own host. Set it to the origin you actually
+  browse — a stale `http://localhost:3000` copied from `.env.example` builds
+  every confirmation and reset link against your own machine.
 
 ## 3. Input validation, in one place
 

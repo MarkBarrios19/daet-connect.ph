@@ -339,8 +339,10 @@ http.createServer((req, res) => {
     }
 
     if (url.pathname === "/auth/v1/logout") {
-      record({ kind: "logout" });
-      return send(204, {});
+      record({ kind: "logout", scope: url.searchParams.get("scope") });
+      // GoTrue answers 204 with no body; the app must not depend on one.
+      res.writeHead(204, cors);
+      return res.end();
     }
     if (url.pathname === "/rest/v1/rpc/get_my_role") return send(200, role === "anon" ? null : role);
     if (url.pathname === "/rest/v1/rpc/tours_refundable_amount") return send(200, 500);

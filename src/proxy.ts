@@ -13,6 +13,15 @@ import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/supabase/en
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) return NextResponse.next({ request });
 
+  // The auth routes end or replace the session themselves, and a silent refresh
+  // in front of them fights that: on `POST /auth/logout` the refresh wrote a
+  // fresh session cookie onto the same response the route was deleting it from,
+  // so the browser kept a session the visitor had just ended. They are left
+  // alone here; the page they redirect to is refreshed as usual.
+  if (/^\/auth\/(oauth|callback|logout)$/.test(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   const { url, anonKey } = getSupabasePublicConfig();
   let response = NextResponse.next({ request });
 
