@@ -740,6 +740,7 @@ describe("PlaceFan's hero", () => {
     expect(fold).toHaveAttribute("aria-expanded", "true");
     expect(fold).toHaveAttribute("aria-controls", "place-map-body");
     expect(panel.getAttribute("data-collapsed")).toBe("false");
+    expect(panel.style.height).toBe("var(--map-h, auto)");
     expect(panel.querySelector("[data-map-body]")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Show all" })).toBeInTheDocument();
 
@@ -747,6 +748,8 @@ describe("PlaceFan's hero", () => {
 
     expect(screen.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
     expect(panel.getAttribute("data-collapsed")).toBe("true");
+    // Back to the bar's own height: the caller's variable is let go.
+    expect(panel.style.height).toBe("auto");
     expect(panel.querySelector("[data-map-body]")).toBeNull();
     // "Show all" acts on a map nobody can see, so it goes with it.
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();

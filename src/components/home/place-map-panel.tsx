@@ -137,9 +137,10 @@ export function PlaceMapPanel({
       data-place-map
       data-collapsed={collapsed ? "true" : "false"}
       // The card's height is the caller's, as a variable, because folding it
-      // means going back to the header bar's own height — and an inline `auto`
-      // is the one way to undo a height a class set.
-      style={collapsed ? undefined : { height: "var(--map-h, auto)" }}
+      // means going back to the header bar's own height — and `auto` is the one
+      // height that undoes it. React does not reliably clear an inline height
+      // when the style prop goes away, so the folded case says `auto` out loud.
+      style={{ height: collapsed ? "auto" : "var(--map-h, auto)" }}
       className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
     >
       <div className="flex shrink-0 items-center gap-2 px-3 py-2">
