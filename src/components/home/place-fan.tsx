@@ -64,6 +64,8 @@ export function PlaceFan({
     at: number;
     start: PanPosition;
     room: { x: number; y: number };
+    /** Whether this press has taken the pointer, which only a drag does. */
+    captured: boolean;
   } | null>(null);
   /** When the place last closed, so a second tap of a double tap is not a re-open. */
   const closedAt = useRef(0);
@@ -375,8 +377,14 @@ export function PlaceFan({
         { width: img.clientWidth, height: img.clientHeight },
         { width: img.naturalWidth, height: img.naturalHeight },
       ),
+      captured: false,
     };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    // The pointer is deliberately *not* captured here. A captured pointer is
+    // retargeted to this section, and the click and double-click that follow are
+    // retargeted with it: the photo's own button never hears them, so a phone's
+    // tap and a desktop's double-click — the two ways back to the fan — both
+    // went nowhere. The capture is taken in onPointerMove, once the hand has
+    // actually moved and there is a drag worth following.
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLElement>) => {
@@ -388,6 +396,13 @@ export function PlaceFan({
     const dy = event.clientY - press_.y;
     if (!dragged.current && Math.hypot(dx, dy) > DRAG_AFTER) {
       dragged.current = true;
+      // Now there is a drag to follow, and the hand may take it off the photo or
+      // out of the window: capture keeps the pan under it. The click that ends
+      // this press is swallowed in onPointerUp, so the retarget costs nothing.
+      if (!press_.captured) {
+        press_.captured = true;
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
       // The visitor has found the gesture: the hand has done its job.
       hintTaught.current = true;
       setHint(false);
@@ -400,7 +415,7 @@ export function PlaceFan({
     press.current = null;
     if (!press_) return;
 
-    event.currentTarget.releasePointerCapture?.(press_.id);
+    if (press_.captured) event.currentTarget.releasePointerCapture?.(press_.id);
     if (!dragged.current) return;
 
     // A drag that ends over the photo is not a tap: it must not close the place.

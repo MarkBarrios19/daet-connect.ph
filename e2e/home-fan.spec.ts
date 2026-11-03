@@ -148,6 +148,23 @@ test.describe("home fan on a phone", () => {
     expect(Math.abs(textMiddle - (topApex + bottomApex) / 2), "headline centred").toBeLessThanOrEqual(3);
   });
 
+  test("goes back to the fan when the open photo is tapped", async ({ page }) => {
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    // The photo, well above the sheet at the foot of the screen. A phone has no
+    // double-click, so one tap is the way back — and it only works because the
+    // press does not capture the pointer, which would retarget the click to the
+    // hero and leave the photo's own button never hearing it.
+    const photo = (await page.locator("[data-wedge][aria-expanded='true']").boundingBox())!;
+    await page.touchscreen.tap(photo.x + photo.width / 2, photo.y + photo.height * 0.3);
+
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
+    await expect(page).not.toHaveURL(/#place-/);
+  });
+
   test("opens a folded sheet at the foot of the phone, with the photo above it", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", {
@@ -503,6 +520,31 @@ test.describe("home fan on a desktop", () => {
     viewport: { width: 1280, height: 900 },
     isMobile: false,
     hasTouch: false,
+  });
+
+  test("goes back to the fan on a double-click, and leaves it alone on one", async ({ page }) => {
+    await visit(page, "/");
+    // A wedge at rest is a thin sliver, so its middle is not a place a pointer
+    // can reach: the keyboard opens it, as the other fan tests do.
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+    // Let the fold-in land before the pointer goes anywhere near the photo.
+    await page.waitForTimeout(800);
+
+    // Right of the cards, which hug the photo's left edge: the photo itself.
+    const hero = (await page.locator("section[aria-labelledby='home-title']").boundingBox())!;
+    const at = { x: hero.x + hero.width * 0.75, y: hero.y + hero.height * 0.55 };
+
+    // One click no longer takes the photo away while the visitor is looking at it.
+    await page.mouse.click(at.x, at.y);
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    // Two do, and the fan is back.
+    await page.mouse.dblclick(at.x, at.y);
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toHaveCount(0);
+    await expect(page).not.toHaveURL(/#place-/);
+    await expect(page.getByRole("group", { name: "Places in Daet" })).toBeVisible();
   });
 
   test("splits the booking band: the photograph on the left, the three moves on the right, the lettering across the seam", async ({ page }) => {
