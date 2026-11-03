@@ -7,7 +7,7 @@ import { MobileMenu, type MenuLink } from "@/components/ui/mobile-menu";
 import { SiteNavLink } from "@/components/ui/site-nav-link";
 import { NotificationBell } from "@/components/tours/notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { accountLinks, type DashboardRole, type Tab } from "@/lib/tours/dashboards";
+import { accountLinks, staffLinks, type DashboardRole, type Tab } from "@/lib/tours/dashboards";
 
 const PLAN_LINK: MenuLink = { href: "/tours/plan", label: "Plan a trip" };
 
@@ -57,7 +57,9 @@ export function SiteHeader({
   const destinations = explorer ? DESTINATION_LINKS : [];
   // Home and Messages live in the account menu; the bar keeps the work sections.
   const roleLinks = signedIn && !explorer ? tabs.filter((tab) => tab.label !== "Home" && tab.href !== "/tours/messages") : [];
-  const adminLinks = showAdminLink ? ADMIN_LINKS : [];
+  // The role's own tabs come first, and the office's links only add the pages
+  // those tabs do not reach: an admin otherwise sees Analytics twice (image-94).
+  const adminLinks = showAdminLink ? staffLinks(roleLinks, ADMIN_LINKS) : [];
   const menuLinks = explorer ? [DESTINATION_LINKS[0], PLAN_LINK, ...DESTINATION_LINKS.slice(1)] : [];
   const workLinks = signedIn && !explorer ? tabs.map((tab) => ({ href: tab.href, label: tab.label === "Home" ? "Dashboard" : tab.label })) : [];
 

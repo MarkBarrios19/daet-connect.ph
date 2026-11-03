@@ -59,6 +59,21 @@ export function accountLinks(role: string | null | undefined, tabs: Tab[]): Tab[
   return links;
 }
 
+/**
+ * The Tourism Office links a staff bar shows *after* the role's own tabs: the
+ * ones the tabs don't already reach.
+ *
+ * An admin's tabs are Analytics, Approvals and Content, and the office's list of
+ * pages repeats Analytics and points a second link ("Operators") at the very
+ * page the Approvals tab opens. Rendered side by side that is a bar with
+ * Analytics on it twice (owner's note, image-94), so one href gets one link —
+ * the tab's, because it is the one the role lives in.
+ */
+export function staffLinks(tabs: Tab[], officeLinks: Tab[]): Tab[] {
+  const seen = new Set(tabs.map((tab) => tab.href));
+  return officeLinks.filter((link) => !seen.has(link.href));
+}
+
 /** The tab that owns a path: longest matching prefix, so /tours/admin/reviews is "Reviews", not "Home". */
 export function activeTab(tabs: Tab[], pathname: string): string | null {
   let best: Tab | null = null;

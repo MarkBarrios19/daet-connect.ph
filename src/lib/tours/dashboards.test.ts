@@ -11,6 +11,7 @@ import {
   parseAnalyticsRange,
   queueBuckets,
   roleTabs,
+  staffLinks,
 } from "@/lib/tours/dashboards";
 
 describe("roleTabs / activeTab", () => {
@@ -32,6 +33,35 @@ describe("roleTabs / activeTab", () => {
     expect(activeTab(tabs, "/tours/admin/events")).toBe("/tours/admin");
     expect(activeTab(tabs, "/tours/administrator")).toBeNull();
     expect(activeTab(roleTabs("operator"), "/tours/operator/bookings/abc")).toBe("/tours/operator/bookings");
+  });
+});
+
+describe("staffLinks", () => {
+  it("does not list a page twice when the role's own tabs already reach it", () => {
+    // The admin bar draws its role tabs and then the Tourism Office's links
+    // beside them; Analytics was on it twice, and "Operators" and "Approvals"
+    // were two names for one queue (owner's note, image-94).
+    const tabs = roleTabs("admin").filter((tab) => tab.label !== "Home" && tab.href !== "/tours/messages");
+    const office = [
+      { href: "/tours/admin/analytics", label: "Analytics" },
+      { href: "/tours/admin/operators", label: "Operators" },
+      { href: "/tours/admin/guides", label: "Guides" },
+      { href: "/tours/admin/packages", label: "Packages" },
+    ];
+
+    expect(staffLinks(tabs, office)).toEqual([
+      { href: "/tours/admin/guides", label: "Guides" },
+      { href: "/tours/admin/packages", label: "Packages" },
+    ]);
+  });
+
+  it("keeps every office link a role does not reach from its tabs", () => {
+    const office = [
+      { href: "/tours/admin/analytics", label: "Analytics" },
+      { href: "/tours/admin/guides", label: "Guides" },
+    ];
+    expect(staffLinks(roleTabs("operator"), office)).toEqual(office);
+    expect(staffLinks([], office)).toEqual(office);
   });
 });
 
