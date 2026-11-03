@@ -362,12 +362,11 @@ test.describe("home fan on a phone", () => {
     await expect(band).toBeVisible();
     await band.scrollIntoViewIfNeeded();
 
-    // The shape is the theme's cream, not a colour baked into the file: that is
-    // what lets the same ticket turn over in dark mode.
+    // The ticket is the theme's cream, not a colour baked into a file: that is
+    // what lets it turn over in dark mode.
     const paint = await band
-      .locator("[data-ticket-shape] path")
-      .first()
-      .evaluate((element) => getComputedStyle(element).fill);
+      .locator("[data-ticket-shape] .ticket-shape")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(paint, "the reference's cream").toBe("rgb(232, 215, 185)");
 
     // The photograph is in the ticket, and the owner's lettering is the file
@@ -467,17 +466,20 @@ test.describe("home fan on a desktop", () => {
     const photo = (await page.locator("[data-ticket-photo]").boundingBox())!;
     const panel = (await page.locator("[data-ticket-panel]").boundingBox())!;
     const art = (await page.locator("[data-ticket-art]").boundingBox())!;
+    const card = (await page.locator("[data-ticket]").boundingBox())!;
 
     // The owner's layout: the picture in the wider left half, the three moves on
-    // the narrower right one, and the lettering over the perforation between
-    // them — starting on the picture and ending on the card.
+    // the narrower right one, and the lettering centred on the band — clear of
+    // the words on the card (their note on image-64).
     expect(panel.x, "side by side, not stacked").toBeGreaterThanOrEqual(photo.x + photo.width - 1);
     expect(photo.y, "on the same line").toBeCloseTo(panel.y, 0);
     expect(photo.width, "the picture's half is the wider one").toBeGreaterThan(panel.width);
-    expect(art.x, "the lettering starts on the picture").toBeLessThan(photo.x + photo.width);
-    expect(art.x + art.width, "and ends on the card").toBeGreaterThan(panel.x);
-    expect(art.y, "sitting on the seam, not above it").toBeGreaterThan(photo.y);
-    expect(art.y + art.height, "sitting on the seam, not below it").toBeLessThan(photo.y + photo.height);
+
+    const artCentre = art.x + art.width / 2;
+    const bandCentre = card.x + card.width / 2;
+    expect(Math.abs(artCentre - bandCentre), "the lettering, centred on the band").toBeLessThanOrEqual(2);
+    expect(art.y + art.height / 2, "and down its middle").toBeCloseTo(photo.y + photo.height / 2, 0);
+    expect(art.x + art.width, "clear of the card the words are set on").toBeLessThan(panel.x + 8);
 
     await expect(page.locator("[data-ticket-photo] img")).toBeVisible();
     await expect(page.locator("[data-ticket-panel]").getByRole("listitem")).toHaveCount(3);

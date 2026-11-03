@@ -28,9 +28,8 @@ test.describe("dark mode", () => {
     await page.goto("/", { waitUntil: "networkidle" });
 
     const paper = await page
-      .locator("[data-ticket-shape] path")
-      .first()
-      .evaluate((element) => getComputedStyle(element).fill);
+      .locator("[data-ticket-shape] .ticket-shape")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(paper, "a card tone, not the reference's cream").toBe("rgb(21, 32, 54)");
 
     const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [

@@ -153,6 +153,40 @@
   box-shadow: inset 0 0 0 1.5px var(--color-hairline);
 }
 
+/* The ticket's edge (owner's shape, image-62).
+ *
+ * Six bites out of one shape: a quarter circle at each corner and a half circle
+ * in the middle of the top and bottom edges, where the perforation runs into
+ * them. They are masks of fixed radii rather than one stretched SVG — the
+ * owner's note on image-64 was that the circles came out deformed, because a
+ * 1925×556 shape told to fill a wider band turns every circle into a capsule.
+ * A mask keeps them circles at any size, which is what "keep it responsive"
+ * asks for, and it is on a decorative layer *behind* the content, so nothing a
+ * visitor reads is clipped. A browser without mask compositing falls back to a
+ * plain rounded shape rather than losing the card.
+ *
+ * The radii follow the SVG's own proportions at its height: the corner bites
+ * are 44 of its 556, the edge ones 25 — clamped so a phone does not lose a
+ * third of the card to its own scallops.
+ */
+@utility ticket-shape {
+  --ticket-corner: clamp(16px, 2.4vw, 28px);
+  --ticket-notch: clamp(10px, 1.5vw, 16px);
+  border-radius: clamp(10px, 1.2vw, 16px);
+
+  @supports (mask-composite: intersect) {
+    mask-image:
+      radial-gradient(circle var(--ticket-corner) at 0 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 0 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-notch) at 50% 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-notch) at 50% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      linear-gradient(#000, #000);
+    mask-composite: intersect;
+  }
+}
+
 /* Paper, not paint: the band is a printed ticket (owner's note on image-52, and
  * the noise they sent with it), so the photograph and the panel behind the three
  * moves both carry the same surface — nothing else on the band does.

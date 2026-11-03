@@ -252,8 +252,16 @@ export function PlaceFan({
     closedAt.current = Date.now();
     closeInUrl();
     setAnnouncement("");
-    // lastOpen stays put: the fan's close animation reads it to put focus back
-    // on the wedge the panel came from.
+    // The card goes with the close, and the heading inside it had focus: hand it
+    // back to the wedge the panel came from *now*, not when the animation ends. A
+    // fold-back that is interrupted (a wheel, a step, a URL change) never reaches
+    // its completion callback, and focus would be left on the body with the next
+    // arrow key going nowhere. The wedge that was open is the one still on
+    // screen, so it can take focus at any point of the animation.
+    const index = lastOpen.current;
+    if (index !== null) wedgeRefs.current[index]?.focus();
+    // lastOpen stays put: the close animation reads it too, and repeating the
+    // focus once the fan has settled costs nothing.
     closeAnimation();
   }, [closeInUrl, closeAnimation]);
 

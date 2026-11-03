@@ -95,16 +95,21 @@ describe("BookingSteps", () => {
     expect(band).toBeInTheDocument();
 
     // The ticket is a decorative layer behind everything, in the theme's own
-    // colour — inlined rather than linked, so dark mode can turn it over.
+    // colour, bitten by a mask so its circles stay circles at any width.
     const shape = band.querySelector("[data-ticket-shape]") as HTMLElement;
     expect(shape.getAttribute("aria-hidden")).toBe("true");
     expect(shape.className).toContain("absolute");
-    expect(shape.className).toContain("text-ticket-frame");
-    const svg = shape.querySelector("svg") as SVGSVGElement;
-    // Stretched to the band, which is never the reference's own ratio.
-    expect(svg.getAttribute("preserveAspectRatio")).toBe("none");
-    expect(svg.querySelectorAll("path")).toHaveLength(2);
-    expect(svg.querySelector("path")!.getAttribute("fill")).toBe("currentColor");
+    const paper = shape.querySelector(".ticket-shape") as HTMLElement;
+    expect(paper.className).toContain("ticket-shape");
+    expect(paper.className).toContain("bg-ticket-frame");
+    // The grain is the owner's noise, at a tenth of what the reference carried.
+    expect(paper.querySelector(".ticket-noise")?.className).toContain("opacity-[0.06]");
+    // And the perforation is drawn where the ticket is torn, not on a phone.
+    const perf = shape.querySelector("[data-ticket-perf]") as HTMLElement;
+    expect(perf.className).toContain("border-dashed");
+    expect(perf.className).toContain("left-1/2");
+    expect(perf.className).toContain("hidden");
+    expect(perf.className).toContain("md:block");
 
     // The photograph, inset from the ticket's edge, with the same paper on it.
     const photo = band.querySelector("[data-ticket-photo]") as HTMLElement;
@@ -119,9 +124,10 @@ describe("BookingSteps", () => {
     expect((art.querySelector("img") as HTMLImageElement).getAttribute("src")).toBe(
       "/ticket/booking-in-3-moves.svg",
     );
-    // Between the halves on a phone; over the perforation once they sit side by side.
+    // Between the halves on a phone; centred on the band once they sit side by
+    // side, which is what keeps it off the words on the card beside it.
     expect(art.className).toContain("md:absolute");
-    expect(art.className).toContain("md:left-[56%]");
+    expect(art.className).toContain("md:left-1/2");
 
     // The right half is the warm white card with the three moves, word for word.
     const panel = band.querySelector("[data-ticket-panel]") as HTMLElement;
