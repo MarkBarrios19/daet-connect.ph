@@ -977,10 +977,11 @@ describe("PlaceFan on a phone", () => {
     );
 
     // The owner asked for the map at the phone's foot to go, so the photo can be
-    // dragged instead; the card sits centred at the top.
+    // dragged instead; the card is a sheet at the foot of the screen (image-74).
     expect(container.querySelector("[data-place-map]")).toBeNull();
     const card = container.querySelector("[data-detail]") as HTMLElement;
-    expect(card.className).toContain("mx-auto");
+    expect(card.className).toContain("rounded-t-2xl");
+    expect(card.parentElement!.parentElement!.className).toContain("bottom-0");
   });
 
   it("folds a landscape phone's card too", () => {

@@ -3,6 +3,7 @@ import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { ChatDock } from "@/components/chat-dock/chat-dock";
 import { RevealObserver } from "@/components/ui/reveal-observer";
 import { RoleTabBar } from "@/components/ui/role-tab-bar";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { SiteHeader } from "@/components/ui/site-header";
 import type { PhotoKey } from "@/lib/photo-credits";
@@ -69,6 +70,8 @@ export async function PageFrame({
       <SiteFooter credits={credits} compact={role !== undefined && !bleed} className={tabs.length ? "pb-24" : "pb-20 sm:pb-24"} />
       <RoleTabBar tabs={tabs} account={account && !staff ? { ...account, links: accountLinks(role, tabs) } : undefined} />
       <AssistantWidget signedIn={role !== undefined} raised={tabs.length > 0} />
+      {/* The way back to the top of a long page; lifted over the tab bar when there is one. */}
+      <ScrollToTop raised={tabs.length > 0} />
       {role !== undefined ? <ChatDock /> : null}
     </div>
   );

@@ -162,22 +162,35 @@ describe("PlaceDetail", () => {
     expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
   });
 
-  it("centres its card on a phone and leaves the photo the whole screen", () => {
+  it("docks its card to the foot of the screen on a phone, as a sheet", () => {
     renderDetail({ phone: true, places: MAP_PLACES });
 
-    // The owner asked for the map at the phone's foot to go, and for the card to
-    // move from the left edge to the middle.
+    // The owner asked for the map at the phone's foot to go, and then for the
+    // card to become a sheet at the foot of the photo (image-74) rather than a
+    // card floating under the bar.
     expect(screen.queryByRole("region", { name: /Map showing/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Show all" })).not.toBeInTheDocument();
     expect(document.querySelector("[data-fun-fact]")).not.toBeInTheDocument();
-    expect(document.querySelector("[data-detail]")!.className).toContain("mx-auto");
+
+    const card = document.querySelector("[data-detail]") as HTMLElement;
+    // Docked: only its top corners are rounded, it is the screen's width, and it
+    // leaves room for a phone's own safe area under the words.
+    expect(card.className).toContain("rounded-t-2xl");
+    expect(card.className).toContain("pb-[max(1rem,env(safe-area-inset-bottom))]");
+    expect(card.className).not.toContain("max-w-[18rem]");
+    expect(card.className).toContain("max-h-[85svh]");
+    // The layer it sits in is the foot of the photo, not the space under the bar.
+    expect(card.parentElement!.parentElement!.className).toContain("bottom-0");
+    expect(card.parentElement!.parentElement!.className).not.toContain("top-[calc(var(--header-h)");
   });
 
   it("keeps the map on a desktop, in the page's column", () => {
     renderDetail({ places: MAP_PLACES });
 
     expect(screen.getByRole("region", { name: /Map showing Bagasbas Beach/ })).toBeInTheDocument();
-    expect(document.querySelector("[data-detail]")!.className).not.toContain("mx-auto");
+    const card = document.querySelector("[data-detail]") as HTMLElement;
+    expect(card.className).toContain("max-w-[18rem]");
+    expect(card.className).not.toContain("rounded-t-2xl");
   });
 
   it("opens folded on a phone, where the photo is the point", () => {
@@ -193,6 +206,31 @@ describe("PlaceDetail", () => {
     ["Previous place", "Next place", "Hide the place's details"].forEach((name) => {
       expect(screen.getByRole("button", { name })).toHaveClass("h-11", "w-11");
     });
+  });
+
+  it("folds its sheet back to a peek when the place changes on a phone", () => {
+    const { rerender } = renderDetail({ phone: true });
+
+    fireEvent.click(screen.getByRole("button", { name: "Show the place's details" }));
+    expect(document.getElementById("place-detail-body")).not.toHaveAttribute("hidden");
+
+    // The next place arrives: a phone shows its photo, so the sheet goes back to
+    // the peek rather than staying open over half of it.
+    rerender(
+      <PlaceDetail
+        place={FAN_PLACES[0]}
+        index={0}
+        total={FAN_PLACES.length}
+        phone
+        headingRef={createRef<HTMLHeadingElement>()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onPick={jest.fn()}
+      />,
+    );
+
+    expect(document.getElementById("place-detail-body")).toHaveAttribute("hidden");
+    expect(screen.getByRole("button", { name: "Show the place's details" })).toBeInTheDocument();
   });
 
   it("leads with the map card, and stands the place card beside it", () => {

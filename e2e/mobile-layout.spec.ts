@@ -18,6 +18,29 @@ test.describe("mobile layout at 360px", () => {
     await visit(page, "/tours/operator/bookings");
   });
 
+  test("the way back to the top is there once the page is scrolled, and takes it", async ({ page }) => {
+    await visit(page, "/");
+    const up = page.getByRole("button", { name: "Back to top" });
+
+    // Nothing to go back over yet.
+    await expect(up).toHaveCount(0);
+
+    await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 2, behavior: "instant" }));
+    await expect(up).toBeVisible();
+
+    // Centred at the foot of the screen, a thumb's width off the edge.
+    const box = (await up.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
+    expect(viewport.height - (box.y + box.height), "under the last thing on the screen").toBeGreaterThan(8);
+    expect(viewport.height - (box.y + box.height), "and on it").toBeLessThan(48);
+
+    await up.click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(2);
+    // And it steps out of the way again at the top.
+    await expect(up).toHaveCount(0);
+  });
+
   test("the notifications panel opens inside the screen", async ({ context, page }) => {
     await signInAs(context, "tourist");
     await page.goto("/tours/messages", { waitUntil: "networkidle" });

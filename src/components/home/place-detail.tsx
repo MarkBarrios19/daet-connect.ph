@@ -17,9 +17,10 @@ import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
  * chevron, so the photo is nearly clear. The ‹ › pair lives in the card's own
  * header, and the map beside it follows them.
  *
- * On a phone the card is centred at the top and nothing else is on the screen:
- * the photo can be dragged to look along it, the map card and the Fun fact card
- * are desktop only, and the card opens folded.
+ * On a phone the card is a sheet at the foot of the screen — the photo above it,
+ * whole, and the buttons under a thumb — with a grab handle and only its top
+ * corners rounded. The photo can be dragged to look along it, the map card and
+ * the Fun fact card are desktop only, and the sheet opens folded to a peek.
  *
  * There is no ✕: Escape closes the place, and so does tapping the photo again.
  * The card follows the page's theme — a white glass card in light mode, the
@@ -58,6 +59,12 @@ export function PlaceDetail({
   useEffect(() => {
     setCollapsed(phone);
   }, [phone]);
+
+  // A new place folds the sheet back to its peek on a phone: a step is someone
+  // asking to see the next photo, and an open sheet covers half of it.
+  useEffect(() => {
+    if (phone) setCollapsed(true);
+  }, [phone, place.slug]);
   const position = index + 1;
 
   /**
@@ -92,10 +99,21 @@ export function PlaceDetail({
     <section
       data-detail
       aria-labelledby="place-detail-title"
-      className={`pointer-events-auto w-full max-w-[18rem] rounded-2xl bg-surface/92 p-4 text-daet-ink shadow-[var(--shadow-float)] ring-1 ring-daet-ink/10 backdrop-blur-md dark:bg-slate-950/82 dark:text-white dark:ring-white/15 ${
-        phone ? "mx-auto" : ""
+      className={`pointer-events-auto w-full bg-surface/92 text-daet-ink shadow-[var(--shadow-float)] ring-1 ring-daet-ink/10 backdrop-blur-md dark:bg-slate-950/82 dark:text-white dark:ring-white/15 ${
+        phone
+          ? // A sheet, not a floating card: it is docked to the foot of the
+            // photo, as wide as the screen, with only its top corners rounded and
+            // room for the phone's own safe area under it. It can grow taller
+            // than the screen — the words are the point once it is open — so it
+            // scrolls inside itself rather than off the top of the photo.
+            "max-h-[85svh] overflow-y-auto overscroll-contain rounded-t-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5"
+          : "max-w-[18rem] rounded-2xl p-4"
       }`}
     >
+      {phone && (
+        /* The sheet's grab handle: it says "this comes up" before the words do. */
+        <span aria-hidden="true" className="mx-auto mb-2 block h-1 w-10 rounded-full bg-daet-ink/20 dark:bg-white/30" />
+      )}
       <div className="flex items-center gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-daet-ink/70 dark:text-white/75">
           {pin}
@@ -176,12 +194,23 @@ export function PlaceDetail({
   );
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[calc(var(--header-h)+0.5rem)] z-30 sm:top-[calc(var(--header-h)+1rem)]">
+    <div
+      data-detail-layer
+      className={`pointer-events-none absolute inset-x-0 z-30 ${
+        phone
+          ? // A phone's card is a sheet at the foot of the photo (image-74), so
+            // the photo is above it, whole, and the buttons are under a thumb.
+            "bottom-0"
+          : "top-[calc(var(--header-h)+0.5rem)] sm:top-[calc(var(--header-h)+1rem)]"
+      }`}
+    >
       <div
         data-detail-frame
         className={
           phone
-            ? "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8"
+            ? // Full width: the sheet's edges are the screen's, and its own
+              // padding keeps the words off them.
+              "w-full"
             : // Flush to the left of the photo, as the owner asked: the cards hug the
               // page's edge instead of sitting on its centred column and leaving a
               // field of empty photo between them and it.
