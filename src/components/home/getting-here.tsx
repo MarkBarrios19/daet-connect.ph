@@ -20,14 +20,14 @@ import {
  */
 export function GettingHere() {
   return (
-    <section aria-labelledby="home-getting-here" className="mx-auto w-full max-w-7xl px-4 pt-20 sm:px-6 sm:pt-32 lg:px-8">
+    <section aria-labelledby="home-getting-here" className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
       <h2 id="home-getting-here" data-reveal className="display-2 text-daet-ink">
         Getting to Daet
       </h2>
       <p
         data-reveal
         style={{ "--reveal-index": 1 } as CSSProperties}
-        className="mb-6 mt-3 max-w-2xl text-lg text-daet-ink"
+        className="mb-8 mt-3 max-w-2xl text-lg text-daet-ink sm:mb-10"
       >
         Daet is on the Bicol road, about a day from Manila by land. Here is how most people come.
       </p>
@@ -39,7 +39,7 @@ export function GettingHere() {
               key={card.title}
               data-reveal
               style={{ "--reveal-index": index } as CSSProperties}
-              className="flex flex-col gap-3 p-6"
+              className="flex flex-col gap-3 p-6 sm:p-8"
             >
               <div className="flex items-start justify-between gap-3">
                 <span aria-hidden="true" className="text-sm font-bold tabular-nums text-blue-700 dark:text-blue-300">
@@ -57,9 +57,9 @@ export function GettingHere() {
         </ul>
       </div>
 
-      <p className="mt-4 rounded-2xl bg-muted p-4 text-base font-bold text-daet-ink">{GETTING_HERE_CHECK}</p>
+      <p className="mt-6 rounded-2xl bg-muted p-4 text-base font-bold text-daet-ink">{GETTING_HERE_CHECK}</p>
 
-      <details className="mt-3 text-sm text-daet-ink/80">
+      <details className="mt-4 text-sm text-daet-ink/80">
         <summary className="inline-flex min-h-11 cursor-pointer items-center font-bold text-blue-700 dark:text-blue-300">
           Where this comes from · {GETTING_HERE_RESEARCHED}
         </summary>

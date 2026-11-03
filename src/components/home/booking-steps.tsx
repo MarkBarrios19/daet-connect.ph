@@ -51,7 +51,7 @@ export function BookingSteps() {
     <section
       aria-labelledby="home-how"
       data-ticket
-      className="relative mt-20 [container-type:inline-size] [--ticket-gap:0rem] [--ticket-pad-x:0.75rem] [--ticket-pad-y:0.75rem] sm:mt-32 sm:[--ticket-pad-x:1.75rem] sm:[--ticket-pad-y:1.5rem] md:[--ticket-gap:4.5rem] md:[--ticket-pad-x:2.25rem] md:[--ticket-pad-y:1.75rem] lg:[--ticket-gap:7.5rem] lg:[--ticket-pad-x:2.75rem] lg:[--ticket-pad-y:2rem]"
+      className="relative my-20 [container-type:inline-size] [--ticket-gap:0rem] [--ticket-pad-x:0.75rem] [--ticket-pad-y:0.75rem] sm:my-28 sm:[--ticket-pad-x:1.75rem] sm:[--ticket-pad-y:1.5rem] md:[--ticket-gap:4.5rem] md:[--ticket-pad-x:2.25rem] md:[--ticket-pad-y:1.75rem] lg:my-36 lg:[--ticket-gap:7.5rem] lg:[--ticket-pad-x:2.75rem] lg:[--ticket-pad-y:2rem]"
     >
       {/* The ticket itself: the owner's cream, bitten at its four corners and
           twice on the edge with the tear, by `ticket-shape` — masked circles of
