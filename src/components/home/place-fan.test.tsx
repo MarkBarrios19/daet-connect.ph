@@ -732,28 +732,27 @@ describe("PlaceFan's hero", () => {
     expect(lines[1].className).not.toContain("text-[0.85em]");
   });
 
-  it("is a white page under an ink headline in light mode, and dark under a white one in dark mode", () => {
-    // Rewritten from "stays dark under its white headline in either theme": the
-    // owner's mock (image-4) shows the light hero as a white page with the
-    // headline in ink, so the ground follows the theme now. The seams between
-    // wedges are the ground showing through, so they come out white on white
-    // and slate on slate rather than as stray lines. `bg-canvas` is the page's own
-    // ground in light mode, so the hero has no seam against the sections below.
+  it("sits on the page's own ground, under a headline in the theme's ink", () => {
+    // The owner's note on image-59: the hero was a lighter navy band above a
+    // darker page, and its words were white where every heading below them is
+    // the theme's ink. So neither is overridden for the dark theme any more —
+    // the ground is `bg-canvas` and the words are `text-daet-ink`, which switch
+    // with the theme by themselves. The seams between the wedges are the ground
+    // showing through, so they have to follow it.
     const { container } = renderFan();
     const section = container.querySelector("section") as HTMLElement;
 
     expect(section.className).toContain("bg-canvas");
-    expect(section.className).toContain("dark:bg-slate-900");
+    expect(section.className).not.toContain("dark:bg-slate-900");
     expect(section.className).not.toContain("bg-daet-ink");
     container.querySelectorAll("[data-wedge]").forEach((wedge) => {
       expect(wedge.className).toContain("bg-canvas");
-      expect(wedge.className).toContain("dark:bg-slate-900");
+      expect(wedge.className).not.toContain("dark:bg-slate-900");
     });
 
     const title = container.querySelector("#home-title") as HTMLElement;
-    // Ink on a white page; white on the dark one.
     expect(title.className).toContain("text-daet-ink");
-    expect(title.className).toContain("dark:text-white");
+    expect(title.className).not.toContain("dark:text-white");
   });
 
   it("keeps the full headline and its subline on a roomy desktop", () => {

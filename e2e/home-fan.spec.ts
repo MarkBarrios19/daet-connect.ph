@@ -810,10 +810,13 @@ test.describe("home fan on a desktop", () => {
         const hero = document.querySelector("section[aria-labelledby='home-title']") as HTMLElement;
         const headline = document.getElementById("home-title") as HTMLElement;
         const guide = hero.querySelector("[data-headline] button") as HTMLElement | null;
+        const below = document.querySelector("section[aria-labelledby='home-places'] h2") as HTMLElement | null;
 
         return {
           ground: rgb(getComputedStyle(hero).backgroundColor),
+          page: rgb(getComputedStyle(document.body).backgroundColor),
           headline: rgb(getComputedStyle(headline).color),
+          belowHeading: below ? rgb(getComputedStyle(below).color) : null,
           guide: guide ? rgb(getComputedStyle(guide).color) : null,
         };
       });
@@ -824,7 +827,9 @@ test.describe("home fan on a desktop", () => {
 
     const light = await readHero();
     expect(isNear(light.ground, [255, 255, 255]), "the page's own ground, no dark band").toBe(true);
+    expect(isNear(light.ground, light.page), "the hero and the page are one colour").toBe(true);
     expect(isNear(light.headline, [15, 23, 42]), "ink on it").toBe(true);
+    expect(isNear(light.headline, light.belowHeading ?? []), "the same ink as the headings below").toBe(true);
     // White-on-white was the bug in the mock: this button has to carry ink here.
     expect(isNear(light.guide ?? [], [15, 23, 42]), "the guide button keeps an edge on light").toBe(true);
 
@@ -832,8 +837,12 @@ test.describe("home fan on a desktop", () => {
     await visit(page, "/");
 
     const dark = await readHero();
-    expect(isNear(dark.ground, [15, 23, 42]), "the dark ground the fan had").toBe(true);
-    expect(isNear(dark.headline, [255, 255, 255]), "white on it").toBe(true);
+    // The page's own ground in dark mode, not the lighter slate band the hero
+    // used to sit on (image-59), and the headings' off-white rather than white.
+    expect(isNear(dark.ground, [11, 18, 32]), "the page's own ground, no lighter band").toBe(true);
+    expect(isNear(dark.ground, dark.page), "the hero and the page are one colour").toBe(true);
+    expect(isNear(dark.headline, [226, 232, 240]), "the theme's ink, as below").toBe(true);
+    expect(isNear(dark.headline, dark.belowHeading ?? []), "the same ink as the headings below").toBe(true);
   });
 
   test("takes 'Open on the map' to the map, leaving the place open", async ({ page }) => {
