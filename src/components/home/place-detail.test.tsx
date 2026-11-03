@@ -3,7 +3,7 @@
  */
 
 import React, { createRef } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { PlaceDetail } from "./place-detail";
 import { FAN_PLACES } from "./fan-places";
 import type { MapPoint } from "./place-map-panel";
@@ -306,6 +306,39 @@ describe("PlaceDetail", () => {
     // positioned sibling sits *under* every one of them — which is how this card
     // went missing on the owner's screen. It has to be lifted over them.
     expect(overTheMap).toHaveClass("z-[800]");
+  });
+
+  it("folds the card away when the pin it points at is tapped, and brings it back", () => {
+    // The card floats over the map the visitor is working in, so the pin under it
+    // has to be able to put it out of the way (owner's note, image-81).
+    const { onPick } = renderDetail({ places: MAP_PLACES });
+    const card = document.querySelector("[data-map-place]") as HTMLElement;
+    const pins = within(screen.getByRole("region", { name: /map showing/i }));
+    expect(card).toHaveAttribute("data-open", "true");
+
+    fireEvent.click(pins.getByRole("button", { name: "Bagasbas Beach" }));
+    expect(card).toHaveAttribute("data-open", "false");
+    // Folded away, not stepped to: the place is still the one showing.
+    expect(onPick).not.toHaveBeenCalled();
+
+    fireEvent.click(pins.getByRole("button", { name: "Bagasbas Beach" }));
+    expect(card).toHaveAttribute("data-open", "true");
+    expect(onPick).not.toHaveBeenCalled();
+  });
+
+  it("opens the place whose pin was tapped, and the card comes back with it", () => {
+    const { onPick } = renderDetail({ places: MAP_PLACES });
+    const card = document.querySelector("[data-map-place]") as HTMLElement;
+    const pins = within(screen.getByRole("region", { name: /map showing/i }));
+
+    fireEvent.click(pins.getByRole("button", { name: "Bagasbas Beach" }));
+    expect(card).toHaveAttribute("data-open", "false");
+
+    // Any other pin is a place to open, and the card belongs to whichever place
+    // is showing — so it comes back rather than staying folded.
+    fireEvent.click(pins.getByRole("button", { name: "Calaguas" }));
+    expect(onPick).toHaveBeenCalledWith("tinaga-island-calaguas");
+    expect(card).toHaveAttribute("data-open", "true");
   });
 
   it("has no Fun fact card at all", () => {

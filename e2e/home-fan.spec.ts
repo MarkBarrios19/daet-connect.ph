@@ -1064,6 +1064,33 @@ test.describe("home fan on a desktop", () => {
     expect((await clearOfThePin()).clear, "and it is still off the pin").toBe(true);
   });
 
+  test("folds the card over the map when its pin is tapped, and brings it back", async ({ page }) => {
+    // The card floats over the map the visitor is working in, so the pin under it
+    // has to be able to put it out of the way (owner's note, image-81).
+    await visit(page, "/");
+    await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(inPanel(page)).toBeVisible();
+    await page.waitForTimeout(1200);
+
+    const card = page.locator("[data-map-place]");
+    const pin = page.locator("[data-place-map] .leaflet-marker-icon:has(img) button");
+    await pin.waitFor({ state: "visible" });
+    await expect(card).toHaveAttribute("data-open", "true");
+    await expect(card).toHaveCSS("opacity", "1");
+
+    await pin.click();
+    await expect(card).toHaveAttribute("data-open", "false");
+    await expect(card).toHaveCSS("opacity", "0");
+    // Folded away, not stepped away: the same place is still open.
+    await expect(page).toHaveURL(/#place-bagasbas-beach/);
+    await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
+
+    await pin.click();
+    await expect(card).toHaveAttribute("data-open", "true");
+    await expect(card).toHaveCSS("opacity", "1");
+  });
+
   test("never scrolls sideways", async ({ page }) => {
     await visit(page, "/");
     await page.getByRole("button", { name: "Bagasbas Beach: open photo and details" }).focus();
