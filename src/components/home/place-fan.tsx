@@ -201,8 +201,11 @@ export function PlaceFan({
     root: sectionRef,
     geometry,
     // Focus follows the panel in and the wedge back out, so the next Tab, arrow
-    // or Escape lands where the visitor is looking.
-    onOpened: () => headingRef.current?.focus(),
+    // or Escape lands where the visitor is looking. `preventScroll` matters: the
+    // card folds in from below the photo, so at the moment focus lands it is off
+    // screen, and the browser would scroll the page to reach it — half a screen
+    // down, with the sheet left floating in the middle of the next section.
+    onOpened: () => headingRef.current?.focus({ preventScroll: true }),
     onClosed: () => {
       const index = lastOpen.current;
       lastOpen.current = null;
@@ -223,6 +226,7 @@ export function PlaceFan({
     driven.current = openIndex;
     lastOpen.current = openIndex;
     setAnnouncement(describe(openIndex));
+    returnToHeroTop();
     openAt(openIndex, { instant: firstPaint.current });
   }, [openIndex, openAt, describe]);
 
@@ -237,16 +241,28 @@ export function PlaceFan({
     // Deliberately keyed on the geometry alone: openAt is re-created every render.
   }, [geometry]);
 
+  /**
+   * The open place is the hero, and the hero is the page's first screen. Opened
+   * from a scrolled page — or from a deep link the browser restored a scroll
+   * position for — the hero was left half out of view and the sheet floated in
+   * the middle of the next section (image-79). Opening brings the page home.
+   */
+  const returnToHeroTop = useCallback(() => {
+    if (typeof window === "undefined" || window.scrollY <= 0) return;
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
   const open = useCallback(
     (index: number) => {
       lastOpen.current = index;
       driven.current = index;
+      returnToHeroTop();
       openInUrl(places[index].slug);
       setAnnouncement(describe(index));
       hover(null);
       openAt(index);
     },
-    [places, openInUrl, describe, hover, openAt],
+    [places, openInUrl, describe, hover, openAt, returnToHeroTop],
   );
 
   const close = useCallback(() => {
@@ -277,7 +293,7 @@ export function PlaceFan({
   const keepFocusAfterStep = useCallback(() => {
     const active = document.activeElement as HTMLElement | null;
     const lost = !active || active === document.body || Boolean(active.closest("[data-wedge]"));
-    if (lost) headingRef.current?.focus();
+    if (lost) headingRef.current?.focus({ preventScroll: true });
   }, []);
 
   /** Next/previous, wrapping: the panel swipes rather than folding back. */

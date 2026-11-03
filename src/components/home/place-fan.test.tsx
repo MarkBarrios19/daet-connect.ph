@@ -1343,6 +1343,58 @@ describe("PlaceFan on a phone", () => {
   });
 });
 
+describe("PlaceFan's page position", () => {
+  let scrollTo: jest.SpyInstance;
+
+  const scrolledTo = (y: number) => {
+    Object.defineProperty(window, "scrollY", { configurable: true, get: () => y });
+  };
+
+  beforeEach(() => {
+    scrollTo = jest.spyOn(window, "scrollTo").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    delete (window as unknown as Record<string, unknown>).scrollY;
+    jest.restoreAllMocks();
+  });
+
+  it("brings the page back to the top when a place opens from further down", () => {
+    // The open place is the hero, and the hero is the page's first screen. Opened
+    // from a deep link or a scrolled page, the hero was left half out of view
+    // with the sheet floating in the middle of the next section (image-79).
+    scrolledTo(640);
+    renderFan();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
+  });
+
+  it("leaves a page that is already at the top alone", () => {
+    scrolledTo(0);
+    renderFan();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("focuses the card without asking the browser to scroll to it", async () => {
+    // The card folds in from below the photo, so at the moment focus lands it is
+    // off screen; a scroll-on-focus is what dragged the page down before.
+    const focus = jest.spyOn(HTMLElement.prototype, "focus");
+    scrolledTo(0);
+    renderFan();
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    await waitFor(() =>
+      expect(focus).toHaveBeenCalledWith(expect.objectContaining({ preventScroll: true })),
+    );
+  });
+});
+
 describe("PlaceFan without JavaScript", () => {
   it("leaves a plain list of the six places for a browser that can't run it", () => {
     const { container } = renderFan();
