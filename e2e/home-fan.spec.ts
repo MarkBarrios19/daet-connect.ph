@@ -396,18 +396,7 @@ test.describe("home fan on a phone", () => {
 
     await expect(band.getByText(/approved (operator|guide)s?/).first()).toBeVisible();
     await expect(band.getByText(/\[placeholder/)).toHaveCount(0);
-  });
-
-  test("butts the counts band against the blue band above it", async ({ page }) => {
-    await visit(page, "/");
-
-    const ask = await page.locator("section[aria-labelledby='home-ask']").boundingBox();
-    const people = await page.locator("section[aria-labelledby='home-people']").boundingBox();
-    expect(ask && people, "both bands are on the page").toBeTruthy();
-
-    // The dark band used to sit a margin below the blue one, so a strip of page
-    // background showed between two full-bleed colours. They should touch.
-    expect(people!.y - (ask!.y + ask!.height), "no page showing between the bands").toBeLessThanOrEqual(1);
+    await expect(page.locator("section[aria-labelledby='home-ask']")).toHaveCount(0);
   });
 
   test("keeps a slim white bar at the top", async ({ page }) => {

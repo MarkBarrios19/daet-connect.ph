@@ -5,9 +5,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { AskBand } from "./ask-band";
 import { BookingSteps } from "./booking-steps";
 import { GettingHere } from "./getting-here";
 import { HomeMap, type MapPlace } from "./home-map";
@@ -228,18 +227,5 @@ describe("HomeMap", () => {
 
     expect(window.location.hash).toBe("#place-first-rizal-monument");
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
-  });
-});
-
-describe("AskBand", () => {
-  it("asks the assistant to open", () => {
-    const opened = jest.fn();
-    window.addEventListener("daet:open-assistant", opened);
-    render(<AskBand />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Ask what to do in one day" }));
-
-    expect(opened).toHaveBeenCalledTimes(1);
-    window.removeEventListener("daet:open-assistant", opened);
   });
 });
