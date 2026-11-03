@@ -12,7 +12,7 @@ import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { directionsUrl } from "@/lib/maps/geo";
+import { placeMapsUrl } from "@/lib/tours/guide/maps";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, toAttraction } from "@/lib/tours/attractions";
 import { describeHours, openStatus } from "@/lib/tours/opening-hours";
 
@@ -39,7 +39,15 @@ export default async function AttractionPage({ params }: PageProps) {
   const status = openStatus(attraction.opening_hours);
   const hours = describeHours(attraction.opening_hours);
   const pin = attraction.latitude !== null && attraction.longitude !== null ? { lat: attraction.latitude, lng: attraction.longitude } : null;
-  const directions = pin ? directionsUrl([pin]) : null;
+  // The page says the pin is approximate; the button must not then march the
+  // visitor to it. Confirmed pins go to Google as coordinates, the rest by name
+  // in the place's own town (owner's note, image-93).
+  const directions = placeMapsUrl({
+    name: attraction.name,
+    municipality: attraction.municipality,
+    point: pin,
+    pinConfirmed: attraction.location_verified,
+  });
 
   const photoKey = attraction.photo_url ? null : matchPlacePhoto(attraction.name);
 
@@ -108,11 +116,9 @@ export default async function AttractionPage({ params }: PageProps) {
               {!attraction.location_verified ? (
                 <p className="mt-2 text-sm text-daet-ink/75">Approximate pin from public sources, not yet confirmed by the Tourism Office.</p>
               ) : null}
-              {directions ? (
-                <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-blue-600 px-6 font-bold text-white hover:bg-blue-700">
-                  Open in Google Maps
-                </a>
-              ) : null}
+              <a href={directions} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-blue-600 px-6 font-bold text-white hover:bg-blue-700">
+                Open in Google Maps
+              </a>
             </>
           ) : (
             <Notice variant="info">The exact location is still being confirmed by the Tourism Office.</Notice>

@@ -799,10 +799,16 @@ test.describe("home fan on a desktop", () => {
     await page.keyboard.press("Enter");
 
     await expect(page.getByRole("heading", { level: 2, name: "Bagasbas Beach" })).toBeVisible();
-    // "Open in Google Maps" (owner's note, image-92), at this place's own
-    // coordinates, in a new tab — the place stays open behind it.
+    // "Open in Google Maps" (owner's note, image-92) for the place that was
+    // clicked (image-93), in a new tab — the place stays open behind it. This
+    // pin is not confirmed by the Tourism Office, so Google is asked for the
+    // place by name in its own town rather than sent to an approximate
+    // coordinate.
     const maps = inPanel(page).getByRole("link", { name: /open in google maps/i });
-    await expect(maps).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=14.131583,122.985083");
+    await expect(maps).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/search/?api=1&query=Bagasbas+Beach%2C+Daet%2C+Camarines+Norte",
+    );
     await expect(maps).toHaveAttribute("target", "_blank");
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
     await checkA11y(page, "home, a place open, desktop");

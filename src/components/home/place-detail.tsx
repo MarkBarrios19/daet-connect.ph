@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
+import { placeMapsUrl } from "@/lib/tours/guide/maps";
 import type { FanPlace } from "./fan-places";
 import { PlaceMapPanel, type MapPoint } from "./place-map-panel";
 
@@ -72,14 +73,18 @@ export function PlaceDetail({
    *
    * The old link scrolled to the map section, which is now a phone's section
    * only — and the visitor who wants directions wants them in the maps app they
-   * already have, with the trip to it planned. The place's own coordinates come
-   * from the places table; a place the Tourism Office has not pinned yet is
-   * searched for by name instead, so the button is never a dead end.
+   * already have. It has to open the place that is in front of them (owner's
+   * note, image-93): the row for this slug carries its own town and whether the
+   * office has confirmed its pin, so Bagasbas goes to Bagasbas, and Apuao and
+   * Calaguas are searched for in Mercedes and Vinzons rather than in Daet.
    */
   const point = places.find((candidate) => candidate.slug === place.slug);
-  const googleMapsHref = point
-    ? `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, Daet, Camarines Norte`)}`;
+  const googleMapsHref = placeMapsUrl({
+    name: point?.name ?? place.name,
+    municipality: point?.municipality ?? place.town,
+    point: point ? { lat: point.lat, lng: point.lng } : null,
+    pinConfirmed: point?.verified ?? false,
+  });
 
   /** A 44px circle in the card's header: ink in light, white in dark. */
   const step =

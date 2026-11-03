@@ -125,10 +125,12 @@ export default async function HomePage() {
       .eq("status", "published")
       .order("created_at", { ascending: false })
       .limit(3),
-    // Only the places that actually have coordinates can be pinned.
+    // Only the places that actually have coordinates can be pinned. The town
+    // and whether the office confirmed the pin travel with them: the open
+    // place's "Open in Google Maps" needs both to land on the right place.
     supabase
       .from("tours_attractions")
-      .select("slug, name, latitude, longitude")
+      .select("slug, name, latitude, longitude, municipality, location_verified")
       .eq("is_active", true)
       .not("latitude", "is", null)
       .not("longitude", "is", null),
@@ -165,9 +167,25 @@ export default async function HomePage() {
   // Attractions carry their own slugs; a pin only makes sense for a place the
   // fan knows, because tapping it opens that wedge.
   const fanSlugs = new Set(FAN_PLACES.map((place) => place.slug));
-  const mapPlaces: MapPlace[] = ((placesResult.data ?? []) as Array<{ slug: string; name: string; latitude: number | null; longitude: number | null }>)
+  const mapPlaces: MapPlace[] = (
+    (placesResult.data ?? []) as Array<{
+      slug: string;
+      name: string;
+      latitude: number | null;
+      longitude: number | null;
+      municipality: string | null;
+      location_verified: boolean | null;
+    }>
+  )
     .filter((row) => fanSlugs.has(row.slug) && Number.isFinite(Number(row.latitude)) && Number.isFinite(Number(row.longitude)))
-    .map((row) => ({ slug: row.slug, name: row.name, lat: Number(row.latitude), lng: Number(row.longitude) }));
+    .map((row) => ({
+      slug: row.slug,
+      name: row.name,
+      lat: Number(row.latitude),
+      lng: Number(row.longitude),
+      municipality: row.municipality,
+      verified: Boolean(row.location_verified),
+    }));
 
   // Null until the count function is deployed (or if it fails): the band then
   // shows a visible placeholder rather than a made-up number.

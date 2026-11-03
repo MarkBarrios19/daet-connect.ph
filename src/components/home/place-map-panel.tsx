@@ -14,8 +14,21 @@ import { PHOTO_PIN_RISE, type FreeMapMarker } from "@/components/maps/map-types"
  */
 const GAP = 6;
 
-/** A place the hero's map can pin: the coordinates come from the places table. */
-export type MapPoint = { slug: string; name: string; lat: number; lng: number };
+/**
+ * A place the hero's map can pin: the coordinates come from the places table,
+ * with the town it sits in and whether the office has confirmed the pin — the
+ * place's own "Open in Google Maps" needs both to land on the right place.
+ */
+export type MapPoint = {
+  slug: string;
+  name: string;
+  lat: number;
+  lng: number;
+  /** Daet, Vinzons, Mercedes… The town the place is actually in. */
+  municipality?: string | null;
+  /** True only for a pin the Tourism Office has confirmed. */
+  verified?: boolean;
+};
 
 /** What the card over the map says about the place that is open. */
 export type MapCardPlace = {
