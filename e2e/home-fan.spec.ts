@@ -660,7 +660,13 @@ test.describe("home fan on a desktop", () => {
     await expect(page.getByRole("button", { name: "Show the map" })).toHaveAttribute("aria-expanded", "false");
     await expect(page.locator("[data-place-map] [data-map-body]")).toHaveCount(0);
     const folded = (await page.locator("[data-place-map]").boundingBox())!;
-    expect(folded.height, "a bar, not a column").toBeLessThan(72);
+    const probe = await page.locator("[data-place-map]").evaluate((element) => ({
+      inline: element.getAttribute("style"),
+      computed: getComputedStyle(element).height,
+      children: element.children.length,
+      collapsed: element.getAttribute("data-collapsed"),
+    }));
+    expect(folded.height, `a bar, not a column ${JSON.stringify(probe)}`).toBeLessThan(72);
     expect(folded.width, "still the card's width").toBeCloseTo(map.width, 0);
     await expect(page.locator("[data-place-map] [data-viewing]")).toContainText("Bagasbas Beach");
     // "Show all" acts on a map, so it goes with it.
