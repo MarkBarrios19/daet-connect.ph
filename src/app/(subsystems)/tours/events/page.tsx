@@ -81,7 +81,7 @@ export default async function EventsCalendarPage({ searchParams }: { searchParam
   return (
     <PageFrame>
       <header className="mb-6">
-        <h1 className="display-2 text-daet-ink">What&apos;s on in Daet</h1>
+        <h1 className="display-2 text-daet-ink">What&apos;s on Daet.</h1>
         <p className="mt-2 max-w-2xl text-lg text-daet-ink">
           Festivals, cultural shows, sports and weekend markets around Daet and Camarines Norte. Times are Philippine time.
         </p>

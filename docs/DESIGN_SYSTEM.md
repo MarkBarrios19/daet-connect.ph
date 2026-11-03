@@ -66,7 +66,8 @@ The choice is saved on the device (`localStorage["daet-theme"]`). A script in `<
 - **Footer** (`site-footer.tsx`):
   - the full close for visitors and tourists: link columns, the name set large, and photo credits through `PageFrame credits={...}`;
   - a one-line footer on staff work screens.
-- **Bottom tab bar** (`role-tab-bar.tsx`) for signed-in users on phones.
+- **Bottom tab bar** (`role-tab-bar.tsx`) for signed-in users on phones, and the **back to top** button (`scroll-to-top.tsx`) at the foot of every page: 44px, centred, only once a screen of the page is behind the visitor, and lifted over that tab bar when there is one.
+- **A place open on a phone** (`place-detail.tsx`) is a **sheet**, not a floating card: docked to the foot of the hero, the screen's width, only its top corners rounded, a grab handle, the phone's safe area under the words, and it scrolls inside itself if the copy outgrows 85svh (the owner's design, image-74).
 
 ## Checking a change
 

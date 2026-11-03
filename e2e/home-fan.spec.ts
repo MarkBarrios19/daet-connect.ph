@@ -148,7 +148,7 @@ test.describe("home fan on a phone", () => {
     expect(Math.abs(textMiddle - (topApex + bottomApex) / 2), "headline centred").toBeLessThanOrEqual(3);
   });
 
-  test("opens a folded bar at the top of the phone, with the photo to itself", async ({ page }) => {
+  test("opens a folded sheet at the foot of the phone, with the photo above it", async ({ page }) => {
     await visit(page, "/");
     const wedge = page.getByRole("button", {
       name: "Bagasbas Beach: open photo and details",
@@ -163,16 +163,20 @@ test.describe("home fan on a phone", () => {
     await expect(page).toHaveURL(/#place-bagasbas-beach/);
 
     // The way out at the photo's top right is a desktop's: a phone has its folded
-    // bar at the top and a tap on the photo itself.
+    // sheet at the foot of the photo and a tap on the photo itself.
     await expect(page.getByRole("button", { name: "Back to the fan" })).toHaveCount(0);
 
-    // The map that used to sit at the foot of the screen is gone, and the card
-    // has moved from the left edge to the middle.
+    // The map that used to sit at the foot of the screen is gone, and the card is
+    // a sheet now (image-74): the screen's width, docked to its foot, the photo
+    // above it whole.
     await expect(page.locator("[data-place-map]")).toHaveCount(0);
     const viewport = page.viewportSize()!;
     const card = (await page.locator("[data-detail]").boundingBox())!;
-    expect(Math.abs(card.x + card.width / 2 - viewport.width / 2), "the card, centred").toBeLessThanOrEqual(2);
-    expect(card.y - (await page.locator("header").first().boundingBox())!.height, "under the bar").toBeLessThan(40);
+    expect(Math.abs(card.x + card.width / 2 - viewport.width / 2), "the sheet, centred").toBeLessThanOrEqual(2);
+    expect(viewport.width - card.width, "the sheet, the screen's width").toBeLessThanOrEqual(1);
+    expect(viewport.height - (card.y + card.height), "docked to the foot of the photo").toBeLessThanOrEqual(1);
+    // Folded to a peek: the header row and the name, no copy.
+    expect(card.height, "a peek, not the whole card").toBeLessThan(140);
 
     await page.getByRole("button", { name: "Show the place's details" }).click();
     await expect(inPanel(page).getByText(/ten minutes from the plaza/)).toBeVisible();

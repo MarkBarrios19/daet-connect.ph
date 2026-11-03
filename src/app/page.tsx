@@ -223,7 +223,7 @@ export default async function HomePage() {
       <section aria-labelledby="home-events" className={`${WRAP} pt-20 sm:pt-32`}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 id="home-events" data-reveal className="display-2 text-daet-ink">
-            What&apos;s on in Daet
+            What&apos;s on Daet.
           </h2>
           <Link href="/tours/events" className="inline-flex min-h-11 items-center gap-1 font-bold text-blue-700 dark:text-blue-300 hover:underline">
             Full calendar <LineIcon name="arrowRight" className="h-5 w-5" />
