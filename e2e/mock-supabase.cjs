@@ -216,6 +216,9 @@ const BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
   }
   const user = { id: "9b7e5a5e-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "juan@example.ph", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" };
   
+const authLog = [];
+let bodyBuffer = "";
+
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET,POST,PATCH,HEAD,OPTIONS", "access-control-expose-headers": "content-range" };
@@ -226,6 +229,119 @@ http.createServer((req, res) => {
     const role = /^e2e-(tourist|operator|guide|admin)$/.test(token) ? token.slice(4) : "anon";
     const { tables, analytics, inbox, header, user } = build(role);
     if (url.pathname === "/auth/v1/user") return role === "anon" ? send(401, { message: "not signed in" }) : send(200, user);
+
+    // ---------------------------------------------------------------- auth --
+    // Enough of GoTrue to exercise the app's own sign-in, sign-up, email-link
+    // and Google flows: the pages are under test, not the mail service. Every
+    // call is recorded so a spec can check what the app actually sent.
+    const record = (entry) => {
+      authLog.unshift({ at: new Date().toISOString(), ...entry });
+      authLog.length = Math.min(authLog.length, 50);
+    };
+    if (url.pathname === "/testing/auth-log") return send(200, authLog);
+    if (url.pathname === "/testing/auth-log/clear") { authLog.length = 0; return send(200, {}); }
+
+    const session = (email, metadata = {}) => ({
+      access_token: "e2e-tourist",
+      refresh_token: "e2e-refresh",
+      token_type: "bearer",
+      expires_in: 3600,
+      user: {
+        id: "9b7e5a5e-0000-4000-8000-000000000001",
+        aud: "authenticated",
+        role: "authenticated",
+        email,
+        email_confirmed_at: "2026-01-01T00:00:00Z",
+        app_metadata: { provider: "email" },
+        user_metadata: metadata,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    });
+
+    if (url.pathname === "/auth/v1/signup") {
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      const redirectTo = url.searchParams.get("redirect_to");
+      record({ kind: "signup", email: payload.email, redirectTo, data: payload.data });
+      // Supabase answers an existing address with a user that has no identities
+      // and sends no mail. The app must not let that show.
+      if (payload.email === "taken@example.ph") {
+        return send(200, { id: "existing", email: payload.email, identities: [], user_metadata: {} });
+      }
+      return send(200, {
+        id: crypto.randomUUID(),
+        aud: "authenticated",
+        role: "authenticated",
+        email: payload.email,
+        created_at: new Date().toISOString(),
+        confirmation_sent_at: new Date().toISOString(),
+        email_confirmed_at: null,
+        user_metadata: payload.data || {},
+        identities: [{ id: crypto.randomUUID(), provider: "email" }],
+      });
+    }
+
+    if (url.pathname === "/auth/v1/token" && url.searchParams.get("grant_type") === "password") {
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      record({ kind: "password", email: payload.email });
+      if (payload.email === "unverified@example.ph") {
+        return send(400, { code: 400, error_code: "email_not_confirmed", msg: "Email not confirmed" });
+      }
+      if (payload.email !== "juan@example.ph" || payload.password !== "Bagasbas-Waves-2026") {
+        return send(400, { code: 400, error_code: "invalid_credentials", msg: "Invalid login credentials" });
+      }
+      return send(200, session(payload.email, { full_name: "Juan Dela Cruz" }));
+    }
+
+    if (url.pathname === "/auth/v1/token" && url.searchParams.get("grant_type") === "pkce") {
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      record({ kind: "pkce", authCode: payload.auth_code });
+      if (payload.auth_code === "expired-code") {
+        return send(400, { code: 400, error_code: "flow_state_not_found", msg: "invalid flow state" });
+      }
+      return send(200, session(payload.auth_code === "e2e-google-code" ? "juan@gmail.example" : "juan@example.ph"));
+    }
+
+    if (url.pathname === "/auth/v1/verify") {
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      record({ kind: "verify", type: payload.type, tokenHash: payload.token_hash });
+      if (payload.token_hash === "bad-hash") {
+        return send(403, { code: 403, error_code: "otp_expired", msg: "Email link is invalid or has expired" });
+      }
+      return send(200, session("juan@example.ph"));
+    }
+
+    if (url.pathname === "/auth/v1/resend") {
+      let payload = {};
+      try { payload = JSON.parse(body || "{}"); } catch { payload = {}; }
+      record({ kind: "resend", email: payload.email, type: payload.type, redirectTo: url.searchParams.get("redirect_to") });
+      return send(200, {});
+    }
+
+    if (url.pathname === "/auth/v1/recover") {
+      record({ kind: "recover", redirectTo: url.searchParams.get("redirect_to") });
+      return send(200, {});
+    }
+
+    if (url.pathname === "/auth/v1/authorize") {
+      const provider = url.searchParams.get("provider");
+      const redirectTo = url.searchParams.get("redirect_to") || "";
+      record({ kind: "authorize", provider, redirectTo, prompt: url.searchParams.get("prompt") });
+      if (provider !== "google") return send(400, { error_code: "validation_failed", msg: "Unsupported provider" });
+      // Where GoTrue would hand the browser to Google, then back to the app.
+      const back = new URL(redirectTo);
+      back.searchParams.set("code", "e2e-google-code");
+      res.writeHead(302, { location: back.toString(), ...cors });
+      return res.end();
+    }
+
+    if (url.pathname === "/auth/v1/logout") {
+      record({ kind: "logout" });
+      return send(204, {});
+    }
     if (url.pathname === "/rest/v1/rpc/get_my_role") return send(200, role === "anon" ? null : role);
     if (url.pathname === "/rest/v1/rpc/tours_refundable_amount") return send(200, 500);
     if (url.pathname === "/rest/v1/rpc/tours_admin_analytics") return send(200, analytics);
