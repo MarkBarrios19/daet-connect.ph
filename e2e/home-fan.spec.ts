@@ -686,9 +686,18 @@ test.describe("home fan on a desktop", () => {
     const viewport = page.viewportSize()!;
     expect(map.y + map.height, "its bottom edge on the 90% line").toBeGreaterThan(viewport.height * 0.88);
     expect(map.y + map.height, "its bottom edge on the 90% line").toBeLessThan(viewport.height * 0.92);
-    const mapBody = (await page.locator("[data-place-map] .leaflet-container").boundingBox())!;
+    // Not the leaflet container first: it only exists once the map has booted,
+    // and this part is about the room the card gives it.
+    const mapBody = (await page.locator("[data-place-map] [data-map-body]").boundingBox())!;
     expect(mapBody.height, "the map fills the card").toBeGreaterThan(map.height - 60);
     expect(mapBody.height, "far past the old 16rem band").toBeGreaterThan(256);
+
+    // And the map itself has to fill that room. A percentage height inside a
+    // flex item that grows from no basis resolves against nothing in Chrome, so
+    // a `h-full` map came out zero tall and took the wheel zoom with it.
+    await expect(page.locator("[data-place-map] .leaflet-container")).toHaveCount(1);
+    const leaflet = (await page.locator("[data-place-map] .leaflet-container").boundingBox())!;
+    expect(leaflet.height, "the map itself fills the room").toBeGreaterThan(mapBody.height - 4);
 
     expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
     expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);

@@ -717,9 +717,7 @@ describe("PlaceFan's hero", () => {
     expect(panel.className).toContain("w-[24rem]");
     expect(panel.className).toContain("flex-col");
 
-    // The map's own wrapper: the card over it and the "Viewing" line are flex
-    // children too, so pick the relative one.
-    const mapBody = panel.querySelector("div.relative.flex-1") as HTMLElement;
+    const mapBody = panel.querySelector("[data-map-body]") as HTMLElement;
     expect(mapBody.className).toContain("min-h-[16rem]");
     // Nothing left over from the fixed band.
     expect(panel.querySelector(".h-64")).toBeNull();

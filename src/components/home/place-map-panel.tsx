@@ -157,8 +157,13 @@ export function PlaceMapPanel({
       {/* The map takes whatever height the caller gives the card and no less
           than the 16rem it used to be: the owner asked for it to stand at about
           nine tenths of the viewport (image-61), so the header row is fixed and
-          the map is the rest of the card. */}
-      <div className="relative min-h-[16rem] flex-1">
+          the map is the rest of the card.
+
+          The map is a flex child, not a `h-full` one: a percentage height inside
+          a flex item that grows from no basis resolves against nothing in
+          Chrome, and the container came out zero tall (caught in CI). Sizing it
+          by flex is one rule and no arithmetic. */}
+      <div data-map-body className="relative flex min-h-[16rem] flex-1 flex-col">
         <FreeMap
           markers={markers}
           title={`Map showing ${place.name} and the other places in the fan`}
@@ -173,7 +178,7 @@ export function PlaceMapPanel({
           // wheel zooms: this map is what the visitor is working in.
           focusOffsetY={76}
           wheelZoom
-          className="h-full w-full"
+          className="min-h-0 flex-1"
         />
 
         {/* The place itself, over the map: its photo, its name, the line about
