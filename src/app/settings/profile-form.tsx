@@ -9,7 +9,10 @@ import { updateName } from "./actions";
 
 /** The account's name. Saving writes the profile row and the sign-up metadata. */
 export function ProfileForm({ name }: { name: string }) {
-  const [state, formAction, pending] = useActionState(updateName, INITIAL_AUTH_STATE);
+  const [state, formAction, pending] = useActionState(
+    updateName,
+    INITIAL_AUTH_STATE,
+  );
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
@@ -20,10 +23,21 @@ export function ProfileForm({ name }: { name: string }) {
         hint="Letters, spaces, hyphens, dots and commas. Up to 80 characters."
         error={state.fieldErrors?.fullName}
       >
-        <Input name="fullName" defaultValue={name} required minLength={2} maxLength={80} autoComplete="name" />
+        <Input
+          name="fullName"
+          defaultValue={name}
+          required
+          minLength={2}
+          maxLength={80}
+          autoComplete="name"
+        />
       </Field>
 
-      {state.message ? <Notice variant={state.status === "success" ? "success" : "error"}>{state.message}</Notice> : null}
+      {state.message ? (
+        <Notice variant={state.status === "success" ? "success" : "error"}>
+          {state.message}
+        </Notice>
+      ) : null}
 
       <Button type="submit" loading={pending} loadingText="Saving">
         Save name

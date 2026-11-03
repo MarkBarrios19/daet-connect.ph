@@ -27,13 +27,21 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
 
     const supabase = await createSupabaseServerClient();
 
-    const { data } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).maybeSingle();
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
     return {
       fullName: typeof data?.full_name === "string" ? data.full_name : null,
       avatarUrl: typeof data?.avatar_url === "string" ? data.avatar_url : null,
     };
   } catch (error) {
-    console.error("could not read the profile", error);
+    // "This route used cookies" is Next telling the build the page is dynamic,
+    // not a failure: it says so itself, once per route.
+    const dynamicUsage =
+      error instanceof Error && error.message.includes("Dynamic server usage");
+    if (!dynamicUsage) console.error("could not read the profile", error);
     return null;
   }
 });

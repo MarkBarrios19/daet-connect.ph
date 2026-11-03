@@ -14,32 +14,32 @@ forced square crop).
 
 ## 1. What exists today
 
-| Piece | Current state | What the plan does with it |
-|---|---|---|
-| `public.profiles` | 10 rows for 10 auth users; **7 have no `full_name`**. Columns: `id`, `full_name`, `avatar_url`, `role`, `created_at` | Becomes the record of the name and the photo |
-| Writing a name | Nothing writes it. Sign-up puts `full_name` in `user_metadata` only | Profile edit writes **both**; backfill makes the two agree |
-| `handle_new_user()` | `insert into profiles (id, role) values (new.id, 'tourist')` — drops the name the form collected | Replaced so it copies `raw_user_meta_data->>'full_name'` |
-| Column grants | `REVOKE UPDATE ON profiles`; `GRANT UPDATE (full_name, avatar_url)` — role escalation is already blocked | The Server Action writes through the user's own client, no service role |
-| `avatar_url` | Defined, granted, **used nowhere in the UI** — every avatar is an initial letter drawn by `AccountMenu` | Bucket + picker + `<img>` with the initial as fallback |
-| Header name | `PageFrame.signedInViewer()` reads `user_metadata.full_name ?? name ?? email` | Reads the profile row (one cached query) with the same fallbacks |
-| Change password | Missing. `updateUser({ password })` is only used by `/reset-password`, after an email link | New action that re-authenticates with the current password first |
-| Reset password | Exists: `/forgot-password` → email → `/auth/callback` → `/reset-password` → `signOut({ scope: "others" })` | Reused verbatim from settings, with the address fixed to the signed-in account |
-| Validation | `fullNameSchema`, `passwordSchema`, `newPasswordSchema`, `fieldErrorsOf` in `src/lib/auth/validation.ts` | Reused; one new `changePasswordSchema` |
-| Rate limits | `AUTH_LIMITS` in `src/lib/auth/rate-limit.ts` (sign-in, sign-up, resend, reset, oauth) | Two new windows: change-password, photo upload |
-| Uploads | Client `compressImageFile()`, server re-validation in `src/lib/tours/validation.ts`, five buckets with per-folder policies (`20261102_package_media_bucket.sql` is the model) | New public bucket `tours-avatars`, own folder policy |
-| Nav | `accountLinks()` (`src/lib/tours/dashboards.ts`) feeds both the header avatar menu and the phone You tab | Gains **Profile settings** for every role |
-| Tests | Action tests mock `@/lib/supabase/server` + `next/headers`; e2e auth mock in `e2e/mock-supabase.cjs` | Both extended (see §9) |
+| Piece               | Current state                                                                                                                                                                 | What the plan does with it                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `public.profiles`   | 10 rows for 10 auth users; **7 have no `full_name`**. Columns: `id`, `full_name`, `avatar_url`, `role`, `created_at`                                                          | Becomes the record of the name and the photo                                   |
+| Writing a name      | Nothing writes it. Sign-up puts `full_name` in `user_metadata` only                                                                                                           | Profile edit writes **both**; backfill makes the two agree                     |
+| `handle_new_user()` | `insert into profiles (id, role) values (new.id, 'tourist')` — drops the name the form collected                                                                              | Replaced so it copies `raw_user_meta_data->>'full_name'`                       |
+| Column grants       | `REVOKE UPDATE ON profiles`; `GRANT UPDATE (full_name, avatar_url)` — role escalation is already blocked                                                                      | The Server Action writes through the user's own client, no service role        |
+| `avatar_url`        | Defined, granted, **used nowhere in the UI** — every avatar is an initial letter drawn by `AccountMenu`                                                                       | Bucket + picker + `<img>` with the initial as fallback                         |
+| Header name         | `PageFrame.signedInViewer()` reads `user_metadata.full_name ?? name ?? email`                                                                                                 | Reads the profile row (one cached query) with the same fallbacks               |
+| Change password     | Missing. `updateUser({ password })` is only used by `/reset-password`, after an email link                                                                                    | New action that re-authenticates with the current password first               |
+| Reset password      | Exists: `/forgot-password` → email → `/auth/callback` → `/reset-password` → `signOut({ scope: "others" })`                                                                    | Reused verbatim from settings, with the address fixed to the signed-in account |
+| Validation          | `fullNameSchema`, `passwordSchema`, `newPasswordSchema`, `fieldErrorsOf` in `src/lib/auth/validation.ts`                                                                      | Reused; one new `changePasswordSchema`                                         |
+| Rate limits         | `AUTH_LIMITS` in `src/lib/auth/rate-limit.ts` (sign-in, sign-up, resend, reset, oauth)                                                                                        | Two new windows: change-password, photo upload                                 |
+| Uploads             | Client `compressImageFile()`, server re-validation in `src/lib/tours/validation.ts`, five buckets with per-folder policies (`20261102_package_media_bucket.sql` is the model) | New public bucket `tours-avatars`, own folder policy                           |
+| Nav                 | `accountLinks()` (`src/lib/tours/dashboards.ts`) feeds both the header avatar menu and the phone You tab                                                                      | Gains **Profile settings** for every role                                      |
+| Tests               | Action tests mock `@/lib/supabase/server` + `next/headers`; e2e auth mock in `e2e/mock-supabase.cjs`                                                                          | Both extended (see §9)                                                         |
 
 ---
 
 ## 2. Decisions
 
 1. **Route: `/settings`** at the root, not `/tours/settings`.
-   * It is account-level, not a tour-workspace page, and all four roles share it — so it cannot
+   - It is account-level, not a tour-workspace page, and all four roles share it — so it cannot
      live under any one role's subtree.
-   * Its neighbours are already root routes: `/login`, `/signup`, `/forgot-password`,
+   - Its neighbours are already root routes: `/login`, `/signup`, `/forgot-password`,
      `/reset-password`, `/verify-email`.
-   * `/tours/operator/settings` keeps its own URL and gets the label **Payment settings**, so the
+   - `/tours/operator/settings` keeps its own URL and gets the label **Payment settings**, so the
      two never read as the same page.
 2. **The profile row is the record; metadata is the mirror.**
    Display order: `profiles.full_name` → `user_metadata.full_name` → the email's local part.
@@ -50,7 +50,7 @@ forced square crop).
    action re-authenticates with `signInWithPassword` and only then updates.
 4. **Reset is not a second way to do the same thing.** "Change password" is for someone who knows
    the current one. "Reset" is for someone who does not, and it is the only route for a
-   Google-only account to *get* a password.
+   Google-only account to _get_ a password.
 5. **The photo bucket is public**, like `tours-package-media` and `tours-promo-images`. The header
    draws the avatar on every page including signed-out ones, and signed URLs per render would be
    waste. The page says so in plain words; see §7.
@@ -145,14 +145,14 @@ Signed in as juan@example.ph               ← the address, read-only, with why 
 
 New files under `src/app/settings/`:
 
-| File | Job |
-|---|---|
-| `page.tsx` | Session guard, loads profile + providers, lays out the cards |
-| `actions.ts` | `updateName`, `saveAvatar`, `removeAvatar`, `changePassword`, `sendPasswordReset` |
-| `profile-form.tsx` | client: name field, `useActionState`, success/error notices |
-| `photo-picker.tsx` | client: file input, local preview, `compressImageFile()`, progress |
-| `password-form.tsx` | client: three fields, strength hint, `useActionState` |
-| `reset-card.tsx` | client: the one-button reset, "check your inbox" state |
+| File                | Job                                                                               |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `page.tsx`          | Session guard, loads profile + providers, lays out the cards                      |
+| `actions.ts`        | `updateName`, `saveAvatar`, `removeAvatar`, `changePassword`, `sendPasswordReset` |
+| `profile-form.tsx`  | client: name field, `useActionState`, success/error notices                       |
+| `photo-picker.tsx`  | client: file input, local preview, `compressImageFile()`, progress                |
+| `password-form.tsx` | client: three fields, strength hint, `useActionState`                             |
+| `reset-card.tsx`    | client: the one-button reset, "check your inbox" state                            |
 
 ---
 
@@ -160,7 +160,10 @@ New files under `src/app/settings/`:
 
 ```ts
 // src/app/settings/actions.ts
-export async function updateName(prev: AuthActionState, formData: FormData): Promise<AuthActionState>
+export async function updateName(
+  prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState>;
 ```
 
 1. `fullNameSchema` (already rejects hidden characters, collapses whitespace, caps at 80).
@@ -176,8 +179,12 @@ Helper worth writing once, used by the header, the page and bookings:
 
 ```ts
 // src/lib/profile/name.ts  (pure, no imports)
-export function displayName(parts: { profileName?: string | null; metaName?: string | null; email?: string | null }): string
-export function initials(name: string): string   // one letter, unicode-safe
+export function displayName(parts: {
+  profileName?: string | null;
+  metaName?: string | null;
+  email?: string | null;
+}): string;
+export function initials(name: string): string; // one letter, unicode-safe
 ```
 
 ---
@@ -187,7 +194,10 @@ export function initials(name: string): string   // one letter, unicode-safe
 ### 6a. Change, with the current password
 
 ```ts
-export async function changePassword(prev: AuthActionState, formData: FormData): Promise<AuthActionState>
+export async function changePassword(
+  prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState>;
 ```
 
 ```
@@ -204,9 +214,10 @@ current, new, confirm
 ```
 
 Notes:
+
 - The re-authentication also refreshes this browser's session cookie; Server Actions can write
   cookies, so the visitor stays signed in.
-- A successful re-auth with the *same* password as the new one is harmless; the update is a no-op
+- A successful re-auth with the _same_ password as the new one is harmless; the update is a no-op
   and we still say it saved.
 - Never echo Supabase's message: a weak password gets "Choose a longer one, or one that is not
   common." — the mapping in `src/lib/auth/errors.ts` grows one `passwordChangeMessage()`.
@@ -214,7 +225,10 @@ Notes:
 ### 6b. Reset, without it
 
 ```ts
-export async function sendPasswordReset(prev: AuthActionState, formData: FormData): Promise<AuthActionState>
+export async function sendPasswordReset(
+  prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState>;
 ```
 
 Reuses the existing machinery exactly: `AUTH_LIMITS.resetIp` / `resetEmail` (keyed by user id here),
@@ -276,8 +290,9 @@ not one per render.
 phone You tab read, so one line adds the page everywhere:
 
 ```ts
-links.push({ href: "/settings", label: "Profile settings" });   // first, every role
-if (role === "operator") links.push({ href: "/tours/operator/settings", label: "Payment settings" });
+links.push({ href: "/settings", label: "Profile settings" }); // first, every role
+if (role === "operator")
+  links.push({ href: "/tours/operator/settings", label: "Payment settings" });
 ```
 
 Today that operator entry is labelled plainly "Settings" — renaming it keeps the two from being
@@ -292,6 +307,7 @@ button by name, not by position.
 ## 9. Tests
 
 **Unit — pure helpers** (`src/lib/profile/name.test.ts`, `avatar.test.ts`)
+
 - `displayName`: profile → metadata → email local part → "Your account"; whitespace and empty
   strings never win.
 - `initials`: keeps today's single letter (that is what the header draws, and the tab bar has no
@@ -304,6 +320,7 @@ button by name, not by position.
 
 **Unit — Server Actions** (`src/app/settings/actions.test.ts`, same mocking as
 `src/app/login/actions.test.ts`)
+
 - `updateName`: invalid name → field error and **no** client call; valid → metadata first, row
   second; no session → refused; a 0-row update is reported as a failure, not a success.
 - `changePassword`: validation order; wrong current password → one generic sentence, `updateUser`
@@ -313,10 +330,12 @@ button by name, not by position.
   `authOrigin`; limits keyed per user.
 
 **Component** (`profile-form.test.tsx`, `password-form.test.tsx`, jsdom)
+
 - Errors land beside their field (`aria-describedby`, `aria-invalid`), success shows a notice,
   the button is disabled while pending, the file input has a real label and a keyboard path.
 
 **e2e** (`e2e/settings.spec.ts`, 375px, axe on every visit)
+
 - Signed out, `/settings` → `/login?next=%2Fsettings`.
 - Tourist opens Profile settings from the avatar menu, sees their own name and address.
 - Rename → header shows the new name after `revalidatePath` (mock gains `PATCH /rest/v1/profiles`).
@@ -332,13 +351,13 @@ button by name, not by position.
 
 ## 10. Phases
 
-| # | Scope | Acceptance |
-|---|---|---|
-| 0 | Migration + `displayName`/`initials` + `getMyProfile()`; header reads the profile row | Header shows the 7 backfilled names; no visual change otherwise |
-| 1 | `/settings` page skeleton + name form + nav entry | A tourist renames themselves and every page shows it |
-| 2 | Change password + reset card + new rate limits | Wrong current password refused; right one works; other sessions ended |
-| 3 | Photo: bucket policies, picker, upload action, header `<img>` | Upload, replace, remove all round-trip; initial returns after removal |
-| 4 | Polish: `/tours/me` link, copy, `docs/AUTH.md` update, e2e sweep | Full gates green |
+| #   | Scope                                                                                 | Acceptance                                                            |
+| --- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 0   | Migration + `displayName`/`initials` + `getMyProfile()`; header reads the profile row | Header shows the 7 backfilled names; no visual change otherwise       |
+| 1   | `/settings` page skeleton + name form + nav entry                                     | A tourist renames themselves and every page shows it                  |
+| 2   | Change password + reset card + new rate limits                                        | Wrong current password refused; right one works; other sessions ended |
+| 3   | Photo: bucket policies, picker, upload action, header `<img>`                         | Upload, replace, remove all round-trip; initial returns after removal |
+| 4   | Polish: `/tours/me` link, copy, `docs/AUTH.md` update, e2e sweep                      | Full gates green                                                      |
 
 Gates each phase, as ever: `tsc --noEmit` → `npx jest` → `next build` → PR → `gh pr checks` green →
 merge. Rough size: phases 0–2 are a day's work, phase 3 the better part of another (storage

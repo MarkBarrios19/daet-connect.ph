@@ -12,31 +12,58 @@ jest.mock("@/components/chat/unread-badge", () => ({
   UnreadMessagesBadge: () => null,
 }));
 
-const PHOTO = "https://project.supabase.co/storage/v1/object/public/tours-avatars/u/avatar-1.jpg";
-const LINKS = [{ href: "/settings", label: "Profile settings" }, { href: "/tours/messages", label: "Messages" }];
+const PHOTO =
+  "https://project.supabase.co/storage/v1/object/public/tours-avatars/u/avatar-1.jpg";
+const LINKS = [
+  { href: "/settings", label: "Profile settings" },
+  { href: "/tours/messages", label: "Messages" },
+];
 
 describe("AccountMenu", () => {
   it("draws the account photo when there is one", () => {
     const { container } = render(
-      <AccountMenu initial="J" name="Juan Dela Cruz" links={LINKS} avatarUrl={PHOTO} />,
+      <AccountMenu
+        initial="J"
+        name="Juan Dela Cruz"
+        links={LINKS}
+        avatarUrl={PHOTO}
+      />,
     );
 
     const image = container.querySelector("img");
     expect(image).toHaveAttribute("src", PHOTO);
     // Decoration, not a second announcement: the button already carries the name.
     expect(image).toHaveAttribute("alt", "");
-    expect(container.querySelector("span[aria-hidden='true']")).toHaveTextContent("");
+    expect(
+      container.querySelector("span[aria-hidden='true']"),
+    ).toHaveTextContent("");
   });
 
   it("falls back to the initial when there is no photo", () => {
-    const { container } = render(<AccountMenu initial="J" name="Juan Dela Cruz" links={LINKS} avatarUrl={null} />);
+    const { container } = render(
+      <AccountMenu
+        initial="J"
+        name="Juan Dela Cruz"
+        links={LINKS}
+        avatarUrl={null}
+      />,
+    );
 
     expect(container.querySelector("img")).toBeNull();
-    expect(container.querySelector("span[aria-hidden='true']")).toHaveTextContent("J");
+    expect(
+      container.querySelector("span[aria-hidden='true']"),
+    ).toHaveTextContent("J");
   });
 
   it("opens on Profile settings, as the first of the person's own pages", async () => {
-    render(<AccountMenu initial="J" name="Juan Dela Cruz" links={LINKS} avatarUrl={null} />);
+    render(
+      <AccountMenu
+        initial="J"
+        name="Juan Dela Cruz"
+        links={LINKS}
+        avatarUrl={null}
+      />,
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /your account/i }));
@@ -44,6 +71,8 @@ describe("AccountMenu", () => {
 
     const menu = screen.getByRole("navigation", { name: "Your account" });
     expect(menu.querySelector("a")).toHaveAttribute("href", "/settings");
-    expect(screen.getByRole("link", { name: "Profile settings" })).toHaveAttribute("aria-current", "page");
+    expect(
+      screen.getByRole("link", { name: "Profile settings" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 });

@@ -38,9 +38,19 @@ export default async function SettingsPage() {
   if (!session.user) redirect(`/login?next=${encodeURIComponent("/settings")}`);
 
   const profile = await getMyProfile();
-  const meta = (session.user.user_metadata ?? {}) as { full_name?: unknown; name?: unknown };
-  const metaName = [meta.full_name, meta.name].find((value): value is string => typeof value === "string" && value.trim() !== "");
-  const name = displayName({ profileName: profile?.fullName, metaName, email: session.user.email });
+  const meta = (session.user.user_metadata ?? {}) as {
+    full_name?: unknown;
+    name?: unknown;
+  };
+  const metaName = [meta.full_name, meta.name].find(
+    (value): value is string =>
+      typeof value === "string" && value.trim() !== "",
+  );
+  const name = displayName({
+    profileName: profile?.fullName,
+    metaName,
+    email: session.user.email,
+  });
   const avatarUrl = profile?.avatarUrl ?? null;
   const email = session.user.email ?? "";
 
@@ -48,7 +58,9 @@ export default async function SettingsPage() {
   // saying so is kinder than a form that can only fail.
   const providers = Array.isArray(session.user.app_metadata?.providers)
     ? (session.user.app_metadata.providers as string[])
-    : (session.user.identities ?? []).map((identity) => identity.provider).filter(Boolean);
+    : (session.user.identities ?? [])
+        .map((identity) => identity.provider)
+        .filter(Boolean);
   const canHavePassword = providers.length === 0 || providers.includes("email");
 
   return (
@@ -56,7 +68,8 @@ export default async function SettingsPage() {
       <div className="mx-auto max-w-3xl">
         <h1 className="display-2 text-daet-ink">Settings</h1>
         <p className="mt-2 text-daet-ink/80">
-          Signed in as <span className="font-bold text-daet-ink">{email}</span>. Your photo, your name and your password.
+          Signed in as <span className="font-bold text-daet-ink">{email}</span>.
+          Your photo, your name and your password.
         </p>
 
         <div className="mt-6 space-y-4">
@@ -69,7 +82,10 @@ export default async function SettingsPage() {
           </Card>
 
           <Card>
-            <CardHeader title="Your name" description="As it appears on your bookings, tickets and messages." />
+            <CardHeader
+              title="Your name"
+              description="As it appears on your bookings, tickets and messages."
+            />
             <ProfileForm name={name} />
           </Card>
 
@@ -86,8 +102,8 @@ export default async function SettingsPage() {
               <PasswordForm />
             ) : (
               <Notice variant="info">
-                You sign in with Google, so there is no password to change. Use the reset link below if you would
-                like a password as well.
+                You sign in with Google, so there is no password to change. Use
+                the reset link below if you would like a password as well.
               </Notice>
             )}
           </Card>
@@ -102,7 +118,8 @@ export default async function SettingsPage() {
         </div>
 
         <p className="mt-6 text-sm text-daet-ink/70">
-          Your email address is the one you signed up with. Ask the Daet Tourism Office if it needs to change.
+          Your email address is the one you signed up with. Ask the Daet Tourism
+          Office if it needs to change.
         </p>
       </div>
     </PageFrame>

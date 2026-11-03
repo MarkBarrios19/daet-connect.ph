@@ -18,7 +18,11 @@ export const AVATAR_BUCKET = "tours-avatars";
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /** SVG is deliberately absent: it can carry script. */
-export const AVATAR_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const AVATAR_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
 
 export type AvatarMime = (typeof AVATAR_MIME_TYPES)[number];
 
@@ -49,7 +53,13 @@ export function isAvatarMime(value: unknown): value is AvatarMime {
  * 0A; WebP is a RIFF container whose form type at offset 8 is "WEBP".
  */
 export function sniffImageMime(bytes: Uint8Array): AvatarMime | null {
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  )
+    return "image/jpeg";
   if (
     bytes.length >= 8 &&
     bytes[0] === 0x89 &&
@@ -89,14 +99,21 @@ export type AvatarCheck =
  * The messages are the ones a person reads, so they say what to do rather than
  * what failed: "Choose a JPG, PNG or WebP under 5 MB."
  */
-export function checkAvatarUpload(input: { size: number; type?: string | null; bytes?: Uint8Array }): AvatarCheck {
+export function checkAvatarUpload(input: {
+  size: number;
+  type?: string | null;
+  bytes?: Uint8Array;
+}): AvatarCheck {
   const { size, type, bytes } = input;
 
   if (!Number.isFinite(size) || size <= 0) {
     return { ok: false, error: "That file is empty. Choose a photo instead." };
   }
   if (size > AVATAR_MAX_BYTES) {
-    return { ok: false, error: "That photo is larger than 5 MB. Choose a smaller one." };
+    return {
+      ok: false,
+      error: "That photo is larger than 5 MB. Choose a smaller one.",
+    };
   }
   if (type != null && type !== "" && !isAvatarMime(type)) {
     return { ok: false, error: "Choose a JPG, PNG or WebP photo." };
@@ -116,7 +133,11 @@ export function checkAvatarUpload(input: { size: number; type?: string | null; b
     return { ok: false, error: "That file is not a JPG, PNG or WebP photo." };
   }
   if (declared && declared !== sniffed) {
-    return { ok: false, error: "That file is not the kind of image it says it is. Choose another photo." };
+    return {
+      ok: false,
+      error:
+        "That file is not the kind of image it says it is. Choose another photo.",
+    };
   }
 
   return { ok: true, mime: sniffed, extension: EXTENSIONS[sniffed] };
@@ -130,7 +151,11 @@ export function checkAvatarUpload(input: { size: number; type?: string | null; b
  * from the session, never from a form, and is scrubbed anyway so that nothing
  * walkable (`../`) can ever reach a key.
  */
-export function avatarObjectKey(userId: string, stamp: number, extension: string): string {
+export function avatarObjectKey(
+  userId: string,
+  stamp: number,
+  extension: string,
+): string {
   const owner = (userId ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "");
   if (owner.length < 8) throw new Error("avatarObjectKey needs a real user id");
   const at = Number.isFinite(stamp) ? Math.abs(Math.trunc(stamp)) : Date.now();
@@ -144,7 +169,9 @@ export function avatarObjectKey(userId: string, stamp: number, extension: string
  * Used to remove the photo that is being replaced; a URL that is not ours (an
  * old Gravatar link, a hand-typed address) simply yields null and is left alone.
  */
-export function avatarKeyFromUrl(url: string | null | undefined): string | null {
+export function avatarKeyFromUrl(
+  url: string | null | undefined,
+): string | null {
   if (typeof url !== "string" || url === "") return null;
   const marker = `/object/public/${AVATAR_BUCKET}/`;
   const at = url.indexOf(marker);

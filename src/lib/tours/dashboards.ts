@@ -50,13 +50,18 @@ export function roleTabs(role: string | null): Tab[] {
  * Dark mode and Sign out follow them. `tabs` are the role's tabs: the first is
  * the dashboard.
  */
-export function accountLinks(role: string | null | undefined, tabs: Tab[]): Tab[] {
+export function accountLinks(
+  role: string | null | undefined,
+  tabs: Tab[],
+): Tab[] {
   // Everyone's own page comes first: one name, one photo, one password, for
   // tourists and staff alike. The operator's payment details stay their own
   // page, under a label that cannot be mistaken for it.
   const links: Tab[] = [{ href: "/settings", label: "Profile settings" }];
-  if (role === "operator") links.push({ href: "/tours/operator/settings", label: "Payment settings" });
-  if (!role || role === "tourist") links.push({ href: "/tours/my-bookings", label: "Bookings" });
+  if (role === "operator")
+    links.push({ href: "/tours/operator/settings", label: "Payment settings" });
+  if (!role || role === "tourist")
+    links.push({ href: "/tours/my-bookings", label: "Bookings" });
   links.push({ href: "/tours/messages", label: "Messages" });
   if (tabs[0]) links.push({ href: tabs[0].href, label: "Dashboard" });
   return links;
@@ -91,14 +96,29 @@ export function activeTab(tabs: Tab[], pathname: string): string | null {
 /** Where /dashboard sends a signed-in user. */
 export function dashboardPath(
   role: string | null,
-  accounts: { operatorStatus?: string | null; guideStatus?: string | null } = {},
+  accounts: {
+    operatorStatus?: string | null;
+    guideStatus?: string | null;
+  } = {},
 ): string {
   if (role === "admin") return "/tours/admin";
   if (role === "operator" || role === "guide") {
     const { operatorStatus, guideStatus } = accounts;
-    if (operatorStatus) return operatorStatus === "approved" ? "/tours/operator/dashboard" : operatorStatus === "rejected" ? "/tours/operator/register" : "/tours/operator/pending";
-    if (guideStatus) return guideStatus === "approved" ? "/tours/guide/dashboard" : guideStatus === "rejected" ? "/tours/guide/register" : "/tours/guide/pending";
-    return role === "operator" ? "/tours/operator/register" : "/tours/guide/register";
+    if (operatorStatus)
+      return operatorStatus === "approved"
+        ? "/tours/operator/dashboard"
+        : operatorStatus === "rejected"
+          ? "/tours/operator/register"
+          : "/tours/operator/pending";
+    if (guideStatus)
+      return guideStatus === "approved"
+        ? "/tours/guide/dashboard"
+        : guideStatus === "rejected"
+          ? "/tours/guide/register"
+          : "/tours/guide/pending";
+    return role === "operator"
+      ? "/tours/operator/register"
+      : "/tours/guide/register";
   }
   return "/tours/me";
 }
@@ -110,7 +130,13 @@ export function dashboardPath(
 export type DayLoad = { bookings: number; pax: number };
 
 /** Active bookings per tour date (cancelled/rejected left out). */
-export function bookingsByDay(rows: Array<{ tour_date: string; status: string; number_of_pax: number | null }>): Map<string, DayLoad> {
+export function bookingsByDay(
+  rows: Array<{
+    tour_date: string;
+    status: string;
+    number_of_pax: number | null;
+  }>,
+): Map<string, DayLoad> {
   const days = new Map<string, DayLoad>();
   for (const row of rows) {
     if (row.status === "cancelled" || row.status === "rejected") continue;
@@ -122,10 +148,20 @@ export function bookingsByDay(rows: Array<{ tour_date: string; status: string; n
   return days;
 }
 
-export type Occupancy = { seats: number; booked: number; percent: number | null; openDays: number };
+export type Occupancy = {
+  seats: number;
+  booked: number;
+  percent: number | null;
+  openDays: number;
+};
 
 /** Seats sold vs. seats offered across availability rows (null percent when nothing was offered). */
-export function occupancy(rows: Array<{ capacity_total: number | null; capacity_booked: number | null }>): Occupancy {
+export function occupancy(
+  rows: Array<{
+    capacity_total: number | null;
+    capacity_booked: number | null;
+  }>,
+): Occupancy {
   let seats = 0;
   let booked = 0;
   let openDays = 0;
@@ -136,13 +172,21 @@ export function occupancy(rows: Array<{ capacity_total: number | null; capacity_
     seats += total;
     booked += Math.min(total, Math.max(0, Number(row.capacity_booked ?? 0)));
   }
-  return { seats, booked, openDays, percent: seats > 0 ? Math.round((booked / seats) * 100) : null };
+  return {
+    seats,
+    booked,
+    openDays,
+    percent: seats > 0 ? Math.round((booked / seats) * 100) : null,
+  };
 }
 
 /** A guide's day: not set, available or not available. */
 export type AvailabilityState = "unset" | "available" | "unavailable";
 /** Tapping a day with the chosen mark: it gets the mark, or loses it if it already had it. */
-export function markDay(state: AvailabilityState, mark: Exclude<AvailabilityState, "unset">): AvailabilityState {
+export function markDay(
+  state: AvailabilityState,
+  mark: Exclude<AvailabilityState, "unset">,
+): AvailabilityState {
   return state === mark ? "unset" : mark;
 }
 
@@ -168,45 +212,104 @@ export const RANGE_PRESETS = [
 ] as const;
 
 /** ?range=30d or ?from=&to= (max 366 days); defaults to the last 30 days ending today. */
-export function parseAnalyticsRange(params: Record<string, string | string[] | undefined>, today: string): AnalyticsRange {
-  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+export function parseAnalyticsRange(
+  params: Record<string, string | string[] | undefined>,
+  today: string,
+): AnalyticsRange {
+  const one = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v;
   const from = one(params.from);
   const to = one(params.to);
-  if (from && to && DATE_RE.test(from) && DATE_RE.test(to) && from <= to && to <= today) {
+  if (
+    from &&
+    to &&
+    DATE_RE.test(from) &&
+    DATE_RE.test(to) &&
+    from <= to &&
+    to <= today
+  ) {
     const span = (Date.parse(to) - Date.parse(from)) / 86_400_000;
     if (span <= 366) return { from, to, preset: "custom" };
   }
-  const preset = RANGE_PRESETS.find((p) => p.key === one(params.range)) ?? RANGE_PRESETS[1];
-  return { from: addDays(today, -(preset.days - 1)), to: today, preset: preset.key };
+  const preset =
+    RANGE_PRESETS.find((p) => p.key === one(params.range)) ?? RANGE_PRESETS[1];
+  return {
+    from: addDays(today, -(preset.days - 1)),
+    to: today,
+    preset: preset.key,
+  };
 }
 
 /** One entry per day in the range, zero-filled, for the arrivals chart. */
-export function fillDays(points: Array<{ day: string; checkins: number }>, from: string, to: string): Array<{ day: string; checkins: number }> {
+export function fillDays(
+  points: Array<{ day: string; checkins: number }>,
+  from: string,
+  to: string,
+): Array<{ day: string; checkins: number }> {
   const byDay = new Map(points.map((p) => [p.day, p.checkins]));
   const out: Array<{ day: string; checkins: number }> = [];
-  for (let day = from; day <= to && out.length < 400; day = addDays(day, 1)) out.push({ day, checkins: byDay.get(day) ?? 0 });
+  for (let day = from; day <= to && out.length < 400; day = addDays(day, 1))
+    out.push({ day, checkins: byDay.get(day) ?? 0 });
   return out;
 }
 
 export type Analytics = {
   arrivals: Array<{ day: string; checkins: number }>;
-  bookings: { total: number; pending: number; confirmed: number; completed: number; cancelled: number; rejected: number; pax: number };
-  operators: Array<{ id: string; business_name: string; bookings: number; revenue: number; refunded: number }>;
-  topPackages: Array<{ id: string; title: string; bookings: number; pax: number }>;
-  topAttractions: Array<{ id: string; name: string; slug: string; planned: number }>;
-  queue: Array<{ kind: "operator" | "guide"; id: string; name: string; waiting_days: number }>;
+  bookings: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+    cancelled: number;
+    rejected: number;
+    pax: number;
+  };
+  operators: Array<{
+    id: string;
+    business_name: string;
+    bookings: number;
+    revenue: number;
+    refunded: number;
+  }>;
+  topPackages: Array<{
+    id: string;
+    title: string;
+    bookings: number;
+    pax: number;
+  }>;
+  topAttractions: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    planned: number;
+  }>;
+  queue: Array<{
+    kind: "operator" | "guide";
+    id: string;
+    name: string;
+    waiting_days: number;
+  }>;
   ratings: Array<{ stars: number; count: number }>;
 };
 
 const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
-const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as Record<string, unknown>[]) : []);
+const arr = (v: unknown): Record<string, unknown>[] =>
+  Array.isArray(v) ? (v as Record<string, unknown>[]) : [];
 
 /** Defensive read of the tours_admin_analytics JSON. */
 export function parseAnalytics(json: unknown): Analytics {
-  const j = (json && typeof json === "object" ? json : {}) as Record<string, unknown>;
-  const b = (j.bookings && typeof j.bookings === "object" ? j.bookings : {}) as Record<string, unknown>;
+  const j = (json && typeof json === "object" ? json : {}) as Record<
+    string,
+    unknown
+  >;
+  const b = (
+    j.bookings && typeof j.bookings === "object" ? j.bookings : {}
+  ) as Record<string, unknown>;
   return {
-    arrivals: arr(j.arrivals).map((r) => ({ day: String(r.day), checkins: num(r.checkins) })),
+    arrivals: arr(j.arrivals).map((r) => ({
+      day: String(r.day),
+      checkins: num(r.checkins),
+    })),
     bookings: {
       total: num(b.total),
       pending: num(b.pending),
@@ -216,11 +319,35 @@ export function parseAnalytics(json: unknown): Analytics {
       rejected: num(b.rejected),
       pax: num(b.pax),
     },
-    operators: arr(j.operators).map((r) => ({ id: String(r.id), business_name: String(r.business_name ?? "Operator"), bookings: num(r.bookings), revenue: num(r.revenue), refunded: num(r.refunded) })),
-    topPackages: arr(j.top_packages).map((r) => ({ id: String(r.id), title: String(r.title ?? "Package"), bookings: num(r.bookings), pax: num(r.pax) })),
-    topAttractions: arr(j.top_attractions).map((r) => ({ id: String(r.id), name: String(r.name ?? ""), slug: String(r.slug ?? ""), planned: num(r.planned) })),
-    queue: arr(j.queue).map((r) => ({ kind: r.kind === "guide" ? "guide" : "operator", id: String(r.id), name: String(r.name ?? ""), waiting_days: num(r.waiting_days) })),
-    ratings: [5, 4, 3, 2, 1].map((stars) => ({ stars, count: num(arr(j.ratings).find((r) => num(r.stars) === stars)?.count) })),
+    operators: arr(j.operators).map((r) => ({
+      id: String(r.id),
+      business_name: String(r.business_name ?? "Operator"),
+      bookings: num(r.bookings),
+      revenue: num(r.revenue),
+      refunded: num(r.refunded),
+    })),
+    topPackages: arr(j.top_packages).map((r) => ({
+      id: String(r.id),
+      title: String(r.title ?? "Package"),
+      bookings: num(r.bookings),
+      pax: num(r.pax),
+    })),
+    topAttractions: arr(j.top_attractions).map((r) => ({
+      id: String(r.id),
+      name: String(r.name ?? ""),
+      slug: String(r.slug ?? ""),
+      planned: num(r.planned),
+    })),
+    queue: arr(j.queue).map((r) => ({
+      kind: r.kind === "guide" ? "guide" : "operator",
+      id: String(r.id),
+      name: String(r.name ?? ""),
+      waiting_days: num(r.waiting_days),
+    })),
+    ratings: [5, 4, 3, 2, 1].map((stars) => ({
+      stars,
+      count: num(arr(j.ratings).find((r) => num(r.stars) === stars)?.count),
+    })),
   };
 }
 
@@ -231,13 +358,16 @@ export function cancellationRate(b: Analytics["bookings"]): number | null {
 }
 
 /** Queue ageing buckets for the accreditation backlog. */
-export function queueBuckets(queue: Analytics["queue"]): Array<{ label: string; count: number }> {
+export function queueBuckets(
+  queue: Analytics["queue"],
+): Array<{ label: string; count: number }> {
   const buckets = [
     { label: "Under 3 days", count: 0 },
     { label: "3–7 days", count: 0 },
     { label: "Over 7 days", count: 0 },
   ];
-  for (const item of queue) buckets[item.waiting_days < 3 ? 0 : item.waiting_days <= 7 ? 1 : 2].count += 1;
+  for (const item of queue)
+    buckets[item.waiting_days < 3 ? 0 : item.waiting_days <= 7 ? 1 : 2].count +=
+      1;
   return buckets;
 }
-

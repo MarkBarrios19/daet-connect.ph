@@ -18,7 +18,13 @@ import { removeAvatar, saveAvatar } from "./actions";
  * what actually arrived anyway. The preview is the file the visitor picked, not
  * a promise about what will be stored.
  */
-export function PhotoForm({ initial, avatarUrl }: { initial: string; avatarUrl: string | null }) {
+export function PhotoForm({
+  initial,
+  avatarUrl,
+}: {
+  initial: string;
+  avatarUrl: string | null;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -91,14 +97,27 @@ export function PhotoForm({ initial, avatarUrl }: { initial: string; avatarUrl: 
           aria-hidden="true"
           className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-700 text-2xl font-bold text-white"
         >
-          {shown ? <img src={shown} alt="" width={80} height={80} className="h-full w-full object-cover" /> : initials(initial)}
+          {shown ? (
+            <img
+              src={shown}
+              alt=""
+              width={80}
+              height={80}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            initials(initial)
+          )}
         </span>
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <label
               htmlFor="photo"
-              className={buttonClasses({ variant: "secondary", size: "md" }) + (working ? " pointer-events-none opacity-60" : "")}
+              className={
+                buttonClasses({ variant: "secondary", size: "md" }) +
+                (working ? " pointer-events-none opacity-60" : "")
+              }
             >
               {avatarUrl || preview ? "Choose another photo" : "Choose photo"}
             </label>
@@ -113,21 +132,33 @@ export function PhotoForm({ initial, avatarUrl }: { initial: string; avatarUrl: 
               aria-describedby="photo-hint"
             />
             {avatarUrl ? (
-              <Button type="button" variant="ghost" onClick={remove} loading={pending && !file} loadingText="Removing">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={remove}
+                loading={pending && !file}
+                loadingText="Removing"
+              >
                 Remove
               </Button>
             ) : null}
           </div>
           <p id="photo-hint" className="mt-2 text-sm text-daet-ink/75">
-            JPG, PNG or WebP, up to {Math.round(AVATAR_MAX_BYTES / (1024 * 1024))} MB. We shrink it in your browser
-            first.
+            JPG, PNG or WebP, up to{" "}
+            {Math.round(AVATAR_MAX_BYTES / (1024 * 1024))} MB. We shrink it in
+            your browser first.
           </p>
         </div>
       </div>
 
       {file ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" onClick={save} loading={pending} loadingText="Saving">
+          <Button
+            type="button"
+            onClick={save}
+            loading={pending}
+            loadingText="Saving"
+          >
             Save photo
           </Button>
           <Button
@@ -146,7 +177,9 @@ export function PhotoForm({ initial, avatarUrl }: { initial: string; avatarUrl: 
       ) : null}
 
       {state?.message ? (
-        <Notice variant={state.status === "success" ? "success" : "error"}>{state.message}</Notice>
+        <Notice variant={state.status === "success" ? "success" : "error"}>
+          {state.message}
+        </Notice>
       ) : null}
     </div>
   );

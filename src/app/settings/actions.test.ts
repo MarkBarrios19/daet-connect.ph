@@ -3,25 +3,58 @@ import { clearAttempts } from "@/lib/auth/rate-limit";
 import { rememberNextPath } from "@/lib/auth/next-cookie";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
-import { changePassword, removeAvatar, saveAvatar, sendPasswordReset, updateName } from "./actions";
+import {
+  changePassword,
+  removeAvatar,
+  saveAvatar,
+  sendPasswordReset,
+  updateName,
+} from "./actions";
 
 jest.mock("server-only", () => ({}));
-jest.mock("next/cache", () => ({ revalidatePath: jest.fn(), revalidateTag: jest.fn() }));
-jest.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: jest.fn() }));
-jest.mock("@/lib/tours/server-auth", () => ({ getAuthenticatedSession: jest.fn() }));
-jest.mock("@/lib/auth/next-cookie", () => ({ rememberNextPath: jest.fn(async () => {}) }));
+jest.mock("next/cache", () => ({
+  revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
+}));
+jest.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: jest.fn(),
+}));
+jest.mock("@/lib/tours/server-auth", () => ({
+  getAuthenticatedSession: jest.fn(),
+}));
+jest.mock("@/lib/auth/next-cookie", () => ({
+  rememberNextPath: jest.fn(async () => {}),
+}));
 jest.mock("next/headers", () => ({
   headers: jest.fn(
-    async () => new Headers({ host: "daet.test", "x-forwarded-proto": "https", "x-forwarded-for": "203.0.113.9" }),
+    async () =>
+      new Headers({
+        host: "daet.test",
+        "x-forwarded-proto": "https",
+        "x-forwarded-for": "203.0.113.9",
+      }),
   ),
-  cookies: jest.fn(async () => ({ set: jest.fn(), get: jest.fn(), getAll: jest.fn(() => []) })),
+  cookies: jest.fn(async () => ({
+    set: jest.fn(),
+    get: jest.fn(),
+    getAll: jest.fn(() => []),
+  })),
 }));
 
-const mockClient = createSupabaseServerClient as jest.MockedFunction<typeof createSupabaseServerClient>;
-const mockSession = getAuthenticatedSession as jest.MockedFunction<typeof getAuthenticatedSession>;
-const mockRevalidate = revalidatePath as jest.MockedFunction<typeof revalidatePath>;
+const mockClient = createSupabaseServerClient as jest.MockedFunction<
+  typeof createSupabaseServerClient
+>;
+const mockSession = getAuthenticatedSession as jest.MockedFunction<
+  typeof getAuthenticatedSession
+>;
+const mockRevalidate = revalidatePath as jest.MockedFunction<
+  typeof revalidatePath
+>;
 
-const USER = { id: "9b7e5a5e-0000-4000-8000-000000000001", email: "juan@example.ph" };
+const USER = {
+  id: "9b7e5a5e-0000-4000-8000-000000000001",
+  email: "juan@example.ph",
+};
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const PREVIOUS = `https://project.supabase.co/storage/v1/object/public/tours-avatars/${USER.id}/avatar-1.jpg`;
 
@@ -34,8 +67,18 @@ function form(entries: Record<string, string>) {
 }
 
 /** A PostgREST-shaped table: chainable, and awaitable at the end of an update. */
-function table(options: { row?: Record<string, unknown> | null; updateRows?: unknown[]; updateError?: unknown } = {}) {
-  const { row = { avatar_url: null }, updateRows = [{ id: USER.id }], updateError = null } = options;
+function table(
+  options: {
+    row?: Record<string, unknown> | null;
+    updateRows?: unknown[];
+    updateError?: unknown;
+  } = {},
+) {
+  const {
+    row = { avatar_url: null },
+    updateRows = [{ id: USER.id }],
+    updateError = null,
+  } = options;
   const builder: Record<string, unknown> = {};
   Object.assign(builder, {
     select: jest.fn(() => builder),
@@ -43,22 +86,34 @@ function table(options: { row?: Record<string, unknown> | null; updateRows?: unk
     eq: jest.fn(() => builder),
     maybeSingle: jest.fn(async () => ({ data: row, error: null })),
     then: (resolve: (value: unknown) => unknown) =>
-      Promise.resolve({ data: updateError ? null : updateRows, error: updateError }).then(resolve),
+      Promise.resolve({
+        data: updateError ? null : updateRows,
+        error: updateError,
+      }).then(resolve),
   });
   return builder;
 }
 
-function client(options: Parameters<typeof table>[0] & { auth?: Record<string, jest.Mock> } = {}) {
+function client(
+  options: Parameters<typeof table>[0] & {
+    auth?: Record<string, jest.Mock>;
+  } = {},
+) {
   const builder = table(options);
   const upload = jest.fn(async () => ({ data: { path: "x" }, error: null }));
   const remove = jest.fn(async () => ({ data: [], error: null }));
   const getPublicUrl = jest.fn(() => ({
-    data: { publicUrl: `https://project.supabase.co/storage/v1/object/public/tours-avatars/${USER.id}/avatar-2.jpg` },
+    data: {
+      publicUrl: `https://project.supabase.co/storage/v1/object/public/tours-avatars/${USER.id}/avatar-2.jpg`,
+    },
   }));
   const storage = { from: jest.fn(() => ({ upload, remove, getPublicUrl })) };
   const auth = {
     updateUser: jest.fn(async () => ({ data: { user: {} }, error: null })),
-    signInWithPassword: jest.fn(async () => ({ data: { user: {}, session: {} }, error: null })),
+    signInWithPassword: jest.fn(async () => ({
+      data: { user: {}, session: {} },
+      error: null,
+    })),
     signOut: jest.fn(async () => ({ error: null })),
     resetPasswordForEmail: jest.fn(async () => ({ data: {}, error: null })),
     ...options.auth,
@@ -69,7 +124,11 @@ function client(options: Parameters<typeof table>[0] & { auth?: Record<string, j
 }
 
 function signedIn(user: { id: string; email?: string | null } = USER) {
-  mockSession.mockResolvedValue({ user: user as never, role: "tourist", error: null });
+  mockSession.mockResolvedValue({
+    user: user as never,
+    role: "tourist",
+    error: null,
+  });
 }
 
 beforeEach(() => {
@@ -98,10 +157,18 @@ describe("saving a name", () => {
   it("writes both records and refreshes the header", async () => {
     const { auth } = client();
 
-    const state = await updateName(idle, form({ fullName: "  Juan   Dela Cruz " }));
+    const state = await updateName(
+      idle,
+      form({ fullName: "  Juan   Dela Cruz " }),
+    );
 
-    expect(state).toEqual({ status: "success", message: "Your name is saved." });
-    expect(auth.updateUser).toHaveBeenCalledWith({ data: { full_name: "Juan Dela Cruz" } });
+    expect(state).toEqual({
+      status: "success",
+      message: "Your name is saved.",
+    });
+    expect(auth.updateUser).toHaveBeenCalledWith({
+      data: { full_name: "Juan Dela Cruz" },
+    });
     expect(mockRevalidate).toHaveBeenCalledWith("/", "layout");
   });
 
@@ -129,28 +196,50 @@ describe("saving a name", () => {
 });
 
 describe("changing a password", () => {
-  const typed = { current: "Bagasbas-Waves-2026", password: "Calaguas-Sunrise-2026", confirm: "Calaguas-Sunrise-2026" };
+  const typed = {
+    current: "Bagasbas-Waves-2026",
+    password: "Calaguas-Sunrise-2026",
+    confirm: "Calaguas-Sunrise-2026",
+  };
 
   it("checks the two new fields against the shared policy", async () => {
-    const state = await changePassword(idle, form({ ...typed, confirm: "something-else-entirely" }));
+    const state = await changePassword(
+      idle,
+      form({ ...typed, confirm: "something-else-entirely" }),
+    );
 
     expect(state.fieldErrors?.confirm).toMatch(/do not match/i);
     expect(mockClient).not.toHaveBeenCalled();
   });
 
   it("refuses the password that is already there", async () => {
-    const state = await changePassword(idle, form({ ...typed, password: typed.current, confirm: typed.current }));
+    const state = await changePassword(
+      idle,
+      form({ ...typed, password: typed.current, confirm: typed.current }),
+    );
     expect(state.fieldErrors?.password).toMatch(/current password/i);
   });
 
   it("proves the current password before it saves anything", async () => {
-    const { auth } = client({ auth: { signInWithPassword: jest.fn(async () => ({ data: {}, error: { code: "invalid_credentials", message: "Invalid login credentials" } })) } });
+    const { auth } = client({
+      auth: {
+        signInWithPassword: jest.fn(async () => ({
+          data: {},
+          error: {
+            code: "invalid_credentials",
+            message: "Invalid login credentials",
+          },
+        })),
+      },
+    });
 
     const state = await changePassword(idle, form(typed));
 
     expect(state.status).toBe("error");
     expect(state.message).toBe("That is not your current password.");
-    expect(state.fieldErrors?.current).toBe("That is not your current password.");
+    expect(state.fieldErrors?.current).toBe(
+      "That is not your current password.",
+    );
     expect(auth.updateUser).not.toHaveBeenCalled();
   });
 
@@ -161,13 +250,20 @@ describe("changing a password", () => {
 
     expect(state.status).toBe("success");
     expect(state.message).toMatch(/other devices have been signed out/i);
-    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: USER.email, password: typed.current });
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: USER.email,
+      password: typed.current,
+    });
     expect(auth.updateUser).toHaveBeenCalledWith({ password: typed.password });
     expect(auth.signOut).toHaveBeenCalledWith({ scope: "others" });
   });
 
   it("still saves when ending the other sessions does not work", async () => {
-    const { auth } = client({ auth: { signOut: jest.fn(async () => Promise.reject(new Error("offline"))) } });
+    const { auth } = client({
+      auth: {
+        signOut: jest.fn(async () => Promise.reject(new Error("offline"))),
+      },
+    });
 
     const state = await changePassword(idle, form(typed));
 
@@ -176,7 +272,10 @@ describe("changing a password", () => {
   });
 
   it("stops after five wrong guesses in a quarter of an hour", async () => {
-    const wrong = jest.fn(async () => ({ data: {}, error: { code: "invalid_credentials", message: "no" } }));
+    const wrong = jest.fn(async () => ({
+      data: {},
+      error: { code: "invalid_credentials", message: "no" },
+    }));
     client({ auth: { signInWithPassword: wrong } });
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -210,7 +309,9 @@ describe("asking for a reset link", () => {
     expect(state.message).toContain(USER.email);
     expect(auth.resetPasswordForEmail).toHaveBeenCalledWith(
       USER.email,
-      expect.objectContaining({ redirectTo: expect.stringMatching(/\/auth\/callback/) }),
+      expect.objectContaining({
+        redirectTo: expect.stringMatching(/\/auth\/callback/),
+      }),
     );
     expect(rememberNextPath).toHaveBeenCalledWith("/reset-password");
   });
@@ -220,7 +321,10 @@ describe("asking for a reset link", () => {
       auth: {
         resetPasswordForEmail: jest.fn(async () => ({
           data: {},
-          error: { code: "over_email_send_rate_limit", message: "email rate limit exceeded" },
+          error: {
+            code: "over_email_send_rate_limit",
+            message: "email rate limit exceeded",
+          },
         })),
       },
     });
@@ -252,7 +356,12 @@ describe("the account photo", () => {
   it("refuses a file that is not really an image", async () => {
     client();
     const data = new FormData();
-    data.set("photo", new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], "me.jpg", { type: "image/jpeg" }));
+    data.set(
+      "photo",
+      new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], "me.jpg", {
+        type: "image/jpeg",
+      }),
+    );
 
     const state = await saveAvatar(data);
 
@@ -261,7 +370,9 @@ describe("the account photo", () => {
   });
 
   it("uploads under the person's own id, then points the profile at it", async () => {
-    const { upload, getPublicUrl, builder } = client({ row: { avatar_url: PREVIOUS } });
+    const { upload, getPublicUrl, builder } = client({
+      row: { avatar_url: PREVIOUS },
+    });
     const data = new FormData();
     data.set("photo", new File([JPEG], "me.jpg", { type: "image/jpeg" }));
 
@@ -269,8 +380,12 @@ describe("the account photo", () => {
 
     expect(state.status).toBe("success");
     const [key] = upload.mock.calls[0] as unknown as [string];
-    expect(key).toMatch(new RegExp(`^tours-avatars/${USER.id}/avatar-\\d+\\.jpg$`));
-    expect(builder.update).toHaveBeenCalledWith({ avatar_url: getPublicUrl().data.publicUrl });
+    expect(key).toMatch(
+      new RegExp(`^tours-avatars/${USER.id}/avatar-\\d+\\.jpg$`),
+    );
+    expect(builder.update).toHaveBeenCalledWith({
+      avatar_url: getPublicUrl().data.publicUrl,
+    });
     expect(mockRevalidate).toHaveBeenCalledWith("/", "layout");
   });
 
@@ -304,7 +419,9 @@ describe("the account photo", () => {
 
     expect(state.status).toBe("success");
     expect(builder.update).toHaveBeenCalledWith({ avatar_url: null });
-    expect(remove).toHaveBeenCalledWith([`tours-avatars/${USER.id}/avatar-1.jpg`]);
+    expect(remove).toHaveBeenCalledWith([
+      `tours-avatars/${USER.id}/avatar-1.jpg`,
+    ]);
     expect(mockRevalidate).toHaveBeenCalledWith("/", "layout");
   });
 });

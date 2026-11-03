@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { INITIAL_AUTH_STATE } from "@/lib/auth/action-state";
-import { passwordScore, PASSWORD_MAX, PASSWORD_MIN } from "@/lib/auth/validation";
+import {
+  passwordScore,
+  PASSWORD_MAX,
+  PASSWORD_MIN,
+} from "@/lib/auth/validation";
 import { changePassword } from "./actions";
 
 /**
@@ -15,14 +19,28 @@ import { changePassword } from "./actions";
  * the same one sign-up and the reset page use.
  */
 export function PasswordForm() {
-  const [state, formAction, pending] = useActionState(changePassword, INITIAL_AUTH_STATE);
+  const [state, formAction, pending] = useActionState(
+    changePassword,
+    INITIAL_AUTH_STATE,
+  );
   const [next, setNext] = useState("");
   const score = passwordScore(next);
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
-      <Field id="current" label="Current password" required error={state.fieldErrors?.current}>
-        <Input type="password" name="current" required maxLength={PASSWORD_MAX} autoComplete="current-password" />
+      <Field
+        id="current"
+        label="Current password"
+        required
+        error={state.fieldErrors?.current}
+      >
+        <Input
+          type="password"
+          name="current"
+          required
+          maxLength={PASSWORD_MAX}
+          autoComplete="current-password"
+        />
       </Field>
 
       <Field
@@ -43,7 +61,12 @@ export function PasswordForm() {
         />
       </Field>
 
-      <Field id="confirm" label="Type the new password again" required error={state.fieldErrors?.confirm}>
+      <Field
+        id="confirm"
+        label="Type the new password again"
+        required
+        error={state.fieldErrors?.confirm}
+      >
         <Input
           type="password"
           name="confirm"
@@ -54,7 +77,11 @@ export function PasswordForm() {
         />
       </Field>
 
-      {state.message ? <Notice variant={state.status === "success" ? "success" : "error"}>{state.message}</Notice> : null}
+      {state.message ? (
+        <Notice variant={state.status === "success" ? "success" : "error"}>
+          {state.message}
+        </Notice>
+      ) : null}
 
       <Button type="submit" loading={pending} loadingText="Saving">
         Save new password

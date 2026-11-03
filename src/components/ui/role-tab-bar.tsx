@@ -16,7 +16,12 @@ export function RoleTabBar({
   account,
 }: {
   tabs: Tab[];
-  account?: { initial: string; name: string; avatarUrl?: string | null; links: Tab[] };
+  account?: {
+    initial: string;
+    name: string;
+    avatarUrl?: string | null;
+    links: Tab[];
+  };
 }) {
   const pathname = usePathname() ?? "";
   const current = activeTab(tabs, pathname);
@@ -38,9 +43,16 @@ export function RoleTabBar({
               >
                 <span className="relative isolate">
                   {/* The active tab's pill fades in behind its icon. */}
-                  {active ? <span aria-hidden="true" className="motion-pop-in absolute -inset-x-3.5 -inset-y-1 -z-10 rounded-full bg-blue-50 dark:bg-blue-950/40" /> : null}
+                  {active ? (
+                    <span
+                      aria-hidden="true"
+                      className="motion-pop-in absolute -inset-x-3.5 -inset-y-1 -z-10 rounded-full bg-blue-50 dark:bg-blue-950/40"
+                    />
+                  ) : null}
                   <TabIcon label={tab.label} className="h-6 w-6" />
-                  {tab.href === "/tours/messages" ? <UnreadMessagesBadge className="absolute -right-3 -top-1.5" /> : null}
+                  {tab.href === "/tours/messages" ? (
+                    <UnreadMessagesBadge className="absolute -right-3 -top-1.5" />
+                  ) : null}
                 </span>
                 {tab.label}
               </Link>
@@ -49,7 +61,13 @@ export function RoleTabBar({
         })}
         {account ? (
           <li>
-            <AccountMenu variant="tab" initial={account.initial} name={account.name} avatarUrl={account.avatarUrl} links={account.links} />
+            <AccountMenu
+              variant="tab"
+              initial={account.initial}
+              name={account.name}
+              avatarUrl={account.avatarUrl}
+              links={account.links}
+            />
           </li>
         ) : null}
       </ul>

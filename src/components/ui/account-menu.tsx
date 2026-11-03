@@ -43,9 +43,21 @@ function Avatar({
       aria-hidden="true"
       className={`relative grid place-items-center overflow-hidden rounded-full bg-blue-700 font-bold text-white ${small ? "h-[1.625rem] w-[1.625rem] text-[13px]" : "h-10 w-10 text-base"} ${ring ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-surface" : ""}`}
     >
-      {src ? <img src={src} alt="" width={small ? 26 : 40} height={small ? 26 : 40} className="h-full w-full object-cover" /> : initial}
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          width={small ? 26 : 40}
+          height={small ? 26 : 40}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initial
+      )}
       {unread ? (
-        <span className={`absolute rounded-full border-2 border-surface bg-yellow-500 ${small ? "-right-1 -top-[3px] h-2.5 w-2.5" : "right-0 top-0 h-3 w-3"}`} />
+        <span
+          className={`absolute rounded-full border-2 border-surface bg-yellow-500 ${small ? "-right-1 -top-[3px] h-2.5 w-2.5" : "right-0 top-0 h-3 w-3"}`}
+        />
       ) : null}
     </span>
   );
@@ -70,12 +82,18 @@ export function AccountMenu({
   /** The account photo, when there is one; the initial is the fallback. */
   avatarUrl?: string | null;
 }) {
-  const { open, setOpen, toggle, rootRef, buttonRef } = usePopover(`account-${variant}`);
+  const { open, setOpen, toggle, rootRef, buttonRef } = usePopover(
+    `account-${variant}`,
+  );
   const unread = useUnreadChats();
   const pathname = usePathname() ?? "";
   const tab = variant === "tab";
   // On phones the sheet can be swiped down to close.
-  const { sheetRef } = useDragDismiss<HTMLDivElement>("down", () => setOpen(false), open && tab);
+  const { sheetRef } = useDragDismiss<HTMLDivElement>(
+    "down",
+    () => setOpen(false),
+    open && tab,
+  );
 
   return (
     <div ref={rootRef} className={tab ? "contents" : "relative"}>
@@ -94,11 +112,19 @@ export function AccountMenu({
             : "grid h-12 w-12 place-items-center rounded-full transition-[background-color,scale] duration-150 ease-out hover:bg-muted active:scale-95"
         }
       >
-        <Avatar initial={initial} unread={unread} small={tab} ring={tab && open} src={avatarUrl} />
+        <Avatar
+          initial={initial}
+          unread={unread}
+          small={tab}
+          ring={tab && open}
+          src={avatarUrl}
+        />
         {tab ? (
           <>
             <span aria-hidden="true">You</span>
-            <span className="sr-only">You, your account{unreadLabel(unread)}</span>
+            <span className="sr-only">
+              You, your account{unreadLabel(unread)}
+            </span>
           </>
         ) : null}
       </button>
@@ -113,13 +139,30 @@ export function AccountMenu({
                 "motion-pop absolute right-0 top-full z-50 mt-3 w-[18.75rem] [--pop-origin:calc(100%-1.5rem)_0]"
           }
         >
-          {tab ? null : <span aria-hidden="true" className="absolute -top-1.5 right-4 h-4 w-4 rotate-45 rounded-[3px] bg-surface" />}
-          <nav aria-label="Your account" className="relative rounded-2xl card-edge bg-surface p-2 shadow-[var(--shadow-float)]">
-            {tab ? <span aria-hidden="true" className="mx-auto mt-1 block h-1.5 w-10 rounded-full bg-muted-strong" /> : null}
-            <p className="truncate px-4 pb-1 pt-2 text-sm text-daet-ink/70">{name}</p>
+          {tab ? null : (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1.5 right-4 h-4 w-4 rotate-45 rounded-[3px] bg-surface"
+            />
+          )}
+          <nav
+            aria-label="Your account"
+            className="relative rounded-2xl card-edge bg-surface p-2 shadow-[var(--shadow-float)]"
+          >
+            {tab ? (
+              <span
+                aria-hidden="true"
+                className="mx-auto mt-1 block h-1.5 w-10 rounded-full bg-muted-strong"
+              />
+            ) : null}
+            <p className="truncate px-4 pb-1 pt-2 text-sm text-daet-ink/70">
+              {name}
+            </p>
             <ul>
               {links.map((link) => {
-                const current = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                const current =
+                  pathname === link.href ||
+                  pathname.startsWith(`${link.href}/`);
                 return (
                   <li key={link.href}>
                     <Link
@@ -131,7 +174,10 @@ export function AccountMenu({
                       {link.href === MESSAGES_HREF && unread ? (
                         <span className="inline-grid min-w-[1.375rem] place-items-center rounded-full bg-blue-700 px-1.5 text-xs font-bold leading-[1.375rem] text-white">
                           {unread > 9 ? "9+" : unread}
-                          <span className="sr-only"> unread {unread === 1 ? "chat" : "chats"}</span>
+                          <span className="sr-only">
+                            {" "}
+                            unread {unread === 1 ? "chat" : "chats"}
+                          </span>
                         </span>
                       ) : null}
                     </Link>

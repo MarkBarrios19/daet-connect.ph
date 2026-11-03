@@ -16,8 +16,7 @@
 export type RateLimit = { limit: number; windowMs: number };
 
 export type RateLimitResult =
-  | { ok: true; remaining: number }
-  | { ok: false; retryAfterSeconds: number };
+  { ok: true; remaining: number } | { ok: false; retryAfterSeconds: number };
 
 const buckets = new Map<string, number[]>();
 
@@ -45,13 +44,20 @@ export const AUTH_LIMITS = {
 } as const satisfies Record<string, RateLimit>;
 
 /** Count one attempt against `key`, and say whether it is allowed. */
-export function takeAttempt(key: string, { limit, windowMs }: RateLimit, now = Date.now()): RateLimitResult {
+export function takeAttempt(
+  key: string,
+  { limit, windowMs }: RateLimit,
+  now = Date.now(),
+): RateLimitResult {
   const cutoff = now - windowMs;
   const hits = (buckets.get(key) ?? []).filter((at) => at > cutoff);
 
   if (hits.length >= limit) {
     buckets.set(key, hits);
-    const retryAfterSeconds = Math.max(1, Math.ceil((hits[0] + windowMs - now) / 1000));
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((hits[0] + windowMs - now) / 1000),
+    );
     return { ok: false, retryAfterSeconds };
   }
 
