@@ -701,6 +701,30 @@ describe("PlaceFan's hero", () => {
     expect(container.querySelector("#place-detail")?.className ?? "").not.toContain("overscroll-contain");
   });
 
+  it("stands the map card at nine tenths of the viewport, the map filling it", () => {
+    // The owner's note on image-61: the map was a 16rem band in the corner of a
+    // tall screen. The card's height is the caller's now — off the viewport, past
+    // the header and the frame's gap — and the map takes all of it bar the header
+    // row, so it is a column rather than a strip.
+    const { container } = renderFan({
+      mapPlaces: [{ slug: "bagasbas-beach", name: "Bagasbas Beach", lat: 14.131583, lng: 122.985083 }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
+
+    const panel = container.querySelector("[data-place-map]") as HTMLElement;
+    expect(panel.className).toContain("h-[calc(90svh-var(--header-h)-1rem)]");
+    expect(panel.className).toContain("w-[24rem]");
+    expect(panel.className).toContain("flex-col");
+
+    // The map's own wrapper: the card over it and the "Viewing" line are flex
+    // children too, so pick the relative one.
+    const mapBody = panel.querySelector("div.relative.flex-1") as HTMLElement;
+    expect(mapBody.className).toContain("min-h-[16rem]");
+    // Nothing left over from the fixed band.
+    expect(panel.querySelector(".h-64")).toBeNull();
+  });
+
   it("leaves a wheel over the open place's map to the map, which zooms with it", () => {
     // The card's map zooms with the wheel, so a wheel over it is someone looking
     // at the place — not someone asking to leave the hero.

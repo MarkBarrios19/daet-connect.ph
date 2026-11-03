@@ -679,6 +679,17 @@ test.describe("home fan on a desktop", () => {
     expect(map.y - hero.y, "at the top of the photo, under the bar").toBeLessThanOrEqual(110);
     expect(map.width, "a card, not a column").toBeLessThanOrEqual(420);
 
+    // The owner's note (image-61): nine tenths of the viewport tall, the map
+    // filling it, rather than a 16rem band in the corner of the screen. The
+    // card's top is the header plus the frame's gap and its height takes that
+    // back off, so its bottom edge lands on the 90% line.
+    const viewport = page.viewportSize()!;
+    expect(map.y + map.height, "its bottom edge on the 90% line").toBeGreaterThan(viewport.height * 0.88);
+    expect(map.y + map.height, "its bottom edge on the 90% line").toBeLessThan(viewport.height * 0.92);
+    const mapBody = (await page.locator("[data-place-map] .leaflet-container").boundingBox())!;
+    expect(mapBody.height, "the map fills the card").toBeGreaterThan(map.height - 60);
+    expect(mapBody.height, "far past the old 16rem band").toBeGreaterThan(256);
+
     expect(card.x, "the place card beside the map, to its right").toBeGreaterThan(map.x + map.width - 1);
     expect(Math.abs(card.y - map.y), "their tops line up").toBeLessThanOrEqual(2);
     // No card under it any more: the row is the map and the place, nothing else.

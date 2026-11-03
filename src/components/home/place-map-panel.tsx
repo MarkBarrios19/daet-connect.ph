@@ -131,9 +131,9 @@ export function PlaceMapPanel({
   return (
     <div
       data-place-map
-      className={`pointer-events-auto overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
+      className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-surface/92 ring-1 ring-daet-ink/10 shadow-[var(--shadow-float)] backdrop-blur-md dark:bg-slate-950/80 dark:ring-white/15 ${className}`}
     >
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div className="flex shrink-0 items-center gap-2 px-3 py-2">
         <svg
           viewBox="0 0 24 24"
           className="h-4 w-4 shrink-0 text-blue-700 dark:text-blue-300"
@@ -154,7 +154,11 @@ export function PlaceMapPanel({
         </button>
       </div>
 
-      <div className="relative">
+      {/* The map takes whatever height the caller gives the card and no less
+          than the 16rem it used to be: the owner asked for it to stand at about
+          nine tenths of the viewport (image-61), so the header row is fixed and
+          the map is the rest of the card. */}
+      <div className="relative min-h-[16rem] flex-1">
         <FreeMap
           markers={markers}
           title={`Map showing ${place.name} and the other places in the fan`}
@@ -169,7 +173,7 @@ export function PlaceMapPanel({
           // wheel zooms: this map is what the visitor is working in.
           focusOffsetY={76}
           wheelZoom
-          className="h-64"
+          className="h-full w-full"
         />
 
         {/* The place itself, over the map: its photo, its name, the line about
