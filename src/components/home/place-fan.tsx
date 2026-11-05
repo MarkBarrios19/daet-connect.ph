@@ -664,8 +664,28 @@ export function PlaceFan({
 
         {onPhone ? (
           // The band between the two fans is only about 150px tall: the
-          // headline and the hint fit, the long subline and the buttons do not.
-          <p className="mt-2 text-sm text-daet-ink/80 dark:text-white/80">Tap a place to see it</p>
+          // headline, one line of hint and one action fit; the long subline and
+          // the second button do not. The action stands beside the hint rather
+          // than under it, which is the difference between the band holding it
+          // and the button pushing down into the bottom fan's photos.
+          //
+          // One button, not two: the audit found no call to action at all on a
+          // phone's first screen, and browsing the tours is the one thing a
+          // first-time visitor most needs. Behind an open place the row is
+          // faded out, so it leaves the tab order as the desktop row does.
+          <div
+            className="pointer-events-auto mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+            inert={isOpen}
+          >
+            <p className="text-sm text-daet-ink/80 dark:text-white/80">Tap a place to see it</p>
+            <ButtonLink
+              href="/tours/browse"
+              size="md"
+              className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
+            >
+              Find a tour
+            </ButtonLink>
+          </div>
         ) : (
           <>
             {!tight && (

@@ -920,13 +920,35 @@ describe("PlaceFan on a phone", () => {
     chips.forEach((chip) => expect(chip).toBeVisible());
   });
 
-  it("keeps the headline band to the headline and a hint", () => {
+  it("keeps the headline band to the headline, a hint and one action", () => {
     setHeroSize(390, 844);
     renderFan();
 
+    // The audit's finding: a phone's first screen had no call to action at all.
+    // One button fits beside the hint; the long subline and the second button
+    // still do not, because the band is only as tall as the gap between the fans.
     expect(screen.getByText("Tap a place to see it")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Find a tour" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Find a tour" })).toHaveAttribute("href", "/tours/browse");
+    expect(screen.queryByRole("button", { name: "Ask the travel guide" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Beaches, islands and old-town walks/)).not.toBeInTheDocument();
+  });
+
+  it("takes the phone's action out of the tab order while a place is open", () => {
+    const { container } = renderFan();
+    setHeroSize(390, 844);
+
+    const row = screen.getByRole("link", { name: "Find a tour" }).parentElement;
+    expect(row).not.toHaveAttribute("inert");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Bagasbas Beach: open photo and details",
+      }),
+    );
+
+    // Faded out behind the photo: not reachable by keyboard, as on a desktop.
+    expect(row).toHaveAttribute("inert");
+    expect(container.querySelector("[data-headline]")).not.toBeNull();
   });
 
   it("drops the chips and keeps one fan of six on a landscape phone", () => {

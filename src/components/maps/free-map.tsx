@@ -245,7 +245,14 @@ export function FreeMap({
       if (cancelled) return;
       cancelled = true;
       window.clearTimeout(timer);
+      // Take the map down and let go of it in the same breath. `setMode` below
+      // re-runs this effect, and its cleanup asks the *same* `map` to remove
+      // itself a second time — which Leaflet refuses with "Map container is
+      // being reused by another instance". That throw came out of a React
+      // effect, reached error.tsx, and took the whole page down: a phone on a
+      // flaky connection lost the home page because a tile host was away.
       map?.remove();
+      map = null;
       mapRef.current = null;
       setReady(false);
       setMode("sketch");
@@ -320,8 +327,12 @@ export function FreeMap({
         paint();
         // The container may still be settling when it mounts (an overlay opening).
         requestAnimationFrame(() => {
-          map?.invalidateSize();
-          if (map) fit(map, pointsOf(latest.current.markers, latest.current.lines));
+          // A frame later the map may already be gone — given up on, or the
+          // component unmounted. Leaflet's `invalidateSize` throws on a removed
+          // map, so nothing here runs once the effect has been torn down.
+          if (cancelled || !map) return;
+          map.invalidateSize();
+          fit(map, pointsOf(latest.current.markers, latest.current.lines));
           setReady(true);
         });
 
@@ -344,7 +355,10 @@ export function FreeMap({
       markersMap.clear();
       linesMap.forEach(({ line }) => line.remove());
       linesMap.clear();
+      // Null unless `giveUp` already took the map down: one removal per map,
+      // whichever of the two paths gets there first.
       map?.remove();
+      map = null;
       mapRef.current = null;
       setReady(false);
     };
