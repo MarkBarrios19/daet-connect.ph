@@ -46,6 +46,20 @@ export function roleTabs(role: string | null): Tab[] {
 }
 
 /**
+ * The tabs the phone's bottom bar draws. A tourist's Home is the landing page:
+ * their dashboard (/tours/me) is still one tap away in the account menu, and
+ * the header's Dashboard link, which are built from `roleTabs` itself and so
+ * keep the dashboard. Every other role's Home is its dashboard, as in `tabs`.
+ *
+ * On "/" the tab is the active one; on /tours/me, no tab is, because that page
+ * is the dashboard and the bar no longer has a tab for it.
+ */
+export function barTabs(role: string | null | undefined, tabs: Tab[]): Tab[] {
+  if (role !== "tourist") return tabs;
+  return tabs.map((tab) => (tab.label === "Home" ? { ...tab, href: "/" } : tab));
+}
+
+/**
  * The signed-in user's own pages for the account menu (nav iteration 3);
  * Dark mode and Sign out follow them. `tabs` are the role's tabs: the first is
  * the dashboard.

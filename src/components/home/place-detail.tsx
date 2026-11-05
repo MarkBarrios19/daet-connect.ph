@@ -112,7 +112,7 @@ export function PlaceDetail({
             // room for the phone's own safe area under it. It can grow taller
             // than the screen — the words are the point once it is open — so it
             // scrolls inside itself rather than off the top of the photo.
-            "max-h-[85svh] overflow-y-auto overscroll-contain rounded-t-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5"
+            "max-h-[calc(85svh-var(--tab-bar-h))] overflow-y-auto overscroll-contain rounded-t-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5"
           : "max-w-[18rem] rounded-2xl p-4"
       }`}
     >
@@ -212,7 +212,9 @@ export function PlaceDetail({
         phone
           ? // A phone's card is a sheet at the foot of the photo (image-74), so
             // the photo is above it, whole, and the buttons are under a thumb.
-            "bottom-0"
+            // It stops at the signed-in tab bar rather than running under it
+            // (--tab-bar-h is zero when there is no bar).
+            "bottom-[var(--tab-bar-h)]"
           : "top-[calc(var(--header-h)+0.5rem)] sm:top-[calc(var(--header-h)+1rem)]"
       }`}
     >

@@ -1003,7 +1003,7 @@ describe("PlaceFan on a phone", () => {
     expect(container.querySelector("[data-place-map]")).toBeNull();
     const card = container.querySelector("[data-detail]") as HTMLElement;
     expect(card.className).toContain("rounded-t-2xl");
-    expect(card.parentElement!.parentElement!.className).toContain("bottom-0");
+    expect(card.parentElement!.parentElement!.className).toContain("bottom-[var(--tab-bar-h)]");
   });
 
   it("folds a landscape phone's card too", () => {

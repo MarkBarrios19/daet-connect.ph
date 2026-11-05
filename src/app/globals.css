@@ -99,6 +99,21 @@
     }
   }
 
+  /* The signed-in phone tab bar's height, for whatever has to sit above it.
+     Zero everywhere the bar is not drawn: for visitors with no tabs, and from
+     `sm` up, where role-tab-bar.tsx hides it. PageFrame marks the page with
+     data-has-tabs when it draws the bar. Keep in step with that bar's
+     min-h-14 and its safe-area padding. */
+  :root {
+    --tab-bar-h: 0px;
+  }
+
+  @media (max-width: 39.999rem) {
+    [data-has-tabs] {
+      --tab-bar-h: calc(3.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
   * {
     box-sizing: border-box;
   }
