@@ -5,7 +5,7 @@ import { requestPlanChange } from "./actions";
 import type { PlanStop } from "@/lib/tours/assistant/plan-tool";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { bookablePackages, loadAttractions, type BookablePackage } from "@/lib/tours/itinerary/data";
-import { planAttractionIds, removeStop, swapStop } from "@/lib/tours/itinerary/edit";
+import { dayOrders, planAttractionIds, removeStop, reorderDays, stopChoices, swapStop, type StopChoice } from "@/lib/tours/itinerary/edit";
 import { parsePreferences, type PlannerInput } from "@/lib/tours/itinerary/form";
 import { generatePlan, withTotals } from "@/lib/tours/itinerary/schedule";
 import type { Plan, PlannerAttraction } from "@/lib/tours/itinerary/types";
@@ -72,4 +72,31 @@ export async function changePlan(input: PlannerInput, current: Plan, text: strin
   if (!loaded.ok) return loaded;
   const result = await finish(changed.plan, loaded.attractions, loaded.supabase);
   return result.ok ? { ...result, reply: changed.reply, input: changed.input } : result;
+}
+
+/** The traveller's own order of stops (drag to reorder, or move to another day), re-timed and re-checked. */
+export async function reorderPlan(input: PlannerInput, current: Plan, days: string[][]): Promise<PanelResult> {
+  const loaded = await load(input);
+  if (!loaded.ok) return loaded;
+  const clean = Array.isArray(days) ? days.slice(0, 5).map((d) => (Array.isArray(d) ? d.slice(0, 12).map(String) : [])) : [];
+  const result = reorderDays(cleanPlan(current), clean, loaded.attractions, loaded.prefs);
+  if (!result.ok) return result;
+  return finish(result.plan, loaded.attractions, loaded.supabase);
+}
+
+/** "Add a stop": the place goes at the end of the day, then the day is re-timed. */
+export async function addPlanStop(input: PlannerInput, current: Plan, day: number, attractionId: string): Promise<PanelResult> {
+  const plan = cleanPlan(current);
+  const orders = dayOrders(plan);
+  const d = Number(day);
+  if (!Number.isInteger(d) || d < 0 || d >= orders.length) return { ok: false, message: "That day isn't in your plan." };
+  orders[d] = [...orders[d], String(attractionId)];
+  return reorderPlan(input, plan, orders);
+}
+
+/** Up to 8 listed places not yet in the plan that suit the day. */
+export async function planStopChoices(input: PlannerInput, current: Plan, day: number): Promise<{ ok: true; choices: StopChoice[] } | { ok: false; message: string }> {
+  const loaded = await load(input);
+  if (!loaded.ok) return loaded;
+  return { ok: true, choices: stopChoices(cleanPlan(current), Number(day), loaded.attractions, loaded.prefs) };
 }

@@ -12,7 +12,10 @@ import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import {
   changePlan,
   regeneratePlan,
+  addPlanStop,
+  planStopChoices,
   removePlanStop,
+  reorderPlan,
   swapPlanStop,
 } from "./panel-actions";
 import { saveItinerary } from "./actions";
@@ -25,6 +28,9 @@ const actions: PanelActions = {
   swap: (it, day, id) => swapPlanStop(it.input, it.plan, day, id),
   remove: (it, day, id) => removePlanStop(it.input, it.plan, day, id),
   change: (it, text) => changePlan(it.input, it.plan, text),
+  reorder: (it, orders) => reorderPlan(it.input, it.plan, orders),
+  add: (it, day, id) => addPlanStop(it.input, it.plan, day, id),
+  choices: (it, day) => planStopChoices(it.input, it.plan, day),
 };
 
 /**

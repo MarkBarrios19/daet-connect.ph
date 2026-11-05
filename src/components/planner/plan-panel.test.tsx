@@ -1,8 +1,9 @@
 /** @jest-environment jsdom */
 
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PlanPanel, type PanelActions } from "@/components/planner/plan-panel";
+import { moveInOrders } from "@/components/planner/plan-editor";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 
 jest.mock("@/components/maps/route-map", () => ({ RouteMap: ({ title }: { title: string }) => <div data-testid="map">{title}</div> }));
@@ -63,7 +64,7 @@ describe("PlanPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ask about this place" }));
     expect(onAsk).toHaveBeenCalledWith("Tell me about Bagasbas Beach");
     fireEvent.click(screen.getByRole("button", { name: "Options for Bagasbas Beach" }));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Swap stop" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Swap this stop" })));
     expect(actions.swap).toHaveBeenCalledWith(itinerary, 0, "bagasbas");
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ plan: swapped, packages: [] }));
     expect(screen.getByRole("status")).toHaveTextContent("Swapped Bagasbas Beach.");
@@ -74,7 +75,7 @@ describe("PlanPanel", () => {
     const onChange = jest.fn();
     render(<PlanPanel itinerary={itinerary} onChange={onChange} onAsk={jest.fn()} actions={actions} />);
     fireEvent.click(screen.getByRole("button", { name: "Options for Bagasbas Beach" }));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Swap stop" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Swap this stop" })));
     expect(screen.getByRole("status")).toHaveTextContent(/No other place fits/);
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -117,5 +118,81 @@ describe("PlanPanel", () => {
     expect(books[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-10&pax=3");
     expect(books[1]).toHaveAttribute("href", "/tours/packages/pkg2/book?date=2026-11-11&pax=3");
     expect(screen.getByText(/About ₱3,400.00 for all 2 bookable trips\. Each one is booked and paid separately\./)).toBeInTheDocument();
+  });
+
+  it("closes the stop menu with Escape and returns focus to its button", () => {
+    render(<PlanPanel itinerary={itinerary} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+    const button = screen.getByRole("button", { name: "Options for Bagasbas Beach" });
+    fireEvent.click(button);
+    const menu = screen.getByRole("group", { name: "Options for Bagasbas Beach" });
+    expect(within(menu).getAllByRole("button").map((b) => b.textContent)).toEqual(["Ask about this place", "Find experiences nearby", "Swap this stop", "Remove from this day", "Cancel"]);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("group", { name: "Options for Bagasbas Beach" })).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+
+  describe("edit mode", () => {
+    const editable = (overrides: Partial<PanelActions> = {}): PanelActions => ({
+      ...noop,
+      reorder: jest.fn().mockResolvedValue({ ok: true, plan: itinerary.plan, stops: itinerary.stops, packages: [] }),
+      add: jest.fn(),
+      choices: jest.fn().mockResolvedValue({ ok: true, choices: [{ id: "falls", name: "Mananap Falls", category: "nature", fee: 50, photoUrl: null }] }),
+      ...overrides,
+    });
+
+    it("has no Edit button without the edit actions", () => {
+      render(<PlanPanel itinerary={itinerary} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+      expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    });
+
+    it("shows drag handles and remove buttons, and Cancel puts the plan back", () => {
+      const onChange = jest.fn();
+      render(<PlanPanel itinerary={itinerary} onChange={onChange} onAsk={jest.fn()} actions={editable()} />);
+      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+      expect(screen.getByText(/^Editing · /)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Drag to reorder Bagasbas Beach" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Remove Bagasbas Beach" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Regenerate" })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(onChange).toHaveBeenCalledWith(itinerary);
+      expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+    });
+
+    it("removes a stop with Undo", async () => {
+      const without = { ...itinerary.plan, days: [{ date: "2026-11-10", blocks: [] }, itinerary.plan.days[1]] };
+      const onChange = jest.fn();
+      const actions = editable({ remove: jest.fn().mockResolvedValue({ ok: true, plan: without, stops: itinerary.stops, packages: [] }) });
+      render(<PlanPanel itinerary={itinerary} onChange={onChange} onAsk={jest.fn()} actions={actions} />);
+      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Remove Bagasbas Beach" })));
+      expect(actions.remove).toHaveBeenCalledWith(itinerary, 0, "bagasbas");
+      expect(screen.getByText("Bagasbas Beach removed from your trip")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+      expect(onChange).toHaveBeenLastCalledWith(itinerary);
+    });
+
+    it("adds a suggested stop to the day", async () => {
+      const actions = editable({ add: jest.fn().mockResolvedValue({ ok: true, plan: itinerary.plan, stops: itinerary.stops, packages: [] }) });
+      render(<PlanPanel itinerary={itinerary} onChange={jest.fn()} onAsk={jest.fn()} actions={actions} />);
+      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Add a stop" })));
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Add Mananap Falls to Day 1" })));
+      expect(actions.add).toHaveBeenCalledWith(itinerary, 0, "falls");
+    });
+  });
+});
+
+describe("moveInOrders", () => {
+  const orders = [["a", "b", "c"], ["d"]];
+  it("moves a stop within a day onto another stop's place", () => {
+    expect(moveInOrders(orders, "c", "a")).toEqual([["c", "a", "b"], ["d"]]);
+    expect(moveInOrders(orders, "a", "c")).toEqual([["b", "c", "a"], ["d"]]);
+  });
+  it("moves a stop to another day, before the stop it lands on or at the end of the list", () => {
+    expect(moveInOrders(orders, "b", "d")).toEqual([["a", "c"], ["b", "d"]]);
+    expect(moveInOrders(orders, "b", "day-1")).toEqual([["a", "c"], ["d", "b"]]);
+  });
+  it("leaves the plan as it was for unknown stops", () => {
+    expect(moveInOrders(orders, "x", "a")).toBe(orders);
   });
 });

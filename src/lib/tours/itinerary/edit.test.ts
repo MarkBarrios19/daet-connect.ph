@@ -1,4 +1,4 @@
-import { contextToInput, planAttractionIds, removeStop, swapStop } from "@/lib/tours/itinerary/edit";
+import { contextToInput, dayOrders, planAttractionIds, removeStop, reorderDays, stopChoices, swapStop } from "@/lib/tours/itinerary/edit";
 import { generatePlan } from "@/lib/tours/itinerary/schedule";
 import type { PlannerAttraction, Preferences } from "@/lib/tours/itinerary/types";
 import { validatePlan } from "@/lib/tours/itinerary/validate";
@@ -51,5 +51,50 @@ describe("swapStop and removeStop", () => {
   it("regenerate leaves out the places already planned", () => {
     const again = generatePlan(places, prefs, { exclude: new Set(planAttractionIds(plan)) });
     expect(planAttractionIds(again).some((id) => planAttractionIds(plan).includes(id))).toBe(false);
+  });
+});
+
+describe("reorderDays", () => {
+  const two: Preferences = { ...prefs, days: 2 };
+  const plan = generatePlan(places, two);
+
+  it("re-times a day in the traveller's order, and the result is valid", () => {
+    const orders = dayOrders(plan);
+    const reversed = [...orders[0]].reverse();
+    const result = reorderDays(plan, [reversed, orders[1]], places, two);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(dayOrders(result.plan)[0]).toEqual(reversed);
+    expect(result.plan.days[1]).toBe(plan.days[1]);
+    expect(validatePlan(result.plan, byId, two).ok).toBe(true);
+  });
+
+  it("moves a stop to another day", () => {
+    const orders = dayOrders(plan);
+    const moved = orders[0][0];
+    const result = reorderDays(plan, [orders[0].slice(1), [...orders[1], moved]], places, two);
+    expect(result.ok && dayOrders(result.plan)[1].includes(moved)).toBe(true);
+  });
+
+  it("refuses unknown or repeated places, and a day count that doesn't match", () => {
+    const orders = dayOrders(plan);
+    expect(reorderDays(plan, [["nope"], orders[1]], places, two)).toMatchObject({ ok: false, message: expect.stringMatching(/no longer listed/) });
+    expect(reorderDays(plan, [[orders[0][0], orders[0][0]], orders[1]], places, two)).toMatchObject({ ok: false, message: expect.stringMatching(/already in your plan/) });
+    expect(reorderDays(plan, [orders[0]], places, two)).toMatchObject({ ok: false });
+  });
+
+  it("says why an order doesn't fit", () => {
+    const closedLate = places.map((a) => (a.id === "rizal" ? { ...a, hours: { mon: [["08:00", "09:00"]], tue: [["08:00", "09:00"]], wed: [["08:00", "09:00"]], thu: [["08:00", "09:00"]], fri: [["08:00", "09:00"]], sat: [["08:00", "09:00"]], sun: [["08:00", "09:00"]] } as never } : a));
+    const result = reorderDays({ days: [{ date: "2026-11-06", blocks: [] }], totals: { cost: 0, travelMinutes: 0, visits: 0 } }, [["bagasbas", "falls", "rizal"]], closedLate, prefs);
+    expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/^That order doesn't fit Day 1: /) });
+  });
+});
+
+describe("stopChoices", () => {
+  it("offers places not in the plan, best first, at most the limit", () => {
+    const plan = generatePlan(places, prefs);
+    const choices = stopChoices(plan, 0, places, prefs, 3);
+    expect(choices.length).toBeLessThanOrEqual(3);
+    for (const c of choices) expect(planAttractionIds(plan)).not.toContain(c.id);
   });
 });

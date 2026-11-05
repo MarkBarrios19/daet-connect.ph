@@ -31,7 +31,7 @@ test("the plan opens as a sheet on phones; stops can be removed and tours booked
   const options = plan.getByRole("button", { name: /^Options for / }).first();
   const name = ((await options.getAttribute("aria-label")) ?? "").replace("Options for ", "");
   await options.click();
-  await plan.getByRole("group", { name: `Options for ${name}` }).getByRole("button", { name: "Remove" }).click();
+  await plan.getByRole("group", { name: `Options for ${name}` }).getByRole("button", { name: "Remove from this day" }).click();
   await expect(plan.getByText(`Removed ${name}.`)).toBeVisible();
 
   // 3. Bookable tours link to their booking form with the date and group filled in.

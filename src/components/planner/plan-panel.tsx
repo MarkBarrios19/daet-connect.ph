@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { TransportCardView } from "@/components/assistant/transport-card";
 import { BookableCard, groupPrice } from "@/components/planner/book-each-trip";
+import { PlanEditor } from "@/components/planner/plan-editor";
+import { StopMenu } from "@/components/planner/stop-menu";
 import { RouteMap, type MapPoint } from "@/components/maps/route-map";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon, LineIcon } from "@/components/ui/icons";
@@ -10,6 +12,7 @@ import { formatPeso } from "@/lib/money";
 import type { ItineraryResult, PlanStop } from "@/lib/tours/assistant/plan-tool";
 import { bookHref, dayFor } from "@/lib/tours/itinerary/bookable";
 import type { BookablePackage } from "@/lib/tours/itinerary/data";
+import type { StopChoice } from "@/lib/tours/itinerary/edit";
 import { formatClock, type PlanDay, type VisitBlock } from "@/lib/tours/itinerary/types";
 
 /** What the panel's buttons call; injected so the panel works without a server in tests. */
@@ -19,6 +22,10 @@ export type PanelActions = {
   remove: (it: ItineraryResult, day: number, id: string) => Promise<PanelUpdate>;
   /** A change in words, e.g. "Make it more relaxed"; the reply says what changed. */
   change: (it: ItineraryResult, text: string) => Promise<PanelUpdate & { reply?: string; input?: ItineraryResult["input"] }>;
+  /** Edit mode: the traveller's own order of stops, day by day. Optional so read-only uses of the panel need not pass them. */
+  reorder?: (it: ItineraryResult, orders: string[][]) => Promise<PanelUpdate>;
+  add?: (it: ItineraryResult, day: number, id: string) => Promise<PanelUpdate>;
+  choices?: (it: ItineraryResult, day: number) => Promise<{ ok: true; choices: StopChoice[] } | { ok: false; message: string }>;
 };
 export type PanelUpdate = { ok: true; plan: ItineraryResult["plan"]; stops: ItineraryResult["stops"]; packages: BookablePackage[] } | { ok: false; message: string };
 
@@ -100,6 +107,11 @@ export function PlanPanel({
   const [day, setDay] = useState<number | "all">(0);
   const [message, setMessage] = useState<string | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
+  const canEdit = Boolean(actions.reorder && actions.add && actions.choices);
+  const [editing, setEditing] = useState(false);
+  // The plan from before Edit, for Cancel; and the plan from before a remove, for Undo.
+  const [snapshot, setSnapshot] = useState<ItineraryResult | null>(null);
+  const [undo, setUndo] = useState<{ label: string; before: ItineraryResult } | null>(null);
   const [pending, start] = useTransition();
   const byId = new Map(itinerary.stops.map((s) => [s.id, s]));
   const group = itinerary.travelers.adults + itinerary.travelers.children.length;
@@ -121,18 +133,32 @@ export function PlanPanel({
   );
   const mapTitle = current === null ? "All days" : `Day ${current + 1} route`;
 
-  function run(label: string, call: () => Promise<PanelUpdate>) {
+  function run(label: string, call: () => Promise<PanelUpdate>, after?: (ok: boolean) => void) {
     setMessage(null);
     start(async () => {
       const result = await call().catch(() => ({ ok: false as const, message: "That didn't work. Check your connection and try again." }));
       if (!result.ok) {
         setMessage(result.message);
+        after?.(false);
         return;
       }
       onChange({ ...itinerary, plan: result.plan, stops: result.stops, packages: result.packages });
       setMessage(label);
+      after?.(true);
     });
   }
+
+  function removeWithUndo(day: number, b: VisitBlock) {
+    const before = itinerary;
+    run(`Removed ${b.name}.`, () => actions.remove(itinerary, day, b.attractionId), (ok) => ok && setUndo({ label: `${b.name} removed from your trip`, before }));
+  }
+
+  // The Undo offer lasts a few seconds, as on the Desktop-Edit board.
+  useEffect(() => {
+    if (!undo) return;
+    const timer = window.setTimeout(() => setUndo(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [undo]);
 
   const lastRequest = useRef<number | null>(null);
   useEffect(() => {
@@ -160,21 +186,62 @@ export function PlanPanel({
           <h2 id="plan-title" className="font-[family-name:var(--font-display)] text-2xl font-semibold text-daet-ink sm:text-3xl">
             Your {plan.days.length}-day Daet plan
           </h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{tripLine(itinerary)}</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{editing ? `Editing · ${tripLine(itinerary)}` : tripLine(itinerary)}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" loading={pending} loadingText="Working…" onClick={() => run("Here is a fresh plan.", () => actions.regenerate(itinerary))}>
-            <LineIcon name="return" className="h-4 w-4" /> Regenerate
-          </Button>
-          {footer ? (
-            <Button aria-expanded={saveOpen} aria-controls="plan-save" onClick={() => setSaveOpen((v) => !v)}>
-              <LineIcon name="plus" className="h-4 w-4" /> Save to a trip
+        {editing ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              disabled={pending}
+              onClick={() => {
+                if (snapshot) onChange(snapshot);
+                setEditing(false);
+                setUndo(null);
+                setMessage("Changes cancelled.");
+              }}
+            >
+              Cancel
             </Button>
-          ) : null}
-        </div>
+            <Button
+              disabled={pending}
+              onClick={() => {
+                setEditing(false);
+                setUndo(null);
+                setMessage("Your changes are in the plan.");
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {canEdit ? (
+              <Button
+                variant="secondary"
+                disabled={pending}
+                onClick={() => {
+                  setSnapshot(itinerary);
+                  setSaveOpen(false);
+                  setMessage(null);
+                  setEditing(true);
+                }}
+              >
+                <LineIcon name="edit" className="h-4 w-4" /> Edit
+              </Button>
+            ) : null}
+            <Button variant="secondary" loading={pending} loadingText="Working…" onClick={() => run("Here is a fresh plan.", () => actions.regenerate(itinerary))}>
+              <LineIcon name="return" className="h-4 w-4" /> Regenerate
+            </Button>
+            {footer ? (
+              <Button aria-expanded={saveOpen} aria-controls="plan-save" onClick={() => setSaveOpen((v) => !v)}>
+                <LineIcon name="plus" className="h-4 w-4" /> Save to a trip
+              </Button>
+            ) : null}
+          </div>
+        )}
       </div>
 
-      {footer && saveOpen ? (
+      {footer && saveOpen && !editing ? (
         <div id="plan-save" className="rounded-2xl bg-surface p-4">
           {footer}
         </div>
@@ -205,7 +272,23 @@ export function PlanPanel({
           </div>
         ) : null}
         <div className="min-w-0 space-y-6 xl:order-1">
-          {shown.map(({ d, i }) => (
+          {editing && canEdit ? (
+            <PlanEditor
+              itinerary={itinerary}
+              days={shown.map(({ i }) => i)}
+              busy={pending}
+              onReorder={(orders) =>
+                new Promise<boolean>((resolve) => run("New times are in.", () => actions.reorder!(itinerary, orders), resolve))
+              }
+              onRemove={removeWithUndo}
+              loadChoices={async (d) => {
+                const result = await actions.choices!(itinerary, d);
+                return result.ok ? result.choices : result.message;
+              }}
+              onAdd={(d, c) => run(`Added ${c.name} to Day ${d + 1}.`, () => actions.add!(itinerary, d, c.id))}
+            />
+          ) : null}
+          {editing && canEdit ? null : shown.map(({ d, i }) => (
             <div key={d.date} className="space-y-3">
               <div>
                 <h3 className="font-bold text-daet-ink">
@@ -227,13 +310,13 @@ export function PlanPanel({
                   bookingHref={(p) => bookHref(p.id, datedFor(p), group)}
                   onAsk={onAsk}
                   onSwap={(b) => run(`Swapped ${b.name}.`, () => actions.swap(itinerary, i, b.attractionId))}
-                  onRemove={(b) => run(`Removed ${b.name}.`, () => actions.remove(itinerary, i, b.attractionId))}
+                  onRemove={(b) => removeWithUndo(i, b)}
                 />
               )}
             </div>
           ))}
 
-          {rest.length ? (
+          {!editing && rest.length ? (
             <div className="space-y-2">
               <h3 className="font-bold text-daet-ink">More tours near your plan</h3>
               {rest.map((p) => (
@@ -242,7 +325,7 @@ export function PlanPanel({
             </div>
           ) : null}
 
-          {itinerary.packages.length > 1 && known.length ? (
+          {!editing && itinerary.packages.length > 1 && known.length ? (
             <p className="text-sm font-semibold text-daet-ink">
               {known.length < prices.length ? "At least " : "About "}
               {formatPeso(known.reduce((a, b) => a + b, 0))} for all {itinerary.packages.length} bookable trips. Each one is booked and paid separately.
@@ -250,8 +333,24 @@ export function PlanPanel({
           ) : null}
           <p className="text-xs text-slate-600 dark:text-slate-400">Costs are entrance fees for your group of {group}. Times are estimates; confirm hours marked as not confirmed.</p>
         </div>
-
       </div>
+
+      {undo ? (
+        <div role="status" className="fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-md items-center justify-between gap-3 rounded-full bg-slate-900 py-1 pl-5 pr-2 text-sm text-white shadow-[var(--shadow-float)] dark:bg-slate-100 dark:text-slate-900">
+          <span className="min-w-0 truncate">{undo.label}</span>
+          <button
+            type="button"
+            onClick={() => {
+              onChange(undo.before);
+              setUndo(null);
+              setMessage("Stop put back.");
+            }}
+            className="min-h-11 shrink-0 rounded-full px-4 font-bold underline"
+          >
+            Undo
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -357,13 +456,9 @@ function StopCard({
   onRemove: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const menuItem = "flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm font-semibold text-daet-ink hover:bg-muted disabled:opacity-50";
-  const pick = (fn: () => void) => () => {
-    setOpen(false);
-    fn();
-  };
+  const menuButton = useRef<HTMLButtonElement>(null);
   return (
-    <article className="space-y-3 rounded-2xl bg-surface p-3">
+    <article className="relative space-y-3 rounded-2xl bg-surface p-3">
       <div className="flex gap-3">
         {stop?.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- listing photos come from many hosts
@@ -379,7 +474,7 @@ function StopCard({
               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[13px] text-white">{number}</span>
               <span className="min-w-0">{block.name}</span>
             </h4>
-            <button type="button" aria-expanded={open} aria-label={`Options for ${block.name}`} onClick={() => setOpen((v) => !v)} className="-mr-1 -mt-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-daet-ink hover:bg-muted">
+            <button ref={menuButton} type="button" aria-expanded={open} aria-haspopup="true" aria-label={`Options for ${block.name}`} onClick={() => setOpen((v) => !v)} className="-mr-1 -mt-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-daet-ink hover:bg-muted">
               <LineIcon name="menu" className="h-5 w-5" />
             </button>
           </div>
@@ -394,11 +489,17 @@ function StopCard({
         </div>
       </div>
       {open ? (
-        <div className="grid gap-1 sm:grid-cols-3" role="group" aria-label={`Options for ${block.name}`}>
-          <button type="button" className={menuItem} onClick={pick(onNearby)}>Find nearby</button>
-          <button type="button" className={menuItem} disabled={busy} onClick={pick(onSwap)}>Swap stop</button>
-          <button type="button" className={`${menuItem} text-red-700 dark:text-red-300`} disabled={busy} onClick={pick(onRemove)}>Remove</button>
-        </div>
+        <StopMenu
+          name={block.name}
+          returnFocus={menuButton}
+          onClose={() => setOpen(false)}
+          items={[
+            { label: "Ask about this place", icon: "chat", onSelect: onAsk },
+            { label: "Find experiences nearby", icon: "search", onSelect: onNearby },
+            { label: "Swap this stop", icon: "swap", onSelect: onSwap, disabled: busy },
+            { label: "Remove from this day", icon: "trash", onSelect: onRemove, disabled: busy, danger: true },
+          ]}
+        />
       ) : null}
       {packages.map((p) => (
         <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p)} />

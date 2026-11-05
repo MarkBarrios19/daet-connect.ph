@@ -70,3 +70,60 @@ export function removeStop(plan: Plan, day: number, attractionId: string, attrac
 export function planAttractionIds(plan: Plan): string[] {
   return plan.days.flatMap((_, d) => visitIdsOf(plan, d));
 }
+
+export type ReorderResult = { ok: true; plan: Plan } | { ok: false; message: string };
+
+/**
+ * A plan with the traveller's own order of stops (drag to reorder, move to
+ * another day, or add a stop). Only the ids are trusted: unknown places are
+ * refused, a place may appear once, and each changed day is re-timed by the
+ * engine. When the new order breaks a rule (a place is closed then, the day
+ * runs late), the first reason comes back instead of a plan.
+ */
+export function reorderDays(plan: Plan, days: string[][], attractions: PlannerAttraction[], prefs: Preferences): ReorderResult {
+  if (!Array.isArray(days) || days.length !== plan.days.length) return { ok: false, message: "That change doesn't match your plan. Please try again." };
+  const byId = new Map(attractions.map((a) => [a.id, a]));
+  const seen = new Set<string>();
+  for (const day of days) {
+    if (!Array.isArray(day)) return { ok: false, message: "That change doesn't match your plan. Please try again." };
+    for (const id of day) {
+      if (typeof id !== "string" || !byId.has(id)) return { ok: false, message: "One of those places is no longer listed. Please plan again." };
+      if (seen.has(id)) return { ok: false, message: `${byId.get(id)!.name} is already in your plan.` };
+      seen.add(id);
+    }
+  }
+  const next = withTotals(
+    plan.days.map((d, i) => {
+      const order = days[i];
+      const same = order.length === visitIdsOf(plan, i).length && order.every((id, j) => id === visitIdsOf(plan, i)[j]);
+      if (same) return d;
+      return order.length ? scheduleOrder(d.date, order, byId, prefs) : { date: d.date, blocks: [] };
+    }),
+  );
+  const check = validatePlan(next, byId, prefs);
+  if (check.ok) return { ok: true, plan: next };
+  const issue = check.issues[0];
+  return { ok: false, message: `That order doesn't fit Day ${issue.day + 1}: ${issue.message}` };
+}
+
+/** The current order of stops, day by day. */
+export function dayOrders(plan: Plan): string[][] {
+  return plan.days.map((_, d) => visitIdsOf(plan, d));
+}
+
+export type StopChoice = { id: string; name: string; category: AttractionCategory; fee: number | null; photoUrl: string | null };
+
+/** Places not yet in the plan that suit a day, best first, for "Add a stop". */
+export function stopChoices(plan: Plan, day: number, attractions: PlannerAttraction[], prefs: Preferences, limit = 8): StopChoice[] {
+  const used = new Set(planAttractionIds(plan));
+  const byId = new Map(attractions.map((a) => [a.id, a]));
+  const ids = visitIdsOf(plan, day);
+  const last = ids.length ? byId.get(ids[ids.length - 1]) : null;
+  const categoriesToday = ids.flatMap((id) => (byId.get(id) ? [byId.get(id)!.category] : []));
+  return attractions
+    .filter((a) => !used.has(a.id))
+    .map((a) => ({ a, score: scoreAttraction(a, prefs, { categoriesToday, travelMinutes: travelMinutes(last ?? DAY_ORIGIN, a) }) }))
+    .sort((x, y) => y.score - x.score || x.a.name.localeCompare(y.a.name))
+    .slice(0, limit)
+    .map(({ a }) => ({ id: a.id, name: a.name, category: a.category, fee: a.fee, photoUrl: a.photoUrl ?? null }));
+}
