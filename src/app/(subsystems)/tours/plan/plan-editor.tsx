@@ -248,7 +248,7 @@ export function PlanEditor({
           ) : null}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-6">
+        <aside className="space-y-4 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
           <section aria-labelledby="limits" className="rounded-2xl card-edge bg-surface p-5">
             <h3 id="limits" className="text-base font-bold text-daet-ink">
               Against your limits

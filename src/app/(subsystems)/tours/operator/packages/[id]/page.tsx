@@ -458,7 +458,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
 
           {/* Sidebar - Stats */}
           <div className="lg:col-span-1">
-            <div className="sticky-below-header rounded-2xl card-edge bg-surface p-6 shadow-[var(--shadow-float)]">
+            <div className="sticky top-[calc(var(--header-h)+1.5rem)] rounded-2xl card-edge bg-surface p-6 shadow-[var(--shadow-float)]">
               <h2 className="font-bold text-daet-ink">Package stats</h2>
 
               <div className="mt-4 space-y-4">

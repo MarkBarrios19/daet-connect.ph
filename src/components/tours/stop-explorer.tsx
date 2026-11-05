@@ -73,7 +73,7 @@ export function StopExplorer({ stops, legs, meetingPoint, title }: { stops: Stop
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start lg:gap-10">
       {pinned.length > 0 ? (
-        <div className="sticky top-0 z-20 -mx-4 bg-canvas px-4 pb-3 pt-2 sm:mx-0 sm:px-0 lg:top-24 lg:order-2 lg:pt-0">
+        <div className="sticky top-[var(--header-h)] z-20 -mx-4 bg-canvas px-4 pb-3 pt-2 sm:mx-0 sm:px-0 lg:top-[calc(var(--header-h)+1.5rem)] lg:order-2 lg:pt-0">
           <div className="relative">
             <FreeMap
               markers={markers}

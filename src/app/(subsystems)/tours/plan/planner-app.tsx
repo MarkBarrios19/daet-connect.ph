@@ -171,7 +171,7 @@ export function PlannerApp({
         {/* On phones this is the sticky bottom bar; from lg it is the "your trip so far" card. */}
         <aside
           aria-label="Your trip so far"
-          className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3 border-t border-daet-ink/10 bg-surface px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 print:hidden lg:sticky lg:top-6 lg:z-auto lg:block lg:rounded-2xl lg:border-0 lg:bg-daet-leaf lg:p-6 lg:text-white"
+          className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3 border-t border-daet-ink/10 bg-surface px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 print:hidden lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:z-auto lg:block lg:rounded-2xl lg:border-0 lg:bg-daet-leaf lg:p-6 lg:text-white"
         >
           <div className="min-w-0 flex-1 lg:hidden">
             <p className="truncate text-sm font-bold text-daet-ink">{dates}</p>

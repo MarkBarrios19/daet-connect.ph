@@ -36,6 +36,18 @@ beforeEach(() => {
 });
 
 describe("StopExplorer", () => {
+  it("sticks its map below the site header, not under it", () => {
+    const { container } = render(<StopExplorer stops={stops} legs={legs} meetingPoint="Rizal Park, 6:00 AM" title="Route map" />);
+    // The header is sticky at the top of the screen and translucent, so a map
+    // stuck at top-0 (or a fixed offset smaller than the header) shows through
+    // it. The offset is the header's own height, as on the FAQ page.
+    const sticky = container.querySelector(".sticky") as HTMLElement;
+    expect(sticky.className).toContain("top-[var(--header-h)]");
+    expect(sticky.className).toContain("lg:top-[calc(var(--header-h)+1.5rem)]");
+    expect(sticky.className).not.toMatch(/(^|\s)top-0(\s|$)/);
+    expect(sticky.className).not.toContain("lg:top-24");
+  });
+
   it("lists the start and every stop, numbering pins by their place in the list", () => {
     render(<StopExplorer stops={stops} legs={legs} meetingPoint="Rizal Park, 6:00 AM" title="Route map" />);
     expect(screen.getByText("Rizal Park, 6:00 AM")).toBeInTheDocument();
