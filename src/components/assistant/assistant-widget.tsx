@@ -4,6 +4,7 @@ import { LineIcon } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { OPEN_ASSISTANT_EVENT, OVERLAY_EVENT, type OverlayDetail } from "@/lib/ui-overlay";
 import { usePathname } from "next/navigation";
+import { pageFromPath } from "@/lib/tours/assistant/context";
 import { AssistantChat } from "@/components/assistant/assistant-chat";
 import { DOCK_BUSY_EVENT, openInDock } from "@/components/chat-dock/dock-bus";
 
@@ -127,7 +128,7 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
               ✕
             </button>
           </div>
-          {open ? <AssistantChat signedIn={signedIn} onNavigate={close} autoFocus /> : null}
+          {open ? <AssistantChat signedIn={signedIn} onNavigate={close} autoFocus page={pageFromPath(pathname)} /> : null}
         </div>
       </dialog>
     </>

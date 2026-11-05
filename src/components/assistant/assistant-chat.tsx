@@ -11,11 +11,18 @@ import type { AssistantEvent } from "@/lib/tours/assistant/respond";
 import type { AssistantCard, HandoffCard } from "@/lib/tours/assistant/tools";
 import type { CostCard, PlaceCard, TransportCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
+import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import { QuestionsCard } from "@/components/assistant/questions-card";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic" };
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null } };
+type PageRef = NonNullable<TripContext["page"]>;
+type TripAnswers = Pick<TripContext, "dates" | "travelers" | "origin">;
 type Point = { lat: number; lng: number };
 
 const STORAGE_KEY = "daet-assistant-v1";
+/** Dates, travellers and origin, kept for this tab only so the form isn't asked twice. */
+const TRIP_KEY = "daet-trip-context-v1";
 const MESSAGE_MAX = 1000;
 export const ASSISTANT_EXAMPLES = [
   "Budget for 2 days in Calaguas?",
@@ -34,9 +41,26 @@ function load(): Turn[] {
     return [];
   }
 }
+function loadTrip(): TripAnswers {
+  try {
+    const raw = window.sessionStorage.getItem(TRIP_KEY);
+    const value = raw ? (JSON.parse(raw) as TripAnswers) : {};
+    return value && typeof value === "object" ? value : {};
+  } catch {
+    return {};
+  }
+}
+function saveTrip(trip: TripAnswers) {
+  try {
+    window.sessionStorage.setItem(TRIP_KEY, JSON.stringify(trip));
+  } catch {
+    // Not kept; the form just asks again next time.
+  }
+}
 function save(turns: Turn[]) {
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-30)));
+    // An unanswered form is not kept: it would come back stale.
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-30).map(({ questions: _questions, ...turn }) => turn)));
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
   }
@@ -55,7 +79,7 @@ function askLocation(): Promise<Point> {
 }
 
 /** The Daet AI assistant conversation: used by the floating widget, the Messages pinned chat and /tours/help. */
-export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { signedIn: boolean; onNavigate?: () => void; autoFocus?: boolean }) {
+export function AssistantChat({ signedIn, onNavigate, autoFocus = false, page = null }: { signedIn: boolean; onNavigate?: () => void; autoFocus?: boolean; page?: PageRef | null }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,6 +90,8 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const [confirmClear, setConfirmClear] = useState(false);
+  const [trip, setTrip] = useState<TripAnswers>({});
+  useEffect(() => setTrip(loadTrip()), []);
   // Signed-in travellers keep their chat on their account; visitors keep it in this tab only.
   useEffect(() => {
     if (!signedIn) {
@@ -110,20 +136,20 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
     }
   }
 
-  async function send(value: string, location: Point | null = here) {
+  async function send(value: string, location: Point | null = here, answers: TripAnswers = trip, base: Turn[] = turns) {
     const question = value.trim().slice(0, MESSAGE_MAX);
     if (!question || busy) return;
     setError(null);
     setText("");
     setBusy(true);
-    const history: Turn[] = [...turns, { role: "user", content: question }];
+    const history: Turn[] = [...base, { role: "user", content: question }];
     let reply: Turn = { role: "assistant", content: "" };
     setTurns([...history, reply]);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location }),
+        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers } }),
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
@@ -141,6 +167,7 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
           if (event.t === "mode") reply = { ...reply, mode: event.mode };
           else if (event.t === "text") reply = { ...reply, content: reply.content + event.v };
           else if (event.t === "cards") reply = { ...reply, cards: event.cards };
+          else if (event.t === "questions") reply = { ...reply, questions: { missing: event.missing, prefill: event.prefill } };
           else if (event.t === "error") reply = { ...reply, content: event.message };
           setTurns([...history, reply]);
         }
@@ -164,6 +191,15 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
     const point = await shareLocation();
     const lastQuestion = [...turns].reverse().find((t) => t.role === "user")?.content;
     if (point && lastQuestion) await send(lastQuestion, point);
+  }
+
+  /** The form was filled in: keep the answers and ask the same question again, without a second copy of it. */
+  function answerQuestions(index: number, answers: TripAnswers) {
+    const question = turns[index - 1]?.content;
+    if (!question) return;
+    setTrip(answers);
+    saveTrip(answers);
+    void send(question, here, answers, turns.slice(0, index - 1));
   }
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
@@ -245,6 +281,9 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
                 </p>
+                {turn.questions && i === turns.length - 1 && !busy ? (
+                  <QuestionsCard prefill={turn.questions.prefill} today={toManilaDateKey(new Date())} onSubmit={(answers) => answerQuestions(i, answers)} />
+                ) : null}
                 {turn.cards?.length ? <AssistantCards cards={turn.cards} signedIn={signedIn} onNavigate={onNavigate} onShareLocation={shareAndRetry} /> : null}
               </div>
             )}

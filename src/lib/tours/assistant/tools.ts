@@ -1,3 +1,4 @@
+import type { TripContext } from "@/lib/tours/assistant/context";
 import { hasTicket } from "@/lib/tours/ticket";
 import { formatPeso } from "@/lib/money";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -35,6 +36,8 @@ export type ToolContext = {
   route?: (from: LatLng, to: LatLng) => Promise<Leg>;
   /** The traveller's location, rounded, when they chose to share it for this message. Never stored. */
   here?: LatLng | null;
+  /** The page it was opened on and the trip answers so far, from the browser. Hints only. */
+  trip?: TripContext | null;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

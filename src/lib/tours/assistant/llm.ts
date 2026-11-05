@@ -205,7 +205,7 @@ export async function runAssistant(
   const tools = assistantTools(ctx);
   const byName = new Map(tools.map((tool) => [tool.name, tool]));
   const declarations = tools.map((tool) => ({ name: tool.name, description: tool.description, parametersJsonSchema: toJsonSchema(tool.inputSchema) }));
-  const system = assistantSystemPrompt({ today: ctx.today, signedIn: Boolean(ctx.userId) });
+  const system = assistantSystemPrompt({ today: ctx.today, signedIn: Boolean(ctx.userId), trip: ctx.trip });
   const contents: Content[] = history.map((turn) => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] }));
 
   let stopReason: string | null = null;

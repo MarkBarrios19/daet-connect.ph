@@ -195,6 +195,41 @@ describe("respond", () => {
     expect(events.map((e) => (e.t === "text" ? e.v : "")).join("")).toMatch(/Calaguas is\s+Sorry, I lost the connection/);
   });
 
+  describe("before I draft", () => {
+    const planAsk = (context: unknown, content = "Plan 2 days of beach for us") => ({ messages: [{ role: "user", content }], context });
+    const never = async () => {
+      throw new Error("must not run");
+    };
+
+    it("asks for the missing answers instead of calling the model", async () => {
+      const events = await collect(respond(planAsk({ origin: { city: "Manila" } }), deps({ tripQuestions: true, runAi: never })));
+      expect(events.map((e) => e.t)).toEqual(["mode", "questions", "text", "done"]);
+      expect(events[1]).toMatchObject({ t: "questions", missing: ["dates", "travelers"], prefill: { origin: { city: "Manila" } } });
+    });
+
+    it("goes ahead to the model once dates, travellers and origin are known", async () => {
+      const context = { dates: { start: "2026-10-30", end: "2026-11-01" }, travelers: { adults: 2, children: [] }, origin: { city: "Naga" } };
+      const events = await collect(respond(planAsk(context), deps({ tripQuestions: true, runAi: async (_c, _h, onText) => { onText("Here you go."); return { stopReason: "end_turn" }; } })));
+      expect(events.map((e) => e.t)).not.toContain("questions");
+      expect(events.some((e) => e.t === "text")).toBe(true);
+    });
+
+    it("leaves other questions, old clients and a switched-off planner alone", async () => {
+      const run = async (_c: ToolContext, _h: unknown, onText: (d: string) => void) => {
+        onText("ok");
+        return { stopReason: "end_turn" };
+      };
+      for (const [raw, tripQuestions] of [
+        [planAsk({}, "Budget for 2 days in Calaguas?"), true],
+        [{ messages: [{ role: "user", content: "Plan 2 days" }] }, true],
+        [planAsk({}), false],
+      ] as const) {
+        const events = await collect(respond(raw, deps({ tripQuestions, runAi: run })));
+        expect(events.map((e) => e.t)).not.toContain("questions");
+      }
+    });
+  });
+
   it("rejects empty, oversized or assistant-last conversations", () => {
     expect(cleanHistory({})).toHaveProperty("error");
     expect(cleanHistory(ask("x".repeat(1001)))).toHaveProperty("error");

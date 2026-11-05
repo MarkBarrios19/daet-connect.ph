@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod/v4";
 import { basicReply } from "@/lib/tours/assistant/basic";
+import { isPlanRequest, missingInputs, TripContextSchema, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import type { AssistantCard, ToolContext } from "@/lib/tours/assistant/tools";
 
 /**
@@ -19,6 +20,8 @@ export const AssistantRequestSchema = z.object({
     .max(40),
   /** Only when the traveller tapped "Use my location" for this message; used for "near me", never stored. */
   location: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).nullable().optional(),
+  /** The page it was opened on and the trip answers so far (dates, travellers, origin). */
+  context: TripContextSchema.nullable().optional(),
 });
 
 /** About 100 m: enough for "nearest eatery", without an exact position. */
@@ -28,6 +31,8 @@ export type AssistantEvent =
   | { t: "mode"; mode: "ai" | "basic" }
   | { t: "text"; v: string }
   | { t: "cards"; cards: AssistantCard[] }
+  /** The planner needs these answers before it drafts; the client shows the "Before I draft" card. */
+  | { t: "questions"; missing: MissingInput[]; prefill: TripContext | null }
   | { t: "done" }
   | { t: "error"; message: string };
 
@@ -41,11 +46,13 @@ export type RespondDeps = {
   aiAllowed: boolean;
   /** Road legs for travel_time (the cached Routes API); estimates when missing. */
   route?: ToolContext["route"];
+  /** Ask for dates, travellers and origin before a plan request (TRIP_PLANNER_V2 is not "off"). */
+  tripQuestions?: boolean;
   runAi: (ctx: ToolContext, history: ChatTurn[], onText: (delta: string) => void) => Promise<{ stopReason: string | null }>;
 };
 
 /** Validates and trims the conversation; null when it isn't usable. */
-export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: number; lng: number } | null } | { error: string } {
+export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: number; lng: number } | null; trip: TripContext | null } | { error: string } {
   const parsed = AssistantRequestSchema.safeParse(raw);
   if (!parsed.success) return { error: "Send a message to the assistant." };
   const turns = parsed.data.messages.map((m) => ({ role: m.role, content: m.content.replace(/\s+$/g, "").trim() })).filter((m) => m.content);
@@ -55,7 +62,7 @@ export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: 
   let history = turns.slice(-ASSISTANT_HISTORY_MAX).map((m) => ({ ...m, content: m.content.slice(0, m.role === "user" ? ASSISTANT_MESSAGE_MAX : 2000) }));
   // The API needs the conversation to start with the tourist.
   while (history.length && history[0].role !== "user") history = history.slice(1);
-  return { history, here: parsed.data.location ? roundLocation(parsed.data.location) : null };
+  return { history, here: parsed.data.location ? roundLocation(parsed.data.location) : null, trip: parsed.data.context ?? null };
 }
 
 export async function* respond(raw: unknown, deps: RespondDeps): AsyncGenerator<AssistantEvent> {
@@ -64,8 +71,21 @@ export async function* respond(raw: unknown, deps: RespondDeps): AsyncGenerator<
     yield { t: "error", message: cleaned.error };
     return;
   }
-  const { history, here } = cleaned;
-  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], route: deps.route, here };
+  const { history, here, trip } = cleaned;
+  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], route: deps.route, here, trip };
+
+  // A plan needs dates, who is coming and where from. Ask once, before any model call.
+  const latest = history[history.length - 1].content;
+  if (deps.tripQuestions && trip && isPlanRequest(latest)) {
+    const missing = missingInputs(trip, deps.today);
+    if (missing.length) {
+      yield { t: "mode", mode: deps.aiAllowed ? "ai" : "basic" };
+      yield { t: "questions", missing, prefill: trip };
+      yield { t: "text", v: "Before I draft your plan, I need three things: your dates, who is coming, and where you are travelling from." };
+      yield { t: "done" };
+      return;
+    }
+  }
 
   if (deps.aiAllowed) {
     const queue: string[] = [];
