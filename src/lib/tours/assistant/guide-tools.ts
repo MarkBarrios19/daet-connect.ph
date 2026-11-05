@@ -152,7 +152,7 @@ function transportCard(title: string, routes: FareRoute[]): TransportCard {
     type: "transport",
     title,
     options: routes.slice(0, 4).map((route) => ({
-      time: minutesLabel(route.minutesMin, route.minutesMax),
+      time: atLeast(minutesLabel(route.minutesMin, route.minutesMax), route.timeComplete),
       legs: route.legs.map((leg) => ({
         mode: FARE_MODES[leg.mode],
         from: leg.from_name,
@@ -167,21 +167,44 @@ function transportCard(title: string, routes: FareRoute[]): TransportCard {
   };
 }
 
-export async function howToGetThere(ctx: ToolContext, input: { from?: string | null; to: string }) {
+const atLeast = (label: string | null, complete: boolean) => (label && !complete ? `at least ${label}` : label);
+
+/** Every listed way between two places, with the transport card and a Google Maps button added for the visitor. */
+export async function tripRoutes(ctx: ToolContext, input: { from?: string | null; to: string }): Promise<FareRoute[]> {
   const to = (input.to ?? "").trim();
-  if (!to) return { error: "Say where you want to go." };
   const from = (input.from ?? "").trim() || null;
   const routes = faresBetween(await loadFares(ctx), from, to);
   if (routes.length) {
     addCard(ctx, transportCard(from ? `${from} to ${to}` : `Ways to ${to}`, routes));
+    addCard(ctx, { type: "link", href: mapsDirectionsUrl({ name: to }, "transit"), label: `Google Maps directions to ${to}`, external: true });
   }
-  addCard(ctx, { type: "link", href: mapsDirectionsUrl({ name: to }, "transit"), label: `Google Maps directions to ${to}`, external: true });
+  return routes;
+}
+
+const pesoTotal = (lo: number | null, hi: number | null, fromOnly: boolean) =>
+  lo === null ? null : fromOnly ? `from ${formatPeso(lo)}` : hi !== null && hi !== lo ? `${formatPeso(lo)}–${formatPeso(hi)}` : formatPeso(lo);
+
+export async function howToGetThere(ctx: ToolContext, input: { from?: string | null; to: string }) {
+  const to = (input.to ?? "").trim();
+  if (!to) return { error: "Say where you want to go." };
+  const from = (input.from ?? "").trim() || null;
+  const routes = await tripRoutes(ctx, { from, to });
+  if (!routes.length) {
+    addCard(ctx, { type: "link", href: mapsDirectionsUrl({ name: to }, "transit"), label: `Google Maps directions to ${to}`, external: true });
+  }
+  const checked = routes.flatMap((r) => r.legs.map((l) => l.checked_on)).sort()[0] ?? null;
   return {
     routes: routes.slice(0, 4).map((r) => ({
-      totalTime: minutesLabel(r.minutesMin, r.minutesMax),
-      legs: r.legs.map((l) => ({ how: FARE_MODES[l.mode], from: l.from_name, to: l.to_name, fare: fareLabel(l, formatPeso) ?? "ask locally", time: minutesLabel(l.minutes_min, l.minutes_max), tip: l.schedule_note, verified: l.verified })),
+      totalTime: atLeast(minutesLabel(r.minutesMin, r.minutesMax), r.timeComplete),
+      totalPerPerson: pesoTotal(r.perPersonMin, r.perPersonMax, r.perPersonFromOnly),
+      sharedCosts: r.sharedLegs.map((l) => `${FARE_MODES[l.mode]} ${l.from_name} to ${l.to_name}: ${fareLabel(l, formatPeso) ?? "ask locally"}`),
+      legs: r.legs.map((l) => ({ how: FARE_MODES[l.mode], from: l.from_name, to: l.to_name, fare: fareLabel(l, formatPeso) ?? "ask locally", time: minutesLabel(l.minutes_min, l.minutes_max), tip: l.schedule_note, source: l.source, verified: l.verified })),
     })),
-    note: routes.length === 0 ? "No fares listed for this route. Use travel_time for the drive, and suggest confirming with the Tourism Office." : "Fares are provisional unless verified; tell them to agree on tricycle fares before riding.",
+    faresCheckedOn: checked,
+    note:
+      routes.length === 0
+        ? "No fares listed for this route. Say so plainly, suggest getting to Manila or Naga first (then bus or van to Daet), use travel_time for a drive, and suggest the Tourism Office."
+        : "These are estimates from public listings, not quotes, and none is verified unless verified is true. Always say so and tell them to confirm with the operator before travelling; agree on tricycle fares before riding.",
   };
 }
 

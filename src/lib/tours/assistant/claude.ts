@@ -125,8 +125,11 @@ export function assistantTools(ctx: ToolContext) {
       name: "how_to_get_there",
       eager_input_streaming: true,
       description:
-        "Every listed way to travel between two places (bus, UV Express van, jeepney, tricycle, boat), with fares, travel times, where to board and tips, joining two legs through Daet when needed (e.g. Manila → Daet → Bagasbas). Adds a Google Maps button. Use for 'how do I get to…', commuting and fares.",
-      inputSchema: z.object({ from: z.string().max(60).nullable().describe("start; null to list every way in"), to: z.string().max(60) }),
+        "Every listed way to travel between two places, from anywhere in the Philippines to Daet and around it: planes, buses, UV Express vans, jeepneys, tricycles, ferries and boats, chaining up to four rides (e.g. Cebu → Manila (NAIA) → Naga → Daet, or Daet → Paracale → Calaguas). For each option: the legs with fare and time, the total per person, the total time, and boat hire shared by the group. Fastest first; fares are estimates with their source and the date they were checked. Adds a transport card and a Google Maps button. Use for fares (pamasahe), routes, 'how do I get to…', and travel times between towns.",
+      inputSchema: z.object({
+        from: z.string().max(60).nullable().describe("start, e.g. 'Manila', 'Cebu', 'Davao', 'Daet'; null to list every way in"),
+        to: z.string().max(60).describe("destination; 'Daet' when they only said where they're coming from"),
+      }),
       run: (input) => guard(() => howToGetThere(ctx, input)),
     }),
     betaZodTool({
