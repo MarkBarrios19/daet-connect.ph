@@ -55,4 +55,17 @@ describe("SiteHeader", () => {
 
     expect(navLinks()).toEqual(["Plan a trip", "Trips", "Places", "Events", "Souvenirs"]);
   });
+
+  it("takes its height from --header-h, so nothing else has to guess it", () => {
+    // The package page's booking card used to stick at `top-6`, 24px from the
+    // top of the page — 37px less than the bar is tall — and the bar painted
+    // over the card's own "From" label. The height now lives in one custom
+    // property; a literal here would put the two back out of step.
+    const { container } = render(<SiteHeader />);
+
+    const bar = container.querySelector("header > div");
+    expect(bar).not.toBeNull();
+    expect(bar!.className).toContain("min-h-[var(--header-h)]");
+    expect(bar!.className).not.toMatch(/\bmin-h-14\b|3\.8rem/);
+  });
 });

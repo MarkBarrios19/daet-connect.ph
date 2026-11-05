@@ -87,9 +87,10 @@
     color-scheme: light;
     background: var(--color-canvas);
     color: var(--color-daet-ink);
-    /* The header's own height, so the hero can run up under it and still end
-       exactly at the fold. Keep in step with site-header.tsx's
-       min-h-14 / sm:min-h-[3.8rem]. */
+    /* The header's own height: the hero runs up under it and ends exactly at the
+       fold, a section's `scroll-mt` clears it, and a panel that sticks below it
+       is offset by it. site-header.tsx sets its min-height from this value, so
+       it is written here once and nowhere else. */
     --header-h: 3.5rem;
   }
 
@@ -169,6 +170,26 @@
  * two fighting. */
 @utility card-edge {
   box-shadow: inset 0 0 0 1.5px var(--color-hairline);
+}
+
+/* A panel that sticks below the header.
+ *
+ * The booking card sat at `top-6` — 24px from the top of the page, 37px less
+ * than the header is tall — so the header painted over the card's own top edge
+ * and cut the "From" label in half. Nothing may write the header's height twice:
+ * the offset and the height both come from `--header-h`, so they cannot drift.
+ *
+ * The height cap and the scroll are for a short laptop screen: the card is about
+ * 380px tall, and at 1024x600 the offset alone would leave it running past the
+ * foot of the window with its button out of reach. Capped, it scrolls inside
+ * itself and stays whole. `svh`, not `dvh`: the smaller of the two is the one
+ * that cannot be taller than the space actually on screen.
+ */
+@utility sticky-below-header {
+  position: sticky;
+  top: calc(var(--header-h) + 1.5rem);
+  max-height: calc(100svh - var(--header-h) - 3rem);
+  overflow-y: auto;
 }
 
 /* The ticket's edge (owner's shape, image-62).
