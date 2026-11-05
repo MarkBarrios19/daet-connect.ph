@@ -61,6 +61,14 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 | 24 | Other currencies | A rough amount in the visitor's currency (guessed from the phone), daily rate, USD if unknown; marked "approx.". |
 | 25 | Returning visitor | A fresh chat that remembers the trip (dates, group, origin) for signed-in visitors; old chats under Recent. |
 | 26 | Feedback | "Was this helpful? Yes / No" under each answer. |
+| 27 | Operator's phone | Public: shown to visitors who are not signed in. Only messaging in the site needs sign-in. |
+| 28 | Telling them about sign-in | After the 3rd answer, a small card "Sign in to keep getting full answers" with Google sign-in. Answers stay simple until they sign in. |
+| 29 | After "No" | Recorded only. |
+| 30 | "Is my tour on today?" when not signed in | Ask them to sign in to see their bookings. No lookup by reference. |
+| 31 | Open near me now | Known-open places first, then "Hours not listed" ones marked "Check before you go"; within 3 km, closest first, at most 5. |
+| 32 | Emergency numbers not yet entered | The national 911 hotline, plus "Tell the operator or your guide". |
+| 33 | Suggested questions | Place and event pages get a greeting with three suggested questions too. |
+| 34 | Trip memory when not signed in | Dates and group kept on that phone until cleared. |
 
 ## Settings (Vercel environment variables)
 
