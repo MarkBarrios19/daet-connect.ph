@@ -359,7 +359,9 @@ export default async function PackageDetailPage({ params }: PageProps) {
 
         {/* Booking panel: beside the content on wide screens, a bar at the bottom on phones. */}
         <aside aria-label="Book this trip" className="hidden lg:block">
-          <div className="sticky top-6 rounded-2xl card-edge bg-surface p-6">
+          {/* Stuck below the sticky header, not under it: the header is
+              translucent, so a card at top-6 showed through it. */}
+          <div className="sticky top-[calc(var(--header-h)+1.5rem)] rounded-2xl card-edge bg-surface p-6">
             <p className="text-sm font-semibold text-daet-ink/75">From</p>
             <p className="text-4xl font-bold text-daet-ink">{formatPeso(displayPrice)}</p>
             <p className="text-daet-ink/80">{priceLabel}</p>
