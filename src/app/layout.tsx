@@ -32,7 +32,7 @@ const sans = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "CONNECT-DAET | Tours",
+    default: "CONNECT-DAET | Tours and Booking Platform",
     template: "%s | CONNECT-DAET Tours",
   },
   description: "Accredited local tour operators and experiences in Daet, Camarines Norte.",
