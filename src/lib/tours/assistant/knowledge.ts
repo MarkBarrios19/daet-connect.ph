@@ -8,7 +8,7 @@ import { TRANSPORT_FAQS } from "@/lib/tours/assistant/transport";
 /**
  * What the travel assistant (F13) knows about how CONNECT-Daet works. Every
  * rule is built from the constants the app itself uses, so the assistant
- * can't drift from the real policy. Used as the `policy` tool for Claude and
+ * can't drift from the real policy. Used as the `policy` tool for the model and
  * answered directly in basic mode.
  */
 

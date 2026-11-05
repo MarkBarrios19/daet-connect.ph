@@ -3,17 +3,20 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
-// Booking tickets keep working without signal. Only the tourist's own ticket
-// pages are stored (the QR is part of the page), the cache is cleared when the
-// user signs out, and nothing else is cached.
+// Trip day without signal: the tourist's own ticket pages (the QR is part of
+// the page) and their saved trip plans. Pages are stored only after the
+// signed-in tourist opens them, the cache is cleared when they sign out, and
+// nothing else is cached.
 const TICKET_CACHE = "daet-tickets-v1";
 const TICKET_PATH = /^\/tours\/bookings\/[0-9a-f-]{36}\/ticket$/i;
+const TRIP_PATH = /^\/tours\/my-itineraries\/[0-9a-f-]{36}$/i;
+const keepsOffline = (path) => TICKET_PATH.test(path) || TRIP_PATH.test(path);
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || request.mode !== "navigate") return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || !TICKET_PATH.test(url.pathname)) return;
+  if (url.origin !== self.location.origin || !keepsOffline(url.pathname)) return;
 
   event.respondWith(
     fetch(request)
@@ -28,7 +31,7 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(url.pathname, { cacheName: TICKET_CACHE });
         return (
           cached ||
-          new Response("You are offline and this ticket has not been saved on this phone yet. Open it once with signal.", {
+          new Response(`You are offline and this ${TRIP_PATH.test(url.pathname) ? "trip" : "ticket"} has not been saved on this phone yet. Open it once with signal.`, {
             status: 503,
             headers: { "Content-Type": "text/plain; charset=utf-8" },
           })
@@ -40,13 +43,19 @@ self.addEventListener("fetch", (event) => {
 // The ticket page asks to be saved right after it loads, so the first visit is covered too.
 self.addEventListener("message", (event) => {
   const data = event.data || {};
-  if (data.type === "save-ticket" && typeof data.path === "string" && TICKET_PATH.test(data.path)) {
+  // "save-ticket" keeps one page; "save-trip" keeps a trip plan and the tickets for that trip.
+  const paths = (data.type === "save-ticket" ? [data.path] : data.type === "save-trip" && Array.isArray(data.paths) ? data.paths : [])
+    .filter((path) => typeof path === "string" && keepsOffline(path))
+    .slice(0, 20);
+  if (paths.length) {
     event.waitUntil(
-      fetch(data.path, { credentials: "same-origin" }).then((response) =>
-        response.ok && !response.redirected
-          ? caches.open(TICKET_CACHE).then((cache) => cache.put(data.path, response))
-          : undefined,
-      ).catch(() => undefined),
+      Promise.all(
+        paths.map((path) =>
+          fetch(path, { credentials: "same-origin" })
+            .then((response) => (response.ok && !response.redirected ? caches.open(TICKET_CACHE).then((cache) => cache.put(path, response)) : undefined))
+            .catch(() => undefined),
+        ),
+      ),
     );
   }
   if (data.type === "clear-tickets") event.waitUntil(caches.delete(TICKET_CACHE));

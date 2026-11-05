@@ -20,6 +20,10 @@ import { LiveShareCard } from "@/components/tours/live/live-share-card";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
 import { CancelBookingPanel, type MyCancellation } from "./cancel-booking-panel";
+import { CalledOffAlert } from "./called-off-alert";
+import { refundCalledOff, rescheduleCalledOff } from "./call-off-actions";
+import { callOffState } from "@/lib/tours/call-off";
+import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { BookingPaymentPanel, PaymentNextStep, owesBalance, type PanelPayment, type PanelProof } from "./booking-payment-panel";
 import { ReviewForm } from "./review-form";
 import { ReviewList } from "@/components/tours/review-list";
@@ -105,6 +109,16 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   const operator = Array.isArray(pkg?.tours_operators)
     ? pkg.tours_operators[0]
     : pkg?.tours_operators;
+
+  // A trip the operator called off: open dates with enough seats for this group, for "Pick a new date".
+  const calledOff = callOffState(booking);
+  let openDates: ReturnType<typeof bookableDates> | null = null;
+  if (calledOff === "awaiting" && pkg?.id) {
+    const { data: slots } = await supabase.from("tours_package_availability").select("available_date, capacity_total, capacity_booked").eq("package_id", pkg.id);
+    openDates = (slots ?? []).length
+      ? bookableDates((slots ?? []) as AvailabilityRow[], toManilaDateKey(new Date())).filter((o) => !o.full && o.seatsLeft >= Number(booking.number_of_pax ?? 1) && o.date !== booking.tour_date)
+      : null;
+  }
 
   const [{ data: paymentRows }, { data: proofRows }, { data: cancellation }, { data: myReview }] = await Promise.all([
     supabase
@@ -205,6 +219,26 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           </div>
         </header>
 
+        {calledOff === "awaiting" ? (
+          <CalledOffAlert
+            bookingId={booking.id}
+            title={pkg?.title ?? "your trip"}
+            tourDate={booking.tour_date}
+            reason={booking.called_off_reason ?? ""}
+            openDates={openDates}
+            minDate={toManilaDateKey(new Date(Date.now() + 86_400_000))}
+            paid={Number(booking.total_paid ?? 0)}
+            operatorPhone={operator?.contact_phone ?? null}
+            messageButton={<OpenChatButton bookingId={booking.id} label="Message operator" variant="ghost" />}
+            actions={{ reschedule: rescheduleCalledOff, refund: refundCalledOff }}
+          />
+        ) : null}
+        {calledOff === "rescheduled" && booking.status === "confirmed" ? (
+          <Notice variant="success" className="mb-6" title="Your trip has a new date">
+            The operator called off the first date{booking.called_off_reason ? ` (${booking.called_off_reason})` : ""}. You moved it to this date; your payment and ticket carry over.
+          </Notice>
+        ) : null}
+
         {booking.status === "pending" ? (
           <Notice variant="success" className="mb-6" title="Booking sent">
             The operator will confirm it here and in your notifications. You can pay once it is confirmed.
@@ -231,7 +265,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
         ) : null}
 
         {closed ? (
-          <Notice variant={booking.status === "rejected" ? "warning" : "info"} className="mb-6" title={booking.status === "rejected" ? "The operator declined this booking" : "This booking was cancelled"}>
+          <Notice variant={booking.status === "rejected" ? "warning" : "info"} className="mb-6" title={booking.status === "rejected" ? "The operator declined this booking" : calledOff === "refund_requested" ? "Cancelled after the operator called the trip off" : "This booking was cancelled"}>
             {booking.cancellation_reason ?? ""}
             {Number(booking.total_paid ?? 0) > 0 ? " Any amount you paid will be refunded by the operator." : ""}
           </Notice>

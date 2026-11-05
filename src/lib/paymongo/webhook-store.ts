@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LedgerInsert, WebhookStore } from "@/lib/paymongo/webhook";
+import { emailPaymentReceived } from "@/lib/email/notify-booking";
 
 /** Webhook persistence through the service-role client (the webhook has no user session). */
 export function createSupabaseWebhookStore(admin: SupabaseClient): WebhookStore {
@@ -33,8 +34,13 @@ export function createSupabaseWebhookStore(admin: SupabaseClient): WebhookStore 
       const { data, error } = await admin
         .from("tours_payments")
         .upsert(rows, { onConflict: "provider,provider_ref", ignoreDuplicates: true })
-        .select("id");
+        .select("id, booking_id, amount");
       if (error) throw new Error(`Could not record payment: ${error.message}`);
+      // Only rows new to the ledger come back, so a retried webhook or the
+      // return page recording the same payment doesn't email twice.
+      const byBooking = new Map<string, number>();
+      for (const row of (data ?? []) as Array<{ booking_id: string; amount: number | string }>) byBooking.set(row.booking_id, (byBooking.get(row.booking_id) ?? 0) + Number(row.amount ?? 0));
+      for (const [bookingId, amount] of byBooking) emailPaymentReceived(bookingId, amount);
       return data?.length ?? 0;
     },
 

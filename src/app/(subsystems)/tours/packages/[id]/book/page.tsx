@@ -13,9 +13,11 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  /** From the trip planner's Book button: the plan day and group size. */
+  searchParams: Promise<{ date?: string | string[]; pax?: string | string[] }>;
 };
 
-export default async function BookPackagePage({ params }: PageProps) {
+export default async function BookPackagePage({ params, searchParams }: PageProps) {
   if (!isSupabaseConfigured()) {
     return (
       <PageFrame>
@@ -27,13 +29,16 @@ export default async function BookPackagePage({ params }: PageProps) {
   }
 
   const { id } = await params;
+  const query = await searchParams;
+  const prefill = { date: typeof query.date === "string" ? query.date : undefined, pax: typeof query.pax === "string" ? query.pax : undefined };
+  const back = new URLSearchParams(Object.entries(prefill).filter((e): e is [string, string] => typeof e[1] === "string"));
   const supabase = await createSupabaseServerClient();
 
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/tours/packages/${id}/book`)}`);
+    redirect(`/login?next=${encodeURIComponent(`/tours/packages/${id}/book${back.size ? `?${back}` : ""}`)}`);
   }
 
   // Fetch package details with price variants
@@ -132,6 +137,7 @@ export default async function BookPackagePage({ params }: PageProps) {
         <BookingForm
           packageId={pkg.id}
           priceVariants={pkg.tours_package_price_variants || []}
+          prefill={prefill}
           dateOptions={usesOpenDates ? bookableDates((availabilityRows ?? []) as AvailabilityRow[], today) : null}
           userProfile={{
             fullName: profile?.full_name || "",

@@ -11,7 +11,7 @@ Print this for each session. Each role's walkthrough takes 10–15 minutes on a 
    - `PAYMONGO_SECRET_KEY` must be a **test** key (`sk_test_…`). The login page then shows "Test environment: no real money".
    - `PAYMONGO_WEBHOOK_SECRET`: a webhook pointing at `https://<staging-url>/api/webhooks/paymongo`.
    - `QR_SIGNING_SECRET` (32+ characters), `NEXT_PUBLIC_APP_URL` = the staging URL.
-   - Optional: VAPID keys (push), Google Maps keys (road routes), `ANTHROPIC_API_KEY` (AI trip refinement). Without them the app falls back gracefully: in-app notifications only, estimated routes, rule-based plans.
+   - Optional: VAPID keys (push), Google Maps keys (road routes), `GEMINI_API_KEY` (AI chat and trip planner). Without them the app falls back gracefully: in-app notifications only, estimated routes, rule-based plans.
 3. **Demo data and accounts:**
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=<staging url> SUPABASE_SERVICE_ROLE_KEY=<staging service key> \

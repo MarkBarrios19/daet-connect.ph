@@ -1,3 +1,6 @@
+import { durationText } from "@/lib/tours/duration";
+import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { hasTicket } from "@/lib/tours/ticket";
 import { formatPeso } from "@/lib/money";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -35,6 +38,14 @@ export type ToolContext = {
   route?: (from: LatLng, to: LatLng) => Promise<Leg>;
   /** The traveller's location, rounded, when they chose to share it for this message. Never stored. */
   here?: LatLng | null;
+  /** The page it was opened on and the trip answers so far, from the browser. Hints only. */
+  trip?: TripContext | null;
+  /** Set by plan_trip: the drafted plan the panel shows. */
+  itinerary?: ItineraryResult | null;
+  /** Set by plan_trip when the form still needs answers. */
+  questions?: MissingInput[] | null;
+  /** Short progress labels while a tool runs ("Checking operators"). */
+  onStatus?: (label: string) => void;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,7 +69,6 @@ function priceFrom(variants: VariantRow[] | null | undefined): number | null {
   const prices = (variants ?? []).map((v) => Number(v.price_per_pax ?? v.flat_price)).filter((n) => Number.isFinite(n) && n > 0);
   return prices.length ? Math.min(...prices) : null;
 }
-const durationText = (value: number | null, type: string | null) => (value && type ? `${value} ${type}${value === 1 ? "" : "s"}`.replace(/ss$/, "s") : null);
 
 // ------------------------------------------------------------------ tours
 
@@ -361,3 +371,5 @@ export async function travelTime(ctx: ToolContext, input: { from?: string | null
     note: leg.estimated || mode === "walk" ? "Estimated from the map distance; traffic and stops add time." : "From the road route; traffic can add time.",
   };
 }
+
+export { durationText };

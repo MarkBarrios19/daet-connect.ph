@@ -77,7 +77,9 @@ test("the help page hosts the same chat", async ({ page }) => {
 
 test("the planner opens with the assistant's trip description filled in", async ({ page }) => {
   await page.goto(`/tours/plan?describe=${encodeURIComponent("2 days with my kids, beaches and food")}`, { waitUntil: "networkidle" });
-  await expect(page.getByRole("textbox", { name: "Describe your trip" })).toHaveValue("2 days with my kids, beaches and food");
+  await expect(page.getByLabel("Ask the Daet AI assistant")).toHaveValue("2 days with my kids, beaches and food");
+  // It waits for the traveller to send it.
+  await expect(page.getByRole("form", { name: "Before I draft" })).toHaveCount(0);
 });
 
 test("the Daet AI assistant recommends food stops with Google Maps directions", async ({ page }) => {

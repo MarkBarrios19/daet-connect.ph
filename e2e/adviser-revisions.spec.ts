@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { checkA11y, signInAs, type Role } from "./fixtures";
+import { checkA11y, draftPlan, signInAs, type Role } from "./fixtures";
 
 /** Adviser revisions (docs/ADVISER_REVISIONS.md). */
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true });
@@ -28,20 +28,12 @@ test.describe("R1: the exploration menu is only for visitors and tourists", () =
   }
 });
 
-test("R2: All selects every category in the planner, and again clears them", async ({ page }) => {
+test("R2: the old planner form is gone; the planner asks before drafting", async ({ page }) => {
+  // TRIP_PLANNER_V2 is on by default: interests are read from the request, not chips.
   await page.goto("/tours/plan", { waitUntil: "networkidle" });
-  const interests = page.getByRole("group", { name: "What do you enjoy?" });
-  const all = interests.getByRole("button", { name: "All", exact: true });
-  await expect(all).toHaveAttribute("aria-pressed", "false");
-  await all.click();
-  await expect(all).toHaveAttribute("aria-pressed", "true");
-  for (const chip of await interests.getByRole("button").all()) await expect(chip).toHaveAttribute("aria-pressed", "true");
-  await checkA11y(page, "planner with all categories");
-  await all.click();
-  for (const chip of await interests.getByRole("button").all()) await expect(chip).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByText("No preference: we'll mix everything.")).toBeVisible();
-  await page.getByRole("button", { name: /plan my trip/i }).click();
-  await expect(page.getByText(/Day 1/).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("group", { name: "What do you enjoy?" })).toHaveCount(0);
+  await draftPlan(page, "Plan a trip with everything: beaches, food, history and nature");
+  await checkA11y(page, "planner with a plan");
 });
 
 test("R3: package prices show two decimals", async ({ page }) => {

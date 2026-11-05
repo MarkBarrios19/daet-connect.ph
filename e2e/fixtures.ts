@@ -125,3 +125,24 @@ export async function checkA11y(page: Page, label: string) {
   const summary = serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`);
   expect(summary, `${label} accessibility`).toEqual([]);
 }
+
+/**
+ * The trip planner's flow on /tours/plan: type a plan request, answer
+ * "Before I draft" (tomorrow + 1 day, 2 adults, from Manila), get the plan.
+ * Works in basic mode (no Gemini key), which is how e2e runs.
+ */
+export async function draftPlan(page: Page, request = "Plan 2 days in Daet, beaches and food") {
+  await page.getByLabel("Ask the Daet AI assistant").fill(request);
+  await page.getByRole("button", { name: "Send" }).click();
+  const card = page.getByRole("form", { name: "Before I draft" });
+  await expect(card).toBeVisible();
+  const day = (offset: number) => {
+    const d = new Date(Date.now() + 8 * 3_600_000 + offset * 86_400_000);
+    return d.toISOString().slice(0, 10);
+  };
+  await card.getByLabel("First day").fill(day(1));
+  await card.getByLabel("Last day").fill(day(2));
+  await card.getByRole("button", { name: "Manila" }).click();
+  await card.getByRole("button", { name: "Draft my plan" }).click();
+  await expect(page.getByRole("heading", { name: /^Your \d-day Daet plan$/ })).toBeVisible({ timeout: 30_000 });
+}

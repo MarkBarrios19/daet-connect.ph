@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DateOption } from "@/lib/tours/availability";
 import { createBooking } from "./actions";
+import { bookingPrefill } from "./prefill";
 
 interface PriceVariant {
   id: string;
@@ -25,22 +26,27 @@ interface BookingFormProps {
     fullName: string;
     email: string;
   };
+  /** ?date and ?pax from the trip planner; checked against open dates and the price option. */
+  prefill?: { date?: string; pax?: string };
 }
 
 const formatOpenDate = (dateKey: string) =>
   new Date(`${dateKey}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-export function BookingForm({ packageId, priceVariants, dateOptions, userProfile }: BookingFormProps) {
+export function BookingForm({ packageId, priceVariants, dateOptions, userProfile, prefill = {} }: BookingFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [tourDate, setTourDate] = useState(dateOptions?.find((option) => !option.full)?.date ?? "");
-  const [numberOfPax, setNumberOfPax] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState(
     priceVariants.find((v) => v.is_default)?.id || priceVariants[0]?.id || ""
   );
+  const [start] = useState(() =>
+    bookingPrefill(prefill, dateOptions, new Date(Date.now() + (8 + 24) * 60 * 60 * 1000).toISOString().split("T")[0], priceVariants.find((v) => v.id === selectedVariantId)),
+  );
+  const [tourDate, setTourDate] = useState(start.date);
+  const [numberOfPax, setNumberOfPax] = useState(start.pax);
   const [contactName, setContactName] = useState(userProfile.fullName);
   const [contactEmail, setContactEmail] = useState(userProfile.email);
   const [contactPhone, setContactPhone] = useState("");

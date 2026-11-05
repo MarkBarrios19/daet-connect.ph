@@ -15,6 +15,8 @@ const COVER =
 const TODAY = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
 
 const CONV_ID = "cc110000-0000-4000-8000-000000000001";
+const SAVED_TRIP_ID = "5a7e0000-0000-4000-8000-0000000000a1";
+const daysFromToday = (n) => { const d = new Date(TODAY + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 // Live tour tracking keeps state across requests (POST /__reset_live clears it).
 const LIVE_BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
@@ -1436,6 +1438,23 @@ http
         res.writeHead(204, cors);
         return res.end();
       }
+      // A shared trip plan (view only); any other token is unknown.
+      if (url.pathname === "/rest/v1/rpc/tours_shared_itinerary") {
+        const token = JSON.parse(body || "{}").p_token;
+        if (token !== "5a7e0000-0000-4000-8000-000000000001") return send(200, null);
+        const inDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+        return send(200, {
+          title: "Weekend in Daet",
+          start_date: inDays(14),
+          end_date: inDays(15),
+          summary: null,
+          items: [
+            { day_number: 1, item_order: 1, kind: "visit", location_name: "Bagasbas Beach", latitude: 14.131583, longitude: 122.985083, start_time: "08:00", end_time: "11:00", travel_minutes: 10, tip: null, attraction_slug: null },
+            { day_number: 1, item_order: 2, kind: "lunch", location_name: "Lunch break", latitude: null, longitude: null, start_time: "11:30", end_time: "12:30", travel_minutes: 0, tip: null, attraction_slug: null },
+            { day_number: 2, item_order: 1, kind: "visit", location_name: "Daet Heritage Center and Museum", latitude: 14.113187, longitude: 122.954828, start_time: "09:00", end_time: "09:45", travel_minutes: 5, tip: null, attraction_slug: null },
+          ],
+        });
+      }
       if (url.pathname === "/rest/v1/rpc/get_my_role")
         return send(200, role === "anon" ? null : role);
       if (url.pathname === "/rest/v1/rpc/tours_refundable_amount")
@@ -1720,6 +1739,58 @@ http
         (url.searchParams.get("select") || "").includes("tours_packages");
       let rows =
         (wantsEventJoin ? tables._event_availability : tables[table]) || [];
+      // A trip the operator called off for weather (M5), only when asked by id,
+      // so booking lists and counts elsewhere stay the same.
+      if (table === "tours_bookings" && url.searchParams.get("id") === "eq.b-off" && rows.length) {
+        const base = rows.find((r) => r.id === "b-later") || rows[0];
+        rows = [
+          {
+            ...base,
+            id: "b-off",
+            booking_reference: "BK-20261103-CO44WX",
+            status: "confirmed",
+            payment_status: "paid",
+            total_paid: base.total_amount,
+            called_off_at: new Date().toISOString(),
+            called_off_reason: "Strong winds; the coast guard stopped boat trips.",
+            call_off_resolution: null,
+            rescheduled_from: null,
+          },
+        ];
+      }
+      // A saved trip with its stops (the saved trip page), only when asked by id.
+      if (table === "tours_itineraries" && url.searchParams.get("id") === `eq.${SAVED_TRIP_ID}`) {
+        const at = (n) => tables.tours_attractions[n - 1];
+        const item = (day, order, n, start, end, travel, kind = "visit") => ({
+          day_number: day,
+          item_order: order,
+          item_kind: kind,
+          attraction_id: kind === "lunch" ? null : at(n).id,
+          location_name: kind === "lunch" ? "Lunch break" : at(n).name,
+          tip: null,
+          latitude: kind === "lunch" ? null : at(n).latitude,
+          longitude: kind === "lunch" ? null : at(n).longitude,
+          start_time: start,
+          end_time: end,
+          travel_minutes: travel,
+          tours_attractions: kind === "lunch" ? null : { slug: at(n).slug, photo_url: n === 3 ? "/photos/bagasbas-beach.jpg" : n === 1 ? "/photos/rizal-monument.jpg" : null, entrance_fee: n === 2 ? 50 : null },
+        });
+        rows = [
+          {
+            id: SAVED_TRIP_ID,
+            tourist_id: "9b7e5a5e-0000-4000-8000-000000000001",
+            title: "Daet weekend, slowly",
+            start_date: daysFromToday(14),
+            end_date: daysFromToday(15),
+            summary: null,
+            share_token: null,
+            plan_source: "rules",
+            created_at: new Date().toISOString(),
+            preferences: { startDate: daysFromToday(14), days: 2, budgetPerDay: 1500, interests: ["heritage", "beach"], pace: "relaxed", groupSize: 2, dayStart: 480, dayEnd: 1080, travelers: { adults: 2, children: [] }, origin: "Manila" },
+            tours_itinerary_items: [item(1, 1, 1, "08:00", "08:25", 0), item(1, 2, 2, "08:40", "10:00", 10), item(1, 3, 0, "12:00", "13:00", 0, "lunch"), item(1, 4, 3, "14:00", "17:00", 12), item(2, 1, 5, "08:00", "11:00", 30)],
+          },
+        ];
+      }
       for (const [k, v] of url.searchParams) {
         if (v.startsWith("eq.") && !k.includes("."))
           rows = rows.filter((r) => !(k in r) || String(r[k]) === v.slice(3));
