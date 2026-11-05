@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PhotoViewer } from "@/components/tours/photo-viewer";
 import type { HeroPhoto } from "@/lib/tours/hero-photos";
 import { indicatorDots } from "@/lib/tours/photo-indicator";
@@ -9,14 +9,20 @@ const EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
 /** Card geometry, relative to the card's width (--cw): the centre card is 16:10.3, the side cards a little taller. */
 const GAP = 16;
 const SWIPE_PX = 40;
-// Edge blur steps (outermost narrowest and blurriest) and the red/blue split on the outer edges.
-const BLUR = [
-  { width: "clamp(44px, 26cqw, 380px)", blur: 1.8 },
-  { width: "clamp(32px, 18cqw, 260px)", blur: 4.5 },
-  { width: "clamp(20px, 10cqw, 150px)", blur: 9 },
+// Progressive blur: the photos get blurrier the closer they are to the edge of the screen. Each layer
+// blurs what is under it and fades out toward the middle, over a shorter distance the stronger it is, so
+// the steps add up to one smooth ramp with no seam. The centre photo sits in the clear space between the
+// two ramps. BLUR is [blur px, how far toward the middle it reaches, as a share of the space beside the photo].
+const BLUR: Array<[number, number]> = [
+  [1.2, 1],
+  [2.5, 0.84],
+  [4.5, 0.68],
+  [7, 0.52],
+  [10, 0.36],
 ];
-const SPLIT_PX = 7;
-const EDGE_ZONE = 38;
+// The same space is also faded into the page colour at the very edge, so a photo never ends in a hard cut.
+const FADE_SHARE = 0.3;
+const SPLIT_PX = 10;
 
 function useMedia(query: string) {
   return useSyncExternalStore(
@@ -36,10 +42,15 @@ const rel = (k: number, c: number, n: number) => {
   return d;
 };
 
-/** Red and blue copies of a card, slipping apart toward its outer edge and fading out across the edge zone. */
+/**
+ * Red and blue copies of a side photo, slipping apart toward the edge of the screen and closing up
+ * across the photo. The mask starts at the screen edge (--off is how much of the photo hangs past it),
+ * so the split shows at the outer edge of the two upcoming photos and never on the centre one.
+ */
 function Aberration({ src, side, reduced, wraps }: { src: string; side: "left" | "right"; reduced: boolean; wraps: boolean }) {
   const dir = side === "left" ? -1 : 1;
-  const mask = `linear-gradient(to ${side === "left" ? "right" : "left"}, #000 0%, transparent ${EDGE_ZONE}%)`;
+  const start = "max(0px, var(--off))";
+  const mask = `linear-gradient(to ${side === "left" ? "right" : "left"}, #000 ${start}, transparent calc(${start} + var(--ca-zone)))`;
   const move = wraps || reduced ? "none" : `transform 650ms ${EASE}`;
   const layer = (color: string, shift: number) => (
     <div className="absolute inset-0 isolate mix-blend-screen" style={{ transform: `translateX(${shift}px)`, transition: move }}>
@@ -70,6 +81,19 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
   const reduced = useMedia("(prefers-reduced-motion: reduce)");
   const swipe = useRef<{ x: number; swiped: boolean } | null>(null);
   const opener = useRef<HTMLButtonElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  // The strip runs the full width of the screen, past the page's own margins, so the blur and the fade
+  // reach the real edge. It is measured, not 100vw, so a scrollbar never adds sideways scroll.
+  const [span, setSpan] = useState<{ width: number; left: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = wrap.current;
+      if (el) setSpan({ width: document.documentElement.clientWidth, left: -el.getBoundingClientRect().left });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
   const { i, prev } = state;
 
   const go = (k: number) => setState((s) => ({ prev: s.i, i: (k + n) % n }));
@@ -77,7 +101,7 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
   const motion = (props: string[]) => (reduced ? "none" : props.map((p) => `${p} 650ms ${EASE}`).join(", "));
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div ref={wrap} className="flex flex-col items-center gap-3">
       <section
         aria-roledescription="carousel"
         aria-label={`Photos of ${title}`}
@@ -96,8 +120,17 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
             go(e.clientX < s.x ? i + 1 : i - 1);
           }
         }}
-        className="relative -mx-4 w-[calc(100%+2rem)] overflow-hidden [container-type:inline-size] sm:mx-0 sm:w-full"
-        style={{ ["--cw" as string]: "min(560px, 78cqw)", height: "calc(var(--cw) * 0.7 + 40px)" }}
+        className="relative flex-none self-start overflow-x-clip [container-type:inline-size]"
+        style={{
+          ["--cw" as string]: "min(560px, 78cqw)",
+          // How much of a side photo hangs past the screen edge, and how far the colour split reaches in.
+          ["--off" as string]: `calc((3 * var(--cw) + ${2 * GAP}px - 100cqw) / 2)`,
+          ["--ca-zone" as string]: "min(34cqw, 360px)",
+          // Room above and below for the tilted photos, whose near edge grows.
+          height: "calc(var(--cw) * 0.72 + 48px)",
+          width: span ? span.width : "100%",
+          marginLeft: span ? span.left : 0,
+        }}
       >
         {photos.map((photo, k) => {
           const d = rel(k, i, n);
@@ -113,7 +146,7 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
                 zIndex: here ? 2 : 1,
                 width: "var(--cw)",
                 marginLeft: "calc(var(--cw) / -2)",
-                top: here ? 20 : 12,
+                top: here ? 30 : 20,
                 height: here ? "calc(var(--cw) * 0.643)" : "calc(var(--cw) * 0.678)",
                 opacity: Math.abs(d) > 1 ? 0 : 1,
                 transform: `translateX(calc(${d} * (var(--cw) + ${GAP}px))) perspective(1200px) rotateY(${d < 0 ? 18 : d > 0 ? -18 : 0}deg)`,
@@ -127,25 +160,36 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
           );
         })}
 
-        {/* The photos fade and blur toward both edges. The centre card is untouched. */}
-        {(["left", "right"] as const).map((side) =>
-          BLUR.map((b) => (
-            <div
-              key={`${side}-${b.blur}`}
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 z-[4]"
-              style={{
-                [side]: 0,
-                // Never wider than the space beside the centre card, which stays sharp.
-                width: `min(${b.width}, calc((100cqw - var(--cw)) / 2))`,
-                backdropFilter: `blur(${b.blur}px)`,
-                WebkitBackdropFilter: `blur(${b.blur}px)`,
-                maskImage: `linear-gradient(to ${side}, #000, transparent)`,
-                WebkitMaskImage: `linear-gradient(to ${side}, #000, transparent)`,
-              }}
-            />
-          )),
-        )}
+        {/* Progressive blur and a fade into the page colour, across the whole space beside the centre photo. */}
+        {(["left", "right"] as const).map((side) => {
+          const inward = side === "left" ? "right" : "left";
+          return (
+            <div key={side} aria-hidden="true">
+              {BLUR.map(([blur, reach]) => (
+                <div
+                  key={blur}
+                  className="pointer-events-none absolute inset-y-0 z-[4]"
+                  style={{
+                    [side]: 0,
+                    width: `calc((100cqw - var(--cw)) / 2 * ${reach})`,
+                    backdropFilter: `blur(${blur}px)`,
+                    WebkitBackdropFilter: `blur(${blur}px)`,
+                    maskImage: `linear-gradient(to ${inward}, #000 0%, transparent 100%)`,
+                    WebkitMaskImage: `linear-gradient(to ${inward}, #000 0%, transparent 100%)`,
+                  }}
+                />
+              ))}
+              <div
+                className="pointer-events-none absolute inset-y-0 z-[5]"
+                style={{
+                  [side]: 0,
+                  width: `calc((100cqw - var(--cw)) / 2 * ${FADE_SHARE})`,
+                  background: `linear-gradient(to ${inward}, var(--color-canvas) 0%, transparent 100%)`,
+                }}
+              />
+            </div>
+          );
+        })}
 
         <button
           type="button"
@@ -174,7 +218,7 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
             if (!swipe.current?.swiped) setOpen(true);
           }}
           className="absolute left-1/2 z-[3] cursor-zoom-in rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-          style={{ top: 20, width: "var(--cw)", marginLeft: "calc(var(--cw) / -2)", height: "calc(var(--cw) * 0.643)" }}
+          style={{ top: 30, width: "var(--cw)", marginLeft: "calc(var(--cw) / -2)", height: "calc(var(--cw) * 0.643)" }}
         >
           <span aria-hidden="true" className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-900/80 text-white sm:right-3 sm:top-3">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -187,7 +231,7 @@ export function HeroCarousel({ photos, title }: { photos: HeroPhoto[]; title: st
       <div
         role="group"
         aria-label="Choose a photo"
-        className="relative -mt-8 h-[60px] w-[200px] flex-none sm:h-[72px] sm:w-[420px]"
+        className="relative -mt-10 h-[60px] w-[200px] flex-none sm:h-[72px] sm:w-[420px]"
       >
         <svg viewBox="0 0 420 72" preserveAspectRatio="none" fill="none" aria-hidden="true" className="absolute inset-0 h-full w-full">
           <path d="M0 46 Q210 10 420 46" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" className="stroke-slate-200 dark:stroke-slate-700" />
