@@ -83,7 +83,10 @@ export async function PageFrame({
       }
     : undefined;
   return (
-    <div className="min-h-screen">
+    // data-has-tabs: the phone tab bar is drawn, so anything docked to the foot
+    // of the screen (the home page's open-place sheet) must clear it. See
+    // --tab-bar-h in globals.css.
+    <div className="min-h-screen" data-has-tabs={tabs.length > 0 ? "" : undefined}>
       <RevealObserver />
       <a
         href="#main-content"

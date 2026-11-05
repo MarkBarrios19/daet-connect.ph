@@ -228,10 +228,31 @@ describe("PlaceDetail", () => {
     expect(card.className).toContain("rounded-t-2xl");
     expect(card.className).toContain("pb-[max(1rem,env(safe-area-inset-bottom))]");
     expect(card.className).not.toContain("max-w-[18rem]");
-    expect(card.className).toContain("max-h-[85svh]");
+    expect(card.className).toContain("max-h-[calc(85svh-var(--tab-bar-h))]");
     // The layer it sits in is the foot of the photo, not the space under the bar.
-    expect(card.parentElement!.parentElement!.className).toContain("bottom-0");
+    expect(card.parentElement!.parentElement!.className).toContain("bottom-[var(--tab-bar-h)]");
     expect(card.parentElement!.parentElement!.className).not.toContain("top-[calc(var(--header-h)");
+  });
+
+  it("stops above the signed-in tab bar on a phone, so its buttons are not covered", () => {
+    renderDetail({ phone: true, places: MAP_PLACES });
+
+    // The tab bar is fixed over the foot of the screen. The layer is lifted by
+    // its height (--tab-bar-h, zero when there is no bar), and the sheet gives
+    // up the same height so it still fits under the header.
+    const card = document.querySelector("[data-detail]") as HTMLElement;
+    const layer = card.parentElement!.parentElement!;
+    expect(layer.className).toContain("bottom-[var(--tab-bar-h)]");
+    expect(layer.className).not.toMatch(/(^|\s)bottom-0(\s|$)/);
+    expect(card.className).toContain("var(--tab-bar-h)");
+  });
+
+  it("does not lift the desktop cards: they hang from the top, not the foot", () => {
+    renderDetail({ phone: false, places: MAP_PLACES });
+
+    const layer = (document.querySelector("[data-detail]") as HTMLElement).closest("[data-detail-layer]") as HTMLElement;
+    expect(layer.className).toContain("top-[calc(var(--header-h)");
+    expect(layer.className).not.toContain("--tab-bar-h");
   });
 
   it("keeps the map on a desktop, in the page's column", () => {
