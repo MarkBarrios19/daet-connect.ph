@@ -163,7 +163,7 @@ export function AssistantChat({
     }
   }
 
-  async function send(value: string, location: Point | null = here, answers: TripAnswers = trip, base: Turn[] = turns) {
+  async function send(value: string, location: Point | null = here, answers: TripAnswers = trip, base: Turn[] = turns, datesConfirmed = false) {
     const question = value.trim().slice(0, MESSAGE_MAX);
     if (!question || busy) return;
     setError(null);
@@ -176,7 +176,7 @@ export function AssistantChat({
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers } }),
+        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers, ...(datesConfirmed ? { datesConfirmed: true } : {}) } }),
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
@@ -232,7 +232,7 @@ export function AssistantChat({
     if (!question) return;
     setTrip(answers);
     saveTrip(answers);
-    void send(question, here, answers, turns.slice(0, index - 1));
+    void send(question, here, answers, turns.slice(0, index - 1), true);
   }
 
   // Re-pointed after every render so the panel always sends with the latest chat.
@@ -287,6 +287,8 @@ export function AssistantChat({
           )
         ) : null}
       </div>
+
+      {onItinerary ? <TripLine trip={trip} onChange={(answers) => { setTrip(answers); saveTrip(answers); }} /> : null}
 
       <ol
         ref={logRef}
@@ -631,6 +633,55 @@ function PlanSummaryCard({ itinerary, onNavigate }: { itinerary: ItineraryResult
       >
         Open in planner
       </Link>
+    </div>
+  );
+}
+
+const tripDate = (key: string) => new Date(`${key}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
+
+/**
+ * The planner's trip line (Desktop-Results board): the dates and group the
+ * plan uses, tappable to change them, and the AI note.
+ */
+function TripLine({ trip, onChange }: { trip: TripAnswers; onChange: (answers: TripAnswers) => void }) {
+  const [editing, setEditing] = useState(false);
+  const group = trip.travelers ? trip.travelers.adults + trip.travelers.children.length : 0;
+  const label = trip.dates
+    ? [
+        trip.dates.start === trip.dates.end ? tripDate(trip.dates.start) : `${tripDate(trip.dates.start)} to ${tripDate(trip.dates.end)}`,
+        group ? `${group} traveler${group === 1 ? "" : "s"}` : null,
+        trip.origin?.city ? `from ${trip.origin.city}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Add your dates and who is coming";
+  return (
+    <div className="space-y-2 px-3 pt-3">
+      <button
+        type="button"
+        aria-expanded={editing}
+        onClick={() => setEditing((v) => !v)}
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-full bg-blue-50 px-4 text-left text-sm font-bold text-blue-800 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/60"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <LineIcon name="calendar" className="h-4 w-4 shrink-0" />
+          <span className="truncate">{label}</span>
+        </span>
+        <span className="shrink-0 font-semibold">{editing ? "Close" : "Change"}</span>
+      </button>
+      {editing ? (
+        <QuestionsCard
+          prefill={trip as TripContext}
+          title="Your trip"
+          submitLabel="Use these details"
+          today={toManilaDateKey(new Date())}
+          onSubmit={(answers) => {
+            onChange(answers);
+            setEditing(false);
+          }}
+        />
+      ) : null}
+      <p className="text-xs text-slate-600 dark:text-slate-400">The Daet AI assistant can make mistakes. Check details with the operator.</p>
     </div>
   );
 }

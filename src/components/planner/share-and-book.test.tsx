@@ -11,14 +11,14 @@ const pkg: DatedPackage = { id: "pkg1", title: "Surf Lesson", coverImageUrl: nul
 describe("BookEachTrip", () => {
   it("books for the group on the saved trip", () => {
     render(<BookEachTrip packages={[pkg]} group={3} />);
-    expect(screen.getByRole("link", { name: "Book for 3" })).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11&pax=3");
+    expect(screen.getByRole("link", { name: "Book this trip" })).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11&pax=3");
     expect(screen.getByText(/about ₱2,400.00 for 3/)).toBeInTheDocument();
   });
 
   it("lets a viewer of a shared plan book for themselves, with no group total", () => {
     render(<BookEachTrip packages={[pkg, { ...pkg, id: "pkg2" }]} group={null} title="Book these tours yourself" />);
     expect(screen.getByRole("heading", { name: "Book these tours yourself" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Book this tour" })[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11");
+    expect(screen.getAllByRole("link", { name: "Book this trip" })[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11");
     expect(screen.queryByText(/for all 2 trips/)).not.toBeInTheDocument();
     expect(screen.queryByText(/about ₱/)).not.toBeInTheDocument();
   });

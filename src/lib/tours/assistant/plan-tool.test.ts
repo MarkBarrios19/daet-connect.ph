@@ -1,5 +1,5 @@
 import { fakeSupabase, type Tables } from "@/lib/tours/assistant/__fixtures__/fake-supabase";
-import { describeItinerary, gettingThereFrom, planTrip, wantsFromText } from "@/lib/tours/assistant/plan-tool";
+import { describeItinerary, fareOrigins, gettingThereFrom, planTrip, wantsFromText } from "@/lib/tours/assistant/plan-tool";
 import { respond, type AssistantEvent, type RespondDeps } from "@/lib/tours/assistant/respond";
 import type { ToolContext } from "@/lib/tours/assistant/tools";
 
@@ -116,5 +116,13 @@ describe("describeItinerary", () => {
     await planTrip(c, { interests: null, budgetPerDay: null, pace: null });
     const empty = { ...c.itinerary!, plan: { days: [], totals: { cost: 0, travelMinutes: 0, visits: 0 } } };
     expect(describeItinerary(empty)).toMatch(/couldn't fit/);
+  });
+});
+
+describe("fareOrigin", () => {
+  it("starts Quezon City at the Cubao terminals and other Metro Manila cities at Manila", () => {
+    expect(fareOrigins("Quezon City")).toEqual(["Manila (Cubao)", "Manila"]);
+    expect(fareOrigins("Makati")).toEqual(["Manila"]);
+    expect(fareOrigins("Naga")).toEqual([]);
   });
 });

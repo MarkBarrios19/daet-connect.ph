@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { TransportCardView } from "@/components/assistant/transport-card";
-import { BookEachTrip } from "@/components/planner/book-each-trip";
-import { dayFor } from "@/lib/tours/itinerary/bookable";
+import { BookableCard, groupPrice } from "@/components/planner/book-each-trip";
 import { RouteMap, type MapPoint } from "@/components/maps/route-map";
 import { Button } from "@/components/ui/button";
+import { CategoryIcon, LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
-import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
+import type { ItineraryResult, PlanStop } from "@/lib/tours/assistant/plan-tool";
+import { bookHref, dayFor } from "@/lib/tours/itinerary/bookable";
 import type { BookablePackage } from "@/lib/tours/itinerary/data";
-import { formatClock, type VisitBlock } from "@/lib/tours/itinerary/types";
+import { formatClock, type PlanDay, type VisitBlock } from "@/lib/tours/itinerary/types";
 
 /** What the panel's buttons call; injected so the panel works without a server in tests. */
 export type PanelActions = {
@@ -21,15 +22,61 @@ export type PanelActions = {
 };
 export type PanelUpdate = { ok: true; plan: ItineraryResult["plan"]; stops: ItineraryResult["stops"]; packages: BookablePackage[] } | { ok: false; message: string };
 
-const dayLabel = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
-const pillClass = (on: boolean) =>
-  `inline-flex min-h-11 shrink-0 items-center rounded-full px-4 text-sm font-bold transition motion-reduce:transition-none ${on ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-muted text-daet-ink hover:bg-muted-strong"}`;
+const longDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+const shortDate = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
+const PACE_LABEL = { relaxed: "Relaxed pace", normal: "Balanced pace", packed: "Packed pace" } as const;
 
+const pillClass = (on: boolean) =>
+  `inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-bold transition motion-reduce:transition-none ${
+    on ? "bg-blue-600 text-white" : "border border-slate-500 bg-surface text-daet-ink hover:bg-muted"
+  }`;
+
+/** "Nov 6 to Nov 8 · 2 travelers · Relaxed pace": the line under the plan's title. */
+export function tripLine(itinerary: ItineraryResult): string {
+  const days = itinerary.plan.days;
+  const group = itinerary.travelers.adults + itinerary.travelers.children.length;
+  const dates = days.length > 1 ? `${shortDate(days[0].date)} to ${shortDate(days[days.length - 1].date)}` : days[0] ? shortDate(days[0].date) : "";
+  const pace = PACE_LABEL[itinerary.input.pace as keyof typeof PACE_LABEL];
+  return [dates, `${group} traveler${group === 1 ? "" : "s"}`, pace].filter(Boolean).join(" · ");
+}
+
+/** "Bagasbas Beach, Daet Heritage Center and 2 more": what a day is about. */
+function daySummary(day: PlanDay): string {
+  const names = day.blocks.filter((b): b is VisitBlock => b.kind === "visit").map((b) => b.name);
+  if (!names.length) return "Nothing planned yet";
+  return names.length <= 2 ? names.join(" and ") : `${names.slice(0, 2).join(", ")} and ${names.length - 2} more`;
+}
 
 /**
- * The drafted plan: day pills, a map that follows the day, stops with a menu
- * (ask, nearby, swap, remove) and the tours you can book. Every number shown
- * comes from the plan_trip result or a panel action, never from chat text.
+ * Each bookable tour shows inside the first planned stop it passes, as on the
+ * boards; tours that pass no stop of the shown days are listed after them.
+ */
+export function placePackages(days: PlanDay[], packages: BookablePackage[]): { byStop: Map<string, BookablePackage[]>; rest: BookablePackage[] } {
+  const byStop = new Map<string, BookablePackage[]>();
+  const rest: BookablePackage[] = [];
+  for (const pkg of packages) {
+    const matched = new Set(pkg.matched.map((m) => m.toLowerCase()));
+    let placed = false;
+    for (const [i, day] of days.entries()) {
+      const block = day.blocks.find((b) => b.kind === "visit" && matched.has(b.name.toLowerCase()));
+      if (block && block.kind === "visit") {
+        const key = `${i}:${block.attractionId}`;
+        byStop.set(key, [...(byStop.get(key) ?? []), pkg]);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) rest.push(pkg);
+  }
+  return { byStop, rest };
+}
+
+/**
+ * The drafted plan, laid out as the Desktop-Results and Phone-Results boards:
+ * title and trip line with Regenerate and Save, day pills, then the day's
+ * numbered stops beside a map of its route (stacked on narrow screens). Every
+ * number shown comes from the plan_trip result or a panel action, never from
+ * chat text.
  */
 export function PlanPanel({
   itinerary,
@@ -44,6 +91,7 @@ export function PlanPanel({
   /** Sends a message to the chat, e.g. "Tell me about Bagasbas Beach". */
   onAsk: (text: string) => void;
   actions: PanelActions;
+  /** Saving (and sharing once saved); opened with the Save to a trip button. */
   footer?: React.ReactNode;
   /** A change asked from outside the panel (a follow-up chip); runs once per new value. */
   request?: { text: string; id: number } | null;
@@ -51,10 +99,19 @@ export function PlanPanel({
   const { plan } = itinerary;
   const [day, setDay] = useState<number | "all">(0);
   const [message, setMessage] = useState<string | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
   const [pending, start] = useTransition();
   const byId = new Map(itinerary.stops.map((s) => [s.id, s]));
   const group = itinerary.travelers.adults + itinerary.travelers.children.length;
-  const shown = day === "all" ? plan.days.map((d, i) => ({ d, i })) : [{ d: plan.days[day] ?? plan.days[0], i: day }];
+  const current = day === "all" ? null : Math.min(day, plan.days.length - 1);
+  const shown = current === null ? plan.days.map((d, i) => ({ d, i })) : [{ d: plan.days[current], i: current }];
+  const { byStop, rest } = placePackages(plan.days, itinerary.packages);
+  const datedFor = (p: BookablePackage) => dayFor(p.matched, plan.days.map((d) => ({ date: d.date, names: d.blocks.map((b) => b.name) })));
+
+  // A new plan (regenerated, or from another request) starts again on Day 1.
+  useEffect(() => {
+    setDay((d) => (d === "all" || d < plan.days.length ? d : 0));
+  }, [plan.days.length]);
 
   const points: MapPoint[] = shown.flatMap(({ d }) =>
     d.blocks.flatMap((b) => {
@@ -62,6 +119,7 @@ export function PlanPanel({
       return s ? [{ lat: s.lat, lng: s.lng, label: s.name }] : [];
     }),
   );
+  const mapTitle = current === null ? "All days" : `Day ${current + 1} route`;
 
   function run(label: string, call: () => Promise<PanelUpdate>) {
     setMessage(null);
@@ -89,85 +147,215 @@ export function PlanPanel({
     });
   }, [request, actions, itinerary, onChange]);
 
+  // A status line belongs to the plan it was about: a new plan clears it.
+  useEffect(() => setMessage(null), [itinerary.generatedAt]);
+
+  const prices = itinerary.packages.map((p) => groupPrice(p, group));
+  const known = prices.filter((p): p is number => p !== null);
+
   return (
     <section aria-labelledby="plan-title" className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="plan-title" className="text-xl font-bold text-daet-ink">
-          Your {plan.days.length}-day plan
-        </h2>
-        <Button variant="secondary" loading={pending} loadingText="Working…" onClick={() => run("Here is a fresh plan.", () => actions.regenerate(itinerary))}>
-          Regenerate
-        </Button>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="plan-title" className="font-[family-name:var(--font-display)] text-2xl font-semibold text-daet-ink sm:text-3xl">
+            Your {plan.days.length}-day Daet plan
+          </h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{tripLine(itinerary)}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" loading={pending} loadingText="Working…" onClick={() => run("Here is a fresh plan.", () => actions.regenerate(itinerary))}>
+            <LineIcon name="return" className="h-4 w-4" /> Regenerate
+          </Button>
+          {footer ? (
+            <Button aria-expanded={saveOpen} aria-controls="plan-save" onClick={() => setSaveOpen((v) => !v)}>
+              <LineIcon name="plus" className="h-4 w-4" /> Save to a trip
+            </Button>
+          ) : null}
+        </div>
       </div>
 
+      {footer && saveOpen ? (
+        <div id="plan-save" className="rounded-2xl bg-surface p-4">
+          {footer}
+        </div>
+      ) : null}
+
       <div className="scrollbar-quiet -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Choose a day">
-        {plan.days.map((d, i) => (
-          <button key={d.date} type="button" aria-pressed={day === i} onClick={() => setDay(i)} className={pillClass(day === i)}>
-            Day {i + 1} <span className="ml-1 font-normal opacity-80">{dayLabel(d.date)}</span>
-          </button>
-        ))}
         {plan.days.length > 1 ? (
           <button type="button" aria-pressed={day === "all"} onClick={() => setDay("all")} className={pillClass(day === "all")}>
             All days
           </button>
         ) : null}
+        {plan.days.map((d, i) => (
+          <button key={d.date} type="button" aria-pressed={day === i} aria-label={`Day ${i + 1}, ${longDay(d.date)}`} onClick={() => setDay(i)} className={pillClass(day === i)}>
+            Day {i + 1}
+          </button>
+        ))}
       </div>
 
-      <p role="status" aria-live="polite" className={message ? "text-sm font-semibold text-daet-ink" : "sr-only"}>
+      <p role="status" aria-live="polite" className={message ? "rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-900 dark:bg-blue-950/40 dark:text-blue-200" : "sr-only"}>
         {message ?? ""}
       </p>
 
-      {points.length ? (
-        <div className="h-56 overflow-hidden rounded-2xl sm:h-72">
-          <RouteMap points={points} connect={day !== "all"} title={day === "all" ? "Map of all days" : `Map of day ${Number(day) + 1}`} className="h-full" />
-        </div>
-      ) : null}
-
-      {shown.map(({ d, i }) => (
-        <div key={d.date} className="space-y-2">
-          {day === "all" ? <h3 className="font-bold text-daet-ink">Day {i + 1} · {dayLabel(d.date)}</h3> : null}
-          {i === 0 && itinerary.gettingThere ? <GettingThere value={itinerary.gettingThere} /> : null}
-          {d.blocks.length === 0 ? (
-            <p className="rounded-2xl bg-canvas p-3 text-sm text-slate-600 dark:text-slate-400">Nothing fits this day yet. Try Regenerate, or ask for different places.</p>
-          ) : (
-            <ol className="space-y-2">
-              {d.blocks.map((b, j) =>
-                b.kind === "visit" ? (
-                  <li key={`${b.attractionId}-${j}`}>
-                    <StopCard
-                      block={b}
-                      busy={pending}
-                      onAsk={() => onAsk(`Tell me about ${b.name}`)}
-                      onNearby={() => onAsk(`What's near ${b.name}? Food and places to see.`)}
-                      onSwap={() => run(`Swapped ${b.name}.`, () => actions.swap(itinerary, i, b.attractionId))}
-                      onRemove={() => run(`Removed ${b.name}.`, () => actions.remove(itinerary, i, b.attractionId))}
-                    />
-                  </li>
-                ) : (
-                  <li key={`lunch-${j}`} className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-600 dark:text-slate-400">
-                    <span className="w-16 shrink-0 font-semibold">{formatClock(b.start)}</span> Lunch break
-                  </li>
-                ),
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] xl:gap-6">
+        {points.length ? (
+          <div className="relative h-60 min-w-0 overflow-hidden rounded-2xl sm:h-72 xl:sticky xl:top-4 xl:order-2 xl:h-[min(42rem,calc(100dvh-8rem))]">
+            <RouteMap points={points} connect={current !== null} title={current === null ? "Map of all days" : `Map of day ${current + 1}`} className="h-full" />
+            <span className="pointer-events-none absolute left-3 top-3 z-[500] inline-flex min-h-8 items-center rounded-full bg-surface px-3 text-sm font-bold text-daet-ink">{mapTitle}</span>
+          </div>
+        ) : null}
+        <div className="min-w-0 space-y-6 xl:order-1">
+          {shown.map(({ d, i }) => (
+            <div key={d.date} className="space-y-3">
+              <div>
+                <h3 className="font-bold text-daet-ink">
+                  Day {i + 1} · {longDay(d.date)}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{daySummary(d)}</p>
+              </div>
+              {i === 0 && itinerary.gettingThere ? <GettingThere value={itinerary.gettingThere} /> : null}
+              {d.blocks.length === 0 ? (
+                <p className="rounded-2xl bg-surface p-3 text-sm text-slate-600 dark:text-slate-400">Nothing fits this day yet. Try Regenerate, or ask for different places.</p>
+              ) : (
+                <DayStops
+                  day={d}
+                  index={i}
+                  stops={byId}
+                  group={group}
+                  busy={pending}
+                  packagesFor={(id) => byStop.get(`${i}:${id}`) ?? []}
+                  bookingHref={(p) => bookHref(p.id, datedFor(p), group)}
+                  onAsk={onAsk}
+                  onSwap={(b) => run(`Swapped ${b.name}.`, () => actions.swap(itinerary, i, b.attractionId))}
+                  onRemove={(b) => run(`Removed ${b.name}.`, () => actions.remove(itinerary, i, b.attractionId))}
+                />
               )}
-            </ol>
-          )}
+            </div>
+          ))}
+
+          {rest.length ? (
+            <div className="space-y-2">
+              <h3 className="font-bold text-daet-ink">More tours near your plan</h3>
+              {rest.map((p) => (
+                <BookableCard key={p.id} pkg={p} group={group} bookHref={bookHref(p.id, datedFor(p), group)} />
+              ))}
+            </div>
+          ) : null}
+
+          {itinerary.packages.length > 1 && known.length ? (
+            <p className="text-sm font-semibold text-daet-ink">
+              {known.length < prices.length ? "At least " : "About "}
+              {formatPeso(known.reduce((a, b) => a + b, 0))} for all {itinerary.packages.length} bookable trips. Each one is booked and paid separately.
+            </p>
+          ) : null}
+          <p className="text-xs text-slate-600 dark:text-slate-400">Costs are entrance fees for your group of {group}. Times are estimates; confirm hours marked as not confirmed.</p>
         </div>
-      ))}
 
-      {itinerary.packages.length ? (
-        <BookEachTrip
-          group={group}
-          packages={itinerary.packages.map((p) => ({ ...p, date: dayFor(p.matched, itinerary.plan.days.map((d) => ({ date: d.date, names: d.blocks.map((b) => b.name) }))) }))}
-        />
-      ) : null}
-
-      <p className="text-xs text-slate-600 dark:text-slate-400">Costs are entrance fees for your group of {group}. Times are estimates; confirm hours marked as not confirmed.</p>
-      {footer}
+      </div>
     </section>
   );
 }
 
-function StopCard({ block, busy, onAsk, onNearby, onSwap, onRemove }: { block: VisitBlock; busy: boolean; onAsk: () => void; onNearby: () => void; onSwap: () => void; onRemove: () => void }) {
+function DayStops({
+  day,
+  index,
+  stops,
+  group,
+  busy,
+  packagesFor,
+  bookingHref,
+  onAsk,
+  onSwap,
+  onRemove,
+}: {
+  day: PlanDay;
+  index: number;
+  stops: Map<string, PlanStop>;
+  group: number;
+  busy: boolean;
+  packagesFor: (attractionId: string) => BookablePackage[];
+  bookingHref: (p: BookablePackage) => string;
+  onAsk: (text: string) => void;
+  onSwap: (b: VisitBlock) => void;
+  onRemove: (b: VisitBlock) => void;
+}) {
+  let n = 0;
+  return (
+    <ol className="space-y-3" aria-label={`Day ${index + 1} stops`}>
+      {day.blocks.map((b, j) => {
+        if (b.kind !== "visit") {
+          return (
+            <li key={`lunch-${j}`} className="flex items-center gap-3 rounded-2xl bg-surface p-3">
+              <span aria-hidden="true" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                <LineIcon name="plate" className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-bold text-daet-ink">Lunch break</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {formatClock(b.start)} · Ask the assistant for food nearby
+                </p>
+              </div>
+            </li>
+          );
+        }
+        n += 1;
+        return (
+          <li key={`${b.attractionId}-${j}`} className="space-y-3">
+            {j > 0 && b.travelMinutes > 0 ? <TravelChip minutes={b.travelMinutes} /> : null}
+            <StopCard
+              number={n}
+              block={b}
+              stop={stops.get(b.attractionId)}
+              group={group}
+              busy={busy}
+              packages={packagesFor(b.attractionId)}
+              bookingHref={bookingHref}
+              onAsk={() => onAsk(`Tell me about ${b.name}`)}
+              onNearby={() => onAsk(`What's near ${b.name}? Food and places to see.`)}
+              onSwap={() => onSwap(b)}
+              onRemove={() => onRemove(b)}
+            />
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function TravelChip({ minutes }: { minutes: number }) {
+  return (
+    <p className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-blue-50 px-3 text-sm font-bold text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+      <LineIcon name="van" className="h-4 w-4" />
+      By road · about {minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ""}`}
+    </p>
+  );
+}
+
+function StopCard({
+  number,
+  block,
+  stop,
+  group,
+  busy,
+  packages,
+  bookingHref,
+  onAsk,
+  onNearby,
+  onSwap,
+  onRemove,
+}: {
+  number: number;
+  block: VisitBlock;
+  stop: PlanStop | undefined;
+  group: number;
+  busy: boolean;
+  packages: BookablePackage[];
+  bookingHref: (p: BookablePackage) => string;
+  onAsk: () => void;
+  onNearby: () => void;
+  onSwap: () => void;
+  onRemove: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const menuItem = "flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm font-semibold text-daet-ink hover:bg-muted disabled:opacity-50";
   const pick = (fn: () => void) => () => {
@@ -175,29 +363,47 @@ function StopCard({ block, busy, onAsk, onNearby, onSwap, onRemove }: { block: V
     fn();
   };
   return (
-    <div className="rounded-2xl bg-canvas p-3">
-      <div className="flex items-start gap-3">
-        <span className="w-16 shrink-0 pt-0.5 text-sm font-semibold text-slate-600 dark:text-slate-400">{formatClock(block.start)}</span>
+    <article className="space-y-3 rounded-2xl bg-surface p-3">
+      <div className="flex gap-3">
+        {stop?.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- listing photos come from many hosts
+          <img src={stop.photoUrl} alt="" loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-28 sm:w-28" />
+        ) : (
+          <span aria-hidden="true" className="inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800 sm:h-28 sm:w-28 dark:bg-blue-950/40 dark:text-blue-300">
+            <CategoryIcon category={stop?.category ?? "nature"} className="h-8 w-8" />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-daet-ink">{block.name}</p>
+          <div className="flex items-start gap-2">
+            <h4 className="flex min-w-0 flex-1 items-center gap-2 font-bold text-daet-ink">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[13px] text-white">{number}</span>
+              <span className="min-w-0">{block.name}</span>
+            </h4>
+            <button type="button" aria-expanded={open} aria-label={`Options for ${block.name}`} onClick={() => setOpen((v) => !v)} className="-mr-1 -mt-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-daet-ink hover:bg-muted">
+              <LineIcon name="menu" className="h-5 w-5" />
+            </button>
+          </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {block.cost > 0 ? `${formatPeso(block.cost)} for your group` : "Free"} · until {formatClock(block.end)}
+            {formatClock(block.start)} to {formatClock(block.end)} · {block.cost > 0 ? `${formatPeso(block.cost)} for your group` : "Free"}
           </p>
+          {stop?.tip ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{stop.tip}</p> : null}
           {block.hoursConfirmed ? null : <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Opening hours not confirmed</p>}
+          <button type="button" onClick={onAsk} className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-blue-700 hover:underline dark:text-blue-300">
+            <LineIcon name="chat" className="h-4 w-4" /> Ask about this place
+          </button>
         </div>
-        <button type="button" aria-expanded={open} aria-label={`Options for ${block.name}`} onClick={() => setOpen((v) => !v)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl font-bold text-daet-ink hover:bg-muted">
-          ⋯
-        </button>
       </div>
       {open ? (
-        <div className="mt-2 grid gap-1 sm:grid-cols-2" role="group" aria-label={`Options for ${block.name}`}>
-          <button type="button" className={menuItem} onClick={pick(onAsk)}>Ask about this place</button>
+        <div className="grid gap-1 sm:grid-cols-3" role="group" aria-label={`Options for ${block.name}`}>
           <button type="button" className={menuItem} onClick={pick(onNearby)}>Find nearby</button>
           <button type="button" className={menuItem} disabled={busy} onClick={pick(onSwap)}>Swap stop</button>
           <button type="button" className={`${menuItem} text-red-700 dark:text-red-300`} disabled={busy} onClick={pick(onRemove)}>Remove</button>
         </div>
       ) : null}
-    </div>
+      {packages.map((p) => (
+        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p)} />
+      ))}
+    </article>
   );
 }
 
@@ -205,14 +411,20 @@ function StopCard({ block, busy, onAsk, onNearby, onSwap, onRemove }: { block: V
 function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingThere"]> }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl bg-canvas p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+    <div className="rounded-2xl bg-surface p-3">
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+          <LineIcon name="bus" className="h-6 w-6" />
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="font-bold text-daet-ink">Getting there from {value.from}</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {value.card
               ? `${value.card.options.length === 1 ? "One listed way" : `${value.card.options.length} listed ways`}${value.card.options[0]?.time ? `, about ${value.card.options[0].time}` : ""}`
               : `No fares listed from ${value.from} yet. Most people go through Manila or Naga, then take a bus or van to Daet.`}
+          </p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            Estimate. Fares change; confirm with the driver or operator{value.checkedOn ? ` (listed fares checked ${value.checkedOn})` : ""}.
           </p>
         </div>
         {value.card ? (
@@ -222,9 +434,6 @@ function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingTh
         ) : null}
       </div>
       {open && value.card ? <div className="mt-2"><TransportCardView card={value.card} /></div> : null}
-      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-        Estimate. Fares change; confirm with the driver or operator{value.checkedOn ? ` (listed fares checked ${value.checkedOn})` : ""}.
-      </p>
     </div>
   );
 }

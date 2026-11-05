@@ -84,7 +84,7 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
   ) : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(22rem,28rem)_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(22rem,26rem)_minmax(0,1fr)]">
       <div className="flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-float)] lg:h-[calc(100dvh-12rem)]">
         <AssistantChat
           signedIn={signedIn}

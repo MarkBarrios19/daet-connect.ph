@@ -23,6 +23,8 @@ export const TripContextSchema = z.object({
   /** A city chip or whatever the traveller typed. */
   origin: z.object({ city: z.string().trim().min(1).max(60) }).nullable().optional(),
   locale: z.string().max(12).optional(),
+  /** The traveller just filled in or confirmed the dates, so a different day count in their words is not asked about again. */
+  datesConfirmed: z.boolean().optional(),
 });
 export type TripContext = z.infer<typeof TripContextSchema>;
 
@@ -50,6 +52,20 @@ export function missingInputs(context: TripContext | null | undefined, today: st
  */
 export function isPlanRequest(text: string): boolean {
   return /\b(plan|planning|itinerary|ipaplano|magplano|plano)\b/i.test(text);
+}
+
+const DAY_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, isang: 1, dalawang: 2, tatlong: 3, apat: 4, limang: 5 };
+
+/**
+ * How many days the traveller's words ask for ("2 days", "three-day",
+ * "dalawang araw", "a day trip"), or null when they don't say.
+ */
+export function daysAsked(text: string): number | null {
+  const t = text.toLowerCase();
+  const m = /\b(\d{1,2}|one|two|three|four|five|isang|dalawang|tatlong|apat|limang)[\s-]*(?:days?|araw)\b/.exec(t);
+  if (!m) return /\bday trip\b/.test(t) ? 1 : null;
+  const n = DAY_WORDS[m[1]] ?? Number(m[1]);
+  return Number.isInteger(n) && n >= 1 ? n : null;
 }
 
 export function describeTravelers(travelers: NonNullable<TripContext["travelers"]>): string {

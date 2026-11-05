@@ -31,15 +31,16 @@ const noop: PanelActions = { regenerate: jest.fn(), swap: jest.fn(), remove: jes
 describe("PlanPanel", () => {
   it("shows one day at a time with day pills, and all days on request", () => {
     render(<PlanPanel itinerary={itinerary} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
-    expect(screen.getByRole("heading", { name: "Your 2-day plan" })).toBeInTheDocument();
-    expect(screen.getByText("Bagasbas Beach")).toBeInTheDocument();
-    expect(screen.queryByText("Daet Park")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Day 2/ }));
-    expect(screen.getByText("Daet Park")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your 2-day Daet plan" })).toBeInTheDocument();
+    expect(screen.getByText("Nov 10 to Nov 11 · 3 travelers · Balanced pace")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 4, name: /Bagasbas Beach$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 4, name: /Daet Park$/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Day 2,/ }));
+    expect(screen.getByRole("heading", { level: 4, name: /Daet Park$/ })).toBeInTheDocument();
     expect(screen.getByText("Opening hours not confirmed")).toBeInTheDocument();
     expect(screen.getByText(/₱60.00 for your group/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "All days" }));
-    expect(screen.getByText("Bagasbas Beach")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 4, name: /Bagasbas Beach$/ })).toBeInTheDocument();
     expect(screen.getByTestId("map")).toHaveTextContent("Map of all days");
   });
 
@@ -47,8 +48,10 @@ describe("PlanPanel", () => {
     render(<PlanPanel itinerary={itinerary} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
     expect(screen.getByText("Verified by the Tourism Office")).toBeInTheDocument();
     expect(screen.getByText(/from ₱800.00 per person · about ₱2,400.00 for 3/)).toBeInTheDocument();
-    expect(screen.getByText("Not included: Lunch")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View tour" })).toHaveAttribute("href", "/tours/packages/pkg1");
+    expect(screen.getByText("Not included: Lunch.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See details" })).toHaveAttribute("href", "/tours/packages/pkg1");
+    // The tour sits inside the stop it passes, as on the boards.
+    expect(screen.getByRole("article", { name: undefined }).textContent).toContain("Bagasbas Surf Lesson");
   });
 
   it("asks the chat about a stop, and swaps through the action", async () => {
@@ -57,7 +60,6 @@ describe("PlanPanel", () => {
     const swapped = { ...itinerary.plan, days: [{ date: "2026-11-10", blocks: [visit("rizal", "First Rizal Monument", 480)] }, itinerary.plan.days[1]] };
     const actions: PanelActions = { ...noop, swap: jest.fn().mockResolvedValue({ ok: true, plan: swapped, stops: itinerary.stops, packages: [] }) };
     render(<PlanPanel itinerary={itinerary} onChange={onChange} onAsk={onAsk} actions={actions} />);
-    fireEvent.click(screen.getByRole("button", { name: "Options for Bagasbas Beach" }));
     fireEvent.click(screen.getByRole("button", { name: "Ask about this place" }));
     expect(onAsk).toHaveBeenCalledWith("Tell me about Bagasbas Beach");
     fireEvent.click(screen.getByRole("button", { name: "Options for Bagasbas Beach" }));
@@ -110,9 +112,10 @@ describe("PlanPanel", () => {
   it("books each trip on its plan day for the whole group, with a total", () => {
     const second = { ...itinerary.packages[0], id: "pkg2", title: "Daet Heritage Walk", matched: ["Daet Park"], price: { amount: 1000, perPerson: false } };
     render(<PlanPanel itinerary={{ ...itinerary, packages: [...itinerary.packages, second] }} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
-    const books = screen.getAllByRole("link", { name: "Book for 3" });
+    fireEvent.click(screen.getByRole("button", { name: "All days" }));
+    const books = screen.getAllByRole("link", { name: "Book this trip" });
     expect(books[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-10&pax=3");
     expect(books[1]).toHaveAttribute("href", "/tours/packages/pkg2/book?date=2026-11-11&pax=3");
-    expect(screen.getByText(/About ₱3,400.00 for all 2 trips\. Each one is booked and paid separately\./)).toBeInTheDocument();
+    expect(screen.getByText(/About ₱3,400.00 for all 2 bookable trips\. Each one is booked and paid separately\./)).toBeInTheDocument();
   });
 });

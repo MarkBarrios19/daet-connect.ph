@@ -1,4 +1,5 @@
 import { contextPrompt, isPlanRequest, missingInputs, tripDays, TripContextSchema, type TripContext } from "@/lib/tours/assistant/context";
+import { daysAsked } from "@/lib/tours/assistant/context";
 import { assistantSystemPrompt } from "@/lib/tours/assistant/prompt";
 import { cleanHistory } from "@/lib/tours/assistant/respond";
 
@@ -69,5 +70,15 @@ describe("contextPrompt", () => {
   it("is appended to the system prompt", () => {
     expect(assistantSystemPrompt({ today: TODAY, signedIn: false, trip: full })).toContain("do not ask for these again");
     expect(assistantSystemPrompt({ today: TODAY, signedIn: false })).not.toContain("do not ask for these again");
+  });
+});
+
+describe("daysAsked", () => {
+  it("reads the number of days in English and Filipino", () => {
+    expect(daysAsked("Plan 2 days of beaches")).toBe(2);
+    expect(daysAsked("a three-day trip")).toBe(3);
+    expect(daysAsked("dalawang araw sa Daet")).toBe(2);
+    expect(daysAsked("a day trip to Bagasbas")).toBe(1);
+    expect(daysAsked("Plan a weekend")).toBeNull();
   });
 });

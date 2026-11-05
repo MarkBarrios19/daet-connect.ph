@@ -243,10 +243,24 @@ describe("respond", () => {
     });
 
     it("goes ahead to the model once dates, travellers and origin are known", async () => {
-      const context = { dates: { start: "2026-10-30", end: "2026-11-01" }, travelers: { adults: 2, children: [] }, origin: { city: "Naga" } };
+      const context = { dates: { start: "2026-10-30", end: "2026-10-31" }, travelers: { adults: 2, children: [] }, origin: { city: "Naga" } };
       const events = await collect(respond(planAsk(context), deps({ tripQuestions: true, runAi: async (_c, _h, onText) => { onText("Here you go."); return { stopReason: "end_turn" }; } })));
       expect(events.map((e) => e.t)).not.toContain("questions");
       expect(events.some((e) => e.t === "text")).toBe(true);
+    });
+
+    it("asks before using saved dates that don't match the days asked for, offering the asked length", async () => {
+      const context = { dates: { start: "2026-10-30", end: "2026-11-01" }, travelers: { adults: 2, children: [] }, origin: { city: "Naga" } };
+      const events = await collect(respond(planAsk(context), deps({ tripQuestions: true, runAi: never })));
+      const q = events.find((e) => e.t === "questions");
+      expect(q).toMatchObject({ missing: ["dates"], prefill: { dates: { start: "2026-10-30", end: "2026-10-31" } } });
+      expect(events.find((e) => e.t === "text")).toMatchObject({ v: expect.stringMatching(/You asked for 2 days, but your saved dates cover 3/) });
+    });
+
+    it("drafts with the dates once the traveller has confirmed them", async () => {
+      const context = { dates: { start: "2026-10-30", end: "2026-11-01" }, travelers: { adults: 2, children: [] }, origin: { city: "Naga" }, datesConfirmed: true };
+      const events = await collect(respond(planAsk(context), deps({ tripQuestions: true, runAi: async (_c, _h, onText) => { onText("Here you go."); return { stopReason: "end_turn" }; } })));
+      expect(events.map((e) => e.t)).not.toContain("questions");
     });
 
     it("leaves other questions, old clients and a switched-off planner alone", async () => {

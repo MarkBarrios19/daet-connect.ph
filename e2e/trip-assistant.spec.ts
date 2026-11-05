@@ -35,7 +35,7 @@ test("the plan opens as a sheet on phones; stops can be removed and tours booked
   await expect(plan.getByText(`Removed ${name}.`)).toBeVisible();
 
   // 3. Bookable tours link to their booking form with the date and group filled in.
-  const book = plan.getByRole("link", { name: /^Book for 2/ }).first();
+  const book = plan.getByRole("link", { name: "Book this trip" }).first();
   if (await book.count()) await expect(book).toHaveAttribute("href", /\/tours\/packages\/[^/]+\/book\?date=\d{4}-\d{2}-\d{2}&pax=2/);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

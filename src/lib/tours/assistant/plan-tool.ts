@@ -19,7 +19,7 @@ import { formatClock, type Pace, type Plan } from "@/lib/tours/itinerary/types";
 
 export const INTEREST_KEYS = Object.keys(ATTRACTION_CATEGORIES) as AttractionCategory[];
 
-export type PlanStop = { id: string; name: string; category: AttractionCategory; lat: number; lng: number; fee: number | null };
+export type PlanStop = { id: string; name: string; category: AttractionCategory; lat: number; lng: number; fee: number | null; photoUrl?: string | null; tip?: string | null };
 
 export type ItineraryResult = {
   plan: Plan;
@@ -33,12 +33,29 @@ export type ItineraryResult = {
   generatedAt: string;
 };
 
+/**
+ * Where the listed fares start for a traveller's city. Buses to Daet leave
+ * from Cubao (in Quezon City) and PITX, which the fares table lists under
+ * "Manila", so Quezon City and the other Metro Manila cities start there.
+ */
+export function fareOrigins(city: string): string[] {
+  const c = city.trim().toLowerCase();
+  if (/\b(quezon city|qc|cubao)\b/.test(c)) return ["Manila (Cubao)", "Manila"];
+  if (/\b(makati|pasay|taguig|bgc|paranaque|parañaque|mandaluyong|pasig|san juan|caloocan|las pinas|las piñas|muntinlupa|marikina|valenzuela|malabon|navotas|pateros|metro manila|ncr)\b/.test(c)) return ["Manila"];
+  return [];
+}
+
 /** Up to two ways from the traveller's city to Daet, from tours_fares. Never throws: the plan doesn't depend on it. */
 export async function gettingThereFrom(ctx: Pick<ToolContext, "supabase">, city: string | null | undefined): Promise<ItineraryResult["gettingThere"]> {
   const from = (city ?? "").trim();
   if (!from) return null;
   try {
-    const routes = faresBetween(await loadFares(ctx), from, "Daet").slice(0, 2);
+    const fares = await loadFares(ctx);
+    let routes = faresBetween(fares, from, "Daet").slice(0, 2);
+    for (const start of fareOrigins(from)) {
+      if (routes.length) break;
+      routes = faresBetween(fares, start, "Daet").slice(0, 2);
+    }
     const checkedOn = routes.flatMap((r) => r.legs.map((l) => l.checked_on)).sort()[0] ?? null;
     return { from, card: routes.length ? transportCard(`${from} to Daet`, routes) : null, checkedOn };
   } catch {
@@ -66,7 +83,7 @@ export async function planTrip(ctx: ToolContext, wants: PlanWants) {
   const visits = plan.days.flatMap((d) => d.blocks.flatMap((b) => (b.kind === "visit" ? [b] : [])));
   const stops: PlanStop[] = [...new Set(visits.map((v) => v.attractionId))].map((id) => {
     const a = byId.get(id)!;
-    return { id, name: a.name, category: a.category, lat: a.lat, lng: a.lng, fee: a.fee };
+    return { id, name: a.name, category: a.category, lat: a.lat, lng: a.lng, fee: a.fee, photoUrl: a.photoUrl ?? null, tip: a.tip ?? null };
   });
 
   ctx.onStatus?.("Checking operators");
@@ -105,5 +122,10 @@ export function describeItinerary(result: ItineraryResult): string {
   const stops = result.plan.totals.visits;
   if (!stops) return "I couldn't fit any places into those days. Try a bigger budget or different dates.";
   const tours = result.packages.length ? ` ${result.packages.length === 1 ? "One tour" : `${result.packages.length} tours`} you can book pass${result.packages.length === 1 ? "es" : ""} near your stops.` : "";
-  return `Here is a ${days}-day plan with ${stops} stop${stops === 1 ? "" : "s"}. Costs shown are entrance fees for your group.${tours} Tap a stop to swap or remove it.`;
+  const weekday = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+  const perDay = result.plan.days.map((d, i) => {
+    const names = d.blocks.filter((b) => b.kind === "visit").map((b) => b.name);
+    return `• Day ${i + 1} (${weekday(d.date)}): ${names.length ? names.join(", ") : "free day"}`;
+  });
+  return [`Here is a ${days}-day plan with ${stops} stop${stops === 1 ? "" : "s"} for your dates.`, ...perDay, `Costs shown are entrance fees for your group.${tours} Tap a stop to swap or remove it.`].join("\n");
 }

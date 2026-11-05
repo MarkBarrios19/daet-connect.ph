@@ -144,5 +144,5 @@ export async function draftPlan(page: Page, request = "Plan 2 days in Daet, beac
   await card.getByLabel("Last day").fill(day(2));
   await card.getByRole("button", { name: "Manila" }).click();
   await card.getByRole("button", { name: "Draft my plan" }).click();
-  await expect(page.getByRole("heading", { name: /^Your \d-day plan$/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { name: /^Your \d-day Daet plan$/ })).toBeVisible({ timeout: 30_000 });
 }

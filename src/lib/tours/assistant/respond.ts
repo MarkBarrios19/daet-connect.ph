@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod/v4";
 import { basicReply } from "@/lib/tours/assistant/basic";
-import { isPlanRequest, missingInputs, TripContextSchema, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
+import { daysAsked, isPlanRequest, MAX_TRIP_DAYS, missingInputs, tripDays, TripContextSchema, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
+import { addDays } from "@/lib/tours/itinerary/types";
 import { describeItinerary, planTrip, wantsFromText, type ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import type { AssistantCard, ToolContext } from "@/lib/tours/assistant/tools";
 import { CHANGE_EXAMPLES } from "@/lib/tours/itinerary/assistant";
@@ -102,6 +103,18 @@ export async function* respond(raw: unknown, deps: RespondDeps): AsyncGenerator<
       yield { t: "mode", mode: deps.aiAllowed ? "ai" : "basic" };
       yield { t: "questions", missing, prefill: trip };
       yield { t: "text", v: "Before I draft your plan, I need three things: your dates, who is coming, and where you are travelling from." };
+      yield { t: "done" };
+      return;
+    }
+    // "Plan 2 days" with 3 saved days: don't pick one silently. Offer the asked
+    // length from the same first day, and let them confirm or change it.
+    const asked = daysAsked(latest);
+    const saved = trip!.dates ? tripDays(trip!.dates) : 0;
+    if (asked && trip!.dates && !trip!.datesConfirmed && asked !== saved && asked <= MAX_TRIP_DAYS) {
+      const proposed = { start: trip!.dates.start, end: addDays(trip!.dates.start, asked - 1) };
+      yield { t: "mode", mode: deps.aiAllowed ? "ai" : "basic" };
+      yield { t: "questions", missing: ["dates"], prefill: { ...trip!, dates: proposed } };
+      yield { t: "text", v: `You asked for ${asked} day${asked === 1 ? "" : "s"}, but your saved dates cover ${saved}. I've set ${asked === 1 ? "one day" : `${asked} days`} from your first day; check the dates, then tap Draft my plan.` };
       yield { t: "done" };
       return;
     }

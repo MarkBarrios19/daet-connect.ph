@@ -32,8 +32,8 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   // The merged chat + plan planner. TRIP_PLANNER_V2=off brings back the old form.
   if (process.env.TRIP_PLANNER_V2 !== "off") {
     return (
-      <PageFrame>
-        <div className="mx-auto max-w-6xl">
+      <PageFrame bleed>
+        <div className="mx-auto w-full max-w-[88rem] px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           <h1 className="display-2 text-daet-ink">Plan your Daet trip</h1>
           <p className="mt-2 max-w-2xl text-lg text-daet-ink">Tell the assistant your trip in your own words. It drafts a day-by-day plan from places and tours listed on CONNECT-Daet.</p>
           {user ? (

@@ -31,7 +31,7 @@ async function finish(plan: Plan, attractions: PlannerAttraction[], supabase: Aw
   const byId = new Map(attractions.map((a) => [a.id, a]));
   const stops = planAttractionIds(plan).flatMap((id) => {
     const a = byId.get(id);
-    return a ? [{ id, name: a.name, category: a.category, lat: a.lat, lng: a.lng, fee: a.fee }] : [];
+    return a ? [{ id, name: a.name, category: a.category, lat: a.lat, lng: a.lng, fee: a.fee, photoUrl: a.photoUrl ?? null, tip: a.tip ?? null }] : [];
   });
   const packages = await bookablePackages(supabase, stops).catch(() => []);
   return { ok: true, plan, stops, packages };

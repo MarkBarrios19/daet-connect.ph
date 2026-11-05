@@ -16,7 +16,7 @@ const chip = (on: boolean) =>
  * each child, because prices and pace depend on them. Nothing leaves the
  * browser until the traveller taps Draft my plan.
  */
-export function QuestionsCard({ prefill, today, onSubmit }: { prefill: TripContext | null; today: string; onSubmit: (answers: Answers) => void }) {
+export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draft", submitLabel = "Draft my plan" }: { prefill: TripContext | null; today: string; onSubmit: (answers: Answers) => void; title?: string; submitLabel?: string }) {
   const id = useId();
   const [start, setStart] = useState(prefill?.dates?.start ?? "");
   const [end, setEnd] = useState(prefill?.dates?.end ?? "");
@@ -47,8 +47,8 @@ export function QuestionsCard({ prefill, today, onSubmit }: { prefill: TripConte
   }
 
   return (
-    <form onSubmit={submit} noValidate aria-label="Before I draft" className="min-w-0 space-y-4 rounded-2xl bg-canvas p-3">
-      <p className="font-bold text-daet-ink">Before I draft</p>
+    <form onSubmit={submit} noValidate aria-label={title} className="min-w-0 space-y-4 rounded-2xl bg-canvas p-3">
+      <p className="font-bold text-daet-ink">{title}</p>
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-bold text-daet-ink">Dates</legend>
@@ -115,7 +115,7 @@ export function QuestionsCard({ prefill, today, onSubmit }: { prefill: TripConte
       </fieldset>
 
       <Button type="submit" className="w-full">
-        Draft my plan
+        {submitLabel}
       </Button>
     </form>
   );

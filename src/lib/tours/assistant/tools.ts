@@ -1,3 +1,4 @@
+import { durationText } from "@/lib/tours/duration";
 import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { hasTicket } from "@/lib/tours/ticket";
@@ -68,12 +69,6 @@ function priceFrom(variants: VariantRow[] | null | undefined): number | null {
   const prices = (variants ?? []).map((v) => Number(v.price_per_pax ?? v.flat_price)).filter((n) => Number.isFinite(n) && n > 0);
   return prices.length ? Math.min(...prices) : null;
 }
-/** "1 day", "3 days", "2 hours": the database may store the unit singular or plural. */
-export const durationText = (value: number | null, type: string | null) => {
-  if (!value || !type) return null;
-  const unit = type.trim().toLowerCase().replace(/s$/, "");
-  return `${value} ${unit}${value === 1 ? "" : "s"}`;
-};
 
 // ------------------------------------------------------------------ tours
 
@@ -376,3 +371,5 @@ export async function travelTime(ctx: ToolContext, input: { from?: string | null
     note: leg.estimated || mode === "walk" ? "Estimated from the map distance; traffic and stops add time." : "From the road route; traffic can add time.",
   };
 }
+
+export { durationText };

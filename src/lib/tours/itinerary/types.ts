@@ -16,6 +16,10 @@ export type PlannerAttraction = {
   hours: OpeningHours | null;
   dwellMinutes: number | null;
   fee: number | null;
+  /** For the plan's stop cards; optional so older saved plans still load. */
+  photoUrl?: string | null;
+  /** One line from the listing's description. */
+  tip?: string | null;
 };
 
 export const PACES = ["relaxed", "normal", "packed"] as const;
