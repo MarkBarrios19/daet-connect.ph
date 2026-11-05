@@ -89,3 +89,15 @@ export function paymentReceivedEmail(b: BookingEmailData, amount: number) {
     CALL_OFF_RULE,
   ]);
 }
+
+/** Sent when the operator calls the trip off: why, and the two choices. */
+export function tripCalledOffEmail(b: BookingEmailData, reason: string) {
+  return render(`Trip called off: ${b.tourTitle} on ${longDate(b.tourDate)}`, [
+    hello(b.contactName),
+    `${b.operatorName ?? "The operator"} called off your trip for safety: ${reason}`,
+    "Nothing is lost. Choose what you'd like: pick a new date, or get a full refund.",
+    "",
+    ...tripLines(b),
+    { label: "Choose a new date or a refund", href: b.bookingUrl },
+  ]);
+}

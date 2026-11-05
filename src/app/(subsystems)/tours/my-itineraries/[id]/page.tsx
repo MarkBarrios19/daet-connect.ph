@@ -11,6 +11,11 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { appBaseUrl } from "@/lib/tours/qr-issue";
 import { deleteItinerary } from "../actions";
 import { ShareControls } from "./share-controls";
+import { SaveTripOffline } from "@/components/tours/save-trip-offline";
+import { callOffState } from "@/lib/tours/call-off";
+import { hasTicket } from "@/lib/tours/ticket";
+
+const shortDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 import { BookEachTrip } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
 
@@ -37,7 +42,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
 
   const { data: itinerary } = await supabase
     .from("tours_itineraries")
-    .select("id, title, start_date, summary, share_token, plan_source, preferences, tours_itinerary_items ( day_number, item_order, item_kind, location_name, tip, latitude, longitude, start_time, end_time, travel_minutes, tours_attractions ( slug ) )")
+    .select("id, title, start_date, end_date, summary, share_token, plan_source, preferences, tours_itinerary_items ( day_number, item_order, item_kind, location_name, tip, latitude, longitude, start_time, end_time, travel_minutes, tours_attractions ( slug ) )")
     .eq("id", id)
     .eq("tourist_id", user.id)
     .maybeSingle();
@@ -51,6 +56,20 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
   const days = rowsToDays(rows, itinerary.start_date);
   const tours = await bookableForDays(supabase, days);
   const group = groupFromPreferences(itinerary.preferences);
+  // The traveller's own bookings on the trip days: their tickets, and any trip the operator called off.
+  const { data: tripBookings } = itinerary.start_date
+    ? await supabase
+        .from("tours_bookings")
+        .select("*, tours_packages ( title )")
+        .eq("user_id", user.id)
+        .gte("tour_date", itinerary.start_date)
+        .lte("tour_date", itinerary.end_date ?? itinerary.start_date)
+        .in("status", ["confirmed", "completed"])
+        .order("tour_date")
+    : { data: [] };
+  const bookings = (tripBookings ?? []).map((b) => ({ ...b, title: (Array.isArray(b.tours_packages) ? b.tours_packages[0] : b.tours_packages)?.title ?? "Tour" }));
+  const tickets = bookings.filter((b) => hasTicket(b));
+  const calledOff = bookings.filter((b) => callOffState(b) === "awaiting");
 
   return (
     <PageFrame>
@@ -61,6 +80,32 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
         <h1 className="display-2 mt-1 text-daet-ink">{itinerary.title}</h1>
         {itinerary.summary ? <p className="mt-3 rounded-2xl card-edge bg-surface p-4 text-base leading-7 text-daet-ink">{itinerary.summary}</p> : null}
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Opening hours can change; check each place before you go.</p>
+
+        <SaveTripOffline ticketPaths={tickets.map((t) => `/tours/bookings/${t.id}/ticket`)} />
+
+        {calledOff.map((b) => (
+          <Link key={b.id} href={`/tours/bookings/${b.id}`} className="mt-4 block rounded-2xl bg-yellow-50 p-4 text-daet-ink dark:bg-yellow-950/30">
+            <span className="font-bold">{b.title} on {shortDay(b.tour_date)} is called off.</span> {b.called_off_reason} <span className="font-bold text-blue-700 underline dark:text-blue-300">Pick a new date or a full refund</span>
+          </Link>
+        ))}
+
+        {tickets.length ? (
+          <section aria-labelledby="trip-tickets" className="mt-6 rounded-2xl card-edge bg-surface p-4">
+            <h2 id="trip-tickets" className="text-lg font-bold text-daet-ink">Your tickets for this trip</h2>
+            <ul className="mt-2 space-y-2">
+              {tickets.map((t) => (
+                <li key={t.id}>
+                  <Link href={`/tours/bookings/${t.id}/ticket`} className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-canvas px-3 py-2 font-semibold text-daet-ink hover:bg-muted">
+                    <span>
+                      {shortDay(t.tour_date)} · {t.title}
+                    </span>
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">Show QR</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <div className="mt-6">
           <SavedItinerary days={days} />

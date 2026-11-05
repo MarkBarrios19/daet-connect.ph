@@ -12,6 +12,8 @@ import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { manilaDayStartUtc, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
 import { BookingActionButtons } from "./booking-action-buttons";
+import { CallOffButton } from "./call-off-button";
+import { callOffState, canCallOff } from "@/lib/tours/call-off";
 import { CancellationReview, RefundPanel, type CancellationRequest } from "./cancellation-review";
 import { isBusyReason, type BusyReason } from "@/lib/tours/guide-swap";
 import { SwapReview, type PendingSwap } from "./swap-review";
@@ -427,6 +429,17 @@ export default async function OperatorBookingsPage({
                         </>
                       )}
 
+                      {callOffState(booking) === "awaiting" ? (
+                        <p className="mb-4 rounded-2xl bg-yellow-50 p-3 text-sm text-daet-ink dark:bg-yellow-950/30">
+                          <span className="font-bold">Called off:</span> {booking.called_off_reason} The traveller is choosing a new date or a full refund.
+                        </p>
+                      ) : callOffState(booking) === "rescheduled" ? (
+                        <p className="mb-4 rounded-2xl bg-canvas p-3 text-sm text-daet-ink">
+                          <span className="font-bold">Moved after a call-off</span>
+                          {booking.rescheduled_from ? ` from ${new Date(`${booking.rescheduled_from}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" })}` : ""}. The traveller picked this date.
+                        </p>
+                      ) : null}
+
                       {(booking.status === "cancelled" || booking.status === "rejected") && booking.cancellation_reason ? (
                         <p className="mb-4 rounded-2xl bg-canvas p-3 text-sm text-daet-ink">
                           <span className="font-bold">{booking.status === "cancelled" ? "Cancellation reason" : "Declined because"}:</span>{" "}
@@ -463,6 +476,14 @@ export default async function OperatorBookingsPage({
                         {booking.status !== "cancelled" && booking.status !== "rejected" ? (
                           <>
                             <OpenChatButton bookingId={booking.id} label="Message tourist" variant="ghost" />
+                            {canCallOff(booking, today) ? (
+                              <CallOffButton
+                                bookingId={booking.id}
+                                bookingReference={booking.booking_reference}
+                                contactName={booking.contact_name}
+                                tourDay={new Date(`${booking.tour_date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}
+                              />
+                            ) : null}
                             {booking.assigned_guide_id ? (
                               <OpenChatButton target={{ kind: "operator_guide", guideId: booking.assigned_guide_id }} label="Message guide" variant="ghost" />
                             ) : null}

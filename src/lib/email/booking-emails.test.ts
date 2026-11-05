@@ -1,4 +1,4 @@
-import { bookingConfirmedEmail, CALL_OFF_RULE, paymentReceivedEmail, type BookingEmailData } from "@/lib/email/booking-emails";
+import { bookingConfirmedEmail, CALL_OFF_RULE, paymentReceivedEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
 
 const booking: BookingEmailData = {
   reference: "BK-20261110-AAAA11",
@@ -45,5 +45,13 @@ describe("booking emails", () => {
     expect(email.text).toMatch(/^Hi,/);
     expect(email.text).toContain("The operator confirmed your booking.");
     expect(email.text).not.toContain("Meet at");
+  });
+
+  it("call-off: gives the reason and both choices, with a link to choose", () => {
+    const email = tripCalledOffEmail(booking, "Rough sea. The Coast Guard stopped boat trips.");
+    expect(email.subject).toBe("Trip called off: Calaguas <Island> Hopping on Tuesday, November 10, 2026");
+    expect(email.text).toContain("Bagasbas Coast Tours called off your trip for safety: Rough sea. The Coast Guard stopped boat trips.");
+    expect(email.text).toContain("pick a new date, or get a full refund");
+    expect(email.text).toContain("Choose a new date or a refund: https://example.test/tours/bookings/b1");
   });
 });

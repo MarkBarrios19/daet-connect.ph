@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { bookingConfirmedEmail, paymentReceivedEmail, type BookingEmailData } from "@/lib/email/booking-emails";
+import { bookingConfirmedEmail, paymentReceivedEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 
@@ -94,5 +94,13 @@ export function emailPaymentReceived(bookingId: string, amount: number) {
   later(async () => {
     const booking = await loadBooking(bookingId);
     if (booking) await sendEmail({ to: booking.to, ...paymentReceivedEmail(booking.data, amount) });
+  });
+}
+
+export function emailTripCalledOff(bookingId: string, reason: string) {
+  if (!isEmailConfigured()) return;
+  later(async () => {
+    const booking = await loadBooking(bookingId);
+    if (booking) await sendEmail({ to: booking.to, ...tripCalledOffEmail(booking.data, reason) });
   });
 }

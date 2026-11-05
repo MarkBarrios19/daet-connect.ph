@@ -1,7 +1,8 @@
 "use server";
 
 import { scheduleErrorMessage } from "@/lib/tours/guide-swap";
-import { emailBookingConfirmed } from "@/lib/email/notify-booking";
+import { emailBookingConfirmed, emailTripCalledOff } from "@/lib/email/notify-booking";
+import { parseCallOffReason } from "@/lib/tours/call-off";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkTransition, isBookingStatus, type BookingStatus } from "@/lib/tours/booking-lifecycle";
@@ -202,4 +203,26 @@ export async function updateBookingStatus(
     console.error("Unexpected error in updateBookingStatus:", err);
     return { success: false, error: "An unexpected error occurred" };
   }
+}
+
+/**
+ * Calls a confirmed trip off (weather or safety). The database checks that
+ * this operator runs the tour, tells the traveller and the guide in the app
+ * and by push, and the traveller gets an email; they then pick a new date
+ * or a full refund.
+ */
+export async function callOffBooking(bookingId: string, reason: string): Promise<ActionResult> {
+  if (!isUuid(bookingId)) return { success: false, error: "Booking not found." };
+  const parsed = parseCallOffReason(reason);
+  if (!parsed.ok) return { success: false, error: parsed.error };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("tours_call_off_booking", { p_booking_id: bookingId, p_reason: parsed.reason });
+  if (error) {
+    console.error("Call off booking error:", error.message);
+    return { success: false, error: userFacingDbError(error, "The trip could not be called off. Please try again.") };
+  }
+  revalidatePath("/tours/operator/bookings");
+  revalidatePath(`/tours/bookings/${bookingId}`);
+  emailTripCalledOff(bookingId, parsed.reason);
+  return { success: true };
 }
