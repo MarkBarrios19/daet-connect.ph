@@ -69,6 +69,12 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 | 32 | Emergency numbers not yet entered | The national 911 hotline, plus "Tell the operator or your guide". |
 | 33 | Suggested questions | Place and event pages get a greeting with three suggested questions too. |
 | 34 | Trip memory when not signed in | Dates and group kept on that phone until cleared. |
+| 35 | Planning without dates | "No dates yet" drafts a sample plan; dates are asked when saving or booking. |
+| 36 | Questions not about Daet | Politely decline in one line and steer back to Daet. |
+| 37 | Signed-in limit | 20 full AI answers a day (raise to 50 once Gemini is paid); simple answers after that. |
+| 38 | Voice in the chat | A microphone in the assistant's message box, Filipino or English; hidden where the browser can't listen. |
+| 39 | Photos in the chat | Allowed for signed-in visitors, AI answers only (not in basic mode). |
+| 40 | Never | The assistant never: says a booking is confirmed or paid; promises a refund or new date; makes up a price, hours or boat schedule; gives medical or legal advice; shares another visitor's details, a booking or a child's age. |
 
 ## Settings (Vercel environment variables)
 
