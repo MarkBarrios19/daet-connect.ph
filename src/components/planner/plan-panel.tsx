@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { TransportCardView } from "@/components/assistant/transport-card";
 import { RouteMap, type MapPoint } from "@/components/maps/route-map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,7 @@ export function PlanPanel({
       {shown.map(({ d, i }) => (
         <div key={d.date} className="space-y-2">
           {day === "all" ? <h3 className="font-bold text-daet-ink">Day {i + 1} · {dayLabel(d.date)}</h3> : null}
+          {i === 0 && itinerary.gettingThere ? <GettingThere value={itinerary.gettingThere} /> : null}
           {d.blocks.length === 0 ? (
             <p className="rounded-2xl bg-canvas p-3 text-sm text-slate-600 dark:text-slate-400">Nothing fits this day yet. Try Regenerate, or ask for different places.</p>
           ) : (
@@ -153,14 +155,7 @@ export function PlanPanel({
         </div>
       ))}
 
-      {itinerary.packages.length ? (
-        <div className="space-y-2">
-          <h3 className="font-bold text-daet-ink">Tours you can book</h3>
-          {itinerary.packages.map((p) => (
-            <BookableCard key={p.id} pkg={p} group={group} />
-          ))}
-        </div>
-      ) : null}
+      {itinerary.packages.length ? <BookEachTrip itinerary={itinerary} group={group} /> : null}
 
       <p className="text-xs text-slate-600 dark:text-slate-400">Costs are entrance fees for your group of {group}. Times are estimates; confirm hours marked as not confirmed.</p>
       {footer}
@@ -202,7 +197,68 @@ function StopCard({ block, busy, onAsk, onNearby, onSwap, onRemove }: { block: V
   );
 }
 
-export function BookableCard({ pkg, group }: { pkg: BookablePackage; group: number }) {
+/** Day 1 starts with how to get to Daet: listed fares, always labelled as estimates. */
+function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingThere"]> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl bg-canvas p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-bold text-daet-ink">Getting there from {value.from}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {value.card
+              ? `${value.card.options.length === 1 ? "One listed way" : `${value.card.options.length} listed ways`}${value.card.options[0]?.time ? `, about ${value.card.options[0].time}` : ""}`
+              : `No fares listed from ${value.from} yet. Most people go through Manila or Naga, then take a bus or van to Daet.`}
+          </p>
+        </div>
+        {value.card ? (
+          <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="min-h-11 shrink-0 rounded-full px-3 text-sm font-bold text-blue-700 dark:text-blue-300">
+            {open ? "Hide" : "Show"}
+          </button>
+        ) : null}
+      </div>
+      {open && value.card ? <div className="mt-2"><TransportCardView card={value.card} /></div> : null}
+      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+        Estimate. Fares change; confirm with the driver or operator{value.checkedOn ? ` (listed fares checked ${value.checkedOn})` : ""}.
+      </p>
+    </div>
+  );
+}
+
+/** What booking a tour costs this group, from the database price; null when no price is listed. */
+export function groupPrice(pkg: BookablePackage, group: number): number | null {
+  if (!pkg.price) return null;
+  return pkg.price.perPerson ? pkg.price.amount * group : pkg.price.amount;
+}
+
+/** The first plan day that visits a place the tour passes, so the booking form opens on that date. */
+export function bookingHref(pkg: BookablePackage, itinerary: ItineraryResult, group: number): string {
+  const day = itinerary.plan.days.find((d) => d.blocks.some((b) => b.kind === "visit" && pkg.matched.includes(b.name))) ?? itinerary.plan.days[0];
+  const query = new URLSearchParams({ ...(day ? { date: day.date } : {}), pax: String(group) });
+  return `/tours/packages/${pkg.id}/book?${query}`;
+}
+
+/** Each bookable tour with its own Book button (each is paid separately), and the total. */
+function BookEachTrip({ itinerary, group }: { itinerary: ItineraryResult; group: number }) {
+  const prices = itinerary.packages.map((p) => groupPrice(p, group));
+  const known = prices.filter((p): p is number => p !== null);
+  return (
+    <div className="space-y-2">
+      <h3 className="font-bold text-daet-ink">Book each trip</h3>
+      {itinerary.packages.map((p) => (
+        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p, itinerary, group)} />
+      ))}
+      {itinerary.packages.length > 1 && known.length ? (
+        <p className="text-sm font-semibold text-daet-ink">
+          {known.length < prices.length ? "At least " : "About "}
+          {formatPeso(known.reduce((a, b) => a + b, 0))} for all {itinerary.packages.length} trips. Each one is booked and paid separately.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function BookableCard({ pkg, group, bookHref }: { pkg: BookablePackage; group: number; bookHref?: string }) {
   const price = pkg.price ? (pkg.price.perPerson ? `from ${formatPeso(pkg.price.amount)} per person · about ${formatPeso(pkg.price.amount * group)} for ${group}` : `from ${formatPeso(pkg.price.amount)} per group`) : null;
   return (
     <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-950/40">
@@ -215,9 +271,16 @@ export function BookableCard({ pkg, group }: { pkg: BookablePackage; group: numb
       {price ? <p className="mt-1 text-sm font-semibold text-daet-ink">{price}</p> : null}
       {pkg.notIncluded.length ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Not included: {pkg.notIncluded.join(", ")}</p> : null}
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{WEATHER_RULE}</p>
-      <Link href={`/tours/packages/${pkg.id}`} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">
-        View tour
-      </Link>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {bookHref ? (
+          <Link href={bookHref} className="inline-flex min-h-11 items-center rounded-full bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">
+            Book for {group}
+          </Link>
+        ) : null}
+        <Link href={`/tours/packages/${pkg.id}`} className="inline-flex min-h-11 items-center rounded-full bg-surface px-4 text-sm font-bold text-blue-700 hover:bg-muted dark:text-blue-300">
+          View tour
+        </Link>
+      </div>
     </div>
   );
 }

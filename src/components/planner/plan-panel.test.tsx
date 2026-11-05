@@ -23,6 +23,7 @@ const itinerary: ItineraryResult = {
   ],
   packages: [{ id: "pkg1", title: "Bagasbas Surf Lesson", coverImageUrl: null, matched: ["Bagasbas Beach"], price: { amount: 800, perPerson: true }, operatorName: "Coast Tours", verified: true, notIncluded: ["Lunch"] }],
   travelers: { adults: 2, children: [6] },
+  gettingThere: null,
   generatedAt: "2026-11-05T00:00:00.000Z",
 };
 const noop: PanelActions = { regenerate: jest.fn(), swap: jest.fn(), remove: jest.fn(), change: jest.fn() };
@@ -89,5 +90,29 @@ describe("PlanPanel", () => {
     expect(actions.change).toHaveBeenCalledWith(itinerary, "Make it more relaxed");
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ input: relaxed }));
     expect(screen.getByRole("status")).toHaveTextContent("Made it more relaxed.");
+  });
+
+  it("starts day 1 with getting there, always labelled as an estimate", () => {
+    const card = { type: "transport" as const, title: "Manila to Daet", options: [{ time: "8–9 h", legs: [{ mode: "Bus", from: "Manila (PITX)", to: "Daet", fare: "₱752.00–₱950.00 per person", time: "8–9 h", note: null, verified: false, boardHref: "https://maps.example" }] }] };
+    render(<PlanPanel itinerary={{ ...itinerary, gettingThere: { from: "Manila", card, checkedOn: "2026-11-05" } }} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+    expect(screen.getByText("Getting there from Manila")).toBeInTheDocument();
+    expect(screen.getByText(/One listed way, about 8–9 h/)).toBeInTheDocument();
+    expect(screen.getByText(/Estimate\. Fares change; confirm with the driver or operator \(listed fares checked 2026-11-05\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    expect(screen.getByText("Bus: Manila (PITX) to Daet")).toBeInTheDocument();
+  });
+
+  it("says plainly when no fares are listed from their city", () => {
+    render(<PlanPanel itinerary={{ ...itinerary, gettingThere: { from: "Davao", card: null, checkedOn: null } }} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+    expect(screen.getByText(/No fares listed from Davao yet/)).toBeInTheDocument();
+  });
+
+  it("books each trip on its plan day for the whole group, with a total", () => {
+    const second = { ...itinerary.packages[0], id: "pkg2", title: "Daet Heritage Walk", matched: ["Daet Park"], price: { amount: 1000, perPerson: false } };
+    render(<PlanPanel itinerary={{ ...itinerary, packages: [...itinerary.packages, second] }} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+    const books = screen.getAllByRole("link", { name: "Book for 3" });
+    expect(books[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-10&pax=3");
+    expect(books[1]).toHaveAttribute("href", "/tours/packages/pkg2/book?date=2026-11-11&pax=3");
+    expect(screen.getByText(/About ₱3,400.00 for all 2 trips\. Each one is booked and paid separately\./)).toBeInTheDocument();
   });
 });

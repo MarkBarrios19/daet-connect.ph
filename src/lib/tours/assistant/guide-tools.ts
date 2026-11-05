@@ -53,7 +53,7 @@ async function loadPlaces(ctx: ToolContext, kinds: GuidePlaceKind[]): Promise<Gu
   return (data ?? []).map((row) => toGuidePlace(row as Record<string, unknown>));
 }
 
-async function loadFares(ctx: ToolContext): Promise<Fare[]> {
+export async function loadFares(ctx: Pick<ToolContext, "supabase">): Promise<Fare[]> {
   const { data, error } = await ctx.supabase.from("tours_fares").select(FARE_COLUMNS).eq("is_active", true).limit(300);
   if (error) throw new Error("fares");
   return (data ?? []).map((row) => toFare(row as Record<string, unknown>));
@@ -147,7 +147,7 @@ export async function foodStops(ctx: ToolContext, input: { from: string; to: str
 
 // ------------------------------------------------------------------ getting there
 
-function transportCard(title: string, routes: FareRoute[]): TransportCard {
+export function transportCard(title: string, routes: FareRoute[]): TransportCard {
   return {
     type: "transport",
     title,

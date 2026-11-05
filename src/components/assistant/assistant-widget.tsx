@@ -9,7 +9,8 @@ import { AssistantChat } from "@/components/assistant/assistant-chat";
 import { DOCK_BUSY_EVENT, openInDock } from "@/components/chat-dock/dock-bus";
 
 /** Pages where a floating chat button would get in the way. */
-const HIDDEN = [/^\/login/, /^\/signup/, /^\/forgot-password/, /^\/tours\/help/, /^\/tours\/messages\/[^/]+$/, /^\/tours\/guide\/check-in/, /\/ticket$/];
+// /tours/plan is the assistant itself (chat beside the plan).
+const HIDDEN = [/^\/tours\/plan\/?$/, /^\/login/, /^\/signup/, /^\/forgot-password/, /^\/tours\/help/, /^\/tours\/messages\/[^/]+$/, /^\/tours\/guide\/check-in/, /\/ticket$/];
 
 /**
  * Floating "Ask the assistant" button on every page, opening the travel

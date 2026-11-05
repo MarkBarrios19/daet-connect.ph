@@ -1,5 +1,5 @@
 import { fakeSupabase, type Tables } from "@/lib/tours/assistant/__fixtures__/fake-supabase";
-import { describeItinerary, planTrip, wantsFromText } from "@/lib/tours/assistant/plan-tool";
+import { describeItinerary, gettingThereFrom, planTrip, wantsFromText } from "@/lib/tours/assistant/plan-tool";
 import { respond, type AssistantEvent, type RespondDeps } from "@/lib/tours/assistant/respond";
 import type { ToolContext } from "@/lib/tours/assistant/tools";
 
@@ -14,6 +14,9 @@ const tables = (): Tables => ({
     attraction("rizal", "First Rizal Monument", "heritage", 14.1131, 122.9545),
     attraction("church", "Daet Cathedral", "religious", 14.1125, 122.955),
     attraction("park", "Daet Park", "park", 14.115, 122.957, 20),
+  ],
+  tours_fares: [
+    { id: "f1", mode: "bus", from_name: "Manila (PITX)", to_name: "Daet", board_place_id: null, fare_min: "752", fare_max: "950", fare_per: "person", minutes_min: 480, minutes_max: 540, schedule_note: null, source: "test", checked_on: "2026-11-05", verified: false, is_active: true },
   ],
   tours_packages: [
     {
@@ -38,6 +41,8 @@ describe("planTrip", () => {
     expect(c.itinerary?.input.groupSize).toBe(3);
     expect(c.itinerary?.packages[0]).toMatchObject({ id: "pkg1", verified: true, price: { amount: 800, perPerson: true }, notIncluded: ["Lunch"], operatorName: "Bagasbas Coast Tours" });
     expect(labels).toEqual(["Checking places", "Checking operators"]);
+    expect(c.itinerary?.gettingThere).toMatchObject({ from: "Manila", checkedOn: "2026-11-05", card: { title: "Manila to Daet" } });
+    expect(c.itinerary?.gettingThere?.card?.options[0].legs[0]).toMatchObject({ mode: "Bus", from: "Manila (PITX)", fare: "₱752.00–₱950.00 per person" });
     expect(JSON.stringify(result)).toContain("Bagasbas Beach");
     expect(JSON.stringify(result)).not.toContain("800");
   });
@@ -95,6 +100,13 @@ describe("respond with a plan", () => {
     const events = await collect(respond(ask, deps({ runAi: async () => { throw new Error("down"); } })));
     expect(events.filter((e) => e.t === "mode").map((e) => (e as { mode: string }).mode)).toEqual(["ai", "basic"]);
     expect(events.map((e) => e.t)).toContain("itinerary");
+  });
+});
+
+describe("gettingThereFrom", () => {
+  it("is null without a city and has no card when no fares are listed", async () => {
+    expect(await gettingThereFrom(ctx(), null)).toBeNull();
+    expect(await gettingThereFrom(ctx(), "Davao")).toEqual({ from: "Davao", card: null, checkedOn: null });
   });
 });
 

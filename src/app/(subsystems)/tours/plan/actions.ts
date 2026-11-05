@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { aiCallerKey, allowAiCall } from "@/lib/ai/limits";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { TripContextSchema } from "@/lib/tours/assistant/context";
 import { loadAttractions as loadAttractionRows, loadPackageCandidates } from "@/lib/tours/itinerary/data";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { parsePreferences, planToRows, type PlannerInput } from "@/lib/tours/itinerary/form";
@@ -48,10 +49,26 @@ export async function generateItinerary(input: PlannerInput, useAi: boolean): Pr
   };
 }
 
+/** Travellers and origin, re-checked; anything invalid is simply not stored. */
+function tripDetails(trip: { travelers?: unknown; origin?: unknown } | null | undefined) {
+  const parsed = TripContextSchema.pick({ travelers: true, origin: true }).safeParse({ travelers: trip?.travelers ?? null, origin: trip?.origin ?? null });
+  if (!parsed.success) return {};
+  return { ...(parsed.data.travelers ? { travelers: parsed.data.travelers } : {}), ...(parsed.data.origin ? { origin: parsed.data.origin.city } : {}) };
+}
+
 export type SaveResult = { ok: true; id: string } | { ok: false; message: string; issues?: PlanIssue[] };
 
 /** Saves after re-validating the (possibly edited) plan against the live dataset. */
-export async function saveItinerary(input: { title: string; preferences: PlannerInput; plan: Plan; tips: Record<string, string>; summary: string | null; source: "rules" | "llm" }): Promise<SaveResult> {
+export async function saveItinerary(input: {
+  title: string;
+  preferences: PlannerInput;
+  plan: Plan;
+  tips: Record<string, string>;
+  summary: string | null;
+  source: "rules" | "llm";
+  /** Who is coming and where from (the planner's form), kept with the saved trip only. */
+  trip?: { travelers?: unknown; origin?: unknown } | null;
+}): Promise<SaveResult> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -79,7 +96,7 @@ export async function saveItinerary(input: { title: string; preferences: Planner
       title,
       start_date: parsed.prefs.startDate,
       end_date: plan.days[plan.days.length - 1]?.date ?? parsed.prefs.startDate,
-      preferences: parsed.prefs,
+      preferences: { ...parsed.prefs, ...tripDetails(input.trip) },
       summary: typeof input.summary === "string" ? input.summary.slice(0, 600) : null,
       plan_source: input.source === "llm" ? "llm" : "rules",
       ai_prompt_used: input.source === "llm" ? "Gemini refinement of the rule-based draft (curated attractions only)" : null,

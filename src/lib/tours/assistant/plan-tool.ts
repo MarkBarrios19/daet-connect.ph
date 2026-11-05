@@ -1,6 +1,8 @@
 import { ATTRACTION_CATEGORIES, type AttractionCategory } from "@/lib/tours/attractions";
 import { missingInputs, type TripContext } from "@/lib/tours/assistant/context";
+import { loadFares, transportCard, type TransportCard } from "@/lib/tours/assistant/guide-tools";
 import type { ToolContext } from "@/lib/tours/assistant/tools";
+import { faresBetween } from "@/lib/tours/guide/fares";
 import { parseTripRequest } from "@/lib/tours/itinerary/assistant";
 import { bookablePackages, loadAttractions, type BookablePackage } from "@/lib/tours/itinerary/data";
 import { contextToInput } from "@/lib/tours/itinerary/edit";
@@ -26,8 +28,23 @@ export type ItineraryResult = {
   stops: PlanStop[];
   packages: BookablePackage[];
   travelers: NonNullable<TripContext["travelers"]>;
+  /** Day 1's "Getting there": listed fares from where they travel from to Daet. Null card when none are listed. */
+  gettingThere: { from: string; card: TransportCard | null; checkedOn: string | null } | null;
   generatedAt: string;
 };
+
+/** Up to two ways from the traveller's city to Daet, from tours_fares. Never throws: the plan doesn't depend on it. */
+export async function gettingThereFrom(ctx: Pick<ToolContext, "supabase">, city: string | null | undefined): Promise<ItineraryResult["gettingThere"]> {
+  const from = (city ?? "").trim();
+  if (!from) return null;
+  try {
+    const routes = faresBetween(await loadFares(ctx), from, "Daet").slice(0, 2);
+    const checkedOn = routes.flatMap((r) => r.legs.map((l) => l.checked_on)).sort()[0] ?? null;
+    return { from, card: routes.length ? transportCard(`${from} to Daet`, routes) : null, checkedOn };
+  } catch {
+    return { from, card: null, checkedOn: null };
+  }
+}
 
 export type PlanWants = { interests: AttractionCategory[] | null; budgetPerDay: number | null; pace: Pace | null };
 
@@ -53,8 +70,8 @@ export async function planTrip(ctx: ToolContext, wants: PlanWants) {
   });
 
   ctx.onStatus?.("Checking operators");
-  const packages = await bookablePackages(ctx.supabase, stops).catch(() => []);
-  ctx.itinerary = { plan, input, stops, packages, travelers: ctx.trip.travelers, generatedAt: new Date().toISOString() };
+  const [packages, gettingThere] = await Promise.all([bookablePackages(ctx.supabase, stops).catch(() => []), gettingThereFrom(ctx, ctx.trip.origin?.city)]);
+  ctx.itinerary = { plan, input, stops, packages, travelers: ctx.trip.travelers, gettingThere, generatedAt: new Date().toISOString() };
 
   // What the model gets back to explain: names and times only, from the plan itself.
   return {
@@ -65,6 +82,7 @@ export async function planTrip(ctx: ToolContext, wants: PlanWants) {
       stops: d.blocks.map((b) => (b.kind === "visit" ? `${formatClock(b.start)} ${b.name}${b.hoursConfirmed ? "" : " (hours not confirmed)"}` : `${formatClock(b.start)} lunch`)),
     })),
     emptyDays: plan.days.filter((d) => d.blocks.length === 0).length,
+    gettingThere: gettingThere?.card ? `On screen: ${gettingThere.card.options.length} listed way(s) from ${gettingThere.from} to Daet with fares; say they are estimates to confirm with the operator.` : `No fares listed from ${gettingThere?.from ?? "their city"}; most people go through Manila or Naga, then bus or van to Daet.`,
     bookableTours: packages.map((p) => ({ title: p.title, operator: p.operatorName, verifiedByTourismOffice: p.verified, passesNear: p.matched })),
   };
 }

@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { LineIcon } from "@/components/ui/icons";
 import type { AssistantEvent } from "@/lib/tours/assistant/respond";
 import type { AssistantCard, HandoffCard } from "@/lib/tours/assistant/tools";
-import type { CostCard, PlaceCard, TransportCard } from "@/lib/tours/assistant/guide-tools";
+import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
+import { TransportCardView } from "@/components/assistant/transport-card";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
@@ -298,6 +299,11 @@ export function AssistantChat({
               {signedIn ? ", your bookings, payments and tickets" : ""}. I can also pass you to a person.
             </p>
             <div className="flex flex-wrap gap-2">
+              {signedIn ? (
+                <Link href="/tours/my-itineraries" onClick={onNavigate} className="inline-flex min-h-11 items-center rounded-full bg-muted px-4 text-sm font-semibold text-daet-ink transition hover:bg-muted-strong">
+                  My saved trips
+                </Link>
+              ) : null}
               {ASSISTANT_EXAMPLES.map((example) => (
                 <button key={example} type="button" onClick={() => send(example)} className="min-h-11 rounded-full bg-blue-50 dark:bg-blue-950/40 px-4 text-left text-sm font-semibold text-blue-800 dark:text-blue-300 transition hover:bg-blue-100 dark:hover:bg-blue-900/40 active:scale-[0.98]">
                   {example}
@@ -524,36 +530,6 @@ function CostCardView({ card }: { card: CostCard }) {
       <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
         Estimates from listed prices, not quotes.{card.unknown.length ? ` Not included (no price on record): ${card.unknown.join(", ")}.` : ""}
       </p>
-    </div>
-  );
-}
-
-function TransportCardView({ card }: { card: TransportCard }) {
-  return (
-    <div className="rounded-2xl bg-canvas p-3">
-      <p className="font-bold text-daet-ink">{card.title}</p>
-      <ol className="mt-2 space-y-3">
-        {card.options.map((option, i) => (
-          <li key={i} className="rounded-2xl card-edge bg-surface p-2.5">
-            {card.options.length > 1 ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Option {i + 1}{option.time ? ` · about ${option.time}` : ""}</p> : option.time ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">About {option.time} in all</p> : null}
-            <ol className="mt-1 space-y-2">
-              {option.legs.map((leg, j) => (
-                <li key={j} className="text-sm">
-                  <p className="font-semibold text-daet-ink">
-                    {leg.mode}: {leg.from} to {leg.to}
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400">{[leg.fare ?? "Fare: ask locally", leg.time].filter(Boolean).join(" · ")}{leg.verified ? "" : " · verify locally"}</p>
-                  {leg.note ? <p className="text-xs text-slate-600 dark:text-slate-400">{leg.note}</p> : null}
-                  <a href={leg.boardHref} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue-700 dark:text-blue-300 underline">
-                    <LineIcon name="pin" className="h-4 w-4" /> Where to board in {leg.from}
-                    <span className="sr-only"> (opens Google Maps)</span>
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

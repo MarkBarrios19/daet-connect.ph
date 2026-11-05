@@ -1,6 +1,7 @@
 "use server";
 
 import { scheduleErrorMessage } from "@/lib/tours/guide-swap";
+import { emailBookingConfirmed } from "@/lib/email/notify-booking";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkTransition, isBookingStatus, type BookingStatus } from "@/lib/tours/booking-lifecycle";
@@ -193,6 +194,8 @@ export async function updateBookingStatus(
 
     revalidatePath("/tours/operator/bookings");
     revalidatePath(`/tours/bookings/${bookingId}`);
+    // "Confirmed, please pay": once, on the pending → confirmed change.
+    if (newStatus === "confirmed" && booking.status === "pending") emailBookingConfirmed(bookingId);
 
     return { success: true };
   } catch (err) {
