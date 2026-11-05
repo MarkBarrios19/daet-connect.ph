@@ -12,6 +12,7 @@ import { BookingSteps } from "@/components/home/booking-steps";
 import { GettingHere } from "@/components/home/getting-here";
 import { HomeFaq } from "@/components/home/home-faq";
 import { HomeMap, type MapPlace } from "@/components/home/home-map";
+import { MapBoundary } from "@/components/maps/map-boundary";
 import { PackageCard } from "@/components/tours/package-card";
 import { placePhoto } from "@/lib/tours/trip-board";
 import { toSummary, type RatingSummary } from "@/lib/tours/reviews";
@@ -285,7 +286,10 @@ export default async function HomePage() {
             : "The map grows as the Tourism Office pins each place."}
         </p>
         {mapPlaces.length > 0 ? (
-          <HomeMap places={mapPlaces} />
+          // A tile host that is away must cost the visitor the map, not the page.
+          <MapBoundary>
+            <HomeMap places={mapPlaces} />
+          </MapBoundary>
         ) : (
           <p className="rounded-2xl card-edge bg-surface p-6 text-lg text-daet-ink">[placeholder: no place has coordinates yet]</p>
         )}

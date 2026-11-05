@@ -103,13 +103,42 @@ async function spotInWedge(page: import("@playwright/test").Page, index: number)
 }
 
 test.describe("home fan on a phone", () => {
-  test("shows six places, one per wedge", async ({ page }) => {
+  test("shows six places, one per wedge, and one way out to the tours", async ({ page }) => {
     await visit(page, "/");
     const fan = page.getByRole("group", { name: "Places in Daet" });
 
     await expect(fan.getByRole("button")).toHaveCount(6);
-    await expect(page.getByRole("link", { name: "Find a tour" })).toHaveCount(0);
     await expect(page.getByText("Tap a place to see it")).toBeVisible();
+
+    // A phone's first screen used to offer nothing to press: the audit found no
+    // call to action at 390px. One now stands beside the hint, inside the band
+    // the two fans leave — visible without scrolling, and a full touch target.
+    const cta = page.getByRole("link", { name: "Find a tour" });
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", "/tours/browse");
+    const box = await cta.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+
+    // It sits in the band, clear of the photos above and below it.
+    const clear = await page.evaluate(() => {
+      const link = Array.from(document.querySelectorAll("[data-headline] a")).find(
+        (element) => element.textContent?.trim() === "Find a tour",
+      );
+      if (!link) return null;
+      const box = link.getBoundingClientRect();
+      // Where the two fans stand: their apexes are written into the wedges' own
+      // clip paths, so the band is what is left between the highest and lowest.
+      const apexes = Array.from(document.querySelectorAll<HTMLElement>("[data-wedge]")).map((wedge) => {
+        const match = wedge.style.clipPath.match(/polygon\(([-\d.]+)% ([-\d.]+)%/);
+        return match ? (Number(match[2]) / 100) * window.innerHeight : null;
+      });
+      const ys = apexes.filter((y): y is number => y !== null);
+      return { top: box.top, bottom: box.bottom, bandTop: Math.min(...ys), bandBottom: Math.max(...ys) };
+    });
+    expect(clear, "the CTA is in the headline band").not.toBeNull();
+    expect(clear!.top).toBeGreaterThanOrEqual(clear!.bandTop);
+    expect(clear!.bottom).toBeLessThanOrEqual(clear!.bandBottom);
   });
 
   test("keeps the one map, and closes the page with the questions", async ({ page }) => {

@@ -45,6 +45,18 @@ const DEFAULT_VP_Y = 0.578;
  */
 export const PHONE_BAND = 0.18;
 
+/**
+ * …and never less than this, in pixels.
+ *
+ * The band holds the headline, one line of hint and — since the phone got its
+ * own call to action — one 44px button beside that hint, which comes to a
+ * little over 120px on a 360px-wide phone. At the 18% above, a 375×667 screen
+ * leaves the band 120px, and the button would have pushed down into the
+ * photos. A floor is the smallest change that keeps the band's own promise
+ * ("space for what stands in it") true at every phone height.
+ */
+export const PHONE_BAND_MIN = 150;
+
 /** What covers the hero's top and foot, in pixels, on the box it is drawn in. */
 export interface FanInsets {
   /** The sticky header, which the hero sits under. */
@@ -220,7 +232,7 @@ export function fansFor(
     // taller than the bottom one by exactly the header's height — the hero
     // starts under the sticky bar — and the tab bar takes as much again off the
     // foot, so the band between them sat low and the headline rode up on it.
-    const band = PHONE_BAND * height;
+    const band = Math.max(PHONE_BAND * height, PHONE_BAND_MIN);
     const centre = (insets.top + (height - insets.bottom)) / 2;
     return [
       { vp: [0.5 * width, centre - band / 2], a0: 188, a1: 352, from: 0, count: 3 },
