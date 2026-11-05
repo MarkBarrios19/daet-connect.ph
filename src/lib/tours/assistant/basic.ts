@@ -140,11 +140,34 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
     }
   }
 
+  // "Tell me about Apuao Grande Island": a listed place, answered from its listing,
+  // with tours only when one actually goes there.
+  const about = readAboutQuestion(text);
+  if (about) {
+    const info = await attractionInfo(ctx, { name: about });
+    const place = "places" in info ? info.places?.[0] : undefined;
+    if (place) {
+      const tours = await searchTours(ctx, { query: place.name });
+      const fee = place.entranceFee ? ` Entrance fee ${formatPeso(place.entranceFee)} per person.` : "";
+      // attractionInfo keeps 300 characters; end a cut description at a word, not mid-word.
+      const intro = !place.description
+        ? `It is a listed ${place.category} place.`
+        : place.description.length >= 300
+          ? `${place.description.slice(0, place.description.lastIndexOf(" "))}…`
+          : place.description;
+      const where = place.municipality ? ` (${place.municipality})` : "";
+      const toursLine = "tours" in tours && tours.tours?.length ? ` ${tours.tours.length === 1 ? "A tour goes" : "Tours go"} there; see below.` : "";
+      return `${place.name}${where}: ${intro}${fee} ${place.hours}${toursLine}`;
+    }
+  }
+
   // Tours, prices and open dates
   if (has(t, /\b(tour|tours|package|island|hopping|surf|surfing|calaguas|trip|available|availability|open dates|slots|seats|price|cost|magkano|how much)\b/) && !matchFaqStrong(t)) {
     const words = t.split(" ").filter((w) => w.length >= 4 && !STOP.has(w));
     let result = await searchTours(ctx, { query: words.join(" ") || null });
     if (!result.tours?.length && words.length) result = await searchTours(ctx, { query: words[0] });
+    // Nothing matched what they named: say so before showing every tour.
+    const unmatched = !result.tours?.length && words.length > 0;
     if (!result.tours?.length) result = await searchTours(ctx, {});
     if ("error" in result && result.error) return result.error;
     if (!result.tours?.length) return "There are no published tours yet. Please check back soon.";
@@ -155,6 +178,7 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
         return `${details.title}${details.prices[0]?.perPerson ? ` from ${formatPeso(details.prices[0].perPerson)} per person` : ""}. ${dates ? `Next open dates: ${dates}.` : "No open dates are listed right now."}`;
       }
     }
+    if (unmatched) return `I couldn't find a tour for that. Here ${result.tours.length === 1 ? "is the tour" : "are the tours"} you can book now; open one to see its open dates.`;
     return `Here ${result.tours.length === 1 ? "is a tour" : "are some tours"} you can book. Open one to see its open dates.`;
   }
 
@@ -176,4 +200,17 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
 /** A policy question that mentions a tour ("cancel my tour") is still a policy question. */
 function matchFaqStrong(t: string): boolean {
   return /\b(cancel|cancellation|refund|kansela|pay|payment|gcash|bayad|ticket|qr|check in|points|rewards)\b/.test(t);
+}
+
+/**
+ * The place a traveller asks about ("tell me about Apuao Grande Island",
+ * "what is Bagasbas like", "ano ang Calaguas"), or null. Only the name is
+ * returned; it is looked up against listings, never trusted as text.
+ */
+export function readAboutQuestion(text: string): string | null {
+  const m =
+    /^\s*(?:can you |pls |please )?(?:tell me (?:more )?about|what(?:'s| is)(?: there (?:to do )?(?:at|in|on))?|info(?:rmation)? (?:on|about)|describe|ano(?:ng| ang)(?: meron sa)?|kwento(?:han mo ako)? (?:tungkol )?sa)\s+(?:the )?(.{3,60}?)(?:\s+like)?\s*[?.!]*\s*$/i.exec(text);
+  if (!m) return null;
+  const name = m[1].replace(/^(?:sa|ang)\s+/i, "").trim();
+  return name.length >= 3 && !/\b(booking|bookings|ticket|payment|refund|policy|cancel|price|cost|weather)\b/i.test(name) ? name : null;
 }

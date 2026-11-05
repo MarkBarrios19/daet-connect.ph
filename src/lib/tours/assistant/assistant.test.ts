@@ -1,11 +1,11 @@
 import fc from "fast-check";
 import { allowAiCall, AI_BUDGETS, aiCallerKey, resetAiLimits } from "@/lib/ai/limits";
 import { fakeSupabase, type Tables } from "@/lib/tours/assistant/__fixtures__/fake-supabase";
-import { basicReply } from "@/lib/tours/assistant/basic";
+import { basicReply, readAboutQuestion } from "@/lib/tours/assistant/basic";
 import { FAQS, matchFaq } from "@/lib/tours/assistant/knowledge";
 import { assistantSystemPrompt } from "@/lib/tours/assistant/prompt";
 import { cleanHistory, respond, type AssistantEvent, type RespondDeps } from "@/lib/tours/assistant/respond";
-import { bookingCard, handoff, myBookings, searchTours, tourDetails, type ToolContext } from "@/lib/tours/assistant/tools";
+import { bookingCard, durationText, handoff, myBookings, searchTours, tourDetails, type ToolContext } from "@/lib/tours/assistant/tools";
 import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 
 const TODAY = "2026-10-25";
@@ -109,6 +109,16 @@ describe("tools", () => {
   });
 });
 
+describe("tour durations", () => {
+  it("says 1 day and 3 days whether the unit is stored singular or plural", () => {
+    expect(durationText(1, "days")).toBe("1 day");
+    expect(durationText(1, "day")).toBe("1 day");
+    expect(durationText(3, "days")).toBe("3 days");
+    expect(durationText(2, "hour")).toBe("2 hours");
+    expect(durationText(null, "days")).toBeNull();
+  });
+});
+
 describe("basic mode", () => {
   it("answers policy questions from the knowledge base", async () => {
     const c = ctx();
@@ -127,6 +137,31 @@ describe("basic mode", () => {
     expect(await basicReply("where is my ticket?", c)).toContain("BK-20261024-AAAA11");
     expect(c.cards.some((card) => card.type === "booking")).toBe(true);
     expect(await basicReply("where is my ticket?", ctx(null))).toMatch(/sign in/i);
+  });
+
+  it("answers 'tell me about' a listed place from its listing, not with unrelated tours", async () => {
+    const data = tables();
+    data.tours_attractions = [
+      { id: "at-1", slug: "apuao-grande-island", name: "Apuao Grande Island", category: "beach", municipality: "Mercedes", description: "Inhabited island of the Mercedes group, joined to Apuao Pequeña by a sandbar.", entrance_fee: 0, is_active: true, opening_hours: null, hours_note: null, latitude: 14.1, longitude: 123.1 },
+    ];
+    const c = ctx(null, data);
+    const reply = await basicReply("Tell me about Apuao Grande Island", c);
+    expect(reply).toMatch(/^Apuao Grande Island \(Mercedes\): Inhabited island/);
+    expect(reply).not.toMatch(/tours you can book/);
+    expect(c.cards).toEqual([expect.objectContaining({ type: "link", href: "/tours/attractions/apuao-grande-island" })]);
+  });
+
+  it("says when no tour matches a named place before listing all tours", async () => {
+    const reply = await basicReply("Any tour to Quinamanucan?", ctx());
+    expect(reply).toMatch(/couldn't find a tour for that/);
+  });
+
+  it("reads which place a traveller asks about", () => {
+    expect(readAboutQuestion("Tell me about Apuao Grande Island")).toBe("Apuao Grande Island");
+    expect(readAboutQuestion("what is Bagasbas Beach like?")).toBe("Bagasbas Beach");
+    expect(readAboutQuestion("Ano ang Calaguas?")).toBe("Calaguas");
+    expect(readAboutQuestion("tell me about the cancellation policy")).toBeNull();
+    expect(readAboutQuestion("Where can I eat?")).toBeNull();
   });
 
   it("passes complaints to a person", async () => {
