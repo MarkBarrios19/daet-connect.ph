@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FreeMap } from "@/components/maps/free-map";
 import type { FreeMapMarker } from "@/components/maps/map-types";
 import { DARK_TILE_FILTER, MAP_TILES } from "@/lib/maps/map-style";
@@ -361,18 +361,43 @@ describe("FreeMap", () => {
     expect(tail.parentElement).toBe(pin);
   });
 
-  it("leaves the wheel to the page until a map asks for it", async () => {
+  it("zooms with the wheel on every map, unless a map turns it off", async () => {
     const { rerender } = render(<FreeMap markers={markers} title="Places map" />);
     await waitFor(() => expect(mockState.map).not.toBeNull());
-    // A map in a long page does not swallow the wheel.
-    expect(mockState.wheel).toBe(false);
-
-    rerender(<FreeMap markers={markers} title="Places map" wheelZoom />);
-    // The map the visitor is working in does.
+    // Scroll to zoom is on by default (the owner asked for it on all maps).
     await waitFor(() => expect(mockState.wheel).toBe(true));
 
-    rerender(<FreeMap markers={markers} title="Places map" />);
+    rerender(<FreeMap markers={markers} title="Places map" wheelZoom={false} />);
     await waitFor(() => expect(mockState.wheel).toBe(false));
+  });
+
+  it("draws a category pin with its stop number and name, and the board's buttons over the map", async () => {
+    const pins: FreeMapMarker[] = markers.map((m, i) => ({ ...m, icon: i === 0 ? "heritage" : "beach" }));
+    render(<FreeMap markers={pins} title="Day 1 map" chip="Day 1 route" labels />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+    const pin = mockState.markerEls[1];
+    // A dark circle with the category's line icon, the number as a badge, the name beside it.
+    expect(pin.querySelector("span.bg-slate-900 svg path")).not.toBeNull();
+    expect(pin).toHaveAttribute("aria-label", "Stop 2: Bagasbas Beach");
+    expect(pin.textContent).toContain("2");
+    expect(pin.textContent).toContain("Bagasbas Beach");
+
+    expect(screen.getByText("Day 1 route")).toBeInTheDocument();
+    for (const name of ["Expand map", "Show my location", "Zoom in", "Zoom out"]) expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    // Expand opens a full-screen copy over the page; its button and Escape close it.
+    fireEvent.click(screen.getByRole("button", { name: "Expand map" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Close the full map" })).toBeInTheDocument());
+    expect(screen.getByRole("region", { name: "Day 1 map (full screen)" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Close the full map" })).toBeNull());
+  });
+
+  it("keeps only zoom over a map that has its own card", async () => {
+    render(<FreeMap markers={markers} title="Places map" controls="zoom" />);
+    await waitFor(() => expect(mockState.map).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand map" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show my location" })).toBeNull();
   });
 
   it("puts the focused place's photo in its pin, the point on the spot", async () => {
