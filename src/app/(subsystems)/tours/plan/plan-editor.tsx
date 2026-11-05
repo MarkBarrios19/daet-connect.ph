@@ -91,7 +91,7 @@ export function PlanEditor({
         {shortDate(prefs.startDate)}
         {dayCount > 1 ? ` to ${shortDate(plan.days[dayCount - 1].date)}` : ""} · {prefs.groupSize} {prefs.groupSize === 1 ? "person" : "people"}
       </p>
-      {result.summary ? <p className="mt-4 rounded-2xl bg-surface p-4 text-sm leading-6 text-daet-ink">{result.summary}</p> : null}
+      {result.summary ? <p className="mt-4 rounded-2xl card-edge bg-surface p-4 text-sm leading-6 text-daet-ink">{result.summary}</p> : null}
 
       {validation.ok ? null : (
         <Notice variant="warning" title="This plan needs a fix before you can save it" className="mt-4">
@@ -135,7 +135,7 @@ export function PlanEditor({
                               <p className="text-lg font-bold leading-6 text-daet-ink">{formatClock(block.start)}</p>
                               <p className="text-sm text-daet-ink/70">to {formatClock(block.end)}</p>
                             </div>
-                            <div className={`min-w-0 flex-1 rounded-2xl p-4 ${block.kind === "lunch" ? "bg-daet-sand" : "bg-surface"}`}>
+                            <div className={`min-w-0 flex-1 rounded-2xl p-4 ${block.kind === "lunch" ? "bg-daet-sand" : "card-edge bg-surface"}`}>
                               <div className="flex items-start gap-3">
                                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-daet-sand text-daet-leaf dark:text-blue-300">
                                   <CategoryIcon category={block.kind === "lunch" ? "lunch" : (byId.get(block.attractionId)?.category ?? "park")} className="h-5 w-5" />
@@ -222,7 +222,7 @@ export function PlanEditor({
           })}
 
           {matches ? (
-            <section aria-labelledby="matching-tours" className="rounded-2xl bg-surface p-5 sm:p-6">
+            <section aria-labelledby="matching-tours" className="rounded-2xl card-edge bg-surface p-5 sm:p-6">
               <h3 id="matching-tours" className="font-display text-2xl font-semibold text-daet-ink">
                 Book a guide for these places
               </h3>
@@ -249,7 +249,7 @@ export function PlanEditor({
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-6">
-          <section aria-labelledby="limits" className="rounded-2xl bg-surface p-5">
+          <section aria-labelledby="limits" className="rounded-2xl card-edge bg-surface p-5">
             <h3 id="limits" className="text-base font-bold text-daet-ink">
               Against your limits
             </h3>

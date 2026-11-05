@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
     "dev:poll": "node scripts/dev-poll.mjs",
-    "prebuild": "node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "test": "jest --runInBand",
@@ -14,14 +13,18 @@
     "test:e2e:tours": "playwright test --config playwright.tours.config.ts",
     "test:scripts": "node --test scripts/*.test.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "paymongo:setup": "node scripts/paymongo-setup.mjs",
-    "postinstall": "node scripts/copy-maplibre-worker.mjs"
+    "paymongo:setup": "node scripts/paymongo-setup.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.2.0",
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "@gsap/react": "2.1.2",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
-    "maplibre-gl": "6.14.0",
+    "gsap": "3.15.0",
+    "leaflet": "^1.9.4",
     "next": "^16.4.2",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
@@ -37,6 +40,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.19.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.0",

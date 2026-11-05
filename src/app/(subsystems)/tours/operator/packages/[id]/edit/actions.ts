@@ -23,7 +23,8 @@ import {
 } from "@/lib/tours/package-contract";
 import { OPERATOR_TABLE } from "@/lib/tours/operator-contract";
 import { EDIT_PACKAGE_SELECT, mapPackageRowToRecord } from "./edit-mappers";
-import type { EditPackageRecord } from "./edit-types";
+import { requireEditablePackageStatus as requireStatusPermissions } from "./permissions";
+import type { EditPackageRecord, EditPackageStatus } from "./edit-types";
 
 type SessionClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -1398,10 +1399,18 @@ export async function updatePackageCore(
       const result = rpcResult[0];
       
       if (result.success) {
+        const newStatus = result.new_status as EditPackageStatus | null;
         return {
           success: true,
-          message: "Package updated successfully.",
+          message:
+            newStatus === "pending_review"
+              ? "Photos saved. The package is back with the Tourism Office for review."
+              : "Package updated successfully.",
           updatedAt: result.new_updated_at,
+          data: {
+            packageId,
+            status: newStatus ?? packageStatus,
+          },
         };
       } else {
         // RPC returned success=false
@@ -1556,44 +1565,35 @@ export async function submitPackageForReview(
 }
 
 /**
- * Upload package image to Supabase storage.
- * 
- * Purpose:
- * - Verify authentication and operator status
- * - Accept image file from FormData
- * - Validate file format: jpg, jpeg, png, webp only
- * - Validate file size: max 5MB
- * - Upload to Supabase storage bucket with unique path
- * - Generate public URL from storage
- * - Return URL for client to use
- * 
- * Flow:
- * 1. Create Supabase server client
- * 2. Call requireAuthenticated to verify session and operator role
- * 3. Extract file from FormData
- * 4. Validate file MIME type (jpg, jpeg, png, webp only)
- * 5. Validate file size (max 5MB)
- * 6. Generate unique imageId (UUID)
- * 7. Extract file extension from file name
- * 8. Create storage path: tours-package-media/{operatorId}/{packageId}/{imageId}.{ext}
- * 9. Upload file to Supabase storage
- * 10. Get public URL
- * 11. Return success with URL
- * 
- * Error Handling:
- * - 401: Not authenticated -> return 401 error
- * - 403: Not approved operator -> return 403 error
- * - 400: Invalid format or file size -> return 400 error with user-friendly message
- * - 500: Upload failed -> return 500 error
- * 
- * Return type:
- * - { success: boolean; imageUrl?: string; error?: { message: string } }
- * 
- * Validates: Requirements 4.3-4.6, 8.2-8.4
+ * Which slot an upload is for. The two slots have different rules on a
+ * published package: the cover may change, the gallery may not.
+ */
+export type PackageImageKind = "cover" | "gallery";
+
+const IMAGE_KINDS: PackageImageKind[] = ["cover", "gallery"];
+
+/**
+ * Uploads one package image to Supabase Storage and returns its public URL.
+ *
+ * Rules, enforced here and mirrored in the UI by permissions.ts:
+ * - the caller must be an approved operator (requireAuthenticated);
+ * - the package must belong to that operator ("Package not found." otherwise,
+ *   so a stranger cannot probe for package ids);
+ * - pending_review and archived packages accept no photos at all;
+ * - on a published package a new cover is allowed, a new gallery image is not.
+ *
+ * The caller passes `kind` ("cover" from CoverImageStep, "gallery" from
+ * GalleryStep). Callers that omit it are treated as "cover": the older client
+ * bundle only ever uploaded covers, and the gallery is blocked at save time by
+ * the published-package guard in update_package_and_relations anyway.
+ *
+ * Storage failures are mapped to messages an operator can act on, and the raw
+ * error is still logged for the Tourism Office.
  */
 export async function uploadPackageImage(
   packageId: string,
   formData: FormData,
+  kind: PackageImageKind = "cover",
 ): Promise<{ success: boolean; imageUrl?: string; error?: { message: string } }> {
   "use server";
 
@@ -1620,7 +1620,61 @@ export async function uploadPackageImage(
       };
     }
 
-    // Step 4: Extract file from FormData
+    // Step 4: Validate the slot being uploaded to
+    if (!IMAGE_KINDS.includes(kind)) {
+      return {
+        success: false,
+        error: { message: "Invalid image type." },
+      };
+    }
+
+    // Step 5: The package must be this operator's
+    const { data: packageRow, error: packageError } = await sessionClient
+      .from(PACKAGE_TABLE)
+      .select("id,status")
+      .eq("id", packageId)
+      .eq("operator_id", operatorId)
+      .maybeSingle();
+
+    if (packageError) {
+      console.error("Package lookup error:", packageError);
+      return {
+        success: false,
+        error: { message: "Failed to upload image. Please try again." },
+      };
+    }
+
+    if (!packageRow) {
+      return {
+        success: false,
+        error: { message: "Package not found." },
+      };
+    }
+
+    // Step 6: Apply the shared status rules (permissions.ts)
+    const statusCheck = requireStatusPermissions(packageRow.status as EditPackageStatus);
+    if ("error" in statusCheck) {
+      return {
+        success: false,
+        error: { message: statusCheck.error.message },
+      };
+    }
+
+    const permissions = statusCheck.data.permissions;
+    if (kind === "cover" && !permissions.coverImage) {
+      return {
+        success: false,
+        error: { message: "You do not have access to this package." },
+      };
+    }
+    if (kind === "gallery" && !permissions.gallery.add) {
+      return {
+        success: false,
+        error: { message: "Gallery images cannot be modified for this package status." },
+      };
+    }
+
+    // Step 7: Extract file from FormData
     const file = formData.get("file") as File | null;
     if (!file || !(file instanceof File)) {
       return {
@@ -1629,7 +1683,7 @@ export async function uploadPackageImage(
       };
     }
 
-    // Step 5: Validate file MIME type (jpg, jpeg, png, webp only)
+    // Step 8: Validate file MIME type (jpg, jpeg, png, webp only)
     const allowedMimeTypes = [
       "image/jpeg",
       "image/jpg",
@@ -1646,7 +1700,7 @@ export async function uploadPackageImage(
       };
     }
 
-    // Step 6: Validate file size (max 5MB = 5242880 bytes)
+    // Step 9: Validate file size (max 5MB = 5242880 bytes)
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_FILE_SIZE) {
       return {
@@ -1657,18 +1711,18 @@ export async function uploadPackageImage(
       };
     }
 
-    // Step 7: Generate unique imageId (UUID)
+    // Step 10: Generate unique imageId (UUID)
     const imageId = crypto.randomUUID();
 
-    // Step 8: Extract file extension from file name
+    // Step 11: Extract file extension from file name
     const fileName = file.name.toLowerCase();
     const extensionMatch = fileName.match(/\.([a-z0-9]+)$/);
     const extension = extensionMatch ? extensionMatch[1] : "jpg";
 
-    // Step 9: Create storage path: tours-package-media/{operatorId}/{packageId}/{imageId}.{ext}
+    // Step 12: Create storage path: tours-package-media/{operatorId}/{packageId}/{imageId}.{ext}
     const storagePath = `tours-package-media/${operatorId}/${packageId}/${imageId}.${extension}`;
 
-    // Step 10: Upload file to Supabase storage
+    // Step 13: Upload file to Supabase storage
     const { data, error: uploadError } = await sessionClient.storage
       .from(PACKAGE_STORAGE_BUCKET)
       .upload(storagePath, file, {
@@ -1679,6 +1733,32 @@ export async function uploadPackageImage(
 
     if (uploadError || !data) {
       console.error("Storage upload error:", uploadError);
+
+      const message = uploadError?.message ?? "";
+      const statusCode = (uploadError as { statusCode?: number | string } | null)?.statusCode;
+
+      // The bucket is missing from the project: nothing the operator can fix.
+      if (/bucket not found/i.test(message)) {
+        return {
+          success: false,
+          error: {
+            message: "Photo storage isn't set up yet. Please tell the Tourism Office.",
+          },
+        };
+      }
+
+      // Refused by a storage policy: the folder isn't theirs.
+      if (
+        statusCode === 403 ||
+        statusCode === "403" ||
+        /row-level security|permission denied|unauthorized/i.test(message)
+      ) {
+        return {
+          success: false,
+          error: { message: "You can only add photos to your own packages." },
+        };
+      }
+
       return {
         success: false,
         error: {
@@ -1687,7 +1767,7 @@ export async function uploadPackageImage(
       };
     }
 
-    // Step 11: Get public URL
+    // Step 14: Get public URL
     const { data: urlData } = sessionClient.storage
       .from(PACKAGE_STORAGE_BUCKET)
       .getPublicUrl(storagePath);

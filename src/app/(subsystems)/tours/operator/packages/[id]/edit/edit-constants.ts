@@ -36,6 +36,8 @@ export const STATUS_LABELS = {
 
 export const EDIT_MESSAGES = {
   saved: "Changes saved.",
+  sentForReview:
+    "Saved. Because the photos changed, this package is with the Tourism Office for review and is hidden from tourists until they approve it.",
   submitted: "Package submitted for review.",
   conflict:
     "This package was changed elsewhere since you opened it. Reload to get the latest version, then re-apply your edits.",

@@ -80,7 +80,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       )}
 
       {/* Basic Details */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Basic Details</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           Provide the essential information about your tour package.
@@ -167,7 +167,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       </section>
 
       {/* Inclusions */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">What's Included</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           List what's included and not included in your package (one item per line).
@@ -206,7 +206,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       </section>
 
       {/* Pricing */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Pricing</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           Set the price for your tour package.
@@ -247,7 +247,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       </section>
 
       {/* Itinerary */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Itinerary</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           List the stops/locations in your tour (one per line).
@@ -272,7 +272,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       </section>
 
       {/* Image Upload */}
-      <section className="rounded-2xl bg-surface p-6">
+      <section className="rounded-2xl card-edge bg-surface p-6">
         <h2 className="text-xl font-bold text-daet-ink">Package Images</h2>
         <p className="mt-1 text-sm text-daet-ink/70">
           Upload photos to showcase your tour package. Images help tourists visualize the experience.
@@ -349,7 +349,7 @@ export function PackageCreateForm({ operatorId }: Props) {
       </section>
 
       {/* Submit */}
-      <div className="flex items-center justify-between rounded-2xl bg-surface p-6">
+      <div className="flex items-center justify-between rounded-2xl card-edge bg-surface p-6">
         <div>
           <p className="text-sm font-bold text-daet-ink">Ready to submit?</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">

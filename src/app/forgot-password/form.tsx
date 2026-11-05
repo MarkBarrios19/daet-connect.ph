@@ -5,17 +5,24 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
+import { INITIAL_AUTH_STATE } from "@/lib/auth/action-state";
 import { requestPasswordReset } from "./actions";
 
-const INITIAL = { status: "idle" as const };
-
 export function ForgotPasswordForm({ notice }: { notice?: string }) {
-  const [state, formAction, pending] = useActionState(requestPasswordReset, INITIAL);
+  const [state, formAction, pending] = useActionState(requestPasswordReset, INITIAL_AUTH_STATE);
   return (
-    <form action={formAction} className="mt-6 space-y-5">
+    <form action={formAction} className="mt-6 space-y-5" noValidate>
       {notice && state.status === "idle" ? <Notice variant="warning">{notice}</Notice> : null}
-      <Field id="email" label="Email address" required>
-        <Input type="email" name="email" required autoComplete="email" placeholder="you@example.com" />
+      <Field id="email" label="Email address" required error={state.fieldErrors?.email}>
+        <Input
+          type="email"
+          name="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          placeholder="you@example.com"
+          defaultValue={state.email ?? ""}
+        />
       </Field>
       {state.message ? <Notice variant={state.status === "error" ? "error" : "success"}>{state.message}</Notice> : null}
       <Button type="submit" fullWidth loading={pending} loadingText="Sending">

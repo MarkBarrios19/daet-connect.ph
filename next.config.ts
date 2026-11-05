@@ -19,7 +19,27 @@ function supabaseImagePatterns(): NonNullable<NextConfig["images"]>["remotePatte
   }
 }
 
+// Headers that hold for every response. A strict Content-Security-Policy is not
+// here yet: the maps, the photo gallery and the assistant all load from several
+// origins, and a policy written without testing them would break pages quietly.
+// These are safe to add without touching a feature.
+const securityHeaders = [
+  // Never let a browser guess a type: an uploaded file served as text/html is
+  // how a stored-XSS gets a foothold.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Send the full address within the site, only the origin elsewhere.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // No speculative DNS lookups to hosts a page has not asked for yet.
+  { key: "X-DNS-Prefetch-Control", value: "off" },
+  ...(process.env.NODE_ENV === "production"
+    ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }]
+    : []),
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   // The Arena preview is hosted on a dynamic e2b.app subdomain. Allow its
   // origin for Next dev assets and Server Action requests through the proxy.
   allowedDevOrigins: ["*.e2b.app"],

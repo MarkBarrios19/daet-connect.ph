@@ -56,7 +56,10 @@ export function getEditPermissions(status: EditPackageStatus): EditPermissions {
         pricing: { ...locked.pricing, editPax: true },
         inclusions: { ...locked.inclusions, editText: true },
         stops: { ...locked.stops, editDetails: true },
-        gallery: { ...locked.gallery, editCaption: true },
+        // Photos go live only after review: a structural gallery change on a
+        // published package is allowed here, and update_package_and_relations
+        // sends the package back to pending_review when one happens.
+        gallery: { add: true, remove: true, editCaption: true, reorder: true },
       };
     }
     case "pending_review":
@@ -127,21 +130,6 @@ export function findRestrictedChanges(
         before.estimatedDurationMinutes !== after.estimatedDurationMinutes
       ) {
         violations.push("Stops cannot be reordered on a published package.");
-      }
-    });
-  }
-
-  if (original.galleryImages.length !== next.galleryImages.length) {
-    violations.push("Gallery images cannot be added or removed on a published package.");
-  } else {
-    original.galleryImages.forEach((before, index) => {
-      const after = next.galleryImages[index];
-      if (
-        before.id !== after.id ||
-        before.imageUrl !== after.imageUrl ||
-        before.displayOrder !== after.displayOrder
-      ) {
-        violations.push("Only gallery captions can change on a published package.");
       }
     });
   }

@@ -34,278 +34,264 @@ describe("Image Handling Server Actions", () => {
   });
 
   describe("uploadPackageImage", () => {
-    describe("Task 2.13: Upload Package Image", () => {
-      it("should upload image and return URL on success", async () => {
-        // Setup
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const operatorId = "00000000-0000-4000-8000-000000000002";
-        const mockFile = new File(["fake image data"], "test.jpg", {
-          type: "image/jpeg",
-        });
+    const PACKAGE_ID = "00000000-0000-4000-8000-000000000001";
+    const OPERATOR_ID = "00000000-0000-4000-8000-000000000002";
 
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
+    /** An approved operator is signed in and their operator row is returned. */
+    const signInAsApprovedOperator = (accreditationStatus = "approved") => {
+      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        user: { id: "user-123" },
+        role: "operator",
+        error: null,
+      } as any);
 
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: operatorId, accreditation_status: "approved" },
-          error: null,
-        });
+      mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
+        data: { id: OPERATOR_ID, accreditation_status: accreditationStatus },
+        error: null,
+      });
+    };
 
-        mockStorage.upload.mockResolvedValueOnce({
-          data: { path: `tours-package-media/${operatorId}/${packageId}/mock-uuid.jpg` },
-          error: null,
-        });
+    /** The ownership lookup that follows the operator row. */
+    const mockPackageLookup = (status: string | null = "draft") => {
+      mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce(
+        status === null
+          ? { data: null, error: null }
+          : { data: { id: PACKAGE_ID, status }, error: null },
+      );
+    };
 
-        mockStorage.getPublicUrl.mockReturnValueOnce({
-          data: {
-            publicUrl: `https://project.supabase.co/storage/v1/object/public/tours-package-media/${operatorId}/${packageId}/mock-uuid.jpg`,
-          },
-        });
+    const imageForm = (name = "test.jpg", type = "image/jpeg") => {
+      const formData = new FormData();
+      formData.append("file", new File(["fake image data"], name, { type }));
+      return formData;
+    };
 
-        const formData = new FormData();
-        formData.append("file", mockFile);
+    const mockUploadSuccess = () => {
+      mockStorage.upload.mockResolvedValueOnce({ data: { path: "stored.jpg" }, error: null });
+      mockStorage.getPublicUrl.mockReturnValueOnce({
+        data: { publicUrl: `https://project.supabase.co/storage/v1/object/public/tours-package-media/${OPERATOR_ID}/${PACKAGE_ID}/mock-uuid.jpg` },
+      });
+    };
 
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
+    it("uploads a cover for a draft package and returns its public URL", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockUploadSuccess();
 
-        // Assert
-        expect(result.success).toBe(true);
-        expect(result.imageUrl).toBeDefined();
-        expect(result.error).toBeUndefined();
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(true);
+      expect(result.imageUrl).toContain("tours-package-media");
+      expect(result.error).toBeUndefined();
+    });
+
+    it("says Package not found when the package belongs to another operator", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup(null);
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("Package not found.");
+      expect(mockStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it("keeps pending-review packages read-only", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("pending_review");
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("This package is under review and cannot be edited.");
+      expect(mockStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it("allows a new cover on a published package", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("published");
+      mockUploadSuccess();
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(true);
+      expect(result.imageUrl).toBeDefined();
+    });
+
+    it("accepts a new gallery image on a published package; review happens at save", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("published");
+      mockUploadSuccess();
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "gallery");
+
+      // The file may be uploaded; update_package_and_relations is what sends the
+      // package back to pending_review when the gallery actually changes.
+      expect(result.success).toBe(true);
+      expect(result.imageUrl).toBeDefined();
+    });
+
+    it("still refuses a gallery image on a pending-review package", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("pending_review");
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "gallery");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("This package is under review and cannot be edited.");
+      expect(mockStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it("allows a new gallery image on a draft package", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockUploadSuccess();
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm("shot.png", "image/png"), "gallery");
+
+      expect(result.success).toBe(true);
+      expect(mockStorage.upload).toHaveBeenCalledWith(
+        expect.stringContaining("tours-package-media"),
+        expect.anything(),
+        expect.objectContaining({ contentType: "image/png" }),
+      );
+    });
+
+    it("treats a missing kind as a cover upload", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("published");
+      mockUploadSuccess();
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm());
+
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects an unknown kind", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "avatar" as any);
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("Invalid image type.");
+      expect(mockStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it("validates file format (jpg, jpeg, png, webp only)", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm("test.gif", "image/gif"), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain(
+        "Invalid file format. Only JPG, PNG, and WebP are allowed.",
+      );
+    });
+
+    it("validates file size (max 5MB)", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+
+      const formData = new FormData();
+      formData.append("file", new File([new Uint8Array(6 * 1024 * 1024)], "large.jpg", { type: "image/jpeg" }));
+
+      const result = await uploadPackageImage(PACKAGE_ID, formData, "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("File size too large. Maximum size is 5MB.");
+    });
+
+    it("returns 401 error if not authenticated", async () => {
+      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        user: null,
+        role: null,
+        error: "Auth error",
+      } as any);
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("Authentication required");
+    });
+
+    it("returns 403 error if operator is not approved", async () => {
+      signInAsApprovedOperator("pending");
+
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("approved");
+    });
+
+    it("returns error if no file provided", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+
+      const result = await uploadPackageImage(PACKAGE_ID, new FormData(), "cover");
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("No file provided");
+    });
+
+    it("builds the operator/package/uuid storage path", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockUploadSuccess();
+
+      await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
+
+      const uploadPath = mockStorage.upload.mock.calls[0][0];
+      expect(uploadPath).toMatch(/tours-package-media\/.*\/.*\/[a-f0-9-]{36}\.jpg/i);
+    });
+
+    it("tells the operator when the storage bucket is missing", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockStorage.upload.mockResolvedValueOnce({
+        data: null,
+        error: { message: "Bucket not found", statusCode: 404, name: "StorageApiError" },
       });
 
-      it("should validate file format (jpg, jpeg, png, webp only)", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const invalidFile = new File(["fake data"], "test.gif", {
-          type: "image/gif",
-        });
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
 
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe(
+        "Photo storage isn't set up yet. Please tell the Tourism Office.",
+      );
+    });
 
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: "operator-123", accreditation_status: "approved" },
-          error: null,
-        });
-
-        const formData = new FormData();
-        formData.append("file", invalidFile);
-
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
-
-        // Assert
-        expect(result.success).toBe(false);
-        expect(result.error?.message).toContain(
-          "Invalid file format. Only JPG, PNG, and WebP are allowed."
-        );
+    it("maps a storage policy refusal to the ownership message", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockStorage.upload.mockResolvedValueOnce({
+        data: null,
+        error: {
+          message: "new row violates row-level security policy",
+          statusCode: 403,
+          name: "StorageApiError",
+        },
       });
 
-      it("should validate file size (max 5MB)", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
 
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("You can only add photos to your own packages.");
+    });
 
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: "operator-123", accreditation_status: "approved" },
-          error: null,
-        });
-
-        // Create mock file that's too large (> 5MB)
-        const largeData = new Uint8Array(6 * 1024 * 1024); // 6MB
-        const largeFile = new File([largeData], "large.jpg", {
-          type: "image/jpeg",
-        });
-
-        const formData = new FormData();
-        formData.append("file", largeFile);
-
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
-
-        // Assert
-        expect(result.success).toBe(false);
-        expect(result.error?.message).toContain(
-          "File size too large. Maximum size is 5MB."
-        );
+    it("keeps the generic message for any other storage failure", async () => {
+      signInAsApprovedOperator();
+      mockPackageLookup("draft");
+      mockStorage.upload.mockResolvedValueOnce({
+        data: null,
+        error: { message: "Internal error", statusCode: 500, name: "StorageApiError" },
       });
 
-      it("should return 401 error if not authenticated", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const mockFile = new File(["data"], "test.jpg", { type: "image/jpeg" });
+      const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "cover");
 
-        jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
-          user: null,
-          role: null,
-          error: "Auth error",
-        } as any);
-
-        const formData = new FormData();
-        formData.append("file", mockFile);
-
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
-
-        // Assert
-        expect(result.success).toBe(false);
-        expect(result.error?.message).toContain("Authentication required");
-      });
-
-      it("should return 403 error if operator is not approved", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const mockFile = new File(["data"], "test.jpg", { type: "image/jpeg" });
-
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
-
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: "operator-123", accreditation_status: "pending" },
-          error: null,
-        });
-
-        const formData = new FormData();
-        formData.append("file", mockFile);
-
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
-
-        // Assert
-        expect(result.success).toBe(false);
-        expect(result.error?.message).toContain("approved");
-      });
-
-      it("should generate unique imageId (UUID) for each upload", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const operatorId = "00000000-0000-4000-8000-000000000002";
-        const mockFile = new File(["data"], "test.jpg", { type: "image/jpeg" });
-
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
-
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: operatorId, accreditation_status: "approved" },
-          error: null,
-        });
-
-        mockStorage.upload.mockResolvedValueOnce({
-          data: { path: `tours-package-media/${operatorId}/${packageId}/uuid.jpg` },
-          error: null,
-        });
-
-        mockStorage.getPublicUrl.mockReturnValueOnce({
-          data: { publicUrl: "https://example.com/image.jpg" },
-        });
-
-        const formData = new FormData();
-        formData.append("file", mockFile);
-
-        // Execute first upload
-        await uploadPackageImage(packageId, formData);
-
-        // Get the call arguments to check path structure
-        const uploadCall = mockStorage.upload.mock.calls[0];
-        const uploadPath = uploadCall[0]; // First argument is the storage path
-
-        // Verify path structure
-        expect(uploadPath).toMatch(
-          /tours-package-media\/.*\/.*\/[a-f0-9-]{36}\.jpg/i
-        );
-      });
-
-      it("should create correct storage path structure", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-        const operatorId = "00000000-0000-4000-8000-000000000002";
-        const mockFile = new File(["data"], "test.png", { type: "image/png" });
-
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
-
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: operatorId, accreditation_status: "approved" },
-          error: null,
-        });
-
-        mockStorage.upload.mockResolvedValueOnce({
-          data: { path: "tours-package-media/op/pkg/img.png" },
-          error: null,
-        });
-
-        mockStorage.getPublicUrl.mockReturnValueOnce({
-          data: { publicUrl: "https://example.com/image.png" },
-        });
-
-        const formData = new FormData();
-        formData.append("file", mockFile);
-
-        // Execute
-        await uploadPackageImage(packageId, formData);
-
-        // Verify upload was called with correct path pattern
-        expect(mockStorage.upload).toHaveBeenCalledWith(
-          expect.stringContaining("tours-package-media"),
-          mockFile,
-          expect.objectContaining({
-            contentType: "image/png",
-          })
-        );
-      });
-
-      it("should return error if no file provided", async () => {
-        const packageId = "00000000-0000-4000-8000-000000000001";
-
-        jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
-          .mockResolvedValueOnce({
-            user: { id: "user-123" },
-            role: "operator",
-            error: null,
-          } as any);
-
-        mockSessionClient.from().select().eq().maybeSingle.mockResolvedValueOnce({
-          data: { id: "operator-123", accreditation_status: "approved" },
-          error: null,
-        });
-
-        const formData = new FormData(); // No file
-
-        // Execute
-        const result = await uploadPackageImage(packageId, formData);
-
-        // Assert
-        expect(result.success).toBe(false);
-        expect(result.error?.message).toContain("No file provided");
-      });
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe("Failed to upload image. Please try again.");
     });
   });
 

@@ -79,7 +79,7 @@ function Toast({
 function LoadingOverlay() {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-surface rounded-2xl p-8 flex flex-col items-center gap-4">
+      <div className="card-edge bg-surface rounded-2xl p-8 flex flex-col items-center gap-4">
         <div className="animate-spin">
           <svg className="w-8 h-8 text-daet-leaf dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -220,7 +220,8 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           originalData: state.formData,
           hasChanges: false,
           isSubmitting: false,
-          successMessage: EDIT_MESSAGES.saved,
+          successMessage:
+            response.data?.status === "pending_review" ? EDIT_MESSAGES.sentForReview : EDIT_MESSAGES.saved,
           submissionError: null,
           concurrencyError: null,
         }));
@@ -456,7 +457,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           disabled={isButtonDisabled}
           className="inline-flex min-h-11 items-center justify-center px-6 py-2 border border-daet-ink/20 text-daet-ink/80 rounded-2xl font-medium hover:bg-canvas transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Save as Draft
+          {packageData.status === "published" ? "Save changes" : "Save as Draft"}
         </button>
         {hasPermissionToSubmit && (
           <button

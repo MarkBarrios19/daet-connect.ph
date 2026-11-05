@@ -67,6 +67,18 @@ for (const role of Object.keys(pages) as Role[]) {
   });
 }
 
+// Owner's note (image-94): the admin bar drew Analytics twice — once from the
+// admin's own tabs, once from the Tourism Office's links — and reached the
+// approvals queue under two names. A desktop shows the office's links too.
+test("the admin bar lists each destination once", async ({ context, page }) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await signInAs(context, "admin");
+  await visit(page, "/tours/admin/attractions");
+
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  await expect(nav.getByRole("link")).toHaveText(["Analytics", "Approvals", "Content", "Guides", "Packages"]);
+});
+
 test("/dashboard sends each role home", async ({ browser }) => {
   const homes: Record<Role, RegExp> = {
     tourist: /\/tours\/me$/,

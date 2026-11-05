@@ -12,7 +12,7 @@ import { dayLabel, isConversationKind, KIND_LABELS, type InboxRow } from "@/lib/
  */
 export function InboxList({ rows, viewerId, activeId = null }: { rows: InboxRow[]; viewerId: string; activeId?: string | null }) {
   const row = (active: boolean) =>
-    `flex min-h-11 items-center gap-3 rounded-2xl p-3 transition active:scale-[0.99] ${active ? "bg-blue-50 dark:bg-blue-950/40" : "bg-surface hover:bg-canvas"}`;
+    `flex min-h-11 items-center gap-3 rounded-2xl p-3 transition active:scale-[0.99] ${active ? "bg-blue-50 dark:bg-blue-950/40" : "card-edge bg-surface hover:bg-canvas"}`;
   return (
     <ul className="space-y-1" aria-label="Chats">
       <li>

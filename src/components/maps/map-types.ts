@@ -17,9 +17,26 @@ export type FreeMapMarker = LatLng & {
   href?: string;
   /** A second line under the name on a labelled map, e.g. "Heritage site". */
   subtitle?: string;
+  /**
+   * The place's own photo, drawn inside the pin.
+   *
+   * Only the place the map is showing carries one (place-map-panel), so the pin
+   * the open place's card points at is the photo pin and the other places stay
+   * plain dots.
+   */
+  photo?: { src: string; alt?: string };
 };
 
 export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };
+
+/**
+ * How far a photo pin's body stands above the place it marks.
+ *
+ * Its point sits on the coordinates, so anything drawn over the map (the place's
+ * card, with its tail) has to clear this much before it can sit above the pin
+ * rather than on top of it.
+ */
+export const PHOTO_PIN_RISE = 48;
 
 /** The marker look on the tile map (HTML markers). The sketch draws the same shapes in SVG. */
 export const MARKER_CLASSES: Record<MapMarkerKind | "stopActive", string> = {

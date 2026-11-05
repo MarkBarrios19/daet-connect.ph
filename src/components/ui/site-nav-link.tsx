@@ -24,7 +24,13 @@ export function SiteNavLink({
     <Link
       href={href}
       aria-current={current ? "page" : undefined}
-      className={cn(BASE, current ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "text-daet-ink hover:bg-muted", className)}
+      className={cn(
+        BASE,
+        current
+          ? "bg-blue-50 text-blue-700 dark:bg-white/15 dark:text-white"
+          : "text-daet-ink hover:bg-muted dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white",
+        className,
+      )}
     >
       {children}
     </Link>

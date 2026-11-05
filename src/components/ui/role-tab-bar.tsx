@@ -11,7 +11,18 @@ import { activeTab, type Tab } from "@/lib/tours/dashboards";
  * Bottom tab bar on phones for signed-in users; hidden from sm up, where the
  * header has room. With `account` the last tab is You, the account menu.
  */
-export function RoleTabBar({ tabs, account }: { tabs: Tab[]; account?: { initial: string; name: string; links: Tab[] } }) {
+export function RoleTabBar({
+  tabs,
+  account,
+}: {
+  tabs: Tab[];
+  account?: {
+    initial: string;
+    name: string;
+    avatarUrl?: string | null;
+    links: Tab[];
+  };
+}) {
   const pathname = usePathname() ?? "";
   const current = activeTab(tabs, pathname);
   if (tabs.length === 0) return null;
@@ -32,9 +43,16 @@ export function RoleTabBar({ tabs, account }: { tabs: Tab[]; account?: { initial
               >
                 <span className="relative isolate">
                   {/* The active tab's pill fades in behind its icon. */}
-                  {active ? <span aria-hidden="true" className="motion-pop-in absolute -inset-x-3.5 -inset-y-1 -z-10 rounded-full bg-blue-50 dark:bg-blue-950/40" /> : null}
+                  {active ? (
+                    <span
+                      aria-hidden="true"
+                      className="motion-pop-in absolute -inset-x-3.5 -inset-y-1 -z-10 rounded-full bg-blue-50 dark:bg-blue-950/40"
+                    />
+                  ) : null}
                   <TabIcon label={tab.label} className="h-6 w-6" />
-                  {tab.href === "/tours/messages" ? <UnreadMessagesBadge className="absolute -right-3 -top-1.5" /> : null}
+                  {tab.href === "/tours/messages" ? (
+                    <UnreadMessagesBadge className="absolute -right-3 -top-1.5" />
+                  ) : null}
                 </span>
                 {tab.label}
               </Link>
@@ -43,7 +61,13 @@ export function RoleTabBar({ tabs, account }: { tabs: Tab[]; account?: { initial
         })}
         {account ? (
           <li>
-            <AccountMenu variant="tab" initial={account.initial} name={account.name} links={account.links} />
+            <AccountMenu
+              variant="tab"
+              initial={account.initial}
+              name={account.name}
+              avatarUrl={account.avatarUrl}
+              links={account.links}
+            />
           </li>
         ) : null}
       </ul>

@@ -5,12 +5,23 @@
  */
 
 export const DOCK_OPEN_EVENT = "daet:dock-open";
+
+/**
+ * A chat window is on screen (not just a minimised head). The floating
+ * assistant pill sits exactly where an open window lands, so it hides while
+ * this is true: the assistant is already there, one minimise away.
+ */
+export const DOCK_BUSY_EVENT = "daet:dock-busy";
 const ACTIVE_FLAG = "__daetDockActive";
 
 type DockWindow = Window & { [ACTIVE_FLAG]?: boolean };
 
 export function setDockActive(active: boolean) {
   (window as DockWindow)[ACTIVE_FLAG] = active;
+}
+
+export function setDockBusy(busy: boolean) {
+  window.dispatchEvent(new CustomEvent(DOCK_BUSY_EVENT, { detail: { busy } }));
 }
 
 export function dockAvailable(): boolean {

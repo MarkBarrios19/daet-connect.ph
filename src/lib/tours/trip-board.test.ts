@@ -1,4 +1,4 @@
-import { durationLabel, fromPrice, matchPlacePhoto, nextOpenDate, placePhoto, shortDay, tripLength } from "@/lib/tours/trip-board";
+import { cheapestPrice, durationLabel, fromPrice, matchPlacePhoto, nextOpenDate, placePhoto, shortDay, tripLength } from "@/lib/tours/trip-board";
 
 describe("trip board", () => {
   it("groups tours by the time they take", () => {
@@ -17,6 +17,36 @@ describe("trip board", () => {
     expect(fromPrice([{ price_per_pax: null, flat_price: "5000", is_default: false }])).toEqual({ amount: 5000, perPerson: false });
     expect(fromPrice([{ price_per_pax: 900, flat_price: null }, { price_per_pax: 700, flat_price: null }])).toEqual({ amount: 700, perPerson: true });
     expect(fromPrice([])).toBeNull();
+  });
+
+  it("finds the cheapest of every price variant, for a \"from\" price", () => {
+    expect(
+      cheapestPrice([
+        { price_per_pax: 4200, flat_price: null },
+        { price_per_pax: 3799, flat_price: null },
+        { price_per_pax: 5100, flat_price: null },
+      ]),
+    ).toEqual({ price: 3799, perPerson: true });
+
+    // A flat price is the whole trip, not one seat: when the flat one is the
+    // cheapest, the card must not say "per person".
+    expect(cheapestPrice([{ price_per_pax: null, flat_price: "800" }, { price_per_pax: 900, flat_price: null }])).toEqual({
+      price: 800,
+      perPerson: false,
+    });
+
+    // A variant with both uses the per-person figure, as fromPrice() does.
+    expect(cheapestPrice([{ price_per_pax: 900, flat_price: "5000" }])).toEqual({ price: 900, perPerson: true });
+
+    // Numbers arrive as strings from PostgREST.
+    expect(cheapestPrice([{ price_per_pax: "1500", flat_price: null }])).toEqual({ price: 1500, perPerson: true });
+  });
+
+  it("has no price to show when none was set, or none is greater than zero", () => {
+    expect(cheapestPrice(null)).toBeNull();
+    expect(cheapestPrice([])).toBeNull();
+    expect(cheapestPrice([{ price_per_pax: 0, flat_price: 0 }])).toBeNull();
+    expect(cheapestPrice([{ price_per_pax: null, flat_price: null }])).toBeNull();
   });
 
   it("finds the next date with a seat left", () => {

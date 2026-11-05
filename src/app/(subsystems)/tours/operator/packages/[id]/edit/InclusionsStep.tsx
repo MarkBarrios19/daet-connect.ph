@@ -6,6 +6,7 @@ import { useFeedback } from "@/components/ui/feedback";
 import type { EditInclusion, EditPackageStatus, ValidationErrors, StepProps } from "./edit-types";
 import { EDIT_LIMITS } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
+import { withDisplayOrder } from "./edit-order";
 
 type InclusionsStepProps = StepProps<EditInclusion[]>;
 
@@ -64,7 +65,9 @@ export function InclusionsStep({
       id: editingId || `new-${Date.now()}`,
       text: formData.text,
       isIncluded: formData.isIncluded,
-      displayOrder: editingId ? data.find((i) => i.id === editingId)?.displayOrder ?? data.length : data.length,
+      displayOrder: editingId
+        ? data.find((i) => i.id === editingId)?.displayOrder ?? data.length + 1
+        : data.length + 1,
     };
 
     let updated: EditInclusion[];
@@ -74,7 +77,7 @@ export function InclusionsStep({
       updated = [...data, newItem];
     }
 
-    onUpdate(updated);
+    onUpdate(withDisplayOrder(updated));
     setShowAddForm(false);
     setEditingId(undefined);
     setFormData({ text: "", isIncluded: true });
@@ -92,7 +95,7 @@ export function InclusionsStep({
         toast("At least one inclusion is required.", "error");
         return;
       }
-      onUpdate(data.filter((i) => i.id !== id));
+      onUpdate(withDisplayOrder(data.filter((i) => i.id !== id)));
     },
     [data, onUpdate]
   );
@@ -118,18 +121,13 @@ export function InclusionsStep({
       const [removed] = newItems.splice(index, 1);
       newItems.splice(direction === "up" ? index - 1 : index + 1, 0, removed);
 
-      const reordered = newItems.map((item, i) => ({
-        ...item,
-        displayOrder: i,
-      }));
-
-      // Merge back with other items and sort
+      // Merge back with the other group, then number the whole list 1..n
       const merged = [
-        ...reordered.map((item) => ({ ...item, isIncluded: items[0]?.isIncluded })),
+        ...newItems.map((item) => ({ ...item, isIncluded: items[0]?.isIncluded })),
         ...data.filter((i) => i.isIncluded !== items[0]?.isIncluded),
       ];
 
-      onUpdate(merged);
+      onUpdate(withDisplayOrder(merged));
     },
     [data, onUpdate]
   );
@@ -306,7 +304,7 @@ export function InclusionsStep({
       {/* Add/Edit Form Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-2xl max-w-md w-full p-6">
+          <div className="card-edge bg-surface rounded-2xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-daet-ink mb-4">
               {editingId ? "Edit Item" : "Add Item"}
             </h3>

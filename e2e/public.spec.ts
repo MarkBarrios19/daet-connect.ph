@@ -13,6 +13,7 @@ test.describe("public pages", () => {
     "/tours/events/e1000000-0000-4000-8000-000000000001",
     "/tours/merch",
     "/tours/plan",
+    "/tours/faq",
     "/login",
     "/signup",
     "/forgot-password",
@@ -21,6 +22,26 @@ test.describe("public pages", () => {
       await visit(page, path);
     });
   }
+});
+
+// "Open in Google Maps" on a place's own page has to land on that place — and
+// two of the places are not in Daet at all (owner's note, image-93). Until the
+// Tourism Office confirms a pin, Google is asked for the place by name in its
+// own town rather than sent to an approximate coordinate.
+test("a place page asks Google Maps for that place, in its own town", async ({ page }) => {
+  await visit(page, "/tours/attractions/bagasbas-beach");
+  const maps = page.getByRole("link", { name: /open in google maps/i });
+  await expect(maps).toHaveAttribute(
+    "href",
+    "https://www.google.com/maps/search/?api=1&query=Bagasbas+Beach%2C+Daet%2C+Camarines+Norte",
+  );
+  await expect(maps).toHaveAttribute("target", "_blank");
+
+  await visit(page, "/tours/attractions/tinaga-island-calaguas");
+  await expect(page.getByRole("link", { name: /open in google maps/i })).toHaveAttribute(
+    "href",
+    "https://www.google.com/maps/search/?api=1&query=Tinaga+Island%2C+Vinzons%2C+Camarines+Norte",
+  );
 });
 
 // Landing page places: one panel open at a time; tapping another opens it.

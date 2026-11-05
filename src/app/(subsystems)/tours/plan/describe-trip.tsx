@@ -37,7 +37,7 @@ export function DescribeTrip({
   }
 
   return (
-    <section aria-labelledby="describe-trip" className="rounded-2xl bg-surface p-5 sm:p-6">
+    <section aria-labelledby="describe-trip" className="rounded-2xl card-edge bg-surface p-5 sm:p-6">
       <h2 id="describe-trip" className="font-display text-2xl font-semibold text-daet-ink">
         Describe your trip
       </h2>

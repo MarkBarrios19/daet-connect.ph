@@ -30,11 +30,16 @@ const offenders = (test: (line: string) => boolean) =>
 // Pictographic emoji only; typographic marks (★ ✓ ✕ → ·) are fine.
 const EMOJI = /[\u{1F300}-\u{1FAFF}☕⚙⚠⛔✅⭐⏰-⏳✈✏✉❌]/u;
 
-// The one line in free-map.tsx allowed a white background: the picked-stop pin (STOP_PIN).
-const PIN_LINE =
-  readFileSync(join(process.cwd(), "src/components/maps/free-map.tsx"), "utf8")
-    .split("\n")
-    .findIndex((line) => line.startsWith("const STOP_PIN =")) + 1;
+// The one line in free-map.tsx allowed a white background: the picked-stop pin
+// (STOP_PIN). Prettier wraps that long class string onto the line after the
+// `const`, so the licence follows the `bg-white` itself rather than the `const`.
+const PIN_LINE = (() => {
+  const lines = readFileSync(join(process.cwd(), "src/components/maps/free-map.tsx"), "utf8").split("\n");
+  const start = lines.findIndex((line) => line.startsWith("const STOP_PIN ="));
+  const end = lines.findIndex((line, index) => index > start && line.trim().endsWith('";'));
+  const white = lines.slice(start, end + 1).findIndex((line) => line.includes("bg-white"));
+  return start + white + 1;
+})();
 
 describe("design rules", () => {
   it("uses line icons, not emoji", () => {
@@ -60,6 +65,21 @@ describe("design rules", () => {
         (at) => !at.startsWith("src/app/(subsystems)/tours/guide/guide-qr-badge.tsx") && at !== `src/components/maps/free-map.tsx:${PIN_LINE}`,
       ),
     ).toEqual([]);
+  });
+
+  it("keeps the display face behind one token", () => {
+    // Swapping the display typeface is one line in globals.css (docs/FONTS.md).
+    // If a second place names Fraunces, a swap leaves half the site behind.
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css.match(/--font-display\s*:/g) ?? []).toHaveLength(1);
+    expect(css.replace(/--font-display\s*:[^;]*;/, "")).not.toContain("--font-fraunces");
+    expect(css).toContain("font-family: var(--font-display)");
+  });
+
+  it("loads the display font's whole weight range, so 900 is not synthesised", () => {
+    const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
+    expect(layout).toContain("Fraunces-Variable.woff2");
+    expect(layout).toContain('weight: "100 900"');
   });
 
   it("has no eyebrow labels and no rounded-3xl cards", () => {

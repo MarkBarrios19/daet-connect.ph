@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { GoogleSignIn, OrDivider } from "@/components/ui/google-sign-in";
 import { Notice } from "@/components/ui/notice";
+import { INITIAL_AUTH_STATE } from "@/lib/auth/action-state";
 import { signInWithPassword } from "./actions";
 
 interface LoginFormProps {
@@ -13,50 +15,71 @@ interface LoginFormProps {
   notice?: string;
 }
 
-interface ActionState {
-  status: "idle" | "error" | "success";
-  message?: string;
-}
-
-const INITIAL_STATE: ActionState = { status: "idle" };
-
 export function LoginForm({ nextUrl, notice }: LoginFormProps) {
-  const [state, formAction, pending] = useActionState(signInWithPassword, INITIAL_STATE);
+  const [state, formAction, pending] = useActionState(signInWithPassword, INITIAL_AUTH_STATE);
   const signupHref = nextUrl && nextUrl !== "/" ? `/signup?next=${encodeURIComponent(nextUrl)}` : "/signup";
+  const verifyHref = `/verify-email?email=${encodeURIComponent(state.email ?? "")}&next=${encodeURIComponent(nextUrl)}`;
 
   return (
-    <form action={formAction} className="mt-6 space-y-5">
-      <input type="hidden" name="next" value={nextUrl} />
+    <div className="mt-6 space-y-6">
+      <GoogleSignIn nextUrl={nextUrl} />
+      <OrDivider />
 
-      {notice && state.status === "idle" ? <Notice variant="info">{notice}</Notice> : null}
+      <form action={formAction} className="space-y-5" noValidate>
+        <input type="hidden" name="next" value={nextUrl} />
 
-      <Field id="email" label="Email address" required>
-        <Input type="email" name="email" required autoComplete="email" placeholder="you@example.com" />
-      </Field>
+        {notice && state.status === "idle" ? <Notice variant="info">{notice}</Notice> : null}
 
-      <Field id="password" label="Password" required>
-        <Input type="password" name="password" required autoComplete="current-password" />
-      </Field>
-      <p className="-mt-2 text-sm">
-        <Link href="/forgot-password" className="inline-flex min-h-11 items-center font-bold text-daet-forest dark:text-blue-300 underline underline-offset-4">
-          Forgot your password?
-        </Link>
-      </p>
+        <Field id="email" label="Email address" required error={state.fieldErrors?.email}>
+          <Input
+            type="email"
+            name="email"
+            required
+            autoComplete="email"
+            inputMode="email"
+            placeholder="you@example.com"
+            defaultValue={state.email ?? ""}
+          />
+        </Field>
 
-      {state.message ? (
-        <Notice variant={state.status === "error" ? "error" : "success"}>{state.message}</Notice>
-      ) : null}
+        <Field id="password" label="Password" required error={state.fieldErrors?.password}>
+          <Input type="password" name="password" required autoComplete="current-password" />
+        </Field>
 
-      <Button type="submit" fullWidth loading={pending} loadingText="Signing in">
-        Sign in
-      </Button>
+        <p className="-mt-2 text-sm">
+          <Link
+            href="/forgot-password"
+            className="inline-flex min-h-11 items-center font-bold text-daet-forest underline underline-offset-4 dark:text-blue-300"
+          >
+            Forgot your password?
+          </Link>
+        </p>
+
+        {state.status === "unverified" ? (
+          <Notice variant="warning" title="Confirm your email first">
+            {state.message}{" "}
+            <Link href={verifyHref} className="font-bold underline underline-offset-4">
+              Send a new verification email
+            </Link>
+          </Notice>
+        ) : null}
+
+        {state.status === "error" && state.message ? <Notice variant="error">{state.message}</Notice> : null}
+
+        <Button type="submit" fullWidth loading={pending} loadingText="Signing in">
+          Sign in
+        </Button>
+      </form>
 
       <p className="text-center text-sm text-daet-ink/80">
         New here?{" "}
-        <Link href={signupHref} className="inline-flex min-h-11 items-center font-bold text-daet-forest dark:text-blue-300 underline underline-offset-4">
+        <Link
+          href={signupHref}
+          className="inline-flex min-h-11 items-center font-bold text-daet-forest underline underline-offset-4 dark:text-blue-300"
+        >
           Create an account
         </Link>
       </p>
-    </form>
+    </div>
   );
 }

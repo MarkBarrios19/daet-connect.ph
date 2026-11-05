@@ -32,12 +32,41 @@
   /* Neutral surfaces that follow the theme (see the dark values below). Use
      these instead of bg-white / bg-slate-50 / -100 / -200 / -300. */
   --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
+  /* White, sampled from the owner's FAQ reference (image-46): the light ground is
+     the card's own white, so every card carries a hairline instead of relying on
+     a tone step. See `card-edge` below. */
+  --color-canvas: #ffffff;
   --color-muted: #f1f5f9;
+  /* The hairline that separates white cards from the white ground, and the rules
+     between the questions on the FAQ page. The owner asked for it a step more
+     visible than the first cut (image-48 against image-47): darker, and drawn
+     1.5px in `card-edge`, so a card's edge reads at a glance instead of only when
+     looked for. */
+  --color-hairline: #d3dae5;
+  /* The "Booking, in three moves" band is the owner's ticket (image-62): one
+     printed shape with a bite out of the top and bottom edges and a perforation
+     down the middle, a photograph inset into its left half and the three moves
+     on a card of nearly the page's own white on the right. Both colours are
+     sampled from that reference — the ticket's cream and the card's warm white.
+     In dark mode the ticket turns a card tone a step off the page's ground and
+     the panel a shade under it: the reference is the lightest thing on the page
+     and 375k pixels of it would glare on a near-black ground (the owner's note
+     on image-56, "optimize colors for dark mode"). */
+  --color-ticket-frame: #e8d7b9;
+  --color-ticket-panel: #faf6ef;
+  /* The tear: white dashes on the cream (owner's design, image-67). In dark mode
+     it is the lettering's own cyan, which is what marks the tear there. */
+  --color-ticket-perf: rgb(255 255 255 / 0.9);
+  /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
+     arrived yet reads as land rather than as a white flash. */
+  --color-map-ground: #f2efe9;
   --color-muted-strong: #e2e8f0;
   --color-line: #cbd5e1;
   /* Only for things that float above the page: menus, dialogs, the bottom booking bar. */
   --shadow-float: 0 12px 32px rgba(15, 23, 42, 0.18);
+  /* The one resting shadow: the header, which is pinned over the page's content
+     and needs to separate from it (owner's note on the light-mode bar). */
+  --shadow-header: 0 1px 3px rgba(15, 23, 42, 0.08);
   /* Motion. Strong curves (the built-in ones are too weak): ease-out for
      things entering or leaving, ease-in-out for on-screen movement, the
      drawer curve for sheets. These replace Tailwind's ease-out/ease-in-out. */
@@ -58,6 +87,16 @@
     color-scheme: light;
     background: var(--color-canvas);
     color: var(--color-daet-ink);
+    /* The header's own height, so the hero can run up under it and still end
+       exactly at the fold. Keep in step with site-header.tsx's
+       min-h-14 / sm:min-h-[3.8rem]. */
+    --header-h: 3.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    :root {
+      --header-h: 3.8rem;
+    }
   }
 
   * {
@@ -66,7 +105,7 @@
 
   h1,
   h2 {
-    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+    font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.02em;
     text-wrap: balance;
@@ -105,6 +144,183 @@
   }
 }
 
+/* The card edge.
+ *
+ * The light ground is white now (image-46), so a white card has no tone step to
+ * separate it: it carries this hairline instead, on the owner's note — "give the
+ * cards a light thin outline". An inset shadow draws it inside the card's own
+ * radius, so it costs no layout, and it is one class rather than a border on
+ * every card, so a card can still add its own ring or float shadow without the
+ * two fighting. */
+@utility card-edge {
+  box-shadow: inset 0 0 0 1.5px var(--color-hairline);
+}
+
+/* The ticket's edge (owner's shape, image-62).
+ *
+ * Six bites out of one shape: a quarter circle at each corner and a half circle
+ * on the edge where the ticket is torn. They are masks of fixed radii rather
+ * than one stretched SVG — the owner's note on image-64 was that the circles
+ * came out deformed, because a 1925x556 shape told to fill a wider band turns
+ * every circle into a capsule. A mask keeps them circles at any size, which is
+ * what "keep it responsive" asks for, and it is on a decorative layer *behind*
+ * the content, so nothing a visitor reads is clipped. A browser without mask
+ * compositing falls back to a plain rounded shape rather than losing the card.
+ *
+ * The pair of edge bites follows the tear. A wide band is torn across its right
+ * third (56% of its width, where the perforation runs and where the owner's
+ * lettering crosses it), so the bites sit on the top and bottom edges on that
+ * line; on a phone the halves stack and the tear runs across the paper, so they
+ * move to the left and right edges, level with the seam between the photograph
+ * and the card (their design, image-68). `ticket-seam` is where that line is.
+ *
+ * The radii follow the SVG's own proportions at its height: the corner bites
+ * are 44 of its 556, the edge ones 25 — clamped so a phone does not lose a
+ * third of the card to its own scallops.
+ */
+@utility ticket-shape {
+  /* Measured off the owner's two bands (image-67): off a 1286px paper the corner
+     bites are 34px across the radius and the edge ones 26. */
+  --ticket-corner: clamp(11px, 2.6vw, 34px);
+  --ticket-bite: clamp(10px, 1.9vw, 26px);
+  /* The two edge bites, where the tear leaves the paper: on the tear's own line,
+     which the owner draws at 56% of the paper — right of the middle, so the
+     lettering centred on the band crosses it rather than sitting behind it. */
+  --ticket-bite-a: 56% 0;
+  --ticket-bite-b: 56% 100%;
+  border-radius: clamp(10px, 1.2vw, 16px);
+
+  @supports (mask-composite: intersect) {
+    mask-image:
+      radial-gradient(circle var(--ticket-corner) at 0 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 0, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 0 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-corner) at 100% 100%, #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-bite) at var(--ticket-bite-a), #0000 calc(100% - 0.5px), #000 100%),
+      radial-gradient(circle var(--ticket-bite) at var(--ticket-bite-b), #0000 calc(100% - 0.5px), #000 100%),
+      linear-gradient(#000, #000);
+    mask-composite: intersect;
+  }
+
+  /* Stacked, the ticket is torn across: the bites leave the top and bottom edges
+     for the left and right ones, level with the seam. 48rem is Tailwind's md. */
+  @media (width < 48rem) {
+    --ticket-bite-a: 0 var(--ticket-seam);
+    --ticket-bite-b: 100% var(--ticket-seam);
+  }
+}
+
+/* Where the phone's ticket is torn.
+ *
+ * Stacked, the seam is under the photograph: the card's top padding, the 4:3
+ * photograph, and half the gap down to the card of moves. The band is an
+ * inline-size container, so `cqw` is its own width — the length comes out of the
+ * layout at run time, and the bites on the edges and the lettering both land on
+ * it at any width. Keep the three custom properties in step with the classes
+ * that use them (booking-steps.tsx), and the 4:3 here with the photograph's own
+ * `aspect-[4/3]`.
+ */
+@utility ticket-seam {
+  --ticket-seam: calc(
+    var(--ticket-pad-y) + 0.75 * (100cqw - 2 * var(--ticket-pad-x)) + var(--ticket-gap) / 2
+  );
+}
+
+/* Paper, not paint: the band is a printed ticket (owner's note on image-52, and
+ * the noise they sent with it), so the photograph and the panel behind the three
+ * moves both carry the same surface — nothing else on the band does.
+ *
+ * The grain is the owner's own noise filter: fractal turbulence lit by a
+ * distant light (feSpecularLighting), which is what gives it a raised, stucco
+ * texture rather than a flat speckle. It is one 700px tile, repeated, laid over
+ * whatever is beneath it in the overlay blend. Each surface sets its own
+ * opacity, because the same grain reads stronger on cream than on cyan. */
+@utility ticket-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 700' width='700' height='700'%3E%3Cdefs%3E%3Cfilter id='n' x='-20%25' y='-20%25' width='140%25' height='140%25' color-interpolation-filters='linearRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.125' numOctaves='4' seed='15' stitchTiles='stitch'/%3E%3CfeSpecularLighting surfaceScale='28' specularConstant='0.7' specularExponent='20' lighting-color='%237957A8'%3E%3CfeDistantLight azimuth='3' elevation='48'/%3E%3C/feSpecularLighting%3E%3C/filter%3E%3C/defs%3E%3Crect width='700' height='700' fill='transparent'/%3E%3Crect width='700' height='700' fill='%237957a8' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 700px 700px;
+  mix-blend-mode: overlay;
+}
+
+/* Wayra, for the hero's two buttons.
+ *
+ * Extracted from the button set the owner pointed at (Codepen OJJZLzX, the
+ * "Wayra" block, from codrops/ButtonStylesInspiration): a slab a button-and-a-
+ * half wide, hinged at the bottom-left corner and laid back 45 degrees out of
+ * sight, swings up to fill the button on hover. The original's own colours are
+ * #37474f → #3f51b5; here the fill and the label it needs are per-button
+ * variables, so one mechanics rule serves both the solid and the outlined
+ * button — and both take it on focus-visible too, not only on hover.
+ *
+ * Everything stays inside the button: `isolation` makes it a stacking context,
+ * so the slab's -1 sits above the button's own fill and under its label without
+ * a wrapper span, and `overflow: hidden` clips it to the pill. */
+@utility wayra {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 150%;
+    height: 100%;
+    background: var(--wayra-fill, currentColor);
+    z-index: -1;
+    transform-origin: 0% 100%;
+    transform: rotate(-45deg) translate3d(0, -3em, 0);
+    transition:
+      transform 300ms var(--ease-out),
+      background-color 300ms var(--ease-out);
+  }
+
+  &:hover::before,
+  &:focus-visible::before {
+    transform: rotate(0deg);
+  }
+
+  /* The label has to sit on the slab once it lands. */
+  &:hover,
+  &:focus-visible {
+    color: var(--wayra-ink, currentColor);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wayra::before {
+    transition: none;
+  }
+}
+
+/* A question's answer draws itself open (image-46).
+ *
+ * Native <details> still does the opening, this is only the transition: the
+ * answer's block grows from nothing to its own height. That needs `auto` to be
+ * interpolatable, which is what `interpolate-size` is for — where a browser has
+ * neither, the answer simply appears, exactly as it did before. */
+@supports (interpolate-size: allow-keywords) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  details[data-faq]::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 280ms var(--ease-out),
+      opacity 180ms var(--ease-out),
+      content-visibility 280ms allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+
+  details[data-faq][open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
 /* Dark theme values. Raised cards stay one tone lighter than the ground, as in
    light mode. Brand blue fills, green/yellow fills and text-white keep their
    light values: they pass contrast on both grounds. */
@@ -116,8 +332,19 @@
     --color-surface: #111a2e;
     --color-canvas: #0b1220;
     --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
     --color-muted-strong: #26324d;
     --color-line: #334160;
+    --color-hairline: #2b3a57;
+    /* The ticket, seated in the dark ground (the owner's own dark band,
+       image-67): the paper is a slate blue well off the near-black page, and the
+       card of moves sits under it, darker than the paper it is printed on. The
+       tear is the lettering's cyan. The photograph is washed with the ground
+       rather than left blazing. */
+    --color-ticket-frame: #334561;
+    --color-ticket-panel: #162648;
+    --color-ticket-perf: #14a9de;
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
@@ -128,8 +355,14 @@
       --color-surface: #111a2e;
       --color-canvas: #0b1220;
       --color-muted: #1a2540;
+    /* The tiles are inverted in dark mode, so their land reads near-black. */
+    --color-map-ground: #141a23;
       --color-muted-strong: #26324d;
       --color-line: #334160;
+      --color-hairline: #2b3a57;
+      --color-ticket-frame: #334561;
+      --color-ticket-panel: #162648;
+      --color-ticket-perf: #14a9de;
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -142,10 +375,14 @@
     --color-daet-ink: #0f172a;
     --color-daet-sand: #eff6ff;
     --color-surface: #ffffff;
-    --color-canvas: #f8fafc;
+    --color-canvas: #ffffff;
     --color-muted: #f1f5f9;
     --color-muted-strong: #e2e8f0;
     --color-line: #cbd5e1;
+    --color-hairline: #d3dae5;
+    --color-ticket-frame: #e8d7b9;
+    --color-ticket-panel: #faf6ef;
+    --color-ticket-perf: rgb(255 255 255 / 0.9);
   }
 }
 
@@ -164,44 +401,63 @@
   }
 }
 
-/* Display sizes: large and tight. Mobile first; they scale with the viewport. */
+/* Display sizes: large and tight. Mobile first; they scale with the viewport.
+   The family comes from --font-display and nothing else, so changing the display
+   face (a licensed Migra, say) is one line here plus the font file; docs/FONTS.md
+   has the steps.
+   Fraunces' 900 with optical sizing on is the weight the owner picked: at 6rem
+   the opsz axis gives it the high-contrast, tight cut of a display Didone, while
+   the same face stays legible at 1.75rem. WONK 0 turns off its quirkier
+   letterforms, SOFT 0 keeps the terminals crisp. */
 @utility display-1 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
-  font-size: clamp(2.5rem, 9vw, 6rem);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
+  /* --display-scale lets one heading run a little smaller than the size it is
+     set in (the hero, on the owner's note: 10% off, image-57), without a second
+     copy of the whole utility that could drift from this one. */
+  font-size: calc(var(--display-scale, 1) * clamp(2.5rem, 9vw, 6rem));
   line-height: 0.95;
   letter-spacing: -0.03em;
 }
 
 @utility display-2 {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
-  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
+  font-size: calc(var(--display-scale, 1) * clamp(1.75rem, 5vw, 3rem));
   line-height: 1.05;
   letter-spacing: -0.025em;
 }
 
-/* Section entrance: parts marked data-reveal rise into place as they scroll
-   into view (heading, then text, then picture via --reveal-index). Pure CSS,
-   scroll-driven; browsers without view timelines simply show the content, so
-   nothing can stay hidden. */
-@keyframes daet-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* Scrollbars inside panels, not the page. Windows' default light scrollbars in a
+   dark chat panel are a white slab with arrows; this keeps them a hairline in
+   whichever theme is on, and Firefox + Chromium both honour it. */
+@utility scrollbar-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
 }
 
-@supports (animation-timeline: view()) {
-  [data-reveal] {
-    animation: daet-reveal linear both;
-    animation-timeline: view();
-    animation-range: entry calc(var(--reveal-index, 0) * 6%) entry calc(45% + var(--reveal-index, 0) * 6%);
-  }
+/* Section entrance: a part marked data-reveal rises into place once, the first
+   time it reaches the viewport, and then stays put (heading, then text, then
+   picture, via --reveal-index). The observer in reveal-observer.tsx sets
+   data-revealed and stops watching. It used to be a scroll-linked animation,
+   which left whatever was part-way into the view part-way transparent — a
+   half-faded ghost that also failed contrast.
+
+   The hidden state needs `html.js`, which the root layout adds before the first
+   paint, so a visitor without JavaScript is never given content that only a
+   script could bring back. */
+html.js [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+[data-reveal] {
+  transition:
+    opacity 300ms var(--ease-out),
+    transform 300ms var(--ease-out);
+  transition-delay: calc(var(--reveal-index, 0) * 60ms);
 }
 
 @keyframes daet-drift {
@@ -277,8 +533,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The reveal still happens, it just doesn't move: opacity only, and at once. */
+  html.js [data-reveal]:not([data-revealed]) {
+    transform: none;
+  }
+
   [data-reveal] {
-    animation: none !important;
+    transition-delay: 0s;
   }
 
   .drift {

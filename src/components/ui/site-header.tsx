@@ -7,7 +7,12 @@ import { MobileMenu, type MenuLink } from "@/components/ui/mobile-menu";
 import { SiteNavLink } from "@/components/ui/site-nav-link";
 import { NotificationBell } from "@/components/tours/notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { accountLinks, type DashboardRole, type Tab } from "@/lib/tours/dashboards";
+import {
+  accountLinks,
+  staffLinks,
+  type DashboardRole,
+  type Tab,
+} from "@/lib/tours/dashboards";
 
 const PLAN_LINK: MenuLink = { href: "/tours/plan", label: "Plan a trip" };
 
@@ -20,7 +25,10 @@ const DESTINATION_LINKS: MenuLink[] = [
 ];
 
 const JOIN_LINKS: MenuLink[] = [
-  { href: "/tours/operator/register", label: "Run tours: apply as an operator" },
+  {
+    href: "/tours/operator/register",
+    label: "Run tours: apply as an operator",
+  },
   { href: "/tours/guide/register", label: "Guide tours: apply as a guide" },
 ];
 
@@ -51,19 +59,39 @@ export function SiteHeader({
   /** The signed-in user's role tabs (the bottom bar on phones). */
   tabs?: Tab[];
   /** Who is signed in, for the avatar. */
-  account?: { initial: string; name: string };
+  account?: { initial: string; name: string; avatarUrl?: string | null };
 }) {
   const explorer = !signedIn || !role || role === "tourist";
   const destinations = explorer ? DESTINATION_LINKS : [];
   // Home and Messages live in the account menu; the bar keeps the work sections.
-  const roleLinks = signedIn && !explorer ? tabs.filter((tab) => tab.label !== "Home" && tab.href !== "/tours/messages") : [];
-  const adminLinks = showAdminLink ? ADMIN_LINKS : [];
-  const menuLinks = explorer ? [DESTINATION_LINKS[0], PLAN_LINK, ...DESTINATION_LINKS.slice(1)] : [];
-  const workLinks = signedIn && !explorer ? tabs.map((tab) => ({ href: tab.href, label: tab.label === "Home" ? "Dashboard" : tab.label })) : [];
+  const roleLinks =
+    signedIn && !explorer
+      ? tabs.filter(
+          (tab) => tab.label !== "Home" && tab.href !== "/tours/messages",
+        )
+      : [];
+  // The role's own tabs come first, and the office's links only add the pages
+  // those tabs do not reach: an admin otherwise sees Analytics twice (image-94).
+  const adminLinks = showAdminLink ? staffLinks(roleLinks, ADMIN_LINKS) : [];
+  const menuLinks = explorer
+    ? [DESTINATION_LINKS[0], PLAN_LINK, ...DESTINATION_LINKS.slice(1)]
+    : [];
+  const workLinks =
+    signedIn && !explorer
+      ? tabs.map((tab) => ({
+          href: tab.href,
+          label: tab.label === "Home" ? "Dashboard" : tab.label,
+        }))
+      : [];
 
   return (
-    <header className="relative z-40 bg-surface print:hidden">
-      <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-3 sm:min-h-20 sm:px-6 lg:px-8">
+    // The bar stays at the top of the screen and is a scrim in both themes: white
+    // at 80% with ink text in light mode, 80% ink with white text in dark mode,
+    // each over a blur so the hero's photos read through it without turning the
+    // label edges to noise. Light mode also keeps the one resting elevation the
+    // design system allows (see --shadow-header).
+    <header className="sticky top-0 z-40 bg-surface/80 text-daet-ink shadow-header backdrop-blur-md dark:bg-slate-950/80 dark:text-white dark:shadow-none print:hidden">
+      <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-1 px-3 sm:min-h-[3.8rem] sm:px-6 lg:px-8">
         <MobileMenu
           showTheme={!signedIn}
           groups={[
@@ -76,10 +104,16 @@ export function SiteHeader({
         <div className="flex min-w-0 flex-1 items-center">
           <BrandMark />
         </div>
-        <nav aria-label="Main navigation" className="hidden min-w-0 items-center gap-1 md:flex">
+        <nav
+          aria-label="Main navigation"
+          className="hidden min-w-0 items-center gap-1 md:flex"
+        >
           {explorer ? (
             <>
-              <SiteNavLink href={PLAN_LINK.href} className="text-blue-700! dark:text-blue-300!">
+              <SiteNavLink
+                href={PLAN_LINK.href}
+                className="text-blue-700! dark:text-blue-200!"
+              >
                 <LineIcon name="sparkle" className="mr-2 h-5 w-5" />
                 {PLAN_LINK.label}
               </SiteNavLink>
@@ -114,19 +148,34 @@ export function SiteHeader({
               {account ? (
                 // Tourists on phones use the You tab instead.
                 <span className={explorer ? "hidden sm:contents" : "contents"}>
-                  <AccountMenu initial={account.initial} name={account.name} links={accountLinks(role, tabs)} />
+                  <AccountMenu
+                    initial={account.initial}
+                    name={account.name}
+                    avatarUrl={account.avatarUrl}
+                    links={accountLinks(role, tabs)}
+                  />
                 </span>
               ) : null}
             </>
           ) : (
             <>
               <ThemeToggle className="hidden md:grid" />
-              <ButtonLink href="/login" variant="secondary" className="whitespace-nowrap px-4!">
+              {/* Signing up is the header's one filled button; signing in is the
+                  quiet way in, so the call to action reads at a glance. */}
+              <ButtonLink
+                href="/login"
+                variant="onHeader"
+                className="whitespace-nowrap px-4!"
+              >
                 Sign in
               </ButtonLink>
               {/* A wrapper hides it on phones; on the link itself "hidden" would fight the button's inline-flex. */}
               <span className="hidden sm:contents">
-                <ButtonLink href="/signup" className="whitespace-nowrap px-5">
+                <ButtonLink
+                  href="/signup"
+                  size="lg"
+                  className="whitespace-nowrap"
+                >
                   Sign up
                 </ButtonLink>
               </span>

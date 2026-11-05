@@ -171,7 +171,7 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 bg-canvas px-4 py-1 text-sm text-slate-600 dark:text-slate-400">
-        <span>{lastMode === "basic" ? <Badge tone="neutral">Basic mode</Badge> : lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
+        <span className="min-w-0">{lastMode === "basic" ? <Badge tone="neutral">Basic mode</Badge> : lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
         {turns.length && !signedIn ? (
           <button
             type="button"
@@ -214,7 +214,13 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
         ) : null}
       </div>
 
-      <ol ref={logRef} tabIndex={0} aria-live="polite" aria-label="Conversation" className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4">
+      <ol
+        ref={logRef}
+        tabIndex={0}
+        aria-live="polite"
+        aria-label="Conversation"
+        className="scrollbar-quiet min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-3 py-4"
+      >
         {turns.length === 0 ? (
           <li className="space-y-3">
             <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
@@ -235,7 +241,7 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false }: { sig
             {turn.role === "user" ? (
               <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">{turn.content}</p>
             ) : (
-              <div className="max-w-[92%] space-y-2">
+              <div className="min-w-0 max-w-[92%] space-y-2">
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
                 </p>
@@ -317,7 +323,7 @@ const pill = "inline-flex min-h-11 items-center gap-1.5 rounded-full bg-blue-50 
 function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { cards: AssistantCard[]; signedIn: boolean; onNavigate?: () => void; onShareLocation: () => void }) {
   const links = cards.filter((c) => c.type === "link");
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       {cards.map((card, i) => {
         if (card.type === "tour") {
           return (
@@ -442,7 +448,7 @@ function TransportCardView({ card }: { card: TransportCard }) {
       <p className="font-bold text-daet-ink">{card.title}</p>
       <ol className="mt-2 space-y-3">
         {card.options.map((option, i) => (
-          <li key={i} className="rounded-2xl bg-surface p-2.5">
+          <li key={i} className="rounded-2xl card-edge bg-surface p-2.5">
             {card.options.length > 1 ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Option {i + 1}{option.time ? ` · about ${option.time}` : ""}</p> : option.time ? <p className="text-xs font-bold text-slate-600 dark:text-slate-400">About {option.time} in all</p> : null}
             <ol className="mt-1 space-y-2">
               {option.legs.map((leg, j) => (
@@ -499,7 +505,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
       <label htmlFor={id} className="text-sm font-bold text-daet-ink">
         Message to {who} (edit before sending)
       </label>
-      <textarea id={id} rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1 block w-full rounded-2xl bg-surface px-3 py-2 text-base" />
+      <textarea id={id} rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1 block w-full rounded-2xl card-edge bg-surface px-3 py-2 text-base" />
       {state.error ? (
         <p role="alert" className="mt-1 text-sm font-semibold text-red-600 dark:text-red-300">
           {state.error}

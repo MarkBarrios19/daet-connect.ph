@@ -43,7 +43,7 @@ export function AskAssistant({
           {turns.map((turn) => (
             <li key={turn.id} className="space-y-1">
               <p className="ml-auto w-fit max-w-[90%] rounded-2xl bg-white/15 px-3 py-2 text-sm">{turn.request}</p>
-              <div className="w-fit max-w-[90%] rounded-2xl bg-surface px-3 py-2 text-sm text-daet-ink">
+              <div className="w-fit max-w-[90%] rounded-2xl card-edge bg-surface px-3 py-2 text-sm text-daet-ink">
                 <p>{turn.reply}</p>
                 {turn.undo && turn === last ? (
                   <button

@@ -22,18 +22,24 @@ interface PackageCardProps {
     }>;
   };
   rating?: RatingSummary | null;
+  /**
+   * The page's own heading nesting: an h2 under a page h1 (browse), an h3 under
+   * a section h2 (the home page's band).
+   */
+  headingLevel?: 2 | 3;
 }
 
 /**
  * A trip, photo first. Tours without their own cover show a credited photo
  * of the place they visit, so there is never an empty block.
  */
-export function PackageCard({ package: pkg, rating = null }: PackageCardProps) {
+export function PackageCard({ package: pkg, rating = null, headingLevel = 2 }: PackageCardProps) {
   const price = fromPrice(pkg.tours_package_price_variants);
   const fallback = PHOTOS[placePhoto(pkg.title, pkg.location_name)];
+  const Heading = headingLevel === 2 ? "h2" : "h3";
 
   return (
-    <article className="hover-lift group h-full overflow-hidden rounded-2xl bg-surface active:scale-[0.99]">
+    <article className="hover-lift group h-full overflow-hidden rounded-2xl card-edge bg-surface active:scale-[0.99]">
       <Link href={`/tours/packages/${pkg.id}`} className="flex h-full flex-col">
         <div className="relative aspect-[4/3] overflow-hidden bg-blue-100 dark:bg-blue-900/40">
           {pkg.cover_image_url ? (
@@ -55,7 +61,7 @@ export function PackageCard({ package: pkg, rating = null }: PackageCardProps) {
           )}
         </div>
         <div className="flex flex-1 flex-col p-4 sm:p-5">
-          <h2 className="font-sans text-xl font-bold leading-snug tracking-normal text-daet-ink group-hover:text-blue-700 dark:group-hover:text-blue-300">{pkg.title}</h2>
+          <Heading className="font-sans text-xl font-bold leading-snug tracking-normal text-daet-ink group-hover:text-blue-700 dark:group-hover:text-blue-300">{pkg.title}</Heading>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-daet-ink/80">
             <span className="inline-flex items-center gap-1">
               <LineIcon name="pin" className="h-4 w-4" /> {pkg.location_name}

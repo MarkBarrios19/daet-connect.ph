@@ -81,7 +81,7 @@ export default async function EventsCalendarPage({ searchParams }: { searchParam
   return (
     <PageFrame>
       <header className="mb-6">
-        <h1 className="display-2 text-daet-ink">What&apos;s on in Daet</h1>
+        <h1 className="display-2 text-daet-ink">What&apos;s on Daet.</h1>
         <p className="mt-2 max-w-2xl text-lg text-daet-ink">
           Festivals, cultural shows, sports and weekend markets around Daet and Camarines Norte. Times are Philippine time.
         </p>
@@ -118,7 +118,7 @@ export default async function EventsCalendarPage({ searchParams }: { searchParam
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section aria-labelledby="calendar-month" className="order-2 -mx-2 rounded-2xl bg-surface p-2 sm:mx-0 sm:p-5 lg:order-1">
+        <section aria-labelledby="calendar-month" className="order-2 -mx-2 rounded-2xl card-edge bg-surface p-2 sm:mx-0 sm:p-5 lg:order-1">
           <div className="mb-3 flex items-center justify-between gap-2">
             <Link href={calendarHref({ month: prev, category })} aria-label="Previous month" className="grid h-11 w-11 place-items-center rounded-full bg-muted text-lg font-bold hover:bg-blue-50 dark:hover:bg-blue-950/40">
               ‹

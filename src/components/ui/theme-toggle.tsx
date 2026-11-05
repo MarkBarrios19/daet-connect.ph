@@ -54,7 +54,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={() => setTheme(next)}
       aria-label={`Theme: ${THEME_LABELS[theme]}. Switch to ${THEME_LABELS[next]}`}
       title={`Theme: ${THEME_LABELS[theme]}`}
-      className={`grid min-h-11 min-w-11 place-items-center rounded-full text-daet-ink hover:bg-muted ${className}`}
+      className={`grid min-h-11 min-w-11 place-items-center rounded-full text-daet-ink hover:bg-muted dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white ${className}`}
     >
       <LineIcon name={ICONS[theme]} className="h-5 w-5" />
     </button>

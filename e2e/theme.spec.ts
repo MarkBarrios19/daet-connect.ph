@@ -2,7 +2,9 @@ import { expect, test } from "@playwright/test";
 import { checkA11y, signInAs } from "./fixtures";
 
 const canvas = (page: import("@playwright/test").Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-const LIGHT_CANVAS = "rgb(248, 250, 252)";
+// White, sampled from the owner's FAQ reference (image-46): the light theme's
+// ground is the card's own white, and cards carry a hairline instead of a tone.
+const LIGHT_CANVAS = "rgb(255, 255, 255)";
 const DARK_CANVAS = "rgb(11, 18, 32)";
 
 test.describe("dark mode", () => {
@@ -13,6 +15,83 @@ test.describe("dark mode", () => {
     await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
     expect(await canvas(page)).toBe(DARK_CANVAS);
     await checkA11y(page, "home in dark mode");
+    await context.close();
+  });
+
+  test("the ticket sits in the dark theme instead of blazing out of it", async ({ browser }) => {
+    // The owner's own dark band (image-67): the paper is a slate blue well off
+    // the near-black page — not the reference's cream — and the card of moves
+    // sits under it, darker than the paper it is printed on.
+    const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    const paper = await page
+      .locator("[data-ticket-shape] .ticket-shape")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(paper, "the owner's slate paper, not the reference's cream").toBe("rgb(51, 69, 97)");
+
+    const [field, ink] = await page.locator("[data-ticket-panel]").evaluate((element) => [
+      getComputedStyle(element).backgroundColor,
+      getComputedStyle(element).color,
+    ]);
+    expect(field, "under the paper, not its white").toBe("rgb(22, 38, 72)");
+    expect(ink, "the theme's own ink on it").toBe("rgb(226, 232, 240)");
+
+    // And the photograph is seated in the theme with a fifth of the page's
+    // ground (the layer is display:none in light mode).
+    const scrim = await page.locator("[data-ticket-photo] > div").first().evaluate((element) => ({
+      display: getComputedStyle(element).display,
+      paint: getComputedStyle(element).backgroundColor,
+    }));
+    expect(scrim.display, "over the picture in dark mode").toBe("block");
+    expect(scrim.paint, "a dark wash, not a clear one").not.toBe("rgba(0, 0, 0, 0)");
+
+    await context.close();
+  });
+
+  test("the way back to the top is white on the dark paper and blue on the light one", async ({ browser }) => {
+    // The arrow is the page's one action-shaped control, so it is the brand's
+    // blue on light paper and white on the dark (owner's note, image-80).
+    const context = await browser.newContext({ colorScheme: "dark", viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+
+    const up = page.getByRole("button", { name: "Back to top" });
+    await expect(up).toHaveCount(0);
+    await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 2, behavior: "instant" }));
+    await expect(up).toBeVisible();
+
+    const arrow = up.locator("svg");
+    const ink = () => arrow.evaluate((element) => getComputedStyle(element).color);
+
+    // The button eases its colour over 150ms, so each reading waits for the
+    // colour to settle rather than catching it on the way.
+    await expect.poll(ink, { message: "white on the dark paper" }).toBe("rgb(255, 255, 255)");
+
+    // The same page, switched to the light theme.
+    await page.evaluate(() => {
+      document.documentElement.dataset.theme = "light";
+    });
+    // …and the colour settling, since the change is eased over 150ms.
+    await page.waitForTimeout(400);
+
+    // Chrome serialises a token's colour in whatever space it was written —
+    // `lab(36.9 35.1 -85.7)` for this blue — so the light arrow is compared with
+    // the brand's own blue rendered into the same page from the same class,
+    // rather than with an `rgb()` string.
+    const light = await page.evaluate(() => {
+      const arrow = document.querySelector('button[aria-label="Back to top"] svg')!;
+      const probe = document.createElement("span");
+      probe.className = "text-blue-700";
+      document.body.appendChild(probe);
+      const value = { arrow: getComputedStyle(arrow).color, brand: getComputedStyle(probe).color };
+      probe.remove();
+      return value;
+    });
+    expect(light.brand, "the probe took the blue").not.toBe("rgb(255, 255, 255)");
+    expect(light.arrow, "the brand's blue on light paper").toBe(light.brand);
+
     await context.close();
   });
 

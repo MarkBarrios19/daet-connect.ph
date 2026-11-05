@@ -6,6 +6,7 @@ import type { EditPackageStatus, ValidationErrors } from "./edit-types";
 import { uploadPackageImage } from "./actions";
 import { EDIT_LIMITS, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_IMAGE_TYPES } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
+import { useFileDrop } from "./use-file-drop";
 
 interface CoverImageStepData {
   coverImageUrl: string | null;
@@ -42,7 +43,6 @@ export function CoverImageStep({
   const permissions = getEditPermissions(packageStatus);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const isReadOnly = !permissions.canEdit || !permissions.coverImage;
 
@@ -60,66 +60,72 @@ export function CoverImageStep({
     return null;
   };
 
-  const handleFileChange = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
+  const uploadFile = useCallback(
+    async (file: File) => {
       const validationError = validateImage(file);
       if (validationError) {
         setUploadError(validationError);
-        setUploadProgress(0);
         return;
       }
 
       setUploadLoading(true);
       setUploadError(null);
-      setUploadProgress(10);
 
       try {
         const formData = new FormData();
         formData.append("file", file);
 
-        setUploadProgress(50);
-        const result = await uploadPackageImage(packageId, formData);
+        const result = await uploadPackageImage(packageId, formData, "cover");
 
         if (result.success && result.imageUrl) {
-          setUploadProgress(100);
           onUpdate({
             ...data,
             coverImageUrl: result.imageUrl,
           });
-
-          // Reset after success
-          setTimeout(() => {
-            setUploadProgress(0);
-            setUploadLoading(false);
-          }, 500);
         } else {
           setUploadError(result.error?.message ?? "Failed to upload image");
-          setUploadProgress(0);
-          setUploadLoading(false);
         }
       } catch (error) {
         setUploadError("An error occurred during upload");
-        setUploadProgress(0);
+      } finally {
         setUploadLoading(false);
       }
-
-      // Reset file input
-      event.target.value = "";
     },
+    // validateImage only reads module-level constants
     [data, onUpdate, packageId]
   );
+
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (file) void uploadFile(file);
+    },
+    [uploadFile]
+  );
+
+  // Drop a photo straight onto the preview.
+  const fileDrop = useFileDrop({
+    // The cover is a single image, so only the first file in a drop counts.
+    onFiles: (files) => {
+      const file = files[0];
+      if (file) void uploadFile(file);
+    },
+    enabled: !isReadOnly && !uploadLoading && !loading,
+  });
 
   return (
     <div className="border rounded-2xl p-6 bg-surface">
       <h2 className="text-xl font-bold text-daet-ink mb-6">Cover Image</h2>
 
-      <div className="space-y-4">
+      <div className="space-y-4" {...fileDrop.dropProps}>
         {/* Current Image Preview */}
         {data.coverImageUrl ? (
-          <div className="relative w-full h-64 rounded-2xl overflow-hidden bg-muted border border-daet-ink/20">
+          <div
+            className={`relative w-full h-64 rounded-2xl overflow-hidden bg-muted border transition ${
+              fileDrop.isDragging ? "border-daet-forest ring-2 ring-daet-forest/40" : "border-daet-ink/20"
+            }`}
+          >
             <Image
               src={data.coverImageUrl}
               alt="Cover image preview"
@@ -131,25 +137,32 @@ export function CoverImageStep({
             />
           </div>
         ) : (
-          <div className="w-full h-64 rounded-2xl bg-muted border-2 border-dashed border-daet-ink/20 flex items-center justify-center">
+          <div
+            className={`w-full h-64 rounded-2xl bg-muted border-2 border-dashed flex items-center justify-center transition ${
+              fileDrop.isDragging ? "border-daet-forest bg-daet-sand" : "border-daet-ink/20"
+            }`}
+          >
             <div className="text-center">
               <svg className="w-12 h-12 text-daet-ink/70 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-daet-ink/80 text-sm font-medium">No cover image</p>
+              <p className="text-daet-ink/80 text-sm font-medium">
+                {fileDrop.isDragging ? "Drop the photo to upload it" : "No cover image"}
+              </p>
+              {!fileDrop.isDragging && !isReadOnly && (
+                <p className="text-daet-ink/70 text-xs mt-1">or drag a photo here</p>
+              )}
             </div>
           </div>
         )}
 
-        {/* Upload Progress */}
-        {uploadLoading && uploadProgress > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-daet-ink/80">Uploading...</span>
-              <span className="text-daet-ink/70">{uploadProgress}%</span>
-            </div>
+        {/* Upload in progress: the upload isn't measurable from here, so the
+            bar is indeterminate rather than a made-up percentage. */}
+        {uploadLoading && (
+          <div role="status" className="space-y-2">
+            <span className="text-sm text-daet-ink/80">Uploading...</span>
             <div className="w-full h-2 bg-muted-strong rounded-full overflow-hidden">
-              <div className="h-full bg-daet-forest transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+              <div className="h-full w-1/3 rounded-full bg-daet-forest animate-pulse" />
             </div>
           </div>
         )}
