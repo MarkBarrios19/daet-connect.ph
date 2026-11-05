@@ -703,11 +703,12 @@ export function FreeMap({
                   type="button"
                   aria-label={isFull ? "Close the full map" : "Expand map"}
                   onClick={() => (isFull ? onCloseFull?.() : setExpanded(true))}
-                  className={`${CONTROL} absolute left-3 rounded-full ${chip ? "top-14" : "top-3"}`}
+                  // Full screen: the close button is an X at the top right, above the location button.
+                  className={`${CONTROL} absolute rounded-full ${isFull ? "right-3 top-3" : `left-3 ${chip ? "top-14" : "top-3"}`}`}
                 >
-                  <ControlIcon d={isFull ? "M10 4v6H4M14 20v-6h6M4 10l7-7M20 14l-7 7" : "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"} />
+                  <ControlIcon d={isFull ? "M6 6l12 12M18 6L6 18" : "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"} />
                 </button>
-                <button type="button" aria-label="Show my location" disabled={locating} onClick={locate} className={`${CONTROL} absolute right-3 top-3 rounded-xl text-blue-600 dark:text-blue-300`}>
+                <button type="button" aria-label="Show my location" disabled={locating} onClick={locate} className={`${CONTROL} absolute right-3 ${isFull ? "top-16" : "top-3"} rounded-xl text-blue-600 dark:text-blue-300`}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="6" />
                     <circle cx="12" cy="12" r="1.8" fill="currentColor" />

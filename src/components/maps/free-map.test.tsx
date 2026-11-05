@@ -387,6 +387,11 @@ describe("FreeMap", () => {
     // Expand opens a full-screen copy over the page; its button and Escape close it.
     fireEvent.click(screen.getByRole("button", { name: "Expand map" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Close the full map" })).toBeInTheDocument());
+    // An X at the top right, above the location button (owner's note, image-49).
+    const close = screen.getByRole("button", { name: "Close the full map" });
+    expect(close).toHaveClass("right-3", "top-3");
+    expect(close.querySelector("path")).toHaveAttribute("d", "M6 6l12 12M18 6L6 18");
+    expect(screen.getAllByRole("button", { name: "Show my location" }).at(-1)).toHaveClass("right-3", "top-16");
     expect(screen.getByRole("region", { name: "Day 1 map (full screen)" })).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("button", { name: "Close the full map" })).toBeNull());
