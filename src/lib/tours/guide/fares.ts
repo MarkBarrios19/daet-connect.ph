@@ -56,7 +56,7 @@ export function toFare(row: Record<string, unknown>): Fare {
 const words = (value: string) =>
   normalizeText(value)
     .replace(/[()[\]:.,;!?/-]/g, " ")
-    .replace(/\b(port|town|center|centre|city|terminal|the|sa|ng)\b/g, " ")
+    .replace(/\b(port|town|center|centre|city|terminal|island|islands|isla|the|sa|ng)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -69,22 +69,68 @@ export function namesMatch(query: string, name: string): boolean {
 }
 
 export type FareLeg = Fare & { reversed: boolean };
-export type FareRoute = { legs: FareLeg[]; minutesMin: number | null; minutesMax: number | null };
+export type FareRoute = {
+  legs: FareLeg[];
+  minutesMin: number | null;
+  minutesMax: number | null;
+  /** False when some leg has no listed time: the totals then count only the legs that do ("at least"). */
+  timeComplete: boolean;
+  /** What one traveller pays across the per-person legs; null when one of them has no listed fare. */
+  perPersonMin: number | null;
+  perPersonMax: number | null;
+  /** True when a per-person leg only has a lowest price ("from ₱1,088"), so the total is a floor too. */
+  perPersonFromOnly: boolean;
+  /** Legs paid for the whole boat or vehicle (a hired banca, a special trip): shared by the group. */
+  sharedLegs: FareLeg[];
+};
 
 const sumOrNull = (values: Array<number | null>) => (values.some((v) => v === null) ? null : values.reduce<number>((a, b) => a + (b as number), 0));
+const sumKnown = (values: Array<number | null>) => (values.every((v) => v === null) ? null : values.reduce<number>((a, b) => a + (b ?? 0), 0));
 
 function routeOf(legs: FareLeg[]): FareRoute {
-  return { legs, minutesMin: sumOrNull(legs.map((l) => l.minutes_min)), minutesMax: sumOrNull(legs.map((l) => l.minutes_max)) };
+  const perPerson = legs.filter((l) => l.fare_per === "person");
+  return {
+    legs,
+    minutesMin: sumKnown(legs.map((l) => l.minutes_min ?? l.minutes_max)),
+    minutesMax: sumKnown(legs.map((l) => l.minutes_max ?? l.minutes_min)),
+    timeComplete: legs.every((l) => l.minutes_min !== null || l.minutes_max !== null),
+    perPersonMin: sumOrNull(perPerson.map((l) => l.fare_min ?? l.fare_max)),
+    perPersonMax: sumOrNull(perPerson.map((l) => l.fare_max ?? l.fare_min)),
+    perPersonFromOnly: perPerson.some((l) => l.fare_min !== null && l.fare_max === null),
+    sharedLegs: legs.filter((l) => l.fare_per !== "person"),
+  };
 }
 
+/** The town a stop is in: "Manila (PITX)" and "Manila (NAIA)" are both Manila, "Naga Airport (Pili)" is Naga. */
+export function cityOf(name: string): string {
+  return words(name.split("(")[0]).replace(/\b(airport|integrated|central|westbound)\b/g, " ").replace(/\s+/g, " ").trim().split(" ")[0] ?? "";
+}
+
+/** A trip of more legs than this is not something to suggest to a visitor. */
+const MAX_LEGS = 4;
+const MAX_ROUTES = 6;
+/** Each change of vehicle costs waiting time; this keeps one long direct bus ahead of three short hops. */
+const TRANSFER_PENALTY_MIN = 60;
+
+/** A leg with no listed time is counted as this long, so it can't make a route look fastest. */
+const UNKNOWN_LEG_MIN = 60;
+
+const score = (route: FareRoute) =>
+  (route.minutesMin ?? 0) +
+  route.legs.filter((l) => l.minutes_min === null && l.minutes_max === null).length * UNKNOWN_LEG_MIN +
+  (route.legs.length - 1) * TRANSFER_PENALTY_MIN;
+
 /**
- * Ways to get from one place to another: direct fares first (either
- * direction; a ride back costs the same), then two-leg trips through a
- * shared stop such as Daet (Manila → Daet → Bagasbas).
+ * Ways to get from one place to another, chaining up to four rides: either
+ * direction of a listed ride counts (a ride back costs the same), and a stop
+ * named in one ride joins the next ride that starts there (Cebu → Manila
+ * (NAIA) → Manila (PITX) → Daet → Bagasbas). Fastest first, counting an hour
+ * for each change, and only one route per sequence of ways to travel, so the
+ * list shows real alternatives (bus; plane then van; plane then bus).
  */
 export function faresBetween(fares: Fare[], from: string | null, to: string): FareRoute[] {
   const active = fares.filter((f) => f.is_active);
-  const legsFrom = (place: string) => [
+  const legsFrom = (place: string): FareLeg[] => [
     ...active.filter((f) => namesMatch(place, f.from_name)).map((f) => ({ ...f, reversed: false })),
     ...active.filter((f) => namesMatch(place, f.to_name)).map((f) => ({ ...f, from_name: f.to_name, to_name: f.from_name, reversed: true })),
   ];
@@ -94,17 +140,39 @@ export function faresBetween(fares: Fare[], from: string | null, to: string): Fa
     return active.filter((f) => namesMatch(to, f.to_name)).map((f) => routeOf([{ ...f, reversed: false }]));
   }
 
-  const first = legsFrom(from);
-  const direct = first.filter((leg) => namesMatch(to, leg.to_name)).map((leg) => routeOf([leg]));
-  if (direct.length) return direct;
-
-  const twoLeg: FareRoute[] = [];
-  for (const a of first) {
-    for (const b of legsFrom(a.to_name)) {
-      if (b.id !== a.id && namesMatch(to, b.to_name)) twoLeg.push(routeOf([a, b]));
+  const found: FareRoute[] = [];
+  const walk = (place: string, path: FareLeg[], cities: string[]) => {
+    if (path.length >= MAX_LEGS) return;
+    const here = cityOf(place);
+    const lastWasTransfer = path.length > 0 && cityOf(path[path.length - 1].from_name) === here;
+    for (const leg of legsFrom(place)) {
+      if (path.some((p) => p.id === leg.id)) continue;
+      const there = cityOf(leg.to_name);
+      // One change of terminal inside a city (NAIA → PITX) is a transfer; going
+      // back to a city already left is a detour (Manila → Naga → Manila).
+      if (there === here ? lastWasTransfer : cities.includes(there)) continue;
+      // Someone starting "in Manila" goes straight to the terminal they need.
+      if (path.length === 0 && there === here && cityOf(from) === here) continue;
+      const next = [...path, leg];
+      if (namesMatch(to, leg.to_name)) {
+        found.push(routeOf(next));
+        continue;
+      }
+      walk(leg.to_name, next, [...cities, there]);
     }
+  };
+  walk(from, [], [cityOf(from)]);
+
+  const ranked = found.sort((a, b) => score(a) - score(b) || a.legs.length - b.legs.length);
+  // Nothing that takes more than about twice as long as the best way.
+  const limit = ranked.length ? score(ranked[0]) * 2 + 120 : 0;
+  const best = new Map<string, FareRoute>();
+  for (const route of ranked.filter((r) => score(r) <= limit)) {
+    // One route per way of travelling, told apart by where the first ride boards (Cubao or PITX).
+    const key = `${route.legs[0].from_name}|${route.legs.map((l) => l.mode).join(">")}`;
+    if (!best.has(key)) best.set(key, route);
   }
-  return twoLeg.slice(0, 6);
+  return [...best.values()].slice(0, MAX_ROUTES);
 }
 
 export function fareLabel(fare: Pick<Fare, "fare_min" | "fare_max" | "fare_per">, format: (n: number) => string): string | null {
@@ -112,6 +180,8 @@ export function fareLabel(fare: Pick<Fare, "fare_min" | "fare_max" | "fare_per">
   if (lo === null && hi === null) return null;
   const per = ` ${FARE_PER[fare.fare_per]}`;
   if (lo !== null && hi !== null && lo !== hi) return `${format(lo)}–${format(hi)}${per}`;
+  // Only a lowest price is known (an airfare seen on a fare site): say so.
+  if (lo !== null && hi === null) return `from ${format(lo)}${per}`;
   return `${format((lo ?? hi) as number)}${per}`;
 }
 

@@ -2,7 +2,8 @@ import { formatPeso } from "@/lib/money";
 import { FAQS, matchFaq } from "@/lib/tours/assistant/knowledge";
 import { attractionInfo, handoff, myBookings, planTripLink, searchTours, tourDetails, travelTime, upcomingEvents, type ToolContext } from "@/lib/tours/assistant/tools";
 import { readTravelQuestion } from "@/lib/tours/assistant/transport";
-import { estimateCost, findPlaces, howToGetThere, meetingPoint } from "@/lib/tours/assistant/guide-tools";
+import { estimateCost, findPlaces, howToGetThere, meetingPoint, tripRoutes } from "@/lib/tours/assistant/guide-tools";
+import { detectTripLang, readTripQuestion, tripAnswer } from "@/lib/tours/assistant/trip";
 import { isMeetingQuestion, readCostQuestion, readDirectionsQuestion, readPlaceQuestion } from "@/lib/tours/assistant/guide-intents";
 import { normalizeText } from "@/lib/tours/itinerary/assistant";
 
@@ -29,6 +30,17 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
     return ctx.userId
       ? "I'll pass this to a person. Check the message below, edit it if you like, and send it."
       : "I'll pass this to a person. Sign in first so they can reply to you.";
+  }
+
+  // Fares, routes and travel times to Daet and around it, in the visitor's own language
+  const tripQ = readTripQuestion(text);
+  if (tripQ) {
+    const routes = await tripRoutes(ctx, tripQ);
+    if (routes.length) return tripAnswer(routes, tripQ, detectTripLang(text), formatPeso);
+    // A trip from somewhere far with nothing listed: say so, rather than offering tours.
+    if (tripQ.from && !/\b(daet|bagasbas|mercedes|vinzons|paracale|calaguas|apuao|talisay|basud|labo)\b/i.test(tripQ.from)) {
+      return tripAnswer([], tripQ, detectTripLang(text), formatPeso);
+    }
   }
 
   // How long / how far between two places (R5)
