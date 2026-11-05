@@ -1,6 +1,8 @@
 import { formatPeso } from "@/lib/money";
 import { notFound } from "next/navigation";
 import { StopExplorer } from "@/components/tours/stop-explorer";
+import { HeroCarousel } from "@/components/tours/hero-carousel";
+import { heroPhotos } from "@/lib/tours/hero-photos";
 import { directionsUrl, formatDistance, formatDuration } from "@/lib/maps/geo";
 import { planRoute, type RouteSummary } from "@/lib/maps/routes";
 import Image from "next/image";
@@ -166,6 +168,8 @@ export default async function PackageDetailPage({ params }: PageProps) {
 
   // Sort gallery by display order
   const gallery = (pkg.tours_package_gallery || []).sort((a: any, b: any) => a.display_order - b.display_order);
+  // The hero: cover then gallery as a carousel; one photo (or none) stays a plain picture.
+  const photos = heroPhotos(pkg.title, pkg.cover_image_url, gallery);
   const fallbackKey = placePhoto(pkg.title, pkg.location_name);
   const fallback = PHOTOS[fallbackKey];
   const meeting = meetingPointOf(
@@ -183,19 +187,25 @@ export default async function PackageDetailPage({ params }: PageProps) {
   ];
 
   return (
-    <PageFrame credits={pkg.cover_image_url ? [] : [fallbackKey]}>
+    <PageFrame credits={photos.length > 0 ? [] : [fallbackKey]}>
       <Link href="/tours/browse" className="inline-flex min-h-11 items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline">
         <LineIcon name="arrowRight" className="h-4 w-4 rotate-180" /> All trips
       </Link>
 
       {/* The trip itself, as big as the screen allows. */}
-      <figure className="relative -mx-4 mt-2 aspect-[4/3] overflow-hidden bg-blue-100 dark:bg-blue-900/40 sm:mx-0 sm:aspect-[16/9] sm:rounded-2xl lg:aspect-[21/9]">
-        {pkg.cover_image_url ? (
-          <img src={pkg.cover_image_url} alt={pkg.title} fetchPriority="high" className="h-full w-full object-cover" />
-        ) : (
-          <Image src={fallback.src} alt={`${pkg.location_name}: ${fallback.alt}`} fill priority sizes="100vw" className="object-cover" />
-        )}
-      </figure>
+      {photos.length > 1 ? (
+        <div className="mt-2">
+          <HeroCarousel photos={photos} title={pkg.title} />
+        </div>
+      ) : (
+        <figure className="relative -mx-4 mt-2 aspect-[4/3] overflow-hidden bg-blue-100 dark:bg-blue-900/40 sm:mx-0 sm:aspect-[16/9] sm:rounded-2xl lg:aspect-[21/9]">
+          {photos.length === 1 ? (
+            <img src={photos[0].src} alt={photos[0].alt} fetchPriority="high" className="h-full w-full object-cover" />
+          ) : (
+            <Image src={fallback.src} alt={`${pkg.location_name}: ${fallback.alt}`} fill priority sizes="100vw" className="object-cover" />
+          )}
+        </figure>
+      )}
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_22rem] lg:gap-14">
         <div className="min-w-0">
@@ -291,25 +301,6 @@ export default async function PackageDetailPage({ params }: PageProps) {
             </section>
           ) : null}
 
-          {gallery.length > 0 ? (
-            <section aria-labelledby="gallery" className="mt-12">
-              <h2 id="gallery" className="text-2xl font-semibold text-daet-ink sm:text-3xl">Photos</h2>
-              {/* On phones the strip scrolls sideways, so it takes keyboard focus to be scrolled with the arrow keys. */}
-              <ul
-                tabIndex={0}
-                aria-label={`Photos of ${pkg.title}`}
-                className="-mx-4 mt-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0"
-              >
-                {gallery.map((img: any) => (
-                  <li key={img.id} className="w-[80%] shrink-0 snap-start sm:w-auto">
-                    <img src={img.image_url} alt={img.caption || `Photo of ${pkg.title}`} loading="lazy" className="aspect-[4/3] w-full rounded-2xl object-cover" />
-                    {img.caption ? <p className="mt-2 text-sm text-daet-ink/80">{img.caption}</p> : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
           {operatorName ? (
             <section aria-labelledby="operator" className="mt-12 rounded-2xl card-edge bg-surface p-5 sm:p-6">
               <h2 id="operator" className="text-2xl font-semibold text-daet-ink">Run by {operatorName}</h2>
@@ -324,7 +315,13 @@ export default async function PackageDetailPage({ params }: PageProps) {
             </section>
           ) : null}
 
-          <section id="reviews" aria-labelledby="reviews-title" className="mt-12">
+          {/* The page's own "#reviews" link would otherwise leave the heading
+              under the sticky bar — the same 37px the booking card lost. */}
+          <section
+            id="reviews"
+            aria-labelledby="reviews-title"
+            className="mt-12 scroll-mt-[calc(var(--header-h)+1.5rem)]"
+          >
             <div className="flex flex-wrap items-end justify-between gap-3">
               <h2 id="reviews-title" className="text-2xl font-semibold text-daet-ink sm:text-3xl">Traveller reviews</h2>
               <p className="text-sm text-daet-ink/75">Only travellers who finished this trip can review it.</p>

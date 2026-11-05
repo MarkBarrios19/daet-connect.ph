@@ -118,7 +118,12 @@ describe("basic mode as a local guide", () => {
   it("answers food, directions, cost and meeting questions without the AI", async () => {
     const c = ctx();
     expect(await basicReply("Where to eat near Bagasbas?", c)).toMatch(/^Food near bagasbas: Bagasbas Beach eateries/);
-    expect(await basicReply("Paano pumunta sa Bagasbas from Manila?", ctx())).toMatch(/^Bus from Manila \(PITX\) to Daet \(₱801\.00 per person, 9–12 h\), then Tricycle/);
+    // A Tagalog question gets a Tagalog answer: each leg, the total per person, and a reminder to confirm.
+    const directions = await basicReply("Paano pumunta sa Bagasbas from Manila?", ctx());
+    expect(directions).toMatch(/^Mula Manila papunta sa Bagasbas/);
+    expect(directions).toContain("1. Bus Manila (PITX) → Daet (₱801.00 bawat tao, 9–12 oras) → Tricycle Daet town center → Bagasbas (₱30.00 bawat tao");
+    expect(directions).toContain("Kabuuan: ₱831.00 bawat tao");
+    expect(directions).toMatch(/kumpirmahin muna/);
     expect(await basicReply("Budget for 2 days in Bagasbas from Manila?", ctx())).toMatch(/^Estimated total ₱/);
     expect(await basicReply("Where do we meet for my tour?", ctx({ userId: "u1" }))).toMatch(/meet at Vinzons fish port at 5:30 AM on 2026-11-04/);
     expect(await basicReply("Saan pwede kumain malapit dito?", ctx())).toMatch(/Use my location/);

@@ -91,7 +91,7 @@ export function SiteHeader({
     // label edges to noise. Light mode also keeps the one resting elevation the
     // design system allows (see --shadow-header).
     <header className="sticky top-0 z-40 bg-surface/80 text-daet-ink shadow-header backdrop-blur-md dark:bg-slate-950/80 dark:text-white dark:shadow-none print:hidden">
-      <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-1 px-3 sm:min-h-[3.8rem] sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[var(--header-h)] max-w-7xl items-center gap-1 px-3 sm:px-6 lg:px-8">
         <MobileMenu
           showTheme={!signedIn}
           groups={[
