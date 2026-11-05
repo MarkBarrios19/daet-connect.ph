@@ -60,7 +60,9 @@ test("R5: the assistant answers travel time in basic mode, with directions", asy
   await expect(dialog.getByRole("link", { name: /Directions: Daet town center → Bagasbas/ })).toHaveAttribute("target", "_blank");
   await dialog.getByLabel("Ask the Daet AI assistant").fill("Paano pumunta sa Daet galing Manila?");
   await dialog.getByRole("button", { name: "Send" }).click();
-  await expect(dialog.getByText(/Bus from Manila \(PITX\) to Daet \(₱801\.00 per person/)).toBeVisible();
+  // A Tagalog question gets a Tagalog answer, each leg with its fare, and a reminder to confirm.
+  await expect(dialog.getByText(/Mula Manila papunta sa Daet/)).toBeVisible();
+  await expect(dialog.getByText(/Bus Manila \(PITX\) → Daet \(₱801\.00 bawat tao/)).toBeVisible();
   await expect(dialog.getByText("Bus: Manila (PITX) to Daet")).toBeVisible();
   await checkA11y(page, "assistant travel answers");
 });

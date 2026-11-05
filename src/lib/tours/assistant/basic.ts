@@ -1,7 +1,7 @@
 import { formatPeso } from "@/lib/money";
 import { FAQS, matchFaq } from "@/lib/tours/assistant/knowledge";
 import { attractionInfo, handoff, myBookings, planTripLink, searchTours, tourDetails, travelTime, upcomingEvents, type ToolContext } from "@/lib/tours/assistant/tools";
-import { readTravelQuestion } from "@/lib/tours/assistant/transport";
+import { findTransportPlace, readTravelQuestion } from "@/lib/tours/assistant/transport";
 import { estimateCost, findPlaces, howToGetThere, meetingPoint, tripRoutes } from "@/lib/tours/assistant/guide-tools";
 import { detectTripLang, readTripQuestion, tripAnswer } from "@/lib/tours/assistant/trip";
 import { isMeetingQuestion, readCostQuestion, readDirectionsQuestion, readPlaceQuestion } from "@/lib/tours/assistant/guide-intents";
@@ -34,7 +34,11 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
 
   // Fares, routes and travel times to Daet and around it, in the visitor's own language
   const tripQ = readTripQuestion(text);
-  if (tripQ) {
+  // "How long from Daet to Bagasbas?" between two nearby towns is a road time
+  // with a directions button (travel_time, below), not a list of fares.
+  const roadTime = tripQ?.asks === "time" ? readTravelQuestion(text) : null;
+  const local = roadTime?.from && findTransportPlace(roadTime.from) && findTransportPlace(roadTime.to);
+  if (tripQ && !local) {
     const routes = await tripRoutes(ctx, tripQ);
     if (routes.length) return tripAnswer(routes, tripQ, detectTripLang(text), formatPeso);
     // A trip from somewhere far with nothing listed: say so, rather than offering tours.

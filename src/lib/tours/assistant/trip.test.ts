@@ -126,4 +126,9 @@ describe("basic mode end to end, on the live fare rows", () => {
     expect(reply).toContain("Eroplano Cebu (Mactan) → Manila (NAIA) (₱1,088.00–₱1,377.00 bawat tao");
     expect(reply).toContain("Kabuuan: ₱2,555.00–₱5,439.00 bawat tao");
   });
+
+  it("leaves 'how long' between two nearby towns to the road-time answer", async () => {
+    const reply = await basicReply("How long from Daet to Bagasbas?", ctx() as never);
+    expect(reply).not.toMatch(/here is the way I know|estimates from public fare listings/);
+  });
 });
