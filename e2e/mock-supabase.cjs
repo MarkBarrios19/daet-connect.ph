@@ -1436,6 +1436,23 @@ http
         res.writeHead(204, cors);
         return res.end();
       }
+      // A shared trip plan (view only); any other token is unknown.
+      if (url.pathname === "/rest/v1/rpc/tours_shared_itinerary") {
+        const token = JSON.parse(body || "{}").p_token;
+        if (token !== "5a7e0000-0000-4000-8000-000000000001") return send(200, null);
+        const inDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+        return send(200, {
+          title: "Weekend in Daet",
+          start_date: inDays(14),
+          end_date: inDays(15),
+          summary: null,
+          items: [
+            { day_number: 1, item_order: 1, kind: "visit", location_name: "Bagasbas Beach", latitude: 14.131583, longitude: 122.985083, start_time: "08:00", end_time: "11:00", travel_minutes: 10, tip: null, attraction_slug: null },
+            { day_number: 1, item_order: 2, kind: "lunch", location_name: "Lunch break", latitude: null, longitude: null, start_time: "11:30", end_time: "12:30", travel_minutes: 0, tip: null, attraction_slug: null },
+            { day_number: 2, item_order: 1, kind: "visit", location_name: "Daet Heritage Center and Museum", latitude: 14.113187, longitude: 122.954828, start_time: "09:00", end_time: "09:45", travel_minutes: 5, tip: null, attraction_slug: null },
+          ],
+        });
+      }
       if (url.pathname === "/rest/v1/rpc/get_my_role")
         return send(200, role === "anon" ? null : role);
       if (url.pathname === "/rest/v1/rpc/tours_refundable_amount")

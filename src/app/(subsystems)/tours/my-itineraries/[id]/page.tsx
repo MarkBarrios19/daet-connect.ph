@@ -11,6 +11,17 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { appBaseUrl } from "@/lib/tours/qr-issue";
 import { deleteItinerary } from "../actions";
 import { ShareControls } from "./share-controls";
+import { BookEachTrip } from "@/components/planner/book-each-trip";
+import { bookableForDays } from "@/lib/tours/itinerary/bookable";
+
+/** Who the saved trip is for: the planner's travellers, else the form's group size. */
+function groupFromPreferences(value: unknown): number | null {
+  const prefs = (value ?? {}) as { travelers?: { adults?: unknown; children?: unknown }; groupSize?: unknown };
+  const adults = Number(prefs.travelers?.adults);
+  if (Number.isInteger(adults) && adults > 0) return adults + (Array.isArray(prefs.travelers?.children) ? prefs.travelers.children.length : 0);
+  const size = Number(prefs.groupSize);
+  return Number.isInteger(size) && size > 0 ? size : null;
+}
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Itinerary" };
@@ -26,7 +37,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
 
   const { data: itinerary } = await supabase
     .from("tours_itineraries")
-    .select("id, title, start_date, summary, share_token, plan_source, tours_itinerary_items ( day_number, item_order, item_kind, location_name, tip, latitude, longitude, start_time, end_time, travel_minutes, tours_attractions ( slug ) )")
+    .select("id, title, start_date, summary, share_token, plan_source, preferences, tours_itinerary_items ( day_number, item_order, item_kind, location_name, tip, latitude, longitude, start_time, end_time, travel_minutes, tours_attractions ( slug ) )")
     .eq("id", id)
     .eq("tourist_id", user.id)
     .maybeSingle();
@@ -36,6 +47,10 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
     const attraction = Array.isArray(item.tours_attractions) ? item.tours_attractions[0] : item.tours_attractions;
     return { ...(item as object), attraction_slug: (attraction as { slug?: string } | null)?.slug ?? null } as Parameters<typeof rowsToDays>[0][number];
   });
+
+  const days = rowsToDays(rows, itinerary.start_date);
+  const tours = await bookableForDays(supabase, days);
+  const group = groupFromPreferences(itinerary.preferences);
 
   return (
     <PageFrame>
@@ -48,12 +63,18 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Opening hours can change; check each place before you go.</p>
 
         <div className="mt-6">
-          <SavedItinerary days={rowsToDays(rows, itinerary.start_date)} />
+          <SavedItinerary days={days} />
         </div>
+
+        {tours.length ? (
+          <div className="mt-6">
+            <BookEachTrip packages={tours} group={group} />
+          </div>
+        ) : null}
 
         <Card className="mt-6">
           <h2 className="mb-3 text-lg font-bold text-daet-ink">Share</h2>
-          <ShareControls id={itinerary.id} initialToken={itinerary.share_token} baseUrl={appBaseUrl()} />
+          <ShareControls id={itinerary.id} title={itinerary.title} initialToken={itinerary.share_token} baseUrl={appBaseUrl()} />
         </Card>
 
         <form action={deleteItinerary} className="mt-6">

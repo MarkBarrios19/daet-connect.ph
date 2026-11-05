@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { TransportCardView } from "@/components/assistant/transport-card";
+import { BookEachTrip } from "@/components/planner/book-each-trip";
+import { dayFor } from "@/lib/tours/itinerary/bookable";
 import { RouteMap, type MapPoint } from "@/components/maps/route-map";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPeso } from "@/lib/money";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
@@ -25,7 +25,6 @@ const dayLabel = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateStr
 const pillClass = (on: boolean) =>
   `inline-flex min-h-11 shrink-0 items-center rounded-full px-4 text-sm font-bold transition ${on ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-muted text-daet-ink hover:bg-muted-strong"}`;
 
-export const WEATHER_RULE = "If the operator calls this trip off for weather, you pick a new date or get a full refund.";
 
 /**
  * The drafted plan: day pills, a map that follows the day, stops with a menu
@@ -155,7 +154,12 @@ export function PlanPanel({
         </div>
       ))}
 
-      {itinerary.packages.length ? <BookEachTrip itinerary={itinerary} group={group} /> : null}
+      {itinerary.packages.length ? (
+        <BookEachTrip
+          group={group}
+          packages={itinerary.packages.map((p) => ({ ...p, date: dayFor(p.matched, itinerary.plan.days.map((d) => ({ date: d.date, names: d.blocks.map((b) => b.name) }))) }))}
+        />
+      ) : null}
 
       <p className="text-xs text-slate-600 dark:text-slate-400">Costs are entrance fees for your group of {group}. Times are estimates; confirm hours marked as not confirmed.</p>
       {footer}
@@ -221,66 +225,6 @@ function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingTh
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
         Estimate. Fares change; confirm with the driver or operator{value.checkedOn ? ` (listed fares checked ${value.checkedOn})` : ""}.
       </p>
-    </div>
-  );
-}
-
-/** What booking a tour costs this group, from the database price; null when no price is listed. */
-export function groupPrice(pkg: BookablePackage, group: number): number | null {
-  if (!pkg.price) return null;
-  return pkg.price.perPerson ? pkg.price.amount * group : pkg.price.amount;
-}
-
-/** The first plan day that visits a place the tour passes, so the booking form opens on that date. */
-export function bookingHref(pkg: BookablePackage, itinerary: ItineraryResult, group: number): string {
-  const day = itinerary.plan.days.find((d) => d.blocks.some((b) => b.kind === "visit" && pkg.matched.includes(b.name))) ?? itinerary.plan.days[0];
-  const query = new URLSearchParams({ ...(day ? { date: day.date } : {}), pax: String(group) });
-  return `/tours/packages/${pkg.id}/book?${query}`;
-}
-
-/** Each bookable tour with its own Book button (each is paid separately), and the total. */
-function BookEachTrip({ itinerary, group }: { itinerary: ItineraryResult; group: number }) {
-  const prices = itinerary.packages.map((p) => groupPrice(p, group));
-  const known = prices.filter((p): p is number => p !== null);
-  return (
-    <div className="space-y-2">
-      <h3 className="font-bold text-daet-ink">Book each trip</h3>
-      {itinerary.packages.map((p) => (
-        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p, itinerary, group)} />
-      ))}
-      {itinerary.packages.length > 1 && known.length ? (
-        <p className="text-sm font-semibold text-daet-ink">
-          {known.length < prices.length ? "At least " : "About "}
-          {formatPeso(known.reduce((a, b) => a + b, 0))} for all {itinerary.packages.length} trips. Each one is booked and paid separately.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-export function BookableCard({ pkg, group, bookHref }: { pkg: BookablePackage; group: number; bookHref?: string }) {
-  const price = pkg.price ? (pkg.price.perPerson ? `from ${formatPeso(pkg.price.amount)} per person · about ${formatPeso(pkg.price.amount * group)} for ${group}` : `from ${formatPeso(pkg.price.amount)} per group`) : null;
-  return (
-    <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-950/40">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="info">Bookable</Badge>
-        {pkg.verified ? <span className="text-xs font-bold text-green-800 dark:text-green-300">Verified by the Tourism Office</span> : null}
-      </div>
-      <p className="mt-1 font-bold text-daet-ink">{pkg.title}</p>
-      <p className="text-sm text-slate-600 dark:text-slate-400">{[pkg.operatorName, `passes ${pkg.matched.slice(0, 2).join(", ")}`].filter(Boolean).join(" · ")}</p>
-      {price ? <p className="mt-1 text-sm font-semibold text-daet-ink">{price}</p> : null}
-      {pkg.notIncluded.length ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Not included: {pkg.notIncluded.join(", ")}</p> : null}
-      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{WEATHER_RULE}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {bookHref ? (
-          <Link href={bookHref} className="inline-flex min-h-11 items-center rounded-full bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">
-            Book for {group}
-          </Link>
-        ) : null}
-        <Link href={`/tours/packages/${pkg.id}`} className="inline-flex min-h-11 items-center rounded-full bg-surface px-4 text-sm font-bold text-blue-700 hover:bg-muted dark:text-blue-300">
-          View tour
-        </Link>
-      </div>
     </div>
   );
 }
