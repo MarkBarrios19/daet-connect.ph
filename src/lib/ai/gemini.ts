@@ -43,15 +43,75 @@ export async function withBusyFallback<T>(model: string, call: (model: string) =
   throw last;
 }
 
+/**
+ * The API keys to use, in order: GEMINI_API_KEY, then GEMINI_API_KEY_2 and
+ * GEMINI_API_KEY_3 (or a comma-separated GEMINI_API_KEYS). Duplicates and blanks
+ * are dropped. Extra keys are for failover (a key revoked, mistyped or
+ * rejected), each from its own Google Cloud project; they are not a way round
+ * Google's rate limits.
+ */
+export function geminiKeys(env: Record<string, string | undefined> = process.env): string[] {
+  const listed = [env.GEMINI_API_KEY, env.GEMINI_API_KEY_2, env.GEMINI_API_KEY_3, ...(env.GEMINI_API_KEYS ?? "").split(",")];
+  return [...new Set(listed.map((k) => (k ?? "").trim()).filter(Boolean))];
+}
+
 export function isGeminiConfigured(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
+  return geminiKeys().length > 0;
+}
+
+/** A problem with the key itself (invalid, revoked, no access, or its project out of quota): the next key may work. */
+export function isKeyError(error: unknown): boolean {
+  const status = typeof error === "object" && error && "status" in error ? Number((error as { status: unknown }).status) : NaN;
+  if ([401, 403, 429].includes(status)) return true;
+  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|RESOURCE_EXHAUSTED|quota/i.test(error instanceof Error ? error.message : String(error ?? ""));
+}
+
+// The key that last worked, so a failing first key isn't tried on every message.
+let preferredKey = 0;
+
+/**
+ * Runs `call` with each key's client in turn, starting from the last one that
+ * worked, and moves on only for key errors (see isKeyError). Any other error
+ * is thrown as is.
+ */
+export async function withKeyRotation<T>(clients: GeminiClient[], call: (client: GeminiClient) => Promise<T>): Promise<T> {
+  if (!clients.length) throw new Error("No Gemini API key is set.");
+  let last: unknown = null;
+  for (let i = 0; i < clients.length; i++) {
+    const index = (preferredKey + i) % clients.length;
+    try {
+      const result = await call(clients[index]);
+      preferredKey = index;
+      return result;
+    } catch (error) {
+      if (!isKeyError(error) || clients.length === 1) throw error;
+      last = error;
+      console.warn(`Gemini key ${index + 1} of ${clients.length} failed${i < clients.length - 1 ? "; trying the next key" : ""}`);
+    }
+  }
+  throw last;
+}
+
+/** For tests: start from the first key again. */
+export function resetKeyRotation() {
+  preferredKey = 0;
 }
 
 /** The two calls we use, so tests can pass a fake. */
 export type GeminiClient = { models: Pick<GoogleGenAI["models"], "generateContent" | "generateContentStream"> };
 
+/**
+ * One client over all the keys: each call goes to the last key that worked and
+ * moves to the next key when Google rejects that key (withKeyRotation).
+ */
 export function createGeminiClient({ timeoutMs }: { timeoutMs: number }): GeminiClient {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { timeout: timeoutMs } });
+  const clients: GeminiClient[] = geminiKeys().map((apiKey) => new GoogleGenAI({ apiKey, httpOptions: { timeout: timeoutMs } }));
+  return {
+    models: {
+      generateContent: (params) => withKeyRotation(clients, (c) => c.models.generateContent(params)),
+      generateContentStream: (params) => withKeyRotation(clients, (c) => c.models.generateContentStream(params)),
+    },
+  };
 }
 
 /** JSON Schema for a zod schema, in the shape Gemini takes (no $schema key). */

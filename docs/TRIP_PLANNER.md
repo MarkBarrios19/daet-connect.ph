@@ -77,6 +77,17 @@ traveller's words in the planner's message box; nothing is sent until they tap S
   right. "Change with the assistant" rebuilds the saved order with `openSavedInPlanner`
   and opens it in the planner.
 
+## Gemini keys and models
+
+- Keys: `GEMINI_API_KEY`, and optionally `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`
+  (or a comma-separated `GEMINI_API_KEYS`). A call goes to the key that last worked
+  and moves to the next key when Google rejects one (401, 403, 429, invalid key).
+  Use keys from separate Google Cloud projects; this is failover, not a way round
+  Google's rate limits. For steady quota problems, turn on billing.
+- Models: `gemini-flash-latest` (`ASSISTANT_MODEL`, `ITINERARY_MODEL`). When Google
+  says it is busy (503, 429, 500) the call is tried again, then on
+  `GEMINI_FALLBACK_MODEL` (default `gemini-flash-lite-latest`), then basic mode.
+
 ## Checks
 
 - `npx jest` (includes `golden-prompts.test.ts`: 40+ planner prompts in English,
