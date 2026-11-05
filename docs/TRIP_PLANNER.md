@@ -43,15 +43,24 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 | 5 | Sign-in | Asked after 3 messages. |
 | 6 | AI unavailable | Basic mode, without a notice to the visitor. |
 | 7 | Success | A question answered on the site, then a tour booked. |
-| 8 | Language | The whole site in Filipino and English (Bikol dropped, see 16); the assistant replies in the visitor's language. |
+| 8 | Language | The assistant replies in Filipino or English, following the visitor. Pages stay English for now (see 23). No Bikol. |
 | 10 | After 3 messages without signing in | Basic-mode answers continue; signing in gives full AI answers again. |
 | 11 | Basic mode can't answer | Say plainly it can't check that, and give the operator's number or the right page. Never guess about weather, boats or times. |
 | 12 | Trip-day questions | All of: what's open near me now, getting between towns and fares, is my tour on today, operator and meeting point, food nearby with prices, emergency numbers. |
 | 13 | "Book X for 4 on Dec 20" | Open the tour's booking form with the date and guests filled in; the visitor confirms there. |
 | 14 | Group larger than a tour allows | Say the limit and suggest messaging the operator for a private group. No automatic split. |
 | 15 | Foreign visitors and money | Pesos with a rough amount in the visitor's currency; card payment as well as GCash and Maya (cards already exist). |
-| 16 | Site languages | Filipino and English only. |
+| 16 | Languages | Filipino and English only. |
 | 17 | Opening the assistant on a tour page | A greeting about that tour with three suggested questions. |
+| 18 | Counting the 3 messages | 3 a day; tapping a suggested question counts. |
+| 19 | Who pays for a group | One person books and pays for everyone. No bill splitting. |
+| 20 | Messaging the operator | In the site, after signing in. |
+| 21 | Location | Asked only when the visitor asks a "near me" question; if refused, ask which town. |
+| 22 | Emergency numbers | Kept by the Tourism Office in the admin pages, shown with a "last checked" date. |
+| 23 | Filipino text | Only the assistant answers in Filipino; the pages stay English for now. |
+| 24 | Other currencies | A rough amount in the visitor's currency (guessed from the phone), daily rate, USD if unknown; marked "approx.". |
+| 25 | Returning visitor | A fresh chat that remembers the trip (dates, group, origin) for signed-in visitors; old chats under Recent. |
+| 26 | Feedback | "Was this helpful? Yes / No" under each answer. |
 
 ## Settings (Vercel environment variables)
 
