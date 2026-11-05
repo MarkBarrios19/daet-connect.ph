@@ -145,3 +145,16 @@ Settled in the design interview. Words follow `CONTEXT.md`.
   map tiles the Leaflet tests in `home-fan` and `messenger` fail because the sketch
   map is drawn instead; they pass where tiles load.
 - With `GEMINI_API_KEY` on a preview: the planner rows (32–40) in `docs/ASSISTANT_EVAL.md`.
+
+## Build plan for the decisions above (2026-11-05)
+
+Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the decisions table.
+
+1. **Daily limits and the sign-in card** (5, 10, 18, 28, 37). Today's limits live in one server's memory and reset whenever Vercel starts a new instance, so a daily count needs a table: `tours_ai_usage` (who, Manila date, count), written only by the server. Visitors who are not signed in are counted by a random device id in a cookie, because many Philippine phones share one IP through their carrier. After the 3rd message: the sign-in card, then basic mode. Signed in: 20 a day, then basic mode.
+2. **Honest basic mode and the "never" rules** (11, 36, 40). Questions about weather, boats or today's times get "I can't check that" plus the operator's number or page. Off-topic questions get a one-line decline. The five "never" rules go in the prompt and in tests of the answers.
+3. **Trip-day answers** (12, 21, 30, 31, 32). "Near me" asks for location only then (else asks the town); open places within 3 km, at most 5. "Is my tour on today?" reads the signed-in visitor's bookings and call-offs. Emergency numbers: an admin page for the Tourism Office with "last checked", 911 until filled.
+4. **Page greetings and suggested questions** (17, 33). Tour, place and event pages open the assistant with a greeting and three questions answered from listings.
+5. **Memory and feedback** (25, 26, 29, 34). Trip details move from the tab to the phone (localStorage) for visitors who are not signed in, and to the account for signed-in ones; a new chat keeps them. "Was this helpful? Yes / No" under each answer, recorded in a table.
+6. **Sample plans** (35). "No dates yet" drafts a plan without dates; Save and Book ask for dates.
+7. **Money for foreign visitors** (24). A rough amount in the visitor's currency, from a daily rate, USD if unknown, marked "approx.".
+8. **Voice and photos in the chat** (38, 39). A microphone in the message box; photos for signed-in visitors with AI answers only, used for that answer and not kept.
