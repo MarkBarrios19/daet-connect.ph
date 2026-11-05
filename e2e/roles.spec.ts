@@ -62,7 +62,10 @@ for (const role of Object.keys(pages) as Role[]) {
       // Tourists' fifth tab is You, the account menu.
       await expect(tabs).toHaveCount(role === "tourist" ? 4 : 5);
       if (role === "tourist") await expect(bar.getByRole("button", { name: /^(You, y|Y)our account/ })).toBeVisible();
-      await expect(tabs.first()).toHaveAttribute("aria-current", "page");
+      // A tourist's Home tab leads to the landing page ("/"), and /tours/me, their dashboard, has no tab of
+      // its own, so none is current there (see barTabs). Every other role's first tab is its dashboard.
+      if (role === "tourist") await expect(tabs.first()).toHaveAttribute("href", "/");
+      else await expect(tabs.first()).toHaveAttribute("aria-current", "page");
     });
   });
 }
