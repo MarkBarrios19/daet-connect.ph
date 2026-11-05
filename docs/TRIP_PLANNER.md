@@ -92,6 +92,19 @@ Settled in the design interview. Words follow `CONTEXT.md`.
   Getting there. All rows are unverified estimates until the Tourism Office or the
   town LGU confirms them; edit them at `/tours/admin/fares`.
 - `supabase/migrations/20261115_trip_call_off.sql`: call-offs (applied 2026-11-05).
+- `supabase/migrations/20261117_ai_daily_usage.sql`: the assistant's daily count
+  (`tours_ai_usage`, `tours_ai_count_message`). Not applied yet. Until it is, or
+  without `SUPABASE_SERVICE_ROLE_KEY`, messages are not counted and every visitor
+  gets full answers (only the short burst limit applies).
+
+## Daily allowance (decisions 5, 18, 28, 37)
+
+- Not signed in: 3 messages a day with full answers, counted per device (cookie
+  `daet_aid`, a random id). After the 3rd answer the chat shows "Sign in to keep
+  getting full answers"; later messages get basic-mode answers.
+- Signed in: 20 a day, then basic mode, no card.
+- The day is the Manila day. Every message counts, a tapped suggestion too.
+- Code: `src/lib/ai/daily-usage.ts`, used by `src/app/api/assistant/route.ts`.
 
 ## Operator: calling a trip off
 

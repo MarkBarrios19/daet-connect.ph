@@ -1,10 +1,12 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { countAiMessage, dailyDecision, DEVICE_COOKIE, usageCaller, validDeviceId } from "@/lib/ai/daily-usage";
 import { aiCallerKey, allowAiCall } from "@/lib/ai/limits";
 import { planRoute } from "@/lib/maps/routes";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAssistantLlmEnabled, runAssistant } from "@/lib/tours/assistant/llm";
-import { cleanHistory, respond } from "@/lib/tours/assistant/respond";
+import { cleanHistory, respond, withSignInCard } from "@/lib/tours/assistant/respond";
 import { clearAiHistory, loadAiHistory, savingReply } from "@/lib/tours/assistant/history";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 
@@ -25,12 +27,24 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const aiAllowed = isAssistantLlmEnabled() && allowAiCall("assistant", aiCallerKey(user?.id, (await headers()).get("x-forwarded-for")));
+  // A day's allowance of full answers (3 without an account, 20 with one),
+  // counted per account or per device; then basic mode.
+  const jar = await cookies();
+  let deviceId = jar.get(DEVICE_COOKIE)?.value;
+  if (!validDeviceId(deviceId)) {
+    deviceId = crypto.randomUUID();
+    jar.set(DEVICE_COOKIE, deviceId, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
+  }
+  const today = toManilaDateKey(new Date());
+  const valid = !("error" in cleanHistory(body));
+  const count = valid ? await countAiMessage(adminOrNull(), usageCaller(user?.id ?? null, deviceId), today) : null;
+  const { withinDay, askSignIn } = dailyDecision(Boolean(user), count);
+  const aiAllowed = withinDay && isAssistantLlmEnabled() && allowAiCall("assistant", aiCallerKey(user?.id, (await headers()).get("x-forwarded-for")));
 
   const reply = respond(body, {
     supabase,
     userId: user?.id ?? null,
-    today: toManilaDateKey(new Date()),
+    today,
     aiAllowed,
     tripQuestions: process.env.TRIP_PLANNER_V2 !== "off",
     route: async (from, to) => (await planRoute([from, to])).legs[0],
@@ -39,7 +53,7 @@ export async function POST(request: Request) {
   // Signed-in travellers keep their chat, like any other conversation.
   const cleaned = cleanHistory(body);
   const question = "history" in cleaned ? cleaned.history[cleaned.history.length - 1].content : "";
-  const events = user ? savingReply(reply, supabase, question) : reply;
+  const events = user ? savingReply(reply, supabase, question) : withSignInCard(reply, askSignIn);
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async pull(controller) {
@@ -52,6 +66,14 @@ export async function POST(request: Request) {
     },
   });
   return new Response(stream, { headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store" } });
+}
+
+function adminOrNull() {
+  try {
+    return createSupabaseAdminClient();
+  } catch {
+    return null;
+  }
 }
 
 /** The signed-in traveller's saved chat with the assistant, oldest first. */

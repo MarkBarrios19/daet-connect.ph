@@ -42,8 +42,18 @@ export type AssistantEvent =
   | { t: "itinerary"; itinerary: ItineraryResult }
   /** Follow-ups the traveller can tap; each sends its text as a message. */
   | { t: "choices"; options: string[] }
+  /** A visitor who is not signed in has used the day's full answers: show the sign-in card. */
+  | { t: "signin" }
   | { t: "done" }
   | { t: "error"; message: string };
+
+/** Adds the sign-in card's event just before the turn ends. */
+export async function* withSignInCard(events: AsyncGenerator<AssistantEvent>, ask: boolean): AsyncGenerator<AssistantEvent> {
+  for await (const event of events) {
+    if (ask && event.t === "done") yield { t: "signin" };
+    yield event;
+  }
+}
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 

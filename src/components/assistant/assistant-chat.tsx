@@ -14,6 +14,7 @@ import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
+import { GoogleMark } from "@/components/ui/google-sign-in";
 import { TransportCardView } from "@/components/assistant/transport-card";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
@@ -23,7 +24,7 @@ export { loadTrip, saveTrip, type TripAnswers };
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
 export const HANDOFF_KEY = "daet-plan-handoff-v1";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult };
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean };
 type PageRef = NonNullable<TripContext["page"]>;
 type Point = { lat: number; lng: number };
 
@@ -53,6 +54,33 @@ function save(turns: Turn[]) {
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
   }
+}
+
+/**
+ * After a visitor's 3rd message of the day without an account (decision 28):
+ * sign in to keep getting full answers. Answers stay simple until then.
+ */
+function SignInCard() {
+  const [next, setNext] = useState("/");
+  useEffect(() => setNext(`${window.location.pathname}${window.location.search}`), []);
+  return (
+    <section aria-labelledby="assistant-signin" className="space-y-3 rounded-2xl border border-blue-600 bg-blue-50 p-4 dark:bg-blue-950/40">
+      <h3 id="assistant-signin" className="font-bold text-daet-ink">
+        Sign in to keep getting full answers
+      </h3>
+      <p className="text-sm text-slate-700 dark:text-slate-300">It&apos;s free. Your chat and trip details are kept in your account.</p>
+      <a
+        href={`/auth/oauth?next=${encodeURIComponent(next)}`}
+        rel="nofollow"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-500 bg-surface px-4 font-bold text-daet-ink hover:bg-muted"
+      >
+        <GoogleMark /> Continue with Google
+      </a>
+      <Link href={`/login?next=${encodeURIComponent(next)}`} className="block text-center text-sm font-semibold text-blue-700 underline dark:text-blue-300">
+        Other ways to sign in
+      </Link>
+    </section>
+  );
 }
 
 /** The browser's location, rounded to about 100 m. Asked only when the traveller taps the button. */
@@ -201,6 +229,7 @@ export function AssistantChat({
           else if (event.t === "cards") reply = { ...reply, cards: event.cards };
           else if (event.t === "status") reply = { ...reply, status: event.label };
           else if (event.t === "choices") reply = { ...reply, choices: event.options };
+          else if (event.t === "signin") reply = { ...reply, signIn: true };
           else if (event.t === "itinerary") {
             reply = { ...reply, itinerary: event.itinerary };
             onItinerary?.(event.itinerary);
@@ -247,6 +276,7 @@ export function AssistantChat({
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
   const lastPlanTurn = turns.reduce((at, t, i) => (t.itinerary ? i : at), -1);
+  const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -351,6 +381,7 @@ export function AssistantChat({
                   <QuestionsCard prefill={turn.questions.prefill} today={toManilaDateKey(new Date())} onSubmit={(answers) => answerQuestions(i, answers)} />
                 ) : null}
                 {turn.cards?.length ? <AssistantCards cards={turn.cards} signedIn={signedIn} onNavigate={onNavigate} onShareLocation={shareAndRetry} /> : null}
+                {turn.signIn && !signedIn && i === lastSignIn ? <SignInCard /> : null}
               </div>
             )}
           </li>
