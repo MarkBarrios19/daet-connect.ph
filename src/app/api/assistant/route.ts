@@ -3,7 +3,7 @@ import { aiCallerKey, allowAiCall } from "@/lib/ai/limits";
 import { planRoute } from "@/lib/maps/routes";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { isAssistantLlmEnabled, runAssistant } from "@/lib/tours/assistant/claude";
+import { isAssistantLlmEnabled, runAssistant } from "@/lib/tours/assistant/llm";
 import { cleanHistory, respond } from "@/lib/tours/assistant/respond";
 import { clearAiHistory, loadAiHistory, savingReply } from "@/lib/tours/assistant/history";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";

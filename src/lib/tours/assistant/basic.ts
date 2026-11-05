@@ -8,7 +8,7 @@ import { isMeetingQuestion, readCostQuestion, readDirectionsQuestion, readPlaceQ
 import { normalizeText } from "@/lib/tours/itinerary/assistant";
 
 /**
- * Basic mode: answers without a language model. Used when no Anthropic key
+ * Basic mode: answers without a language model. Used when no Gemini key
  * is configured, when the AI limit is reached, or when the AI call fails.
  * Recognises a few intents, then falls back to the FAQ.
  */

@@ -8,7 +8,7 @@ import { validatePlan } from "@/lib/tours/itinerary/validate";
 /**
  * Trip assistant (F7c): plain-language requests, in English or Taglish.
  * "Describe your trip" fills the planner form; "Ask the assistant" edits a
- * plan. These rule-based versions always work; when Claude is configured
+ * plan. These rule-based versions always work; when Gemini is configured
  * it handles the wording instead (llm.ts), and both end in the same
  * merge-and-validate steps here, so nothing invalid reaches the tourist.
  */

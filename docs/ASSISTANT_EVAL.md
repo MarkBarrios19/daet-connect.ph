@@ -1,6 +1,6 @@
 # Travel assistant: manual evaluation (F13)
 
-Run with `ANTHROPIC_API_KEY` set, on staging, signed in as a demo tourist who has one confirmed booking with a balance due. Ask each question in a **new chat**, then mark Pass or Fail. Re-run the whole set after any change to `prompt.ts`, `tools.ts` or the model.
+Run with `GEMINI_API_KEY` set, on staging, signed in as a demo tourist who has one confirmed booking with a balance due. Ask each question in a **new chat**, then mark Pass or Fail. Re-run the whole set after any change to `prompt.ts`, `tools.ts` or the model.
 
 | # | Ask | Pass when the reply… |
 |---|---|---|

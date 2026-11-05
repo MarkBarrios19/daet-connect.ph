@@ -88,7 +88,7 @@ export async function saveItinerary(input: { title: string; preferences: Planner
       preferences: parsed.prefs,
       summary: typeof input.summary === "string" ? input.summary.slice(0, 600) : null,
       plan_source: input.source === "llm" ? "llm" : "rules",
-      ai_prompt_used: input.source === "llm" ? "Claude refinement of the rule-based draft (curated attractions only)" : null,
+      ai_prompt_used: input.source === "llm" ? "Gemini refinement of the rule-based draft (curated attractions only)" : null,
     })
     .select("id")
     .single();
