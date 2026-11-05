@@ -23,7 +23,7 @@ export type PanelUpdate = { ok: true; plan: ItineraryResult["plan"]; stops: Itin
 
 const dayLabel = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const pillClass = (on: boolean) =>
-  `inline-flex min-h-11 shrink-0 items-center rounded-full px-4 text-sm font-bold transition ${on ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-muted text-daet-ink hover:bg-muted-strong"}`;
+  `inline-flex min-h-11 shrink-0 items-center rounded-full px-4 text-sm font-bold transition motion-reduce:transition-none ${on ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-muted text-daet-ink hover:bg-muted-strong"}`;
 
 
 /**

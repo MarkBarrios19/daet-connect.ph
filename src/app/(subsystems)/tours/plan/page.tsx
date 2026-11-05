@@ -42,7 +42,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
             </Link>
           ) : null}
           <div className="mt-6">
-            <PlannerV2 signedIn={Boolean(user)} />
+            <PlannerV2 signedIn={Boolean(user)} initialDescription={initialDescription} />
           </div>
         </div>
       </PageFrame>

@@ -17,6 +17,9 @@ every stop, time and price comes from the database through the rule-based planne
 4. The plan panel comes from the tool result (`itinerary` event), not from model text.
    Without Gemini (or when it fails) the same plan is drafted in basic mode.
 
+The assistant's "Open the trip planner" link (`/tours/plan?describe=…`) puts the
+traveller's words in the planner's message box; nothing is sent until they tap Send.
+
 | Piece | Where |
 |---|---|
 | Trip context, the "Before I draft" rules | `src/lib/tours/assistant/context.ts`, `src/components/assistant/questions-card.tsx` |
@@ -63,5 +66,10 @@ every stop, time and price comes from the database through the rule-based planne
 
 - `npx jest` (includes `golden-prompts.test.ts`: 40+ planner prompts in English,
   Filipino and Taglish, checked in basic mode).
-- `npm run test:e2e:tours` (phone width, with accessibility checks).
+- `npm run test:e2e:tours` (phone width, with accessibility checks). The planner
+  specs are `trip-assistant.spec.ts` (Before I draft, remove a stop, Book links) and
+  `trip-planner-a11y.spec.ts` (planner, shared trip and called-off trip at 375 and
+  1440 px); `draftPlan()` in `e2e/fixtures.ts` walks the flow. In a sandbox without
+  map tiles the Leaflet tests in `home-fan` and `messenger` fail because the sketch
+  map is drawn instead; they pass where tiles load.
 - With `GEMINI_API_KEY` on a preview: the planner rows (32–40) in `docs/ASSISTANT_EVAL.md`.

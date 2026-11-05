@@ -31,7 +31,7 @@ const actions: PanelActions = {
  * The merged planner (TRIP_PLANNER_V2=on): chat on the left, the plan on the
  * right. On phones the plan opens as a sheet over the chat once there is one.
  */
-export function PlannerV2({ signedIn }: { signedIn: boolean }) {
+export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boolean; initialDescription?: string }) {
   const [itinerary, setItinerary] = useState<ItineraryResult | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -88,6 +88,8 @@ export function PlannerV2({ signedIn }: { signedIn: boolean }) {
       <div className="flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-float)] lg:h-[calc(100dvh-12rem)]">
         <AssistantChat
           signedIn={signedIn}
+          initialText={initialDescription}
+          autoFocus={Boolean(initialDescription)}
           onItinerary={show}
           sendRef={sendRef}
           onChoice={(text) => {

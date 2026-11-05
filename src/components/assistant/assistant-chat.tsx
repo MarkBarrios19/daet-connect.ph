@@ -92,6 +92,7 @@ export function AssistantChat({
   onItinerary,
   onChoice,
   sendRef,
+  initialText = "",
 }: {
   signedIn: boolean;
   onNavigate?: () => void;
@@ -103,9 +104,11 @@ export function AssistantChat({
   onChoice?: (text: string) => void;
   /** Lets the plan panel send a message ("Tell me about …") into this chat. */
   sendRef?: React.MutableRefObject<((text: string) => void) | null>;
+  /** Words to start the message box with (the assistant's "Open the trip planner" link carries them). Never sent on its own. */
+  initialText?: string;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText.slice(0, 500));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [here, setHere] = useState<Point | null>(null);

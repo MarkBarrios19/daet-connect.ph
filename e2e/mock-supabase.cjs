@@ -1737,6 +1737,25 @@ http
         (url.searchParams.get("select") || "").includes("tours_packages");
       let rows =
         (wantsEventJoin ? tables._event_availability : tables[table]) || [];
+      // A trip the operator called off for weather (M5), only when asked by id,
+      // so booking lists and counts elsewhere stay the same.
+      if (table === "tours_bookings" && url.searchParams.get("id") === "eq.b-off" && rows.length) {
+        const base = rows.find((r) => r.id === "b-later") || rows[0];
+        rows = [
+          {
+            ...base,
+            id: "b-off",
+            booking_reference: "BK-20261103-CO44WX",
+            status: "confirmed",
+            payment_status: "paid",
+            total_paid: base.total_amount,
+            called_off_at: new Date().toISOString(),
+            called_off_reason: "Strong winds; the coast guard stopped boat trips.",
+            call_off_resolution: null,
+            rescheduled_from: null,
+          },
+        ];
+      }
       for (const [k, v] of url.searchParams) {
         if (v.startsWith("eq.") && !k.includes("."))
           rows = rows.filter((r) => !(k in r) || String(r[k]) === v.slice(3));
