@@ -281,7 +281,8 @@ export function AssistantChat({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-2 bg-canvas px-4 py-1 text-sm text-slate-600 dark:text-slate-400">
-        <span className="min-w-0">{lastMode === "basic" ? <Badge tone="neutral">Basic mode</Badge> : lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
+        <span className="min-w-0">{/* Basic mode carries no notice (decision 6 in docs/TRIP_PLANNER.md). */}
+          {lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
         {turns.length && !signedIn ? (
           <button
             type="button"

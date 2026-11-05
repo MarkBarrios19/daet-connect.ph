@@ -17,6 +17,22 @@ import { normalizeText } from "@/lib/tours/itinerary/assistant";
 const has = (t: string, pattern: RegExp) => pattern.test(t);
 const STOP = new Set(["what", "when", "where", "which", "the", "are", "is", "for", "any", "open", "dates", "date", "available", "availability", "seats", "slots", "tour", "tours", "this", "next", "weekend", "week", "there", "still", "have", "you", "do", "can", "book", "how", "much", "price", "cost", "meron", "pa", "ba", "ang", "sa", "ng", "may", "magkano"]);
 
+export const OFF_TOPIC = "I can only help with trips in and around Daet: tours, places, getting here, costs and your bookings.";
+
+const DAET_WORDS = /\b(daet|bagasbas|mercedes|calaguas|vinzons|paracale|apuao|camarines|labo|talisay|basud|jose panganiban|tour|booking|trip)\b/;
+/** Clearly not about a Daet trip: school work, code, politics, other destinations. */
+export function isOffTopic(t: string): boolean {
+  if (DAET_WORDS.test(t)) return false;
+  return /\b(essay|homework|assignment|thesis|poem|write me|write my|code|javascript|python|math|equation|politic|politics|election|president|senator|boracay|palawan|el nido|siargao|baguio|bohol|batanes|vigan|la union)\b/.test(t);
+}
+
+/** Today's running status or departure times of a boat or tour. */
+function asksLiveStatus(t: string): boolean {
+  const subject = /\b(boat|boats|bangka|biyahe|byahe|trip|tour|ferry|lantsa)\b/.test(t);
+  const live = /\b(running|tuloy|cancelled|canceled|cancel ba|may biyahe|may byahe|on today|still on|schedule|departure|alis|balik|anong oras|what time)\b/.test(t);
+  return subject && live;
+}
+
 export async function basicReply(text: string, ctx: ToolContext): Promise<string> {
   const t = normalizeText(text);
 
@@ -27,6 +43,22 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
   // Weather: no live forecast here, so say where to look and what happens to booked trips.
   if (has(t, /\b(weather|forecast|rain|raining|typhoon|storm|bagyo|panahon|ulan|umuulan|signal no)\b/) && !has(t, /\b(what to do|things to do|ano gagawin|ano ang gagawin|activities)\b/)) {
     return "I can't check today's weather. For the forecast and storm signals, see PAGASA (pagasa.dost.gov.ph) or a weather app. Boat trips to Calaguas and the Mercedes islands stop when the Coast Guard says the sea is rough. If your operator calls off your trip for weather, you pick a new date or get a full refund. On a rainy day, ask me what to do in Daet when it rains.";
+  }
+
+  // Off-topic (decision 36): one line, back to Daet.
+  if (isOffTopic(t)) return OFF_TOPIC;
+
+  // Live facts basic mode can't check (decision 11): whether a boat or tour runs
+  // today, today's departure times. Say so, and point to whoever knows.
+  if (asksLiveStatus(t)) {
+    if (ctx.userId) {
+      const result = await myBookings(ctx, { reference: /\bbk-[0-9a-z-]+\b/i.exec(text)?.[0] ?? null });
+      if ("signedIn" in result && result.signedIn && result.bookings?.length) {
+        return "I can't check that right now. Whether a boat or tour runs today, and its times, are the operator's call. Call your operator; the number is on your booking below. If they call off your trip, you pick a new date or get a full refund.";
+      }
+    }
+    addCard(ctx, { type: "link", href: "/tours/browse", label: "Tours and operator numbers" });
+    return "I can't check that right now. Whether a boat or tour runs today, and its times, are the operator's call, and boats stop when the Coast Guard says the sea is rough. Call the operator; each tour page has their number. If you booked, your booking shows it too.";
   }
 
   // A person, or a complaint

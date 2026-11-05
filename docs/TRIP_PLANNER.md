@@ -106,6 +106,17 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 - The day is the Manila day. Every message counts, a tapped suggestion too.
 - Code: `src/lib/ai/daily-usage.ts`, used by `src/app/api/assistant/route.ts`.
 
+## Honest answers (decisions 6, 11, 16, 36, 40)
+
+- Basic mode shows no label in the chat.
+- Basic mode answers "is the boat running / what time does it leave" with "I can't
+  check that right now" and the operator (their booking for signed-in visitors,
+  tour pages otherwise); weather points to PAGASA.
+- Off-topic questions (school work, code, politics, other destinations) get one
+  line: what the assistant helps with.
+- The AI prompt carries the same rules, the five "never" rules, and replies in
+  English or Filipino only.
+
 ## Operator: calling a trip off
 
 1. Bookings → the confirmed trip → **Call off for weather**. Pick a reason or write one.
