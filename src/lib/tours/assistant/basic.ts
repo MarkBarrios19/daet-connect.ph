@@ -23,6 +23,11 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
     return "Hi! I'm the Daet AI assistant. Ask me where to eat or stay, how to get somewhere and what a trip costs, about tours and open dates, or about your own booking, payment or ticket.";
   }
 
+  // Weather: no live forecast here, so say where to look and what happens to booked trips.
+  if (has(t, /\b(weather|forecast|rain|raining|typhoon|storm|bagyo|panahon|ulan|umuulan|signal no)\b/) && !has(t, /\b(what to do|things to do|ano gagawin|ano ang gagawin|activities)\b/)) {
+    return "I can't check today's weather. For the forecast and storm signals, see PAGASA (pagasa.dost.gov.ph) or a weather app. Boat trips to Calaguas and the Mercedes islands stop when the Coast Guard says the sea is rough. If your operator calls off your trip for weather, you pick a new date or get a full refund. On a rainy day, ask me what to do in Daet when it rains.";
+  }
+
   // A person, or a complaint
   if (has(t, /\b(talk to|speak (to|with)|human|real person|agent|complain|complaint|reklamo|emergency|kausapin|not happy|scam|lost)\b/)) {
     const ref = /\bbk-[0-9a-z-]+\b/i.exec(text)?.[0] ?? null;

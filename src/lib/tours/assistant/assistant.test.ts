@@ -120,6 +120,16 @@ describe("tour durations", () => {
 });
 
 describe("basic mode", () => {
+  it("answers the weather honestly: no forecast here, where to look, and what happens to booked trips", async () => {
+    for (const q of ["What's the weather today in Daet?", "May bagyo ba bukas?"]) {
+      const reply = await basicReply(q, ctx());
+      expect(reply).toMatch(/can't check today's weather/);
+      expect(reply).toMatch(/PAGASA/);
+      expect(reply).toMatch(/new date or get a full refund/);
+    }
+    expect(await basicReply("What to do in Daet when it rains?", ctx())).not.toMatch(/can't check today's weather/);
+  });
+
   it("answers policy questions from the knowledge base", async () => {
     const c = ctx();
     expect(await basicReply("Paano mag-cancel?", c)).toContain(`${FREE_CANCELLATION_HOURS} hours`);

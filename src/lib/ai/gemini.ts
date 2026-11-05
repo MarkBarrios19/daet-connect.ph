@@ -30,17 +30,29 @@ export async function withBusyFallback<T>(model: string, call: (model: string) =
   const fallback = process.env.GEMINI_FALLBACK_MODEL || GEMINI_FALLBACK_MODEL;
   const attempts = [model, model, ...(fallback && fallback !== model ? [fallback] : [])];
   let last: unknown = null;
-  for (const [i, m] of attempts.entries()) {
+  for (let i = 0; i < attempts.length; i++) {
+    const m = attempts[i];
     if (i > 0 && waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
     try {
       return await call(m);
     } catch (error) {
-      if (!isBusyError(error)) throw error;
+      const timedOut = isTimeoutError(error);
+      if (!timedOut && !isBusyError(error)) throw error;
       last = error;
-      console.warn(`Gemini busy on ${m}${i < attempts.length - 1 ? ", trying again" : ""}`);
+      // A call that ran out of time already used the wait; go straight to the next model.
+      if (timedOut) while (i + 1 < attempts.length && attempts[i + 1] === m) i++;
+      console.warn(`Gemini ${timedOut ? "timed out" : "busy"} on ${m}${i < attempts.length - 1 ? ", trying again" : ""}`);
     }
   }
   throw last;
+}
+
+/** The call ran past its time limit (the client aborts it), or Google's own deadline passed. */
+export function isTimeoutError(error: unknown): boolean {
+  const name = typeof error === "object" && error && "name" in error ? String((error as { name: unknown }).name) : "";
+  const status = typeof error === "object" && error && "status" in error ? Number((error as { status: unknown }).status) : NaN;
+  if (name === "AbortError" || name === "TimeoutError" || status === 504) return true;
+  return /aborted|timed out|DEADLINE_EXCEEDED/i.test(error instanceof Error ? error.message : String(error ?? ""));
 }
 
 /**
