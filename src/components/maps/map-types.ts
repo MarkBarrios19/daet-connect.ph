@@ -43,7 +43,7 @@ export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };
  * card, with its tail) has to clear this much before it can sit above the pin
  * rather than on top of it.
  */
-export const PHOTO_PIN_RISE = 48;
+export const PHOTO_PIN_RISE = 58;
 
 /** The marker look on the tile map (HTML markers). The sketch draws the same shapes in SVG. */
 export const MARKER_CLASSES: Record<MapMarkerKind | "stopActive", string> = {

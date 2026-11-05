@@ -113,7 +113,7 @@ test.describe("home fan on a phone", () => {
     // A phone's first screen used to offer nothing to press: the audit found no
     // call to action at 390px. One now stands beside the hint, inside the band
     // the two fans leave — visible without scrolling, and a full touch target.
-    const cta = page.getByRole("link", { name: "Find a tour" });
+    const cta = page.getByRole("link", { name: "Book Now" });
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", "/tours/browse");
     const box = await cta.boundingBox();
@@ -123,7 +123,7 @@ test.describe("home fan on a phone", () => {
     // It sits in the band, clear of the photos above and below it.
     const clear = await page.evaluate(() => {
       const link = Array.from(document.querySelectorAll("[data-headline] a")).find(
-        (element) => element.textContent?.trim() === "Find a tour",
+        (element) => element.textContent?.trim() === "Book Now",
       );
       if (!link) return null;
       const box = link.getBoundingClientRect();
@@ -696,7 +696,7 @@ test.describe("home fan on a desktop", () => {
     const size = await page.locator("#home-title").evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
     expect(size, "the statement, 10% smaller").toBeCloseTo(86.4, 0);
 
-    const solid = page.getByRole("link", { name: "Find a tour" });
+    const solid = page.getByRole("link", { name: "Book Now" });
     const box = (await solid.boundingBox())!;
     expect(box.height, "the buttons, 5% bigger than lg's 48px").toBeCloseTo(50.4, 0);
 
@@ -758,7 +758,7 @@ test.describe("home fan on a desktop", () => {
   test("keeps the headline's links", async ({ page }) => {
     await visit(page, "/");
 
-    await expect(page.getByRole("link", { name: "Find a tour" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Book Now" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ask the travel guide" })).toBeVisible();
   });
 
@@ -773,7 +773,7 @@ test.describe("home fan on a desktop", () => {
       await page.goto("/", { waitUntil: "networkidle" });
 
       const labels = [
-        page.getByRole("link", { name: "Find a tour", exact: true }),
+        page.getByRole("link", { name: "Book Now", exact: true }),
         page.getByRole("button", { name: "Ask the travel guide", exact: true }),
       ];
       for (const label of labels) {

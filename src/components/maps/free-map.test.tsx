@@ -342,7 +342,7 @@ describe("FreeMap", () => {
     expect(mockState.markerEls.at(-1)?.parentElement?.className).toContain("-translate-y-full");
   });
 
-  it("draws the focused place's pin as a blue-ringed circle, its tail one shape with it", async () => {
+  it("draws a photo pin as an orange teardrop with the photo in a white ring and the name under it", async () => {
     const photo = { src: "/photos/bagasbas.jpg" };
     const shown = markers.map((m) => (m.id === "b" ? { ...m, kind: "place" as const, photo } : m));
 
@@ -350,15 +350,20 @@ describe("FreeMap", () => {
     await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
 
     const pin = mockState.markerEls[1];
-    const frame = pin.querySelector("span") as HTMLElement;
-    // A circle with the site's blue drawn round it: the old white ring vanished
-    // against dark tiles, and the crop showed the photo reading as a dark blob.
-    expect(frame).toHaveClass("rounded-full", "border-blue-600");
-    // Its point is a triangle tucked under the circle, not a diamond floating
-    // below it — one pin, not two shapes with the map's labels between them.
-    const tail = pin.querySelectorAll("span")[1] as HTMLElement;
-    expect(tail).toHaveClass("border-t-blue-600", "top-[38px]");
-    expect(tail.parentElement).toBe(pin);
+    const [drop, frame, name] = Array.from(pin.children) as HTMLElement[];
+    expect(drop).toHaveClass("bg-orange-500", "rotate-45");
+    expect(frame).toHaveClass("rounded-full", "border-white");
+    expect(frame.querySelector("img")?.getAttribute("src")).toBe("/photos/bagasbas.jpg");
+    expect(name.textContent).toBe(shown[1].title);
+    // The pin hangs from its point.
+    expect(pin.parentElement?.className).toContain("-translate-y-full");
+  });
+
+  it("names each place beside its pin on a labelled map", async () => {
+    const places = markers.map((m) => ({ ...m, kind: "place" as const }));
+    render(<FreeMap markers={places} title="Places map" labels />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+    expect(mockState.markerEls[0].textContent).toContain(places[0].title);
   });
 
   it("zooms with the wheel on every map, unless a map turns it off", async () => {

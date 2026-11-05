@@ -683,7 +683,7 @@ export function PlaceFan({
               size="md"
               className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
             >
-              Find a tour
+              Book Now
             </ButtonLink>
           </div>
         ) : (
@@ -704,7 +704,7 @@ export function PlaceFan({
                 size="xl"
                 className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
               >
-                Find a tour
+                Book Now
               </ButtonLink>
               {/* Both buttons sit on the hero's pale ground in light mode, so
                   both carry the theme-aware outline: `onBlue` is white on

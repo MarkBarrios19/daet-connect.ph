@@ -285,7 +285,7 @@ describe("phone layout", () => {
     // 375×667 is the smallest phone the two-fan layout is used at (below a 500px
     // hero a landscape phone takes the desktop fan). Eight tenths of that hero
     // is 120px, which is less than the band's own contents: the headline, a line
-    // of hint, and the 44px "Find a tour" beside it.
+    // of hint, and the 44px "Book Now" beside it.
     const small = fanGeometry(375, 667, "phone");
     const [top, bottom] = small.fans.map((fan) => fan.vp[1]);
     expect(bottom - top).toBeCloseTo(PHONE_BAND_MIN, 6);

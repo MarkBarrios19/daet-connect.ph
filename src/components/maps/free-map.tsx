@@ -36,6 +36,32 @@ const STOP_PIN =
 const LABEL_HALO =
   "text-slate-900 [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_0_6px_#fff] dark:text-slate-100 dark:[text-shadow:0_0_2px_#0f172a,0_0_4px_#0f172a]";
 
+/**
+ * Hide a pin's name where it would cover a name already shown, so close pins
+ * stay readable when zoomed out. Photo pins and the picked stop go first.
+ */
+export function hideCrowdedNames(root: HTMLElement) {
+  const names = Array.from(root.querySelectorAll<HTMLElement>(".map-name"));
+  names.forEach((n) => (n.style.visibility = ""));
+  const rank = (n: HTMLElement) => (n.closest("[aria-current]") ? 0 : n.parentElement?.querySelector("img") ? 1 : 2);
+  const shown: DOMRect[] = [];
+  for (const n of names.sort((a, b) => rank(a) - rank(b))) {
+    const r = n.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) continue;
+    if (shown.some((s) => r.left < s.right && r.right > s.left && r.top < s.bottom && r.bottom > s.top)) n.style.visibility = "hidden";
+    else shown.push(r);
+  }
+}
+
+/** The place's name under a photo pin, on a halo so it reads on any tile. */
+function nameUnder(text: string) {
+  const name = document.createElement("span");
+  name.setAttribute("aria-hidden", "true");
+  name.className = `map-name pointer-events-none absolute left-1/2 top-full mt-1 block w-max max-w-[10rem] -translate-x-1/2 truncate text-center text-[13px] font-bold ${LABEL_HALO}`;
+  name.textContent = text;
+  return name;
+}
+
 function markerElement(
   m: FreeMapMarker,
   active: boolean,
@@ -57,29 +83,24 @@ function markerElement(
   if (!m.href && !onClick) el.setAttribute("role", "img");
   el.setAttribute("aria-label", m.title);
 
-  // A place with its photo in the pin: the marker the open place's card points
-  // at. A circle with the site's blue drawn round it (so it reads on dark tiles,
-  // where the old white ring vanished), and a blue tail that grows straight out
-  // of the circle rather than floating under it — the owner's crop (image-44)
-  // showed the two as separate shapes with the map's own label between them.
+  // A place with its photo in the pin: an orange teardrop with the photo in a
+  // white ring, its point on the place, and the place's name under it.
   if (m.photo) {
-    el.className = "relative block h-12 w-12";
+    // The drop is a square turned 45°, so its point reaches 58px down.
+    el.className = "relative block h-[58px] w-12";
+    const drop = document.createElement("span");
+    drop.setAttribute("aria-hidden", "true");
+    drop.className =
+      "absolute left-0 top-0 h-12 w-12 rotate-45 rounded-[50%_50%_0_50%] bg-orange-500 shadow-[0_4px_12px_rgba(15,23,42,0.4)]";
     const frame = document.createElement("span");
-    frame.className =
-      "block h-full w-full overflow-hidden rounded-full border-[3px] border-blue-600 bg-surface shadow-[0_4px_14px_rgba(15,23,42,0.45)] dark:border-blue-400 dark:bg-slate-900";
+    frame.className = "absolute left-[5px] top-[5px] block h-[38px] w-[38px] overflow-hidden rounded-full border-2 border-white bg-orange-100";
     const img = document.createElement("img");
     img.src = m.photo.src;
     img.alt = "";
     img.decoding = "async";
     img.className = "h-full w-full object-cover";
-    // The point: a triangle whose top is tucked under the circle's lower arc, so
-    // the two shapes are one pin at any size.
-    const tail = document.createElement("span");
-    tail.setAttribute("aria-hidden", "true");
-    tail.className =
-      "absolute left-1/2 top-[38px] h-0 w-0 -translate-x-1/2 border-x-[7px] border-t-[10px] border-x-transparent border-t-blue-600 dark:border-t-blue-400";
     frame.append(img);
-    el.append(frame, tail);
+    el.append(drop, frame, nameUnder(m.title));
     return el;
   }
 
@@ -115,13 +136,25 @@ function markerElement(
     if (labels) {
       const name = document.createElement("span");
       name.setAttribute("aria-hidden", "true");
-      name.className = `pointer-events-none absolute left-full top-1/2 ml-2 block w-max max-w-[10rem] -translate-y-1/2 truncate text-[13px] font-bold ${LABEL_HALO}`;
+      name.className = `map-name pointer-events-none absolute left-full top-1/2 ml-2 block w-max max-w-[10rem] -translate-y-1/2 truncate text-[13px] font-bold ${LABEL_HALO}`;
       name.textContent = m.title;
       el.append(name);
     }
     return el;
   }
 
+  if (labels && m.kind === "place") {
+    el.className = "relative block";
+    const dot = document.createElement("span");
+    dot.className = `${MARKER_CLASSES.place} bg-orange-500`;
+    dot.textContent = m.label;
+    const name = document.createElement("span");
+    name.setAttribute("aria-hidden", "true");
+    name.className = `map-name pointer-events-none absolute left-full top-1/2 ml-1.5 block w-max max-w-[10rem] -translate-y-1/2 truncate text-[13px] font-bold ${LABEL_HALO}`;
+    name.textContent = m.title;
+    el.append(dot, name);
+    return el;
+  }
   if (!(labels && m.kind === "stop")) {
     el.className = MARKER_CLASSES[active && m.kind === "stop" ? "stopActive" : m.kind];
     el.textContent = m.label;
@@ -145,7 +178,7 @@ function markerElement(
   }
   const label = document.createElement("span");
   label.setAttribute("aria-hidden", "true");
-  label.className = `pointer-events-none absolute left-full top-0 ml-1.5 flex w-max max-w-[10rem] flex-col text-left leading-tight ${LABEL_HALO}`;
+  label.className = `map-name pointer-events-none absolute left-full top-0 ml-1.5 flex w-max max-w-[10rem] flex-col text-left leading-tight ${LABEL_HALO}`;
   // The whole name is in the page and CSS shortens it, so the visible words match the accessible name.
   const name = document.createElement("span");
   name.className = "block max-w-[9rem] truncate text-xs font-bold";
@@ -473,8 +506,21 @@ export function FreeMap({
         markerRefs.current.delete(id);
       }
     }
+    if (labels && container.current) hideCrowdedNames(container.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `shown` is markers plus `me`
   }, [markers, me, ready, focusId, clickable, labels]);
+
+  // Names re-checked for overlaps after each zoom.
+  useEffect(() => {
+    const map = mapRef.current;
+    const box = container.current;
+    if (!ready || !map || !labels || !box) return;
+    const check = () => hideCrowdedNames(box);
+    map.on("zoomend", check);
+    return () => {
+      map.off?.("zoomend", check);
+    };
+  }, [ready, labels]);
 
   // The wheel zooms where the map is something being worked in, and scrolls the
   // page everywhere else.

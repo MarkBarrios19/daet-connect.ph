@@ -2,6 +2,7 @@ import { LineIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageFrame } from "@/components/ui/page-frame";
+import { SearchBox, searchTerm } from "@/components/ui/search-box";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ import { placePhoto } from "@/lib/tours/trip-board";
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{
+  q?: string;
   location?: string;
   minPrice?: string;
   maxPrice?: string;
@@ -57,6 +59,10 @@ export default async function BrowsePackagesPage({
     .eq("status", "published");
 
   // Apply filters
+  const q = searchTerm(params.q);
+  if (q) {
+    query = query.or(`title.ilike.%${q}%,location_name.ilike.%${q}%,description.ilike.%${q}%`);
+  }
   if (params.location) {
     query = query.ilike("location_name", `%${params.location}%`);
   }
@@ -151,7 +157,16 @@ export default async function BrowsePackagesPage({
         ) : null}
       </div>
 
-      <div className="mt-6">
+      <SearchBox
+        action="/tours/browse"
+        label="Search trips"
+        placeholder="Search trips, e.g. island hopping"
+        value={q}
+        keep={{ location: params.location, minPrice: params.minPrice, maxPrice: params.maxPrice, sort: params.sort }}
+        className="mt-6"
+      />
+
+      <div className="mt-4">
         <PackageFilters currentParams={params} />
       </div>
 
@@ -159,7 +174,7 @@ export default async function BrowsePackagesPage({
         <EmptyState
           className="mt-8"
           icon={<LineIcon name="search" />}
-          title={place ? `No trips in ${place} yet` : "No trips match these filters"}
+          title={q ? `No trips match "${q}"` : place ? `No trips in ${place} yet` : "No trips match these filters"}
           description="Try another place or clear the filters. New trips are added as operators are approved."
           action={<ButtonLink href="/tours/browse">Show all trips</ButtonLink>}
         />

@@ -10,6 +10,7 @@ import { RouteMap } from "@/components/maps/route-map";
 import { Badge } from "@/components/ui/badge";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
+import { SearchBox, searchTerm } from "@/components/ui/search-box";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, isAttractionCategory, toAttraction } from "@/lib/tours/attractions";
@@ -25,8 +26,9 @@ type PageProps = { searchParams: Promise<Record<string, string | string[] | unde
 
 const STATUS_TONE = { open: "success", closed: "neutral", unknown: "neutral" } as const;
 
-function filterHref(category: string | null, openNow: boolean) {
+function filterHref(category: string | null, openNow: boolean, q = "") {
   const params = new URLSearchParams();
+  if (q) params.set("q", q);
   if (category) params.set("category", category);
   if (openNow) params.set("open", "now");
   const query = params.toString();
@@ -45,10 +47,12 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const category = typeof params.category === "string" && isAttractionCategory(params.category) ? params.category : null;
   const openNow = params.open === "now";
+  const q = searchTerm(params.q);
 
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true).order("name");
   if (category) query = query.eq("category", category);
+  if (q) query = query.or(`name.ilike.%${q}%,municipality.ilike.%${q}%,description.ilike.%${q}%`);
   const { data, error } = await query;
 
   const now = new Date();
@@ -58,7 +62,10 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
     .filter((attraction) => !openNow || attraction.status.state === "open");
   const pins = attractions
     .filter((a) => a.latitude !== null && a.longitude !== null)
-    .map((a) => ({ lat: a.latitude!, lng: a.longitude!, label: a.name, href: `/tours/attractions/${a.slug}` }));
+    .map((a) => {
+      const key = a.photo_url ? null : matchPlacePhoto(a.name);
+      return { lat: a.latitude!, lng: a.longitude!, label: a.name, href: `/tours/attractions/${a.slug}`, photo: a.photo_url ?? (key ? PHOTOS[key].src : undefined) };
+    });
 
   const credits = [...new Set(attractions.filter((a) => !a.photo_url).map((a) => matchPlacePhoto(a.name)).filter((key): key is PhotoKey => key !== null))];
 
@@ -69,17 +76,26 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
         Beaches, heritage sites and islands around Daet, with opening hours and entrance fees. Check hours before you go.
       </p>
 
-      <nav className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Filter places">
-        <Link href={filterHref(null, openNow)} aria-current={!category ? "page" : undefined} className={chip(!category)}>
+      <SearchBox
+        action="/tours/attractions"
+        label="Search places"
+        placeholder="Search places, e.g. Bagasbas"
+        value={q}
+        keep={{ category: category ?? undefined, open: openNow ? "now" : undefined }}
+        className="mt-6"
+      />
+
+      <nav className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Filter places">
+        <Link href={filterHref(null, openNow, q)} aria-current={!category ? "page" : undefined} className={chip(!category)}>
           All
         </Link>
         {Object.entries(ATTRACTION_CATEGORIES).map(([value, label]) => (
-          <Link key={value} href={filterHref(value, openNow)} aria-current={category === value ? "page" : undefined} className={chip(category === value)}>
+          <Link key={value} href={filterHref(value, openNow, q)} aria-current={category === value ? "page" : undefined} className={chip(category === value)}>
             <CategoryIcon category={value} className="h-5 w-5" />
             {label}
           </Link>
         ))}
-        <Link href={filterHref(category, !openNow)} aria-current={openNow ? "true" : undefined} className={chip(openNow)}>
+        <Link href={filterHref(category, !openNow, q)} aria-current={openNow ? "true" : undefined} className={chip(openNow)}>
           <LineIcon name="clock" className="h-5 w-5" />
           Open now
         </Link>
@@ -91,8 +107,8 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
         <EmptyState
           className="mt-8"
           icon={<LineIcon name="pin" />}
-          title={openNow ? "Nothing listed is open right now" : "No places listed here yet"}
-          description={openNow ? "Try again later or clear the filter." : "Try another kind of place."}
+          title={q ? `No places match "${q}"` : openNow ? "Nothing listed is open right now" : "No places listed here yet"}
+          description={q ? "Check the spelling or try a shorter word." : openNow ? "Try again later or clear the filter." : "Try another kind of place."}
           action={<ButtonLink href="/tours/attractions">Show all places</ButtonLink>}
         />
       ) : (
