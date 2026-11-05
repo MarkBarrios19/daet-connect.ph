@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/ui/site-footer";
 import { SiteHeader } from "@/components/ui/site-header";
 import type { PhotoKey } from "@/lib/photo-credits";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { accountLinks, roleTabs } from "@/lib/tours/dashboards";
+import { accountLinks, barTabs, roleTabs } from "@/lib/tours/dashboards";
 import { getMyProfile } from "@/lib/tours/my-profile";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { displayName, initials } from "@/lib/profile/name";
@@ -119,8 +119,11 @@ export async function PageFrame({
         compact={role !== undefined && !bleed}
         className={tabs.length ? "pb-24" : "pb-20 sm:pb-24"}
       />
+      {/* The bar's tabs, not the role's: a tourist's Home here is the landing
+          page. The account menu below still takes `tabs`, so its Dashboard
+          link stays the dashboard. */}
       <RoleTabBar
-        tabs={tabs}
+        tabs={barTabs(role, tabs)}
         account={
           account && !staff
             ? { ...account, links: accountLinks(role, tabs) }

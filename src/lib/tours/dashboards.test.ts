@@ -2,6 +2,7 @@ import fc from "fast-check";
 import {
   accountLinks,
   activeTab,
+  barTabs,
   bookingsByDay,
   cancellationRate,
   dashboardPath,
@@ -14,6 +15,48 @@ import {
   roleTabs,
   staffLinks,
 } from "@/lib/tours/dashboards";
+
+describe("barTabs", () => {
+  it("sends a tourist's Home tab to the landing page", () => {
+    const tabs = barTabs("tourist", roleTabs("tourist"));
+    expect(tabs[0]).toEqual({ href: "/", label: "Home" });
+    // The rest of the bar is the role's own.
+    expect(tabs.slice(1)).toEqual(roleTabs("tourist").slice(1));
+  });
+
+  it("leaves the tourist's dashboard where it was for every link built from roleTabs", () => {
+    // The header's Dashboard link and the account menu read roleTabs itself.
+    expect(roleTabs("tourist")[0].href).toBe("/tours/me");
+    expect(accountLinks("tourist", roleTabs("tourist")).at(-1)).toEqual({
+      href: "/tours/me",
+      label: "Dashboard",
+    });
+    expect(dashboardPath("tourist")).toBe("/tours/me");
+  });
+
+  it("does not touch operator, guide or admin tabs, or a signed-out bar", () => {
+    for (const role of ["operator", "guide", "admin"]) {
+      expect(barTabs(role, roleTabs(role))).toEqual(roleTabs(role));
+    }
+    expect(barTabs(undefined, [])).toEqual([]);
+    expect(barTabs(null, [])).toEqual([]);
+  });
+
+  it("does not change the tabs it is given", () => {
+    const tabs = roleTabs("tourist");
+    barTabs("tourist", tabs);
+    expect(tabs[0].href).toBe("/tours/me");
+  });
+
+  it("makes Home the active tab on the landing page only", () => {
+    const tabs = barTabs("tourist", roleTabs("tourist"));
+    expect(activeTab(tabs, "/")).toBe("/");
+    expect(activeTab(tabs, "/tours/plan")).toBe("/tours/plan");
+    expect(activeTab(tabs, "/tours/my-bookings/abc")).toBe("/tours/my-bookings");
+    // /tours/me is the dashboard, which the bar no longer has a tab for.
+    expect(activeTab(tabs, "/tours/me")).toBeNull();
+  });
+});
 
 describe("roleTabs / activeTab", () => {
   it("gives each role five tabs starting at its dashboard, and none when signed out", () => {
