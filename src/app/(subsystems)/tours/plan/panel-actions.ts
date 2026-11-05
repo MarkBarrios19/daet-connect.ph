@@ -2,13 +2,14 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requestPlanChange } from "./actions";
-import type { PlanStop } from "@/lib/tours/assistant/plan-tool";
+import { gettingThereFrom, type ItineraryResult, type PlanStop } from "@/lib/tours/assistant/plan-tool";
+import { prefsToInput } from "@/lib/tours/itinerary/assistant";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { bookablePackages, loadAttractions, type BookablePackage } from "@/lib/tours/itinerary/data";
-import { dayOrders, planAttractionIds, removeStop, reorderDays, stopChoices, swapStop, type StopChoice } from "@/lib/tours/itinerary/edit";
+import { dayOrders, ordersFromRows, planAttractionIds, removeStop, reorderDays, stopChoices, swapStop, type StopChoice } from "@/lib/tours/itinerary/edit";
 import { parsePreferences, type PlannerInput } from "@/lib/tours/itinerary/form";
 import { generatePlan, withTotals } from "@/lib/tours/itinerary/schedule";
-import type { Plan, PlannerAttraction } from "@/lib/tours/itinerary/types";
+import { PACES, addDays, type Plan, type PlannerAttraction, type Preferences } from "@/lib/tours/itinerary/types";
 
 /**
  * Plan panel actions (Regenerate, Swap, Remove). Everything is rebuilt from the
@@ -99,4 +100,48 @@ export async function planStopChoices(input: PlannerInput, current: Plan, day: n
   const loaded = await load(input);
   if (!loaded.ok) return loaded;
   return { ok: true, choices: stopChoices(cleanPlan(current), Number(day), loaded.attractions, loaded.prefs) };
+}
+
+/** "What pace do you want?": the plan is drafted again at that pace (it changes how many stops fit a day). */
+export async function changePace(input: PlannerInput, pace: string): Promise<PanelResult & { input?: PlannerInput }> {
+  if (!PACES.includes(pace as (typeof PACES)[number])) return { ok: false, message: "Pick relaxed, balanced or packed." };
+  const next = { ...input, pace };
+  const loaded = await load(next);
+  if (!loaded.ok) return loaded;
+  const result = await finish(generatePlan(loaded.attractions, loaded.prefs), loaded.attractions, loaded.supabase);
+  return result.ok ? { ...result, input: next } : result;
+}
+
+/**
+ * "Change with the assistant" on a saved trip: the saved places, in their saved
+ * order, re-timed by the engine and handed to the planner. Owner only.
+ */
+export async function openSavedInPlanner(id: string): Promise<{ ok: true; itinerary: ItineraryResult } | { ok: false; message: string }> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Sign in to change your trip." };
+  const { data } = await supabase
+    .from("tours_itineraries")
+    .select("start_date, preferences, tours_itinerary_items ( day_number, item_order, item_kind, attraction_id )")
+    .eq("id", String(id))
+    .eq("tourist_id", user.id)
+    .maybeSingle();
+  if (!data) return { ok: false, message: "That trip wasn't found." };
+  const saved = (data.preferences ?? {}) as Preferences & { travelers?: ItineraryResult["travelers"]; origin?: string };
+  if (!saved.startDate || !saved.days) return { ok: false, message: "This trip was saved before the planner could change it. Plan it again in the chat." };
+  const input = prefsToInput(saved);
+  const loaded = await load(input);
+  if (!loaded.ok) return { ok: false, message: "This trip's dates have passed. Plan it again with new dates." };
+  const base = withTotals(Array.from({ length: input.days }, (_, i) => ({ date: addDays(input.startDate, i), blocks: [] })));
+  const result = reorderDays(base, ordersFromRows(data.tours_itinerary_items ?? [], input.days), loaded.attractions, loaded.prefs);
+  if (!result.ok) return { ok: false, message: result.message };
+  const done = await finish(result.plan, loaded.attractions, loaded.supabase);
+  if (!done.ok) return done;
+  const travelers = saved.travelers ?? { adults: Math.max(1, saved.groupSize || 1), children: [] };
+  return {
+    ok: true,
+    itinerary: { plan: done.plan, input, stops: done.stops, packages: done.packages, travelers, gettingThere: await gettingThereFrom({ supabase }, saved.origin), generatedAt: new Date().toISOString() },
+  };
 }

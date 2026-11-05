@@ -16,18 +16,18 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { TransportCardView } from "@/components/assistant/transport-card";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
+import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
+
+export { loadTrip, saveTrip, type TripAnswers };
 
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
 export const HANDOFF_KEY = "daet-plan-handoff-v1";
 
 type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult };
 type PageRef = NonNullable<TripContext["page"]>;
-type TripAnswers = Pick<TripContext, "dates" | "travelers" | "origin">;
 type Point = { lat: number; lng: number };
 
 const STORAGE_KEY = "daet-assistant-v1";
-/** Dates, travellers and origin, kept for this tab only so the form isn't asked twice. */
-const TRIP_KEY = "daet-trip-context-v1";
 const MESSAGE_MAX = 1000;
 export const ASSISTANT_EXAMPLES = [
   "Budget for 2 days in Calaguas?",
@@ -44,22 +44,6 @@ function load(): Turn[] {
     return Array.isArray(turns) ? turns.slice(-30) : [];
   } catch {
     return [];
-  }
-}
-function loadTrip(): TripAnswers {
-  try {
-    const raw = window.sessionStorage.getItem(TRIP_KEY);
-    const value = raw ? (JSON.parse(raw) as TripAnswers) : {};
-    return value && typeof value === "object" ? value : {};
-  } catch {
-    return {};
-  }
-}
-function saveTrip(trip: TripAnswers) {
-  try {
-    window.sessionStorage.setItem(TRIP_KEY, JSON.stringify(trip));
-  } catch {
-    // Not kept; the form just asks again next time.
   }
 }
 function save(turns: Turn[]) {
@@ -93,6 +77,8 @@ export function AssistantChat({
   onChoice,
   sendRef,
   initialText = "",
+  startWith,
+  afterPlan,
 }: {
   signedIn: boolean;
   onNavigate?: () => void;
@@ -106,6 +92,10 @@ export function AssistantChat({
   sendRef?: React.MutableRefObject<((text: string) => void) | null>;
   /** Words to start the message box with (the assistant's "Open the trip planner" link carries them). Never sent on its own. */
   initialText?: string;
+  /** A first message (typed on the planner's start view), sent once the saved chat has loaded. */
+  startWith?: string;
+  /** Shown under the latest plan in the chat (the planner's pace and getting-around chips). */
+  afterPlan?: React.ReactNode;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState(initialText.slice(0, 500));
@@ -119,24 +109,39 @@ export function AssistantChat({
   const [confirmClear, setConfirmClear] = useState(false);
   const [trip, setTrip] = useState<TripAnswers>({});
   useEffect(() => setTrip(loadTrip()), []);
+  // The start view's message goes once, after the saved chat is in, so it is not overwritten.
+  const startRef = useRef(startWith?.trim() || "");
+  const sendFirst = (base: Turn[]) => {
+    const first = startRef.current;
+    startRef.current = "";
+    if (first) void send(first, here, loadTrip(), base);
+  };
   // Signed-in travellers keep their chat on their account; visitors keep it in this tab only.
   useEffect(() => {
     if (!signedIn) {
-      setTurns(load());
+      const saved = load();
+      setTurns(saved);
+      sendFirst(saved);
       return;
     }
     let cancelled = false;
     fetch("/api/assistant", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((body: { turns?: Turn[] }) => {
-        if (!cancelled) setTurns(Array.isArray(body.turns) ? body.turns : []);
+        if (cancelled) return;
+        const saved = Array.isArray(body.turns) ? body.turns : [];
+        setTurns(saved);
+        sendFirst(saved);
       })
       .catch(() => {
-        if (!cancelled) setError("Your saved chat could not be loaded. New messages still work.");
+        if (cancelled) return;
+        setError("Your saved chat could not be loaded. New messages still work.");
+        sendFirst([]);
       });
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once per sign-in state
   }, [signedIn]);
   const remember = (next: Turn[]) => {
     if (!signedIn) save(next);
@@ -241,6 +246,7 @@ export function AssistantChat({
   });
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
+  const lastPlanTurn = turns.reduce((at, t, i) => (t.itinerary ? i : at), -1);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -330,9 +336,11 @@ export function AssistantChat({
                   <p className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-400">{turn.status}…</p>
                 ) : null}
                 {turn.itinerary && !onItinerary ? <PlanSummaryCard itinerary={turn.itinerary} onNavigate={onNavigate} /> : null}
+                {afterPlan && i === lastPlanTurn && !(busy && i === turns.length - 1) ? afterPlan : null}
                 {onChoice && turn.choices?.length && i === turns.length - 1 && !busy ? (
                   <div className="flex flex-wrap gap-2">
-                    {turn.choices.map((choice) => (
+                    {/* The planner asks about pace with its own chips, so those follow-ups aren't repeated. */}
+                    {turn.choices.filter((choice) => !(afterPlan && /relax|packed|rush|pace/i.test(choice))).map((choice) => (
                       <button key={choice} type="button" onClick={() => onChoice(choice)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
                         {choice}
                       </button>

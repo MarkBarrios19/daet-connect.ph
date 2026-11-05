@@ -9,7 +9,7 @@ import { RouteMap, type MapPoint } from "@/components/maps/route-map";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon, LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
-import type { ItineraryResult, PlanStop } from "@/lib/tours/assistant/plan-tool";
+import type { ItineraryResult, PlanStop, Transport } from "@/lib/tours/assistant/plan-tool";
 import { bookHref, dayFor } from "@/lib/tours/itinerary/bookable";
 import type { BookablePackage } from "@/lib/tours/itinerary/data";
 import type { StopChoice } from "@/lib/tours/itinerary/edit";
@@ -44,7 +44,8 @@ export function tripLine(itinerary: ItineraryResult): string {
   const group = itinerary.travelers.adults + itinerary.travelers.children.length;
   const dates = days.length > 1 ? `${shortDate(days[0].date)} to ${shortDate(days[days.length - 1].date)}` : days[0] ? shortDate(days[0].date) : "";
   const pace = PACE_LABEL[itinerary.input.pace as keyof typeof PACE_LABEL];
-  return [dates, `${group} traveler${group === 1 ? "" : "s"}`, pace].filter(Boolean).join(" · ");
+  const around = itinerary.transport ? TRAVEL_LABEL[itinerary.transport] : null;
+  return [dates, `${group} traveler${group === 1 ? "" : "s"}`, pace, around].filter(Boolean).join(" · ");
 }
 
 /** "Bagasbas Beach, Daet Heritage Center and 2 more": what a day is about. */
@@ -303,6 +304,7 @@ export function PlanPanel({
                 <DayStops
                   day={d}
                   index={i}
+                  transport={itinerary.transport ?? null}
                   stops={byId}
                   group={group}
                   busy={pending}
@@ -366,9 +368,11 @@ function DayStops({
   onAsk,
   onSwap,
   onRemove,
+  transport = null,
 }: {
   day: PlanDay;
   index: number;
+  transport?: Transport | null;
   stops: Map<string, PlanStop>;
   group: number;
   busy: boolean;
@@ -400,7 +404,7 @@ function DayStops({
         n += 1;
         return (
           <li key={`${b.attractionId}-${j}`} className="space-y-3">
-            {j > 0 && b.travelMinutes > 0 ? <TravelChip minutes={b.travelMinutes} /> : null}
+            {j > 0 && b.travelMinutes > 0 ? <TravelChip minutes={b.travelMinutes} transport={transport} /> : null}
             <StopCard
               number={n}
               block={b}
@@ -421,11 +425,13 @@ function DayStops({
   );
 }
 
-function TravelChip({ minutes }: { minutes: number }) {
+export const TRAVEL_LABEL: Record<Transport, string> = { motorbike: "By motorbike", car: "By car", tricycle: "By tricycle or van" };
+
+export function TravelChip({ minutes, transport = null }: { minutes: number; transport?: Transport | null }) {
   return (
     <p className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-blue-50 px-3 text-sm font-bold text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
       <LineIcon name="van" className="h-4 w-4" />
-      By road · about {minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ""}`}
+      {transport ? TRAVEL_LABEL[transport] : "By road"} · about {minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ""}`}
     </p>
   );
 }
@@ -509,7 +515,7 @@ function StopCard({
 }
 
 /** Day 1 starts with how to get to Daet: listed fares, always labelled as estimates. */
-function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingThere"]> }) {
+export function GettingThere({ value }: { value: NonNullable<ItineraryResult["gettingThere"]> }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl bg-surface p-3">

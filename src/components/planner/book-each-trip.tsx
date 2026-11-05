@@ -75,3 +75,52 @@ export function BookableCard({ pkg, group, bookHref: href }: { pkg: BookablePack
     </div>
   );
 }
+
+const tourDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+
+/**
+ * The saved trip's booking summary (Desktop-Trip board): each tour with its
+ * day and group price, the total, and one Book button per tour, because each
+ * operator is booked and paid separately.
+ */
+export function BookSummary({ packages, group }: { packages: DatedPackage[]; group: number | null }) {
+  if (!packages.length) return null;
+  const rows = packages.map((p) => ({ p, price: group ? groupPrice(p, group) : null }));
+  const known = rows.flatMap((r) => (r.price === null ? [] : [r.price]));
+  const who = group ? `${group} traveler${group === 1 ? "" : "s"}` : null;
+  return (
+    <section aria-labelledby="book-summary" className="space-y-3 rounded-2xl bg-surface p-5">
+      <h2 id="book-summary" className="font-[family-name:var(--font-display)] text-[1.75rem] font-semibold leading-8 text-daet-ink">
+        Book each trip
+      </h2>
+      <ul className="space-y-3">
+        {rows.map(({ p, price }) => (
+          <li key={p.id} className="flex justify-between gap-3">
+            <span className="min-w-0">
+              <Link href={`/tours/packages/${p.id}`} className="font-semibold text-daet-ink hover:underline">
+                {p.title}
+              </Link>
+              <span className="block text-sm text-slate-600 dark:text-slate-400">{[who, p.date ? tourDay(p.date) : null].filter(Boolean).join(" · ")}</span>
+            </span>
+            <strong className="shrink-0 text-daet-ink">{price !== null ? formatPeso(price) : "See price"}</strong>
+          </li>
+        ))}
+      </ul>
+      {group && packages.length > 1 && known.length ? (
+        <p className="flex items-baseline justify-between gap-3 rounded-xl bg-blue-50 px-4 py-3 dark:bg-blue-950/40">
+          <span className="text-sm font-bold text-blue-800 dark:text-blue-300">{known.length < rows.length ? "At least, if you book all" : packages.length === 2 ? "Total if you book both" : "Total if you book all"}</span>
+          <strong className="text-xl text-daet-ink">{formatPeso(known.reduce((a, b) => a + b, 0))}</strong>
+        </p>
+      ) : null}
+      <div className="space-y-2">
+        {rows.map(({ p, price }) => (
+          <Link key={p.id} href={bookHref(p.id, p.date, group)} className="flex min-h-12 items-center justify-center rounded-full bg-blue-600 px-5 text-center font-bold text-white hover:bg-blue-700">
+            Book {p.title}
+            {price !== null ? ` · ${formatPeso(price)}` : ""}
+          </Link>
+        ))}
+      </div>
+      <p className="text-sm text-slate-600 dark:text-slate-400">You pay each operator separately. {WEATHER_RULE}</p>
+    </section>
+  );
+}

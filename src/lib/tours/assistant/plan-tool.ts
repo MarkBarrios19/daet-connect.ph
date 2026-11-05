@@ -31,7 +31,12 @@ export type ItineraryResult = {
   /** Day 1's "Getting there": listed fares from where they travel from to Daet. Null card when none are listed. */
   gettingThere: { from: string; card: TransportCard | null; checkedOn: string | null } | null;
   generatedAt: string;
+  /** How they get around between stops (the planner's chips); travel times stay road estimates. */
+  transport?: Transport | null;
 };
+
+export const TRANSPORTS = ["motorbike", "car", "tricycle"] as const;
+export type Transport = (typeof TRANSPORTS)[number];
 
 /**
  * Where the listed fares start for a traveller's city. Buses to Daet leave

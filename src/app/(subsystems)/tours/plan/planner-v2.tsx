@@ -7,10 +7,14 @@ import {
   HANDOFF_KEY,
 } from "@/components/assistant/assistant-chat";
 import { PlanPanel, type PanelActions } from "@/components/planner/plan-panel";
+import { PlanStart } from "@/components/planner/plan-start";
+import { loadTrip, saveTrip } from "@/components/assistant/trip-storage";
+import { PlanChoices } from "@/components/planner/plan-choices";
 import { Button } from "@/components/ui/button";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import {
   changePlan,
+  changePace,
   regeneratePlan,
   addPlanStop,
   planStopChoices,
@@ -34,13 +38,18 @@ const actions: PanelActions = {
 };
 
 /**
- * The merged planner (TRIP_PLANNER_V2=on): chat on the left, the plan on the
- * right. On phones the plan opens as a sheet over the chat once there is one.
+ * The merged planner: a start view (Main board) until the first message, then
+ * the chat pinned on the left at full height (a third of the width) and the
+ * plan on the right (Desktop-Results). On phones the plan opens as a sheet.
  */
 export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boolean; initialDescription?: string }) {
   const [itinerary, setItinerary] = useState<ItineraryResult | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [restored, setRestored] = useState(false);
+  // The first message, from the start view; null until they send one.
+  const [first, setFirst] = useState<string | null>(null);
+  const [paceBusy, startPace] = useTransition();
+  const [paceStatus, setPaceStatus] = useState<string | null>(null);
   const sendRef = useRef<((text: string) => void) | null>(null);
   const [request, setRequest] = useState<{ text: string; id: number } | null>(
     null,
@@ -56,6 +65,16 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
       if (handed?.plan?.days?.length) {
         setItinerary(handed);
         setRestored(true);
+        setFirst("");
+        // The chat's trip line follows the plan it came with.
+        const days = handed.plan.days;
+        saveTrip({
+          ...loadTrip(),
+          dates: { start: days[0].date, end: days[days.length - 1].date },
+          travelers: handed.travelers,
+          ...(handed.gettingThere?.from ? { origin: { city: handed.gettingThere.from } } : {}),
+        });
+        window.scrollTo(0, 0);
       }
     } catch {
       // Nothing to restore.
@@ -70,6 +89,37 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
     setSheetOpen(false);
     sendRef.current?.(text);
   };
+
+  const changeTo = (pace: string) =>
+    startPace(async () => {
+      if (!itinerary) return;
+      setPaceStatus("Drafting the plan again at that pace…");
+      const result = await changePace(itinerary.input, pace);
+      if (!result.ok) {
+        setPaceStatus(result.message);
+        return;
+      }
+      setItinerary({ ...itinerary, plan: result.plan, stops: result.stops, packages: result.packages, input: result.input ?? itinerary.input, generatedAt: new Date().toISOString() });
+      setPaceStatus("Your plan has the new pace.");
+    });
+
+  const choices = itinerary ? (
+    <PlanChoices
+      pace={itinerary.input.pace}
+      transport={itinerary.transport}
+      busy={paceBusy}
+      status={paceStatus}
+      onPace={changeTo}
+      onTransport={(transport) => {
+        setItinerary({ ...itinerary, transport });
+        setPaceStatus(transport ? "Travel between stops is labelled for that." : "Decide later. Travel shows as by road.");
+      }}
+    />
+  ) : null;
+
+  if (first === null) {
+    return <PlanStart signedIn={signedIn} initialText={initialDescription} onSend={(text) => setFirst(text)} />;
+  }
 
   const panel = itinerary ? (
     <PlanPanel
@@ -90,12 +140,22 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
   ) : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(22rem,26rem)_minmax(0,1fr)]">
-      <div className="flex h-[70dvh] min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-float)] lg:h-[calc(100dvh-12rem)]">
+    <div className="grid lg:grid-cols-[minmax(22rem,1fr)_minmax(0,2fr)]">
+      <h1 className="sr-only">Plan your Daet trip</h1>
+      {/* Pinned on the left, the full height of the screen under the header, while the plan scrolls. */}
+      <div className="flex h-[calc(100dvh-var(--header-h)-var(--tab-bar-h))] min-h-[28rem] flex-col overflow-hidden bg-surface lg:sticky lg:top-[var(--header-h)] lg:self-start">
+        {/* Phones: the plan opens as a sheet; this brings it back without covering the message box. */}
+        {itinerary && !sheetOpen ? (
+          <div className="shrink-0 px-3 pt-3 lg:hidden">
+            <Button className="w-full" onClick={() => setSheetOpen(true)}>
+              View your {itinerary.plan.days.length}-day plan
+            </Button>
+          </div>
+        ) : null}
         <AssistantChat
           signedIn={signedIn}
-          initialText={initialDescription}
-          autoFocus={Boolean(initialDescription)}
+          startWith={first}
+          afterPlan={choices}
           onItinerary={show}
           sendRef={sendRef}
           onChoice={(text) => {
@@ -108,7 +168,7 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
       {/* One panel: a sheet over the chat on phones, the right-hand column from lg up. */}
       <section
         aria-label="Your plan"
-        className={`${itinerary && sheetOpen ? "fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-surface p-4 shadow-[var(--shadow-float)]" : "hidden"} min-w-0 lg:static lg:z-auto lg:block lg:max-h-none lg:overflow-visible lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none`}
+        className={`${itinerary && sheetOpen ? "fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-surface p-4 shadow-[var(--shadow-float)]" : "hidden"} min-w-0 lg:static lg:z-auto lg:block lg:max-h-none lg:overflow-visible lg:rounded-none lg:bg-transparent lg:px-8 lg:py-6 lg:shadow-none`}
       >
         {itinerary ? (
           <div className="mb-2 flex justify-end lg:hidden">
@@ -123,23 +183,11 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
         ) : null}
         {panel ?? (
           <div className="flex h-full min-h-[20rem] items-center justify-center rounded-2xl bg-canvas p-6 text-center text-slate-600 dark:text-slate-400">
-            <p>
-              Your plan will show up here.
-              <br />
-              Try &ldquo;Plan 2 days of beaches and food for us&rdquo;.
-            </p>
+            <p>Your plan will show up here.</p>
           </div>
         )}
       </section>
 
-      {itinerary && !sheetOpen ? (
-        <Button
-          className="fixed inset-x-4 bottom-4 z-40 lg:hidden"
-          onClick={() => setSheetOpen(true)}
-        >
-          View your {itinerary.plan.days.length}-day plan
-        </Button>
-      ) : null}
     </div>
   );
 }

@@ -98,3 +98,18 @@ describe("stopChoices", () => {
     for (const c of choices) expect(planAttractionIds(plan)).not.toContain(c.id);
   });
 });
+
+describe("ordersFromRows", () => {
+  it("keeps the saved order per day and skips lunch, unknown and repeated places", () => {
+    const { ordersFromRows } = jest.requireActual("@/lib/tours/itinerary/edit") as typeof import("@/lib/tours/itinerary/edit");
+    const rows = [
+      { day_number: 2, item_order: 1, item_kind: "visit", attraction_id: "c" },
+      { day_number: 1, item_order: 2, item_kind: "visit", attraction_id: "b" },
+      { day_number: 1, item_order: 1, item_kind: "visit", attraction_id: "a" },
+      { day_number: 1, item_order: 3, item_kind: "lunch", attraction_id: null },
+      { day_number: 2, item_order: 2, item_kind: "visit", attraction_id: "a" },
+      { day_number: 4, item_order: 1, item_kind: "visit", attraction_id: "d" },
+    ];
+    expect(ordersFromRows(rows, 2)).toEqual([["a", "b"], ["c"]]);
+  });
+});

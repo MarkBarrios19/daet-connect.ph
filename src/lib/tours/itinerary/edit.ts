@@ -127,3 +127,14 @@ export function stopChoices(plan: Plan, day: number, attractions: PlannerAttract
     .slice(0, limit)
     .map(({ a }) => ({ id: a.id, name: a.name, category: a.category, fee: a.fee, photoUrl: a.photoUrl ?? null }));
 }
+
+/** A saved trip's visit rows back to the order of places per day (for opening it in the planner). */
+export function ordersFromRows(rows: Array<{ day_number: number; item_order: number; item_kind?: string | null; attraction_id?: string | null }>, days: number): string[][] {
+  const orders: string[][] = Array.from({ length: days }, () => []);
+  for (const row of [...rows].sort((a, b) => a.day_number - b.day_number || a.item_order - b.item_order)) {
+    const d = row.day_number - 1;
+    if (row.item_kind === "lunch" || !row.attraction_id || d < 0 || d >= days) continue;
+    if (!orders.some((o) => o.includes(row.attraction_id!))) orders[d].push(row.attraction_id);
+  }
+  return orders;
+}

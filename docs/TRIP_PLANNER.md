@@ -62,12 +62,27 @@ traveller's words in the planner's message box; nothing is sent until they tap S
   (`tours_shared_itinerary` returns only the plan).
 - Trip pages and tickets saved on a phone are removed when the traveller signs out.
 
+## Screens
+
+- **Start view** (`plan-start.tsx`, Main board): "Where to in Daet?", one message box,
+  Dates / Travelers (the trip form, kept for the tab) and Recents, and four example
+  trips. Sending opens the chat and plan view; a plan handed over from the widget or a
+  saved trip skips it.
+- **Chat and plan** (Desktop-Results): the chat is pinned on the left, a third of the
+  width and the full screen height under the header; the plan scrolls beside it. Under
+  the latest plan the chat asks the pace (drafts the plan again with `changePace`) and
+  how they get around (labels the travel between stops; times stay road estimates).
+- **Saved trip** (`/tours/my-itineraries/[id]`, Desktop-Trip): days on the left, map,
+  Book each trip (one Book button and price per tour, and the total) and Share on the
+  right. "Change with the assistant" rebuilds the saved order with `openSavedInPlanner`
+  and opens it in the planner.
+
 ## Checks
 
 - `npx jest` (includes `golden-prompts.test.ts`: 40+ planner prompts in English,
   Filipino and Taglish, checked in basic mode).
 - `npm run test:e2e:tours` (phone width, with accessibility checks). The planner
-  specs are `trip-assistant.spec.ts` (Before I draft, remove a stop, Book links) and
+  specs are `plan-start.spec.ts` (start view, pinned chat, chips, saved trip page), `trip-assistant.spec.ts` (Before I draft, remove a stop, Book links) and
   `trip-planner-a11y.spec.ts` (planner, shared trip and called-off trip at 375 and
   1440 px); `draftPlan()` in `e2e/fixtures.ts` walks the flow. In a sandbox without
   map tiles the Leaflet tests in `home-fan` and `messenger` fail because the sketch

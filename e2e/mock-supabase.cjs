@@ -15,6 +15,8 @@ const COVER =
 const TODAY = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
 
 const CONV_ID = "cc110000-0000-4000-8000-000000000001";
+const SAVED_TRIP_ID = "5a7e0000-0000-4000-8000-0000000000a1";
+const daysFromToday = (n) => { const d = new Date(TODAY + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 // Live tour tracking keeps state across requests (POST /__reset_live clears it).
 const LIVE_BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
@@ -1753,6 +1755,39 @@ http
             called_off_reason: "Strong winds; the coast guard stopped boat trips.",
             call_off_resolution: null,
             rescheduled_from: null,
+          },
+        ];
+      }
+      // A saved trip with its stops (the saved trip page), only when asked by id.
+      if (table === "tours_itineraries" && url.searchParams.get("id") === `eq.${SAVED_TRIP_ID}`) {
+        const at = (n) => tables.tours_attractions[n - 1];
+        const item = (day, order, n, start, end, travel, kind = "visit") => ({
+          day_number: day,
+          item_order: order,
+          item_kind: kind,
+          attraction_id: kind === "lunch" ? null : at(n).id,
+          location_name: kind === "lunch" ? "Lunch break" : at(n).name,
+          tip: null,
+          latitude: kind === "lunch" ? null : at(n).latitude,
+          longitude: kind === "lunch" ? null : at(n).longitude,
+          start_time: start,
+          end_time: end,
+          travel_minutes: travel,
+          tours_attractions: kind === "lunch" ? null : { slug: at(n).slug, photo_url: n === 3 ? "/photos/bagasbas-beach.jpg" : n === 1 ? "/photos/rizal-monument.jpg" : null, entrance_fee: n === 2 ? 50 : null },
+        });
+        rows = [
+          {
+            id: SAVED_TRIP_ID,
+            tourist_id: "9b7e5a5e-0000-4000-8000-000000000001",
+            title: "Daet weekend, slowly",
+            start_date: daysFromToday(14),
+            end_date: daysFromToday(15),
+            summary: null,
+            share_token: null,
+            plan_source: "rules",
+            created_at: new Date().toISOString(),
+            preferences: { startDate: daysFromToday(14), days: 2, budgetPerDay: 1500, interests: ["heritage", "beach"], pace: "relaxed", groupSize: 2, dayStart: 480, dayEnd: 1080, travelers: { adults: 2, children: [] }, origin: "Manila" },
+            tours_itinerary_items: [item(1, 1, 1, "08:00", "08:25", 0), item(1, 2, 2, "08:40", "10:00", 10), item(1, 3, 0, "12:00", "13:00", 0, "lunch"), item(1, 4, 3, "14:00", "17:00", 12), item(2, 1, 5, "08:00", "11:00", 30)],
           },
         ];
       }
