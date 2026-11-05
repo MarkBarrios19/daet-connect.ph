@@ -109,10 +109,10 @@ export function PlanStart({ signedIn, initialText = "", onSend }: { signedIn: bo
           Try asking
         </h2>
         <ul className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {TRY_ASKING.map((t) => (
+          {TRY_ASKING.map((t, i) => (
             <li key={t.prompt}>
               <button type="button" onClick={() => send(t.prompt)} className="block w-full overflow-hidden rounded-2xl bg-surface text-left text-daet-ink hover:bg-muted">
-                <Image src={t.photo} alt={t.alt} width={600} height={300} className="h-[150px] w-full object-cover" />
+                <Image src={t.photo} alt={t.alt} width={600} height={300} loading={i < 2 ? "eager" : "lazy"} className="h-[150px] w-full object-cover" />
                 <span className="block px-4 pb-4 pt-3">
                   <span className="block font-bold">{t.prompt}</span>
                   <span className="block text-sm text-slate-600 dark:text-slate-400">{t.note}</span>

@@ -64,6 +64,8 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
       const handed = JSON.parse(raw) as ItineraryResult;
       if (handed?.plan?.days?.length) {
         setItinerary(handed);
+        // They came to see this plan, so on phones it opens straight away.
+        setSheetOpen(true);
         setRestored(true);
         setFirst("");
         // The chat's trip line follows the plan it came with.
