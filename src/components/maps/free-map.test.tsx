@@ -23,6 +23,7 @@ const mockState: {
   tileOptions: Record<string, unknown>;
   focusedAt: [number, number] | null;
   wheel: boolean;
+  removedMaps: number;
 } = {
   fail: false,
   tiles: [],
@@ -37,6 +38,7 @@ const mockState: {
   tileOptions: {},
   focusedAt: null,
   wheel: false,
+  removedMaps: 0,
 };
 
 // Leaflet is a browser library; this stands in for the parts FreeMap uses and
@@ -89,6 +91,14 @@ jest.mock("leaflet", () => {
     getZoom() {
       return this.zoom;
     }
+    // Leaflet's own guard, and the reason a map must only be removed once:
+    // `Map.remove()` throws this when the container's id no longer matches.
+    removed = false;
+    remove() {
+      if (this.removed) throw new Error("Map container is being reused by another instance");
+      this.removed = true;
+      mockState.removedMaps += 1;
+    }
     getPane() {
       return mockState.pane;
     }
@@ -103,7 +113,12 @@ jest.mock("leaflet", () => {
         mockState.wheel = false;
       },
     };
-    invalidateSize() {}
+    invalidateSize() {
+      // Leaflet's map pane is gone once the map is removed: the call that
+      // follows throws "Cannot read properties of undefined (reading
+      // '_leaflet_pos')", which a phone saw instead of the sketch map.
+      if (this.removed) throw new Error("Cannot read properties of undefined (reading '_leaflet_pos')");
+    }
     getSize() {
       return { x: 384, y: 256 };
     }
@@ -172,6 +187,7 @@ beforeEach(() => {
   mockState.camera = [];
   mockState.markerEls = [];
   mockState.polylineCount = 0;
+  mockState.removedMaps = 0;
   mockState.map = null;
   mockState.layer = null;
   mockState.mapOptions = {};
@@ -211,6 +227,21 @@ describe("FreeMap", () => {
 
     await waitFor(() => expect(screen.getByRole("img", { name: "Route map" })).toBeInTheDocument());
     expect(screen.getByText(/Sketch map/)).toBeInTheDocument();
+  });
+
+  it("removes the map once when the tiles fail, so nothing throws on the way to the sketch", async () => {
+    render(<FreeMap markers={markers} title="Route map" />);
+    await waitFor(() => expect(mockState.layer).not.toBeNull());
+
+    for (let i = 0; i < 4; i += 1) mockState.layer!.emit("tileerror");
+
+    await waitFor(() => expect(screen.getByText(/Sketch map/)).toBeInTheDocument());
+    // One removal. The effect's cleanup used to remove the same map again a
+    // moment later, which Leaflet refuses with "Map container is being reused by
+    // another instance" — thrown from the cleanup, caught by error.tsx, and the
+    // whole phone page was replaced by "Something went wrong."
+    expect(mockState.removedMaps).toBe(1);
+    expect(screen.queryByRole("region", { name: "Route map" })).toBeNull();
   });
 
   it("keeps the map when a tile arrives, even if others fail", async () => {

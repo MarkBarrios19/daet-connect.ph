@@ -1,5 +1,6 @@
 import {
   PHONE_BAND,
+  PHONE_BAND_MIN,
   DEFAULT_HERO_SIZE,
   HOVER_BUMP,
   SEAM_PX,
@@ -278,6 +279,23 @@ describe("phone layout", () => {
       const highest = Math.min(...points.map(([, y]) => y));
       expect(highest).toBeGreaterThanOrEqual(bottom - 0.001);
     });
+  });
+
+  it("keeps the band tall enough for the headline, the hint and one action on a short phone", () => {
+    // 375×667 is the smallest phone the two-fan layout is used at (below a 500px
+    // hero a landscape phone takes the desktop fan). Eight tenths of that hero
+    // is 120px, which is less than the band's own contents: the headline, a line
+    // of hint, and the 44px "Find a tour" beside it.
+    const small = fanGeometry(375, 667, "phone");
+    const [top, bottom] = small.fans.map((fan) => fan.vp[1]);
+    expect(bottom - top).toBeCloseTo(PHONE_BAND_MIN, 6);
+    expect(bottom - top).toBeGreaterThan(120);
+
+    // A tall phone keeps the proportion it was drawn with: the floor only
+    // matters where the fraction is too small to hold the band's contents.
+    const tall = fanGeometry(390, 844, "phone");
+    const [tallTop, tallBottom] = tall.fans.map((fan) => fan.vp[1]);
+    expect(tallBottom - tallTop).toBeCloseTo(PHONE_BAND * 844, 6);
   });
 
   it("mirrors the two fans about the box when nothing covers it", () => {
