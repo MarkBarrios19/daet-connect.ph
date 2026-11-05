@@ -1,6 +1,7 @@
 import { formatPeso } from "@/lib/money";
 import { FAQS, matchFaq } from "@/lib/tours/assistant/knowledge";
-import { attractionInfo, handoff, myBookings, planTripLink, searchTours, tourDetails, travelTime, upcomingEvents, type ToolContext } from "@/lib/tours/assistant/tools";
+import { addCard, attractionInfo, handoff, myBookings, nearbySights, planTripLink, resolvePlace, searchTours, tourDetails, travelTime, upcomingEvents, type ToolContext } from "@/lib/tours/assistant/tools";
+import { formatDistance } from "@/lib/maps/geo";
 import { findTransportPlace, readTravelQuestion } from "@/lib/tours/assistant/transport";
 import { estimateCost, findPlaces, howToGetThere, meetingPoint, tripRoutes } from "@/lib/tours/assistant/guide-tools";
 import { detectTripLang, readTripQuestion, tripAnswer } from "@/lib/tours/assistant/trip";
@@ -21,6 +22,11 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
 
   if (/^(hi|hello|hey|good (morning|afternoon|evening)|kumusta|musta|magandang (umaga|hapon|gabi))\b/.test(t) && t.split(" ").length <= 4) {
     return "Hi! I'm the Daet AI assistant. Ask me where to eat or stay, how to get somewhere and what a trip costs, about tours and open dates, or about your own booking, payment or ticket.";
+  }
+
+  // Weather: no live forecast here, so say where to look and what happens to booked trips.
+  if (has(t, /\b(weather|forecast|rain|raining|typhoon|storm|bagyo|panahon|ulan|umuulan|signal no)\b/) && !has(t, /\b(what to do|things to do|ano gagawin|ano ang gagawin|activities)\b/)) {
+    return "I can't check today's weather. For the forecast and storm signals, see PAGASA (pagasa.dost.gov.ph) or a weather app. Boat trips to Calaguas and the Mercedes islands stop when the Coast Guard says the sea is rough. If your operator calls off your trip for weather, you pick a new date or get a full refund. On a rainy day, ask me what to do in Daet when it rains.";
   }
 
   // A person, or a complaint
@@ -100,8 +106,17 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
   if (placeQ) {
     const result = await findPlaces(ctx, { kind: placeQ.kind, near: placeQ.near, query: null, maxPrice: null, openNow: null, limit: 5 });
     if (placeQ.near === "me" && !ctx.here) return "Tap Use my location below so I can find the nearest ones, or tell me the area (e.g. near Bagasbas).";
-    if (!result.places.length) return `I don't have any ${result.kind.toLowerCase()} listings${result.near ? ` near ${result.near}` : ""} yet. The Tourism Office can recommend some.`;
-    return `${result.kind}${result.near ? ` near ${result.near}` : " in Daet"}: ${result.places.slice(0, 3).map((p) => p.name + (p.price ? ` (${p.price})` : "")).join("; ")}. Tap Get directions to open Google Maps.${result.places.some((p) => !p.verified) ? " Some details aren't verified yet, so check locally." : ""}`;
+    // "What's near X? Food and places to see.": the closest listed sights too, from the same point.
+    let sights = "";
+    if (placeQ.sights && placeQ.near && placeQ.near !== "me") {
+      const anchor = await resolvePlace(ctx, placeQ.near);
+      const nearby = anchor ? await nearbySights(ctx, anchor.point, anchor.name) : [];
+      for (const s of nearby) if (s.slug) addCard(ctx, { type: "link", href: `/tours/attractions/${s.slug}`, label: s.name });
+      if (nearby.length) sights = ` Places to see nearby: ${nearby.map((s) => `${s.name} (${formatDistance(s.meters)})`).join("; ")}.`;
+    }
+    const where = result.near ? ` near ${result.near}` : placeQ.near && placeQ.near !== "me" ? ` (I couldn't find "${placeQ.near}", so these are in Daet)` : " in Daet";
+    if (!result.places.length) return `I don't have any ${result.kind.toLowerCase()} listings${result.near ? ` near ${result.near}` : ""} yet. The Tourism Office can recommend some.${sights}`;
+    return `${result.kind}${where}: ${result.places.slice(0, 3).map((p) => p.name + (p.distance && result.near ? `, ${p.distance}` : "") + (p.price ? ` (${p.price})` : "")).join("; ")}.${sights} Tap Get directions to open Google Maps.${result.places.some((p) => !p.verified) ? " Some details aren't verified yet, so check locally." : ""}`;
   }
 
   // Their own bookings, payments and tickets

@@ -1,5 +1,6 @@
 import type { FreeMapLine, FreeMapMarker } from "@/components/maps/map-types";
 import { projectPoints } from "@/lib/maps/geo";
+import { categoryShape } from "@/components/ui/icons";
 
 const W = 640;
 const H = 360;
@@ -44,7 +45,7 @@ export function SketchMap({
     <figure className={className}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} className="h-auto w-full rounded-2xl bg-blue-50 dark:bg-slate-900">
         {linePoints.map(({ line, points }) => (
-          <polyline key={line.id} points={points} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="4" strokeDasharray={line.dashed ? "10 8" : undefined} strokeLinecap="round" strokeLinejoin="round" />
+          <polyline key={line.id} points={points} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={line.dashed ? 3 : 4} strokeDasharray={line.dashed ? "2 8" : undefined} strokeLinecap="round" strokeLinejoin="round" />
         ))}
         {labelled.map(({ m, p }, i) => {
           const key = `${m.id}-${i}`;
@@ -65,7 +66,31 @@ export function SketchMap({
             guest: "fill-slate-900 dark:fill-slate-100",
             paused: "fill-surface",
             flare: "fill-red-600",
+            me: "fill-[#2f80ed]",
           }[m.kind];
+          // A category pin, as on the tile map: dark circle, white icon, number badge.
+          if (m.icon) {
+            return (
+              <g key={key}>
+                {m.id === focusId ? <circle cx={p.x} cy={p.y} r="22" className="fill-blue-500/40" /> : null}
+                <circle cx={p.x} cy={p.y} r="17" className="fill-slate-900 stroke-white" strokeWidth="2.5" />
+                <g transform={`translate(${p.x - 9.6} ${p.y - 9.6}) scale(0.8)`} fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={categoryShape(m.icon)} />
+                </g>
+                {m.label ? (
+                  <g transform={`translate(${p.x + 14} ${p.y - 14})`}>
+                    <circle r="9" className="fill-white" />
+                    <text y="4" textAnchor="middle" fontSize="11" fontWeight="800" className="fill-blue-700">
+                      {m.label}
+                    </text>
+                  </g>
+                ) : null}
+                <text x={labelX(p.x)} y={below(i) ? p.y + 36 : p.y - 24} textAnchor="middle" fontSize="13" fontWeight="700" className="fill-daet-ink stroke-blue-50 dark:stroke-slate-900" strokeWidth="4" paintOrder="stroke">
+                  {m.title.length > 26 ? `${m.title.slice(0, 25)}…` : m.title}
+                </text>
+              </g>
+            );
+          }
           const active = m.id === focusId;
           const pinStop = pins && m.kind === "stop";
           const stopFill = pinStop ? (active ? "fill-white" : "fill-slate-900") : fill;

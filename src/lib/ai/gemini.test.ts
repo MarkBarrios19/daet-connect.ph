@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { generateJson, geminiKeys, isBusyError, isKeyError, resetKeyRotation, stopReasonOf, toJsonSchema, withBusyFallback, withKeyRotation, type GeminiClient } from "@/lib/ai/gemini";
+import { generateJson, geminiKeys, isBusyError, isTimeoutError, isKeyError, resetKeyRotation, stopReasonOf, toJsonSchema, withBusyFallback, withKeyRotation, type GeminiClient } from "@/lib/ai/gemini";
 
 jest.mock("server-only", () => ({}));
 
@@ -110,5 +110,16 @@ describe("withKeyRotation", () => {
     const all = jest.fn().mockRejectedValue(quota);
     await expect(withKeyRotation(keys, all)).rejects.toBe(quota);
     expect(names(all)).toEqual(["k1", "k2", "k3"]);
+  });
+});
+
+describe("timeouts", () => {
+  it("go straight to the fallback model, without a second wait on the slow one", async () => {
+    const aborted = Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
+    const call = jest.fn().mockRejectedValueOnce(aborted).mockResolvedValue("ok");
+    await expect(withBusyFallback("gemini-flash-latest", call, { waitMs: 0 })).resolves.toBe("ok");
+    expect(call.mock.calls.map((c) => c[0])).toEqual(["gemini-flash-latest", "gemini-flash-lite-latest"]);
+    expect(isTimeoutError(aborted)).toBe(true);
+    expect(isTimeoutError(new Error("Invalid argument"))).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import { formatPeso } from "@/lib/money";
 import { formatDistance, type LatLng } from "@/lib/maps/geo";
 import { estimateTripCost, type CostStyle } from "@/lib/tours/guide/costs";
 import { FARE_COLUMNS, FARE_MODES, faresBetween, fareLabel, minutesLabel, toFare, type Fare, type FareRoute } from "@/lib/tours/guide/fares";
-import { mapsDirectionsUrl, mapsPlaceUrl, type MapsMode } from "@/lib/tours/guide/maps";
+import { mapsDirectionsUrl, mapsPlaceUrl, plainPlaceName, type MapsMode } from "@/lib/tours/guide/maps";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 import { distanceToSegmentM, GUIDE_PLACE_COLUMNS, GUIDE_PLACE_KINDS, placeOpenStatus, placePoint, priceLabel, sortByDistance, toGuidePlace, type GuidePlace, type GuidePlaceKind } from "@/lib/tours/guide/places";
 import { addCard, resolvePlace, type ToolContext } from "@/lib/tours/assistant/tools";
@@ -81,11 +81,15 @@ export function placeCard(place: GuidePlace & { distanceM?: number | null }, mod
     area: place.address ?? place.municipality,
     price: priceLabel(place, formatPeso),
     status: status.state === "unknown" ? null : status.label,
-    distance: place.distanceM != null ? formatDistance(place.distanceM) : null,
+    // Under 50 m is the place itself ("near Bagasbas" → the Bagasbas eateries), not a distance.
+    distance: place.distanceM != null && place.distanceM >= 50 ? formatDistance(place.distanceM) : null,
     verified: place.verified,
     note: extras.length ? extras.join(". ").slice(0, 200) : null,
     directionsHref: mapsDirectionsUrl(target, mode),
-    mapHref: mapsPlaceUrl(target),
+    // "View on map" asks Google for the place by name in its town, so the map
+    // shows the place's own name; a bare coordinate pin had no name on it.
+    // Directions keep the pin, so the route ends at the right spot.
+    mapHref: mapsPlaceUrl({ name: plainPlaceName(place.name), area: place.municipality }),
   };
 }
 

@@ -129,7 +129,7 @@ export function PlanPanel({
   const points: MapPoint[] = shown.flatMap(({ d }) =>
     d.blocks.flatMap((b) => {
       const s = b.kind === "visit" ? byId.get(b.attractionId) : null;
-      return s ? [{ lat: s.lat, lng: s.lng, label: s.name }] : [];
+      return s ? [{ lat: s.lat, lng: s.lng, label: s.name, icon: s.category }] : [];
     }),
   );
   const mapTitle = current === null ? "All days" : `Day ${current + 1} route`;
@@ -268,8 +268,7 @@ export function PlanPanel({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] xl:gap-6">
         {points.length ? (
           <div className="relative h-60 min-w-0 overflow-hidden rounded-2xl sm:h-72 xl:sticky xl:top-4 xl:order-2 xl:h-[min(42rem,calc(100dvh-8rem))]">
-            <RouteMap points={points} connect={current !== null} title={current === null ? "Map of all days" : `Map of day ${current + 1}`} className="h-full" />
-            <span className="pointer-events-none absolute left-3 top-3 z-[500] inline-flex min-h-8 items-center rounded-full bg-surface px-3 text-sm font-bold text-daet-ink">{mapTitle}</span>
+            <RouteMap points={points} connect={current !== null} title={current === null ? "Map of all days" : `Map of day ${current + 1}`} chip={mapTitle} className="h-full" mapClassName="h-full" />
           </div>
         ) : null}
         <div className="min-w-0 space-y-6 xl:order-1">

@@ -19,13 +19,32 @@ const PLACE_WORDS: Array<[GuidePlaceKind, RegExp]> = [
 ];
 
 /** "Where to eat near Bagasbas?" → { kind: "eatery", near: "bagasbas" }. */
-export function readPlaceQuestion(text: string): { kind: GuidePlaceKind; near: string | null; budget: boolean } | null {
+/** What the place question also asks to see: sights, not only food or a bed. */
+const SIGHT_WORDS = /\b(places to see|place to see|things to see|sights|sightseeing|attractions?|landmarks?|tourist spots?|pasyalan|puntahan)\b/;
+/** Kind words that can follow the place in one clause ("near the plaza for food and sights"). */
+const TRAILING = /\s+(?:for|na|with|under|and|at|food|foods|eat|restaurants?|places?|things?|sights|attractions?|to see|hotels?|stay)\b.*$/;
+
+export function readPlaceQuestion(text: string): { kind: GuidePlaceKind; near: string | null; budget: boolean; sights: boolean } | null {
   const t = words(text);
   const hit = PLACE_WORDS.find(([, re]) => re.test(t));
   if (!hit) return null;
-  const near = t.match(/\b(?:near|around|in|at|malapit sa|sa may|sa)\s+([a-z ]+?)(?:\s+(?:for|na|with|under)\b.*)?$/)?.[1]?.trim() ?? null;
+  // The place is read from the clause that says "near …", so "What's near X? Food and places to see." gives X.
+  const clauses = normalizeText(text).split(/[?!.;]+/).map((c) => c.replace(/[,:]/g, " ").replace(/\s+/g, " ").trim()).filter(Boolean);
+  let near: string | null = null;
+  for (const clause of clauses) {
+    const m = clause.match(/\b(?:near|around|in|at|malapit sa|sa may|sa)\s+([a-z ]+)$/) ?? clause.match(/\b(?:near|around|malapit sa|sa may)\s+([a-z ]+?)(?=\s+(?:for|na|with|under|and)\b)/);
+    if (m) {
+      near = m[1].replace(TRAILING, "").trim();
+      if (/\b(near|around|malapit)\b/.test(clause)) break;
+    }
+  }
   const nearMe = /\b(near me|nearby|around here|malapit sa akin|malapit dito|dito)\b/.test(t);
-  return { kind: hit[0], near: nearMe ? "me" : near && !/^(the|a|an)$/.test(near) ? near : null, budget: /\b(cheap|budget|affordable|mura)\b/.test(t) };
+  return {
+    kind: hit[0],
+    near: nearMe ? "me" : near && !/^(the|a|an)$/.test(near) ? near : null,
+    budget: /\b(cheap|budget|affordable|mura)\b/.test(t),
+    sights: SIGHT_WORDS.test(t),
+  };
 }
 
 /** Drops "by bus", "please", "the" from a place the traveller typed. */

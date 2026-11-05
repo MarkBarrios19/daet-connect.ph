@@ -259,6 +259,7 @@ export function PlaceMapPanel({
             // wheel zooms: this map is what the visitor is working in.
             focusOffsetY={76}
             wheelZoom
+            controls="zoom"
             className="absolute inset-0"
           />
 

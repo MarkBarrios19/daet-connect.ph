@@ -45,12 +45,13 @@ export async function* savingReply(events: AsyncGenerator<AssistantEvent>, supab
   }
   const answer = text.trim();
   if (!done || !answer || !question.trim()) return;
-  // One insert gives both rows the same now(); the answer is stamped a millisecond
-  // later so the chat always loads question, then answer.
-  const asked = Date.now();
-  const { error } = await supabase.from("tours_ai_messages").insert([
-    { role: "user", content: question.trim().slice(0, 4000), created_at: new Date(asked).toISOString() },
-    { role: "assistant", content: answer.slice(0, 4000), cards: cards.length ? cards : null, mode, created_at: new Date(asked + 1).toISOString() },
-  ]);
+  // Two inserts, question first: each gets its own now() (the app may not write
+  // created_at), so the chat always loads the question above its answer.
+  const asked = await supabase.from("tours_ai_messages").insert({ role: "user", content: question.trim().slice(0, 4000) });
+  if (asked.error) {
+    console.error("Save assistant chat error:", asked.error.message);
+    return;
+  }
+  const { error } = await supabase.from("tours_ai_messages").insert({ role: "assistant", content: answer.slice(0, 4000), cards: cards.length ? cards : null, mode });
   if (error) console.error("Save assistant chat error:", error.message);
 }

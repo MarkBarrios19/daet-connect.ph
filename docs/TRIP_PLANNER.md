@@ -30,6 +30,29 @@ traveller's words in the planner's message box; nothing is sent until they tap S
 | Call-offs | `src/lib/tours/call-off.ts`, `supabase/migrations/20261115_trip_call_off.sql` |
 | Offline trip day | `public/sw.js`, `src/components/tours/save-trip-offline.tsx` |
 
+## How visitors use it (decisions, 2026-11-05)
+
+Settled in the design interview. Words follow `CONTEXT.md`.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Who we design for | Three visitors: a Filipino visitor from a big city on a phone writing Taglish; a foreign visitor writing English; a group organiser for 6 to 20 people. |
+| 2 | When they use it | Mostly on the trip day in Daet, and when booking a tour they already want. Planning from scratch and dreaming come after. |
+| 3 | Where they start | The floating assistant button on every page is the front door. |
+| 4 | Assistant or planner | The assistant answers quick questions; a request for a plan moves to the planner. |
+| 5 | Sign-in | Asked after 3 messages. |
+| 6 | AI unavailable | Basic mode, without a notice to the visitor. |
+| 7 | Success | A question answered on the site, then a tour booked. |
+| 8 | Language | The whole site in Filipino and English (Bikol dropped, see 16); the assistant replies in the visitor's language. |
+| 10 | After 3 messages without signing in | Basic-mode answers continue; signing in gives full AI answers again. |
+| 11 | Basic mode can't answer | Say plainly it can't check that, and give the operator's number or the right page. Never guess about weather, boats or times. |
+| 12 | Trip-day questions | All of: what's open near me now, getting between towns and fares, is my tour on today, operator and meeting point, food nearby with prices, emergency numbers. |
+| 13 | "Book X for 4 on Dec 20" | Open the tour's booking form with the date and guests filled in; the visitor confirms there. |
+| 14 | Group larger than a tour allows | Say the limit and suggest messaging the operator for a private group. No automatic split. |
+| 15 | Foreign visitors and money | Pesos with a rough amount in the visitor's currency; card payment as well as GCash and Maya (cards already exist). |
+| 16 | Site languages | Filipino and English only. |
+| 17 | Opening the assistant on a tour page | A greeting about that tour with three suggested questions. |
+
 ## Settings (Vercel environment variables)
 
 | Name | What it does |

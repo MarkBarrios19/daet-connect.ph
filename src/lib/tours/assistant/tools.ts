@@ -9,7 +9,7 @@ import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { STATUS_LABELS, isBookingStatus } from "@/lib/tours/booking-lifecycle";
 import { faqById, FAQS, type FaqLink } from "@/lib/tours/assistant/knowledge";
 import { hoursToText } from "@/lib/tours/opening-hours";
-import { directionsUrl, estimateLeg, formatDistance, formatDuration, type LatLng, type Leg } from "@/lib/maps/geo";
+import { directionsUrl, estimateLeg, formatDistance, formatDuration, haversineMeters, type LatLng, type Leg } from "@/lib/maps/geo";
 import { boatOptionsTo, findBoatLeg, findTransportPlace, TRANSPORT_CHECKED } from "@/lib/tours/assistant/transport";
 import type { CostCard, PlaceCard, TransportCard } from "@/lib/tours/assistant/guide-tools";
 
@@ -320,10 +320,36 @@ export async function resolvePlace(ctx: ToolContext, name: string): Promise<{ na
   const town = findTransportPlace(term);
   if (town && town.aliases.includes(term.toLowerCase())) return { name: town.name, point: town.point };
   const { data } = await ctx.supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true).ilike("name", `%${term}%`).limit(1);
-  const attraction = data?.[0] ? toAttraction(data[0] as Record<string, unknown>) : null;
+  let attraction = data?.[0] ? toAttraction(data[0] as Record<string, unknown>) : null;
+  // "jose rizal" typed without the accent still finds "José Rizal".
+  if (!attraction) attraction = (await listedSights(ctx)).find((a) => plain(a.name).includes(plain(term))) ?? null;
   if (attraction && attraction.latitude !== null && attraction.longitude !== null) return { name: attraction.name, point: { lat: attraction.latitude, lng: attraction.longitude } };
   const place = findTransportPlace(name);
   return place ? { name: place.name, point: place.point } : null;
+}
+
+/** Lowercase without accents or punctuation, for matching names as people type them. */
+const plain = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+async function listedSights(ctx: ToolContext) {
+  const { data } = await ctx.supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true).limit(300);
+  return (data ?? []).map((row) => toAttraction(row as Record<string, unknown>));
+}
+
+/** Listed places to see closest to a point, nearest first, with their distance; the place itself is left out. */
+export async function nearbySights(ctx: ToolContext, point: LatLng, exclude: string | null, limit = 3) {
+  const skip = exclude ? plain(exclude) : null;
+  return (await listedSights(ctx))
+    .flatMap((a) => (a.latitude !== null && a.longitude !== null && plain(a.name) !== skip ? [{ name: a.name, slug: a.slug, meters: haversineMeters(point, { lat: a.latitude, lng: a.longitude }) }] : []))
+    .sort((x, y) => x.meters - y.meters)
+    .slice(0, limit);
 }
 
 const minutesText = ([low, high]: [number, number]) => `about ${formatDuration(low * 60)}–${formatDuration(high * 60)}`;
