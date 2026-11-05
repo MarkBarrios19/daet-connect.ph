@@ -93,9 +93,9 @@ Settled in the design interview. Words follow `CONTEXT.md`.
   town LGU confirms them; edit them at `/tours/admin/fares`.
 - `supabase/migrations/20261115_trip_call_off.sql`: call-offs (applied 2026-11-05).
 - `supabase/migrations/20261117_ai_daily_usage.sql`: the assistant's daily count
-  (`tours_ai_usage`, `tours_ai_count_message`). Not applied yet. Until it is, or
-  without `SUPABASE_SERVICE_ROLE_KEY`, messages are not counted and every visitor
-  gets full answers (only the short burst limit applies).
+  (`tours_ai_usage`, `tours_ai_count_message`). Applied 2026-11-05. Without
+  `SUPABASE_SERVICE_ROLE_KEY` (or if the table is missing), messages are not
+  counted and every visitor gets full answers (only the short burst limit applies).
 
 ## Daily allowance (decisions 5, 18, 28, 37)
 
