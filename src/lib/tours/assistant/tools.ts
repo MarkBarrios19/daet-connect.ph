@@ -1,4 +1,5 @@
-import type { TripContext } from "@/lib/tours/assistant/context";
+import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { hasTicket } from "@/lib/tours/ticket";
 import { formatPeso } from "@/lib/money";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,6 +39,12 @@ export type ToolContext = {
   here?: LatLng | null;
   /** The page it was opened on and the trip answers so far, from the browser. Hints only. */
   trip?: TripContext | null;
+  /** Set by plan_trip: the drafted plan the panel shows. */
+  itinerary?: ItineraryResult | null;
+  /** Set by plan_trip when the form still needs answers. */
+  questions?: MissingInput[] | null;
+  /** Short progress labels while a tool runs ("Checking operators"). */
+  onStatus?: (label: string) => void;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

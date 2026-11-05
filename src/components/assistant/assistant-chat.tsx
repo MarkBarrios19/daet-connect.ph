@@ -14,8 +14,12 @@ import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
+import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null } };
+/** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
+export const HANDOFF_KEY = "daet-plan-handoff-v1";
+
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult };
 type PageRef = NonNullable<TripContext["page"]>;
 type TripAnswers = Pick<TripContext, "dates" | "travelers" | "origin">;
 type Point = { lat: number; lng: number };
@@ -60,7 +64,7 @@ function saveTrip(trip: TripAnswers) {
 function save(turns: Turn[]) {
   try {
     // An unanswered form is not kept: it would come back stale.
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-30).map(({ questions: _questions, ...turn }) => turn)));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-30).map(({ questions: _questions, status: _status, itinerary: _itinerary, ...turn }) => turn)));
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
   }
@@ -79,7 +83,26 @@ function askLocation(): Promise<Point> {
 }
 
 /** The Daet AI assistant conversation: used by the floating widget, the Messages pinned chat and /tours/help. */
-export function AssistantChat({ signedIn, onNavigate, autoFocus = false, page = null }: { signedIn: boolean; onNavigate?: () => void; autoFocus?: boolean; page?: PageRef | null }) {
+export function AssistantChat({
+  signedIn,
+  onNavigate,
+  autoFocus = false,
+  page = null,
+  onItinerary,
+  onChoice,
+  sendRef,
+}: {
+  signedIn: boolean;
+  onNavigate?: () => void;
+  autoFocus?: boolean;
+  page?: PageRef | null;
+  /** The planner page shows the plan beside the chat; without it, the chat shows a compact card. */
+  onItinerary?: (itinerary: ItineraryResult) => void;
+  /** Follow-up chips ("Make it more relaxed") edit the plan beside the chat; without it they are not shown. */
+  onChoice?: (text: string) => void;
+  /** Lets the plan panel send a message ("Tell me about …") into this chat. */
+  sendRef?: React.MutableRefObject<((text: string) => void) | null>;
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -167,11 +190,17 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false, page = 
           if (event.t === "mode") reply = { ...reply, mode: event.mode };
           else if (event.t === "text") reply = { ...reply, content: reply.content + event.v };
           else if (event.t === "cards") reply = { ...reply, cards: event.cards };
-          else if (event.t === "questions") reply = { ...reply, questions: { missing: event.missing, prefill: event.prefill } };
+          else if (event.t === "status") reply = { ...reply, status: event.label };
+          else if (event.t === "choices") reply = { ...reply, choices: event.options };
+          else if (event.t === "itinerary") {
+            reply = { ...reply, itinerary: event.itinerary };
+            onItinerary?.(event.itinerary);
+          } else if (event.t === "questions") reply = { ...reply, questions: { missing: event.missing, prefill: event.prefill } };
           else if (event.t === "error") reply = { ...reply, content: event.message };
           setTurns([...history, reply]);
         }
       }
+      reply = { ...reply, status: undefined };
       if (!reply.content.trim()) reply = { ...reply, content: "Sorry, I couldn't answer that. Please try again." };
       const final = [...history, reply];
       setTurns(final);
@@ -201,6 +230,11 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false, page = 
     saveTrip(answers);
     void send(question, here, answers, turns.slice(0, index - 1));
   }
+
+  // Re-pointed after every render so the panel always sends with the latest chat.
+  useEffect(() => {
+    if (sendRef) sendRef.current = (value: string) => void send(value);
+  });
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
 
@@ -281,6 +315,19 @@ export function AssistantChat({ signedIn, onNavigate, autoFocus = false, page = 
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
                 </p>
+                {turn.status && busy && i === turns.length - 1 ? (
+                  <p className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-400">{turn.status}…</p>
+                ) : null}
+                {turn.itinerary && !onItinerary ? <PlanSummaryCard itinerary={turn.itinerary} onNavigate={onNavigate} /> : null}
+                {onChoice && turn.choices?.length && i === turns.length - 1 && !busy ? (
+                  <div className="flex flex-wrap gap-2">
+                    {turn.choices.map((choice) => (
+                      <button key={choice} type="button" onClick={() => onChoice(choice)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 {turn.questions && i === turns.length - 1 && !busy ? (
                   <QuestionsCard prefill={turn.questions.prefill} today={toManilaDateKey(new Date())} onSubmit={(answers) => answerQuestions(i, answers)} />
                 ) : null}
@@ -572,6 +619,39 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
       >
         Send to {card.target === "operator" ? "operator" : "Tourism Office"}
       </Button>
+    </div>
+  );
+}
+
+/** In the widget: a short view of the plan and a way into the full planner. */
+function PlanSummaryCard({ itinerary, onNavigate }: { itinerary: ItineraryResult; onNavigate?: () => void }) {
+  const { plan } = itinerary;
+  return (
+    <div className="rounded-2xl bg-canvas p-3">
+      <p className="font-bold text-daet-ink">Your {plan.days.length}-day plan</p>
+      <ol className="mt-1 space-y-0.5 text-sm text-daet-ink">
+        {plan.days.map((d, i) => (
+          <li key={d.date}>
+            <span className="font-semibold">Day {i + 1}:</span>{" "}
+            {d.blocks.flatMap((b) => (b.kind === "visit" ? [b.name] : [])).join(", ") || "nothing fits yet"}
+          </li>
+        ))}
+      </ol>
+      {itinerary.packages.length ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{itinerary.packages.length} bookable tour{itinerary.packages.length === 1 ? "" : "s"} nearby</p> : null}
+      <Link
+        href="/tours/plan"
+        onClick={() => {
+          try {
+            window.sessionStorage.setItem(HANDOFF_KEY, JSON.stringify(itinerary));
+          } catch {
+            // The planner page simply starts empty.
+          }
+          onNavigate?.();
+        }}
+        className={`${pill} mt-2`}
+      >
+        Open in planner
+      </Link>
     </div>
   );
 }

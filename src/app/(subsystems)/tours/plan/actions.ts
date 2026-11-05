@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { aiCallerKey, allowAiCall } from "@/lib/ai/limits";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ATTRACTION_COLUMNS, toAttraction } from "@/lib/tours/attractions";
+import { loadAttractions as loadAttractionRows, loadPackageCandidates } from "@/lib/tours/itinerary/data";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { parsePreferences, planToRows, type PlannerInput } from "@/lib/tours/itinerary/form";
 import { applyChangeRequest, ASSISTANT_MAX_LENGTH, parseTripRequest, prefsToInput } from "@/lib/tours/itinerary/assistant";
@@ -15,13 +15,7 @@ import { planTotals, type Plan, type PlannerAttraction, type Preferences } from 
 import { validatePlan, type PlanIssue } from "@/lib/tours/itinerary/validate";
 
 async function loadAttractions(): Promise<PlannerAttraction[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true);
-  if (error) throw new Error("Attractions could not be loaded.");
-  return (data ?? [])
-    .map((row) => toAttraction(row as Record<string, unknown>))
-    .filter((a) => a.latitude !== null && a.longitude !== null)
-    .map((a) => ({ id: a.id, name: a.name, category: a.category, lat: a.latitude!, lng: a.longitude!, hours: a.opening_hours, dwellMinutes: a.dwell_minutes, fee: a.entrance_fee }));
+  return loadAttractionRows(await createSupabaseServerClient());
 }
 
 export type GenerateResult =
@@ -116,20 +110,7 @@ export async function suggestPackages(places: Array<{ name: string; lat: number;
     .filter((p) => p && typeof p.name === "string" && Number.isFinite(p.lat) && Number.isFinite(p.lng))
     .slice(0, 40);
   if (clean.length === 0) return [];
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("tours_packages")
-    .select("id, title, cover_image_url, tours_package_stops ( location_name, latitude, longitude )")
-    .eq("status", "published")
-    .limit(200);
-  const packages = (data ?? []).map((pkg) => ({
-    id: pkg.id,
-    title: pkg.title,
-    coverImageUrl: pkg.cover_image_url,
-    stops: (pkg.tours_package_stops ?? [])
-      .map((s: { location_name: string; latitude: unknown; longitude: unknown }) => ({ name: s.location_name, lat: Number(s.latitude), lng: Number(s.longitude) }))
-      .filter((s: { lat: number; lng: number }) => Number.isFinite(s.lat) && Number.isFinite(s.lng) && s.lat !== 0),
-  }));
+  const packages = await loadPackageCandidates(await createSupabaseServerClient());
   return matchPackages(clean, packages);
 }
 

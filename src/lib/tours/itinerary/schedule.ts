@@ -95,8 +95,9 @@ function buildDay(date: string, pool: PlannerAttraction[], used: Set<string>, pr
   return { date, blocks: visits === 0 ? [] : state.blocks };
 }
 
-export function generatePlan(attractions: PlannerAttraction[], prefs: Preferences): Plan {
-  const pool = filterAttractions(attractions, prefs);
+/** `exclude` leaves places out, so Regenerate offers different stops. */
+export function generatePlan(attractions: PlannerAttraction[], prefs: Preferences, options: { exclude?: ReadonlySet<string> } = {}): Plan {
+  const pool = filterAttractions(attractions, prefs).filter((a) => !options.exclude?.has(a.id));
   const used = new Set<string>();
   const days: PlanDay[] = [];
   for (let i = 0; i < prefs.days; i += 1) days.push(buildDay(addDays(prefs.startDate, i), pool, used, prefs));

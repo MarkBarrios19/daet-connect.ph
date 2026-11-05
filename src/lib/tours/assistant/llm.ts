@@ -17,6 +17,7 @@ import {
   upcomingEvents,
   type ToolContext,
 } from "@/lib/tours/assistant/tools";
+import { INTEREST_KEYS, planTrip } from "@/lib/tours/assistant/plan-tool";
 import { estimateCost, findPlaces, foodStops, howToGetThere, meetingPoint } from "@/lib/tours/assistant/guide-tools";
 
 /**
@@ -172,6 +173,17 @@ export function assistantTools(ctx: ToolContext): AssistantTool[] {
       description: "The signed-in tourist's own bookings: reference, tour, date, status, amount still due and the next step. Optionally one booking by reference (BK-...).",
       inputSchema: z.object({ reference: z.string().max(40).nullable() }),
       run: (input) => guard(() => myBookings(ctx, input)),
+    }),
+    defineTool({
+      name: "plan_trip",
+      description:
+        "Draft a day-by-day plan for their trip. Call it for any request to plan or make an itinerary. Dates, group and origin come from the app, not from you. Returns {missing} when the app still needs answers (it shows a form), otherwise a summary of the plan already on screen.",
+      inputSchema: z.object({
+        interests: z.array(z.enum(INTEREST_KEYS as [string, ...string[]])).max(8).nullable().describe("what they want to see, from their words; null if they didn't say"),
+        budgetPerDay: z.number().int().min(0).max(100000).nullable().describe("pesos per person per day for entrance fees, only if they said a budget"),
+        pace: z.enum(["relaxed", "normal", "packed"]).nullable(),
+      }),
+      run: (input) => guard(() => planTrip(ctx, input as Parameters<typeof planTrip>[1])),
     }),
     defineTool({
       name: "plan_trip_link",
