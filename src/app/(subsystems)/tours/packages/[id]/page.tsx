@@ -324,7 +324,13 @@ export default async function PackageDetailPage({ params }: PageProps) {
             </section>
           ) : null}
 
-          <section id="reviews" aria-labelledby="reviews-title" className="mt-12">
+          {/* The page's own "#reviews" link would otherwise leave the heading
+              under the sticky bar — the same 37px the booking card lost. */}
+          <section
+            id="reviews"
+            aria-labelledby="reviews-title"
+            className="mt-12 scroll-mt-[calc(var(--header-h)+1.5rem)]"
+          >
             <div className="flex flex-wrap items-end justify-between gap-3">
               <h2 id="reviews-title" className="text-2xl font-semibold text-daet-ink sm:text-3xl">Traveller reviews</h2>
               <p className="text-sm text-daet-ink/75">Only travellers who finished this trip can review it.</p>
@@ -359,7 +365,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
 
         {/* Booking panel: beside the content on wide screens, a bar at the bottom on phones. */}
         <aside aria-label="Book this trip" className="hidden lg:block">
-          <div className="sticky top-6 rounded-2xl card-edge bg-surface p-6">
+          <div className="sticky-below-header rounded-2xl card-edge bg-surface p-6">
             <p className="text-sm font-semibold text-daet-ink/75">From</p>
             <p className="text-4xl font-bold text-daet-ink">{formatPeso(displayPrice)}</p>
             <p className="text-daet-ink/80">{priceLabel}</p>
