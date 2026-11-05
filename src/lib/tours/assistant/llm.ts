@@ -1,7 +1,7 @@
 import "server-only";
 import type { Content, FunctionCall, Part } from "@google/genai";
 import { z } from "zod/v4";
-import { createGeminiClient, GEMINI_DEFAULT_MODEL, isGeminiConfigured, stopReasonOf, toJsonSchema, type GeminiClient } from "@/lib/ai/gemini";
+import { createGeminiClient, GEMINI_DEFAULT_MODEL, isGeminiConfigured, stopReasonOf, toJsonSchema, withBusyFallback, type GeminiClient } from "@/lib/ai/gemini";
 import { assistantSystemPrompt } from "@/lib/tours/assistant/prompt";
 import type { ChatTurn } from "@/lib/tours/assistant/respond";
 import {
@@ -222,11 +222,14 @@ export async function runAssistant(
 
   let stopReason: string | null = null;
   for (let round = 0; round < MAX_ITERATIONS; round++) {
-    const stream = await client.models.generateContentStream({
-      model: MODEL(),
-      contents,
-      config: { systemInstruction: system, tools: [{ functionDeclarations: declarations }], maxOutputTokens: MAX_OUTPUT_TOKENS },
-    });
+    // Google's "high demand" errors come when the stream opens, before any text, so another try is safe.
+    const stream = await withBusyFallback(MODEL(), (model) =>
+      client.models.generateContentStream({
+        model,
+        contents,
+        config: { systemInstruction: system, tools: [{ functionDeclarations: declarations }], maxOutputTokens: MAX_OUTPUT_TOKENS },
+      }),
+    );
 
     // Parts are kept as received (thought signatures included) so the next round can send them back.
     const modelParts: Part[] = [];

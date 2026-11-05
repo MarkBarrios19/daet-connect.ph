@@ -28,10 +28,13 @@ describe("saved assistant chats", () => {
       { t: "done" },
     ];
     expect(await drain(savingReply(events(reply), supabase, " Where to eat? "))).toEqual(reply);
-    expect(insert).toHaveBeenCalledWith([
-      { role: "user", content: "Where to eat?" },
-      { role: "assistant", content: "Food near Bagasbas.", cards: [{ type: "link", href: "/x", label: "X" }], mode: "basic" },
+    const rows = insert.mock.calls[0][0] as Array<Record<string, unknown>>;
+    expect(rows).toEqual([
+      expect.objectContaining({ role: "user", content: "Where to eat?" }),
+      expect.objectContaining({ role: "assistant", content: "Food near Bagasbas.", cards: [{ type: "link", href: "/x", label: "X" }], mode: "basic" }),
     ]);
+    // The answer is stamped after the question, so the chat never loads them the other way round.
+    expect(Date.parse(String(rows[1].created_at))).toBeGreaterThan(Date.parse(String(rows[0].created_at)));
   });
 
   it("saves nothing when the reply did not finish or was empty", async () => {

@@ -11,6 +11,38 @@ import { z } from "zod/v4";
 /** An alias Google keeps pointed at the current Flash model; override with ASSISTANT_MODEL / ITINERARY_MODEL. */
 export const GEMINI_DEFAULT_MODEL = "gemini-flash-latest";
 
+/** Used when the main model is overloaded (503) or rate limited (429); override with GEMINI_FALLBACK_MODEL. */
+export const GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest";
+
+/** Google's "high demand" (503), rate limit (429) and passing server errors: worth another try, or another model. */
+export function isBusyError(error: unknown): boolean {
+  const status = typeof error === "object" && error && "status" in error ? Number((error as { status: unknown }).status) : NaN;
+  if ([429, 500, 503].includes(status)) return true;
+  return /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(error instanceof Error ? error.message : String(error ?? ""));
+}
+
+/**
+ * Runs `call` on the main model; when Google says it is busy, waits briefly and
+ * tries once more, then tries the fallback model. Any other error, or the
+ * fallback also busy, is thrown so the caller can answer in basic mode.
+ */
+export async function withBusyFallback<T>(model: string, call: (model: string) => Promise<T>, { waitMs = 700 }: { waitMs?: number } = {}): Promise<T> {
+  const fallback = process.env.GEMINI_FALLBACK_MODEL || GEMINI_FALLBACK_MODEL;
+  const attempts = [model, model, ...(fallback && fallback !== model ? [fallback] : [])];
+  let last: unknown = null;
+  for (const [i, m] of attempts.entries()) {
+    if (i > 0 && waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    try {
+      return await call(m);
+    } catch (error) {
+      if (!isBusyError(error)) throw error;
+      last = error;
+      console.warn(`Gemini busy on ${m}${i < attempts.length - 1 ? ", trying again" : ""}`);
+    }
+  }
+  throw last;
+}
+
 export function isGeminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
 }
@@ -59,8 +91,9 @@ export async function generateJson<S extends z.ZodType>(input: {
 }): Promise<z.infer<S> | null> {
   try {
     const client = input.client ?? createGeminiClient({ timeoutMs: input.timeoutMs });
-    const response: GenerateContentResponse = await client.models.generateContent({
-      model: input.model,
+    const response: GenerateContentResponse = await withBusyFallback(input.model, (model) =>
+      client.models.generateContent({
+      model,
       contents: [{ role: "user", parts: [{ text: input.content }] }],
       config: {
         systemInstruction: input.system,
@@ -68,7 +101,8 @@ export async function generateJson<S extends z.ZodType>(input: {
         responseJsonSchema: toJsonSchema(input.schema),
         maxOutputTokens: input.maxOutputTokens,
       },
-    });
+      }),
+    );
     if (stopReasonOf(response) !== "end_turn") return null;
     const text = response.text;
     if (!text) return null;
