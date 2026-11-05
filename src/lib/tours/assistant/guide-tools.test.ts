@@ -164,7 +164,7 @@ describe("food and places to see near a named place (basic mode)", () => {
 describe("place card map links", () => {
   it("opens Google Maps on the place by name (so the map shows it), and directions at its pin", async () => {
     const { placeCard } = await import("@/lib/tours/assistant/guide-tools");
-    const card = placeCard({ ...(TABLES.tours_guide_places[1] as never), distanceM: 20 });
+    const card = placeCard({ ...(TABLES.tours_guide_places[1] as unknown as Parameters<typeof placeCard>[0]), distanceM: 20 });
     expect(new URL(card.mapHref).searchParams.get("query")).toBe("Town Carinderia, Daet, Camarines Norte");
     expect(card.directionsHref).toContain("destination=14.112500%2C122.955500");
     // 20 m is the place itself, not a distance.
