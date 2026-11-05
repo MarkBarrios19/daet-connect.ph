@@ -2,7 +2,8 @@ import { LineIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageFrame } from "@/components/ui/page-frame";
-import { SearchBox, searchTerm } from "@/components/ui/search-box";
+import { SearchBox } from "@/components/ui/search-box";
+import { searchTerm } from "@/components/ui/search-term";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -160,7 +161,7 @@ export default async function BrowsePackagesPage({
       <SearchBox
         action="/tours/browse"
         label="Search trips"
-        placeholder="Search trips, e.g. island hopping"
+        placeholder="Search trips"
         value={q}
         keep={{ location: params.location, minPrice: params.minPrice, maxPrice: params.maxPrice, sort: params.sort }}
         className="mt-6"

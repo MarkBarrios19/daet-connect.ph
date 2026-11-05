@@ -10,7 +10,8 @@ import { RouteMap } from "@/components/maps/route-map";
 import { Badge } from "@/components/ui/badge";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
-import { SearchBox, searchTerm } from "@/components/ui/search-box";
+import { SearchBox } from "@/components/ui/search-box";
+import { searchTerm } from "@/components/ui/search-term";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, isAttractionCategory, toAttraction } from "@/lib/tours/attractions";
@@ -79,7 +80,7 @@ export default async function AttractionsPage({ searchParams }: PageProps) {
       <SearchBox
         action="/tours/attractions"
         label="Search places"
-        placeholder="Search places, e.g. Bagasbas"
+        placeholder="Search places"
         value={q}
         keep={{ category: category ?? undefined, open: openNow ? "now" : undefined }}
         className="mt-6"
