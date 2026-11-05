@@ -43,6 +43,8 @@ const AVATAR_PNG = Buffer.from(
   "base64",
 );
 
+const aiUsage = new Map();
+
 function build(role) {
   const BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
   const operator = {
@@ -1437,6 +1439,13 @@ http
         // GoTrue answers 204 with no body; the app must not depend on one.
         res.writeHead(204, cors);
         return res.end();
+      }
+      // The assistant's daily count (only reached when the app has a service key).
+      if (url.pathname === "/rest/v1/rpc/tours_ai_count_message") {
+        const { p_caller, p_day } = JSON.parse(body || "{}");
+        const key = `${p_caller}|${p_day}`;
+        aiUsage.set(key, (aiUsage.get(key) || 0) + 1);
+        return send(200, aiUsage.get(key));
       }
       // A shared trip plan (view only); any other token is unknown.
       if (url.pathname === "/rest/v1/rpc/tours_shared_itinerary") {

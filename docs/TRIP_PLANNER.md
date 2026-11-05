@@ -43,15 +43,38 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 | 5 | Sign-in | Asked after 3 messages. |
 | 6 | AI unavailable | Basic mode, without a notice to the visitor. |
 | 7 | Success | A question answered on the site, then a tour booked. |
-| 8 | Language | The whole site in Filipino and English (Bikol dropped, see 16); the assistant replies in the visitor's language. |
+| 8 | Language | The assistant replies in Filipino or English, following the visitor. Pages stay English for now (see 23). No Bikol. |
 | 10 | After 3 messages without signing in | Basic-mode answers continue; signing in gives full AI answers again. |
 | 11 | Basic mode can't answer | Say plainly it can't check that, and give the operator's number or the right page. Never guess about weather, boats or times. |
 | 12 | Trip-day questions | All of: what's open near me now, getting between towns and fares, is my tour on today, operator and meeting point, food nearby with prices, emergency numbers. |
 | 13 | "Book X for 4 on Dec 20" | Open the tour's booking form with the date and guests filled in; the visitor confirms there. |
 | 14 | Group larger than a tour allows | Say the limit and suggest messaging the operator for a private group. No automatic split. |
 | 15 | Foreign visitors and money | Pesos with a rough amount in the visitor's currency; card payment as well as GCash and Maya (cards already exist). |
-| 16 | Site languages | Filipino and English only. |
+| 16 | Languages | Filipino and English only. |
 | 17 | Opening the assistant on a tour page | A greeting about that tour with three suggested questions. |
+| 18 | Counting the 3 messages | 3 a day; tapping a suggested question counts. |
+| 19 | Who pays for a group | One person books and pays for everyone. No bill splitting. |
+| 20 | Messaging the operator | In the site, after signing in. |
+| 21 | Location | Asked only when the visitor asks a "near me" question; if refused, ask which town. |
+| 22 | Emergency numbers | Kept by the Tourism Office in the admin pages, shown with a "last checked" date. |
+| 23 | Filipino text | Only the assistant answers in Filipino; the pages stay English for now. |
+| 24 | Other currencies | A rough amount in the visitor's currency (guessed from the phone), daily rate, USD if unknown; marked "approx.". |
+| 25 | Returning visitor | A fresh chat that remembers the trip (dates, group, origin) for signed-in visitors; old chats under Recent. |
+| 26 | Feedback | "Was this helpful? Yes / No" under each answer. |
+| 27 | Operator's phone | Public: shown to visitors who are not signed in. Only messaging in the site needs sign-in. |
+| 28 | Telling them about sign-in | After the 3rd answer, a small card "Sign in to keep getting full answers" with Google sign-in. Answers stay simple until they sign in. |
+| 29 | After "No" | Recorded only. |
+| 30 | "Is my tour on today?" when not signed in | Ask them to sign in to see their bookings. No lookup by reference. |
+| 31 | Open near me now | Known-open places first, then "Hours not listed" ones marked "Check before you go"; within 3 km, closest first, at most 5. |
+| 32 | Emergency numbers not yet entered | The national 911 hotline, plus "Tell the operator or your guide". |
+| 33 | Suggested questions | Place and event pages get a greeting with three suggested questions too. |
+| 34 | Trip memory when not signed in | Dates and group kept on that phone until cleared. |
+| 35 | Planning without dates | "No dates yet" drafts a sample plan; dates are asked when saving or booking. |
+| 36 | Questions not about Daet | Politely decline in one line and steer back to Daet. |
+| 37 | Signed-in limit | 20 full AI answers a day (raise to 50 once Gemini is paid); simple answers after that. |
+| 38 | Voice in the chat | A microphone in the assistant's message box, Filipino or English; hidden where the browser can't listen. |
+| 39 | Photos in the chat | Allowed for signed-in visitors, AI answers only (not in basic mode). |
+| 40 | Never | The assistant never: says a booking is confirmed or paid; promises a refund or new date; makes up a price, hours or boat schedule; gives medical or legal advice; shares another visitor's details, a booking or a child's age. |
 
 ## Settings (Vercel environment variables)
 
@@ -69,6 +92,30 @@ Settled in the design interview. Words follow `CONTEXT.md`.
   Getting there. All rows are unverified estimates until the Tourism Office or the
   town LGU confirms them; edit them at `/tours/admin/fares`.
 - `supabase/migrations/20261115_trip_call_off.sql`: call-offs (applied 2026-11-05).
+- `supabase/migrations/20261117_ai_daily_usage.sql`: the assistant's daily count
+  (`tours_ai_usage`, `tours_ai_count_message`). Applied 2026-11-05. Without
+  `SUPABASE_SERVICE_ROLE_KEY` (or if the table is missing), messages are not
+  counted and every visitor gets full answers (only the short burst limit applies).
+
+## Daily allowance (decisions 5, 18, 28, 37)
+
+- Not signed in: 3 messages a day with full answers, counted per device (cookie
+  `daet_aid`, a random id). After the 3rd answer the chat shows "Sign in to keep
+  getting full answers"; later messages get basic-mode answers.
+- Signed in: 20 a day, then basic mode, no card.
+- The day is the Manila day. Every message counts, a tapped suggestion too.
+- Code: `src/lib/ai/daily-usage.ts`, used by `src/app/api/assistant/route.ts`.
+
+## Honest answers (decisions 6, 11, 16, 36, 40)
+
+- Basic mode shows no label in the chat.
+- Basic mode answers "is the boat running / what time does it leave" with "I can't
+  check that right now" and the operator (their booking for signed-in visitors,
+  tour pages otherwise); weather points to PAGASA.
+- Off-topic questions (school work, code, politics, other destinations) get one
+  line: what the assistant helps with.
+- The AI prompt carries the same rules, the five "never" rules, and replies in
+  English or Filipino only.
 
 ## Operator: calling a trip off
 
@@ -122,3 +169,16 @@ Settled in the design interview. Words follow `CONTEXT.md`.
   map tiles the Leaflet tests in `home-fan` and `messenger` fail because the sketch
   map is drawn instead; they pass where tiles load.
 - With `GEMINI_API_KEY` on a preview: the planner rows (32–40) in `docs/ASSISTANT_EVAL.md`.
+
+## Build plan for the decisions above (2026-11-05)
+
+Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the decisions table.
+
+1. **Daily limits and the sign-in card** (5, 10, 18, 28, 37). Today's limits live in one server's memory and reset whenever Vercel starts a new instance, so a daily count needs a table: `tours_ai_usage` (who, Manila date, count), written only by the server. Visitors who are not signed in are counted by a random device id in a cookie, because many Philippine phones share one IP through their carrier. After the 3rd message: the sign-in card, then basic mode. Signed in: 20 a day, then basic mode.
+2. **Honest basic mode and the "never" rules** (11, 36, 40). Questions about weather, boats or today's times get "I can't check that" plus the operator's number or page. Off-topic questions get a one-line decline. The five "never" rules go in the prompt and in tests of the answers.
+3. **Trip-day answers** (12, 21, 30, 31, 32). "Near me" asks for location only then (else asks the town); open places within 3 km, at most 5. "Is my tour on today?" reads the signed-in visitor's bookings and call-offs. Emergency numbers: an admin page for the Tourism Office with "last checked", 911 until filled.
+4. **Page greetings and suggested questions** (17, 33). Tour, place and event pages open the assistant with a greeting and three questions answered from listings.
+5. **Memory and feedback** (25, 26, 29, 34). Trip details move from the tab to the phone (localStorage) for visitors who are not signed in, and to the account for signed-in ones; a new chat keeps them. "Was this helpful? Yes / No" under each answer, recorded in a table.
+6. **Sample plans** (35). "No dates yet" drafts a plan without dates; Save and Book ask for dates.
+7. **Money for foreign visitors** (24). A rough amount in the visitor's currency, from a daily rate, USD if unknown, marked "approx.".
+8. **Voice and photos in the chat** (38, 39). A microphone in the message box; photos for signed-in visitors with AI answers only, used for that answer and not kept.

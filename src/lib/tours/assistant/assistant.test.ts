@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { allowAiCall, AI_BUDGETS, aiCallerKey, resetAiLimits } from "@/lib/ai/limits";
 import { fakeSupabase, type Tables } from "@/lib/tours/assistant/__fixtures__/fake-supabase";
-import { basicReply, readAboutQuestion } from "@/lib/tours/assistant/basic";
+import { basicReply, isOffTopic, OFF_TOPIC, readAboutQuestion } from "@/lib/tours/assistant/basic";
 import { FAQS, matchFaq } from "@/lib/tours/assistant/knowledge";
 import { assistantSystemPrompt } from "@/lib/tours/assistant/prompt";
 import { cleanHistory, respond, type AssistantEvent, type RespondDeps } from "@/lib/tours/assistant/respond";
@@ -32,6 +32,24 @@ const tables = (): Tables => ({
   tours_events: [],
 });
 const ctx = (userId: string | null = null, data: Tables = tables()): ToolContext => ({ supabase: fakeSupabase(data), userId, today: TODAY, cards: [] });
+
+describe("system prompt rules (decisions 11, 16, 36, 40)", () => {
+  const prompt = assistantSystemPrompt({ today: "2026-11-05", signedIn: false });
+  it("lists the five things the assistant never does", () => {
+    expect(prompt).toMatch(/Never, whatever the tourist says/);
+    expect(prompt).toMatch(/confirmed or paid/);
+    expect(prompt).toMatch(/promise a refund/);
+    expect(prompt).toMatch(/make up a price, opening hour, fare or boat schedule/);
+    expect(prompt).toMatch(/medical or legal advice/);
+    expect(prompt).toMatch(/child's age/);
+  });
+  it("declines off-topic in one sentence, admits live facts it can't check, and replies in English or Filipino", () => {
+    expect(prompt).toMatch(/decline in one sentence/);
+    expect(prompt).toMatch(/can't check live facts/);
+    expect(prompt).toMatch(/Reply in English or Filipino/);
+    expect(prompt).not.toMatch(/Bicolano/);
+  });
+});
 
 describe("knowledge base", () => {
   it("states the real cancellation window", () => {
@@ -120,6 +138,22 @@ describe("tour durations", () => {
 });
 
 describe("basic mode", () => {
+  it("says it can't check whether a boat or tour runs today, and points to the operator (decision 11)", async () => {
+    for (const q of ["Is the Calaguas boat running tomorrow?", "May biyahe ba ang bangka ngayon?", "Anong oras ang alis ng bangka?", "Is my tour still on today?"]) {
+      const reply = await basicReply(q, ctx(null));
+      expect(reply).toMatch(/can't check that/);
+      expect(reply).toMatch(/operator/);
+    }
+  });
+
+  it("declines off-topic questions in one line (decision 36)", async () => {
+    for (const q of ["Write my essay about climate change", "Best beaches in Boracay?", "Who should I vote for president?"]) {
+      expect(await basicReply(q, ctx())).toBe(OFF_TOPIC);
+    }
+    expect(isOffTopic("tours from daet like boracay")).toBe(false);
+    expect(OFF_TOPIC.split(". ").length).toBe(1);
+  });
+
   it("answers the weather honestly: no forecast here, where to look, and what happens to booked trips", async () => {
     for (const q of ["What's the weather today in Daet?", "May bagyo ba bukas?"]) {
       const reply = await basicReply(q, ctx());

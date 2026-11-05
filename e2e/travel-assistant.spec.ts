@@ -17,7 +17,8 @@ test("visitors get policy answers in basic mode, and the dialog is accessible", 
   await dialog.getByLabel("Ask the Daet AI assistant").fill("How do I cancel and get a refund?");
   await dialog.getByRole("button", { name: "Send" }).click();
   await expect(dialog.getByText(/48 hours/)).toBeVisible();
-  await expect(dialog.getByText("Basic mode")).toBeVisible();
+  // Basic mode carries no notice (decision 6).
+  await expect(dialog.getByText("Basic mode")).toHaveCount(0);
   await expect(dialog.getByRole("link", { name: "My bookings" })).toBeVisible();
   await checkA11y(page, "assistant dialog");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

@@ -33,8 +33,9 @@ assistant hands plan requests over to it.
 _Avoid_: Itinerary builder, trip builder
 
 **Basic mode**:
-The assistant answering from fixed rules and listings when the AI is
-unavailable or out of requests.
+The assistant answering from fixed rules and listings: when the AI is
+unavailable, after a visitor's daily allowance of AI answers, or after 3
+messages a day from a visitor who is not signed in.
 _Avoid_: Offline mode, fallback mode
 
 ### Trips
@@ -42,6 +43,11 @@ _Avoid_: Offline mode, fallback mode
 **Plan**:
 A day-by-day list of stops drafted for a visitor's dates and group, not yet saved.
 _Avoid_: Itinerary (in visitor-facing text), schedule
+
+**Sample plan**:
+A plan drafted without dates, to show what a trip could look like; it gets dates
+before it can be saved or booked.
+_Avoid_: Draft, example itinerary
 
 **Stop**:
 One place visited in a plan, with a time and a cost.
