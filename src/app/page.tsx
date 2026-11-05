@@ -198,28 +198,6 @@ export default async function HomePage() {
           under the point they radiate from. */}
       <PlaceFan places={FAN_PLACES} mapPlaces={mapPlaces} signedIn={!!user} />
 
-      {/* Tours and booking: the way into a trip, straight after the hero. */}
-      <section aria-labelledby="home-tours" className={SECTION}>
-        <div className="grid items-end gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12">
-          <div>
-            <h2 id="home-tours" data-reveal className="display-2 text-daet-ink">
-              Tours and booking
-            </h2>
-            <p data-reveal style={{ "--reveal-index": 1 } as React.CSSProperties} className="mt-3 max-w-2xl text-lg text-daet-ink">
-              Pick a trip run by a Tourism Office-verified operator, choose a date, and book online. Your guide scans your QR ticket at the meeting point.
-            </p>
-          </div>
-          <div data-reveal style={{ "--reveal-index": 2 } as React.CSSProperties} className="flex flex-wrap gap-3">
-            <ButtonLink href="/tours/browse" size="lg">
-              Find a tour
-            </ButtonLink>
-            <ButtonLink href="/tours/plan" size="lg" variant="secondary">
-              Plan a trip
-            </ButtonLink>
-          </div>
-        </div>
-      </section>
-
       {/* Places: one panel open at a time, the rest narrow and grey. */}
       <section aria-labelledby="home-places" className={SECTION}>
         <h2 id="home-places" data-reveal className="display-2 text-daet-ink">
