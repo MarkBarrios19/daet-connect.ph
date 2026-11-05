@@ -36,7 +36,7 @@ export function SiteFooter({ credits = [], compact = false, className = "" }: { 
   if (compact) {
     return (
       <footer className={`mx-auto max-w-7xl px-4 py-8 text-sm text-daet-ink/80 sm:px-6 lg:px-8 print:hidden ${className}`}>
-        CONNECT-Daet · Tourism in Daet, Camarines Norte ·{" "}
+        CONNECT-DAET · Tourism in Daet, Camarines Norte ·{" "}
         <Link href="/tours/help" className="font-bold text-blue-700 dark:text-blue-300 underline underline-offset-2">
           Help (24/7 assistant)
         </Link>
@@ -66,7 +66,7 @@ export function SiteFooter({ credits = [], compact = false, className = "" }: { 
             (owner's note, image-90): the close of the page should read as the
             same name that opened it, not as a second billboard. */}
         <p className="mt-14 font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight text-white sm:text-xl">
-          CONNECT-Daet
+          CONNECT-DAET
         </p>
         <p className="mt-4 max-w-2xl text-slate-300">
           Tours, places and events in Daet, Camarines Norte, run by local operators and guides accredited by the Daet Tourism Office.
