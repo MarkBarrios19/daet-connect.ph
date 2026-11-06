@@ -17,9 +17,9 @@ import { useEffect, useState } from "react";
  * dashboard's tab bar, over the page.
  *
  * It stands in the bottom-right corner, directly over the "Daet AI assistant"
- * pill, rather than centred (owner's note, image-91). Both are 44–48px circles
- * on the same right edge, so they stack instead of competing for the same strip
- * of page: the pill keeps the corner, this sits on top of it.
+ * button, rather than centred (owner's note, image-91). Both are 48px circles
+ * on the same right edge (1rem, 1.5rem from 640px), so they line up in one column
+ * and stack: the assistant keeps the corner, this sits on top of it.
  *
  * The arrow is the page's blue on light paper and white on the dark one (owner's
  * note, image-80): the brand's own blue rather than the ink, so the one moving
@@ -58,7 +58,7 @@ export function ScrollToTop({ raised = false }: { raised?: boolean }) {
       type="button"
       onClick={toTop}
       aria-label="Back to top"
-      className={`fixed right-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-blue-600 text-white shadow-[0_2px_8px_rgba(15,23,42,0.3)] ring-2 ring-white/80 transition hover:bg-blue-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-blue-800 print:hidden dark:ring-slate-950/60 ${
+      className={`fixed right-4 z-30 grid h-12 w-12 place-items-center sm:right-6 rounded-full bg-blue-600 text-white shadow-[0_2px_8px_rgba(15,23,42,0.3)] ring-2 ring-white/80 transition hover:bg-blue-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-blue-800 print:hidden dark:ring-slate-950/60 ${
         // Clear of the assistant pill, which is 48px tall and sits 1rem off the
         // foot of a phone, 1.5rem on a wide screen: this lands half a rem above
         // its top edge either way. With a tab bar the pill steps down to 5rem —
