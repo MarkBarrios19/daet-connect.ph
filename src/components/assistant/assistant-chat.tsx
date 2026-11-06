@@ -11,10 +11,11 @@ import type { AssistantEvent } from "@/lib/tours/assistant/respond";
 import type { AssistantCard, HandoffCard } from "@/lib/tours/assistant/tools";
 import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
+import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
 import { TransportCardView } from "@/components/assistant/transport-card";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
@@ -24,7 +25,7 @@ export { loadTrip, saveTrip, type TripAnswers };
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
 export const HANDOFF_KEY = "daet-plan-handoff-v1";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean };
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean; helpful?: boolean; photo?: boolean };
 type PageRef = NonNullable<TripContext["page"]>;
 type Point = { lat: number; lng: number };
 
@@ -54,6 +55,47 @@ function save(turns: Turn[]) {
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
   }
+}
+
+type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
+
+/** A photo shrunk to at most 1280 px as JPEG, so it is quick on mobile data. Used for the answer only, never kept. */
+async function shrinkPhoto(file: File): Promise<Photo> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+    const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const preview = canvas.toDataURL("image/jpeg", 0.8);
+    return { mimeType: "image/jpeg", data: preview.split(",")[1], preview };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** "Was this helpful? Yes / No" under an answer (decisions 26, 29); the choice is recorded only. */
+function WasThisHelpful({ value, onAnswer }: { value: boolean | undefined; onAnswer: (helpful: boolean) => void }) {
+  const pill = (on: boolean) =>
+    `inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold transition ${on ? "border-2 border-daet-ink text-daet-ink" : "border border-slate-400 text-slate-600 hover:border-slate-600 dark:text-slate-300"}`;
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-1" role="group" aria-label="Was this helpful?">
+      <span className="text-sm text-slate-700 dark:text-slate-300">{value === undefined ? "Was this helpful?" : "Thanks for telling us."}</span>
+      <button type="button" aria-pressed={value === true} disabled={value !== undefined} onClick={() => onAnswer(true)} className={pill(value === true)}>
+        Yes
+      </button>
+      <button type="button" aria-pressed={value === false} disabled={value !== undefined} onClick={() => onAnswer(false)} className={pill(value === false)}>
+        No
+      </button>
+    </div>
+  );
 }
 
 /**
@@ -117,7 +159,7 @@ export function AssistantChat({
   /** Follow-up chips ("Make it more relaxed") edit the plan beside the chat; without it they are not shown. */
   onChoice?: (text: string) => void;
   /** Lets the plan panel send a message ("Tell me about …") into this chat. */
-  sendRef?: React.MutableRefObject<((text: string) => void) | null>;
+  sendRef?: React.MutableRefObject<((text: string, answers?: TripAnswers) => void) | null>;
   /** Words to start the message box with (the assistant's "Open the trip planner" link carries them). Never sent on its own. */
   initialText?: string;
   /** A first message (typed on the planner's start view), sent once the saved chat has loaded. */
@@ -126,6 +168,9 @@ export function AssistantChat({
   afterPlan?: React.ReactNode;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
+  // A photo for the next message (decision 39): signed-in visitors, answered by the AI only.
+  const [photo, setPhoto] = useState<Photo | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(initialText.slice(0, 500));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -197,19 +242,21 @@ export function AssistantChat({
   }
 
   async function send(value: string, location: Point | null = here, answers: TripAnswers = trip, base: Turn[] = turns, datesConfirmed = false) {
-    const question = value.trim().slice(0, MESSAGE_MAX);
+    const attached = photo;
+    const question = (value.trim() || (attached ? "What is this?" : "")).slice(0, MESSAGE_MAX);
     if (!question || busy) return;
+    setPhoto(null);
     setError(null);
     setText("");
     setBusy(true);
-    const history: Turn[] = [...base, { role: "user", content: question }];
+    const history: Turn[] = [...base, { role: "user", content: question, ...(attached ? { photo: true } : {}) }];
     let reply: Turn = { role: "assistant", content: "" };
     setTurns([...history, reply]);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers, ...(datesConfirmed ? { datesConfirmed: true } : {}) } }),
+        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers, ...(datesConfirmed ? { datesConfirmed: true } : {}) }, ...(attached ? { image: { mimeType: attached.mimeType, data: attached.data } } : {}) }),
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
@@ -271,11 +318,29 @@ export function AssistantChat({
 
   // Re-pointed after every render so the panel always sends with the latest chat.
   useEffect(() => {
-    if (sendRef) sendRef.current = (value: string) => void send(value);
+    if (sendRef)
+      sendRef.current = (value: string, answers?: TripAnswers) => {
+        // New trip answers (e.g. a sample plan's dates cleared) replace the kept ones first.
+        if (answers) {
+          setTrip(answers);
+          saveTrip(answers);
+        }
+        void send(value, here, answers ?? trip);
+      };
   });
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
   const lastPlanTurn = turns.reduce((at, t, i) => (t.itinerary ? i : at), -1);
+  // On a tour, place or event page: a greeting about it and three questions (decisions 17, 33).
+  const [pageName, setPageName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!page) return setPageName(null);
+    const h1 = document.querySelector("main h1")?.textContent?.replace(/\s+/g, " ").trim();
+    setPageName(h1 && h1.length <= 80 ? h1 : null);
+  }, [page]);
+  const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
+  // Ask by voice (decision 38): what is heard is sent as the message.
+  const speech = useSpeech((heard) => void send(heard));
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
@@ -334,7 +399,18 @@ export function AssistantChat({
         aria-label="Conversation"
         className="scrollbar-quiet min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-3 py-4"
       >
-        {turns.length === 0 ? (
+        {turns.length === 0 && suggestions ? (
+          <li className="space-y-3">
+            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">{suggestions.greeting}</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.questions.map((q) => (
+                <button key={q} type="button" onClick={() => send(q)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                  {q}
+                </button>
+              ))}
+            </div>
+          </li>
+        ) : turns.length === 0 ? (
           <li className="space-y-3">
             <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
               Hi! I&apos;m your local guide for Daet. Ask where to eat or stay, how to get somewhere and what it costs, where your tour meets, or about tours and events
@@ -357,7 +433,10 @@ export function AssistantChat({
         {turns.map((turn, i) => (
           <li key={i} className={turn.role === "user" ? "flex justify-end" : ""}>
             {turn.role === "user" ? (
-              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">{turn.content}</p>
+              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">
+                {turn.photo ? <span className="mb-1 flex items-center gap-1 text-sm font-semibold"><LineIcon name="image" className="h-4 w-4" /> Photo sent</span> : null}
+                {turn.content}
+              </p>
             ) : (
               <div className="min-w-0 max-w-[92%] space-y-2">
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
@@ -383,6 +462,23 @@ export function AssistantChat({
                 ) : null}
                 {turn.cards?.length ? <AssistantCards cards={turn.cards} signedIn={signedIn} onNavigate={onNavigate} onShareLocation={shareAndRetry} /> : null}
                 {turn.signIn && !signedIn && i === lastSignIn ? <SignInCard /> : null}
+                {turn.content && !(busy && i === turns.length - 1) ? (
+                  <WasThisHelpful
+                    value={turn.helpful}
+                    onAnswer={(helpful) => {
+                      setTurns((all) => {
+                        const next = all.map((t, j) => (j === i ? { ...t, helpful } : t));
+                        save(next);
+                        return next;
+                      });
+                      void fetch("/api/assistant/feedback", {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ helpful, mode: turn.mode ?? "basic", question: turns[i - 1]?.role === "user" ? turns[i - 1].content : null, answer: turn.content, page: window.location.pathname }),
+                      }).catch(() => {});
+                    }}
+                  />
+                ) : null}
               </div>
             )}
           </li>
@@ -401,6 +497,15 @@ export function AssistantChat({
             {error}
           </p>
         ) : null}
+        {photo ? (
+          <div className="mb-2 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL */}
+            <img src={photo.preview} alt="Your photo" className="h-14 w-14 rounded-xl object-cover" />
+            <button type="button" onClick={() => setPhoto(null)} className="min-h-11 rounded-full px-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40">
+              Remove photo
+            </button>
+          </div>
+        ) : null}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {here ? (
             <button type="button" onClick={() => setHere(null)} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-green-500 px-4 text-sm font-bold text-slate-950">
@@ -411,6 +516,45 @@ export function AssistantChat({
               <LineIcon name="pin" className="h-4 w-4" /> {locating ? "Finding you…" : "Use my location"}
             </button>
           )}
+          {speech.supported ? (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              disabled={busy}
+              aria-pressed={speech.listening}
+              aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "bg-muted text-daet-ink hover:bg-muted-strong"}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={MIC_PATH} />
+              </svg>
+            </button>
+          ) : null}
+          {signedIn ? (
+            <>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  try {
+                    setPhoto(await shrinkPhoto(file));
+                  } catch {
+                    setError("That photo couldn't be read. Try another one.");
+                  }
+                }}
+              />
+              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-daet-ink hover:bg-muted-strong">
+                <LineIcon name="image" className="h-5 w-5" />
+              </button>
+            </>
+          ) : null}
         </div>
         <label htmlFor="assistant-input" className="sr-only">
           Ask the {ASSISTANT_NAME}
@@ -432,11 +576,12 @@ export function AssistantChat({
             placeholder="Ask anything about your trip…"
             className="block min-h-11 w-full resize-none rounded-2xl bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
-          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim()} aria-label="Send">
+          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim() && !photo} aria-label="Send">
             Send
           </Button>
         </div>
         <p className="mt-2 text-xs leading-4 text-slate-600 dark:text-slate-400">
+          {photo ? "Your photo is used for this answer only, never saved. " : ""}
           {here ? "Your location is sent only with your next questions, never saved. " : ""}
           {signedIn ? "Saved to your account. Delete it anytime." : "Chats aren't saved on our servers."} Never share passwords or card numbers.
         </p>
@@ -688,7 +833,7 @@ function TripLine({ trip, onChange }: { trip: TripAnswers; onChange: (answers: T
   const group = trip.travelers ? trip.travelers.adults + trip.travelers.children.length : 0;
   const label = trip.dates
     ? [
-        trip.dates.start === trip.dates.end ? tripDate(trip.dates.start) : `${tripDate(trip.dates.start)} to ${tripDate(trip.dates.end)}`,
+        trip.sample ? `No dates yet, ${tripDays(trip.dates)} day${tripDays(trip.dates) === 1 ? "" : "s"}` : trip.dates.start === trip.dates.end ? tripDate(trip.dates.start) : `${tripDate(trip.dates.start)} to ${tripDate(trip.dates.end)}`,
         group ? `${group} traveler${group === 1 ? "" : "s"}` : null,
         trip.origin?.city ? `from ${trip.origin.city}` : null,
       ]

@@ -3,6 +3,7 @@ import { LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
 import { bookHref, type DatedPackage } from "@/lib/tours/itinerary/bookable";
 import type { BookablePackage } from "@/lib/tours/itinerary/data";
+import { ApproxPrice } from "@/components/ui/approx-price";
 
 export const WEATHER_RULE = "If the operator calls off the trip for weather, you pick a new date or get a full refund.";
 
@@ -54,6 +55,7 @@ export function BookableCard({ pkg, group, bookHref: href }: { pkg: BookablePack
       </div>
       <p className="font-bold text-daet-ink">{pkg.title}</p>
       <p className="text-sm text-slate-600 dark:text-slate-400">{[pkg.duration, price].filter(Boolean).join(" · ") || "Price on the tour page"}</p>
+      {pkg.price ? <ApproxPrice pesos={pkg.price.amount} /> : null}
       {pkg.operatorName ? <p className="text-sm text-slate-600 dark:text-slate-400">By {pkg.operatorName}</p> : null}
       <p className="text-sm text-daet-ink">{WEATHER_RULE}</p>
       {pkg.notIncluded.length ? <p className="text-sm text-slate-600 dark:text-slate-400">Not included: {pkg.notIncluded.join(", ")}.</p> : null}

@@ -40,6 +40,8 @@ export type ToolContext = {
   here?: LatLng | null;
   /** The page it was opened on and the trip answers so far, from the browser. Hints only. */
   trip?: TripContext | null;
+  /** A photo sent with this message, for the AI only; never stored. */
+  image?: { mimeType: string; data: string } | null;
   /** Set by plan_trip: the drafted plan the panel shows. */
   itinerary?: ItineraryResult | null;
   /** Set by plan_trip when the form still needs answers. */

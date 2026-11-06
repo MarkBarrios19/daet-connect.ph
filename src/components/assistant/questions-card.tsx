@@ -2,9 +2,9 @@
 
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MAX_ADULTS, MAX_CHILDREN, MAX_TRIP_DAYS, ORIGIN_CHIPS, tripDays, type TripContext } from "@/lib/tours/assistant/context";
+import { MAX_ADULTS, MAX_CHILDREN, MAX_TRIP_DAYS, ORIGIN_CHIPS, sampleDates, tripDays, type TripContext } from "@/lib/tours/assistant/context";
 
-type Answers = Required<Pick<TripContext, "dates" | "travelers" | "origin">>;
+type Answers = Required<Pick<TripContext, "dates" | "travelers" | "origin">> & { sample?: boolean };
 type Errors = Partial<Record<"dates" | "children" | "origin", string>>;
 
 const field = "block min-h-11 w-full rounded-xl bg-muted px-3 text-base text-daet-ink focus:outline-none focus:ring-2 focus:ring-blue-600/40";
@@ -20,6 +20,9 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
   const id = useId();
   const [start, setStart] = useState(prefill?.dates?.start ?? "");
   const [end, setEnd] = useState(prefill?.dates?.end ?? "");
+  // "No dates yet" (decision 35): a sample plan of this many days.
+  const [noDates, setNoDates] = useState(Boolean(prefill?.sample));
+  const [sampleDays, setSampleDays] = useState(prefill?.sample && prefill.dates ? tripDays(prefill.dates) : 2);
   const [adults, setAdults] = useState(prefill?.travelers?.adults ?? 2);
   // Kept as text so a child's age can be blank until it is filled in.
   const [ages, setAges] = useState<string[]>((prefill?.travelers?.children ?? []).map(String));
@@ -34,7 +37,9 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
     event.preventDefault();
     const next: Errors = {};
     const days = start && end ? tripDays({ start, end }) : 0;
-    if (!start || !end) next.dates = "Pick your first and last day.";
+    if (noDates) {
+      // no dates to check
+    } else if (!start || !end) next.dates = "Pick your first and last day.";
     else if (start < today) next.dates = "Pick dates from today onward.";
     else if (days < 1) next.dates = "The last day can't be before the first.";
     else if (days > MAX_TRIP_DAYS) next.dates = `Plans cover up to ${MAX_TRIP_DAYS} days.`;
@@ -43,7 +48,9 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
     if (!origin) next.origin = "Choose a city or type where you're travelling from.";
     setErrors(next);
     if (Object.keys(next).length) return;
-    onSubmit({ dates: { start, end }, travelers: { adults, children }, origin: { city: origin.slice(0, 60) } });
+    const travelers = { adults, children };
+    if (noDates) onSubmit({ dates: sampleDates(today, sampleDays), travelers, origin: { city: origin.slice(0, 60) }, sample: true });
+    else onSubmit({ dates: { start, end }, travelers, origin: { city: origin.slice(0, 60) } });
   }
 
   return (
@@ -52,6 +59,22 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-bold text-daet-ink">Dates</legend>
+        <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-daet-ink">
+          <input type="checkbox" checked={noDates} onChange={(e) => setNoDates(e.target.checked)} className="h-5 w-5 accent-blue-600" />
+          No dates yet, show me a sample plan
+        </label>
+        {noDates ? (
+          <label className="block text-sm text-slate-600 dark:text-slate-400">
+            How many days?
+            <select value={sampleDays} onChange={(e) => setSampleDays(Number(e.target.value))} className={field}>
+              {Array.from({ length: MAX_TRIP_DAYS }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n} day{n === 1 ? "" : "s"}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
         <div className="grid grid-cols-2 gap-2">
           <label className="text-sm text-slate-600 dark:text-slate-400">
             First day
@@ -62,6 +85,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
             <input type="date" min={start || today} value={end} onChange={(e) => setEnd(e.target.value)} className={field} aria-invalid={Boolean(errors.dates)} />
           </label>
         </div>
+        )}
         {errors.dates ? <p id={`${id}-dates`} role="alert" className="text-sm font-semibold text-red-600 dark:text-red-300">{errors.dates}</p> : null}
       </fieldset>
 

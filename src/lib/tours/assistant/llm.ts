@@ -1,4 +1,5 @@
 import "server-only";
+import { emergencyNumbers, openNearMe, tourToday } from "@/lib/tours/assistant/trip-day";
 import type { Content, FunctionCall, Part } from "@google/genai";
 import { z } from "zod/v4";
 import { createGeminiClient, GEMINI_DEFAULT_MODEL, isGeminiConfigured, stopReasonOf, toJsonSchema, withBusyFallback, type GeminiClient } from "@/lib/ai/gemini";
@@ -169,6 +170,24 @@ export function assistantTools(ctx: ToolContext): AssistantTool[] {
       run: (input) => guard(() => meetingPoint(ctx, input)),
     }),
     defineTool({
+      name: "emergency_numbers",
+      description: "Emergency numbers for Daet: the national 911 hotline and the Tourism Office's checked list (police, rescue, hospital, coast guard). Call it for any emergency, accident or safety question, and give 911 first.",
+      inputSchema: z.object({}),
+      run: () => guard(() => emergencyNumbers(ctx)),
+    }),
+    defineTool({
+      name: "tour_today",
+      description: "Whether the signed-in tourist's tour today or tomorrow is on, called off by the operator (with the reason and what they chose), or not yet confirmed. Use it for \"is my tour on?\".",
+      inputSchema: z.object({}),
+      run: () => guard(() => tourToday(ctx)),
+    }),
+    defineTool({
+      name: "open_near_me",
+      description: "Places open now within 3 km of the tourist's shared location, closest first (at most 5), then places with no listed hours marked check before you go. Needs Use my location.",
+      inputSchema: z.object({}),
+      run: () => guard(() => openNearMe(ctx)),
+    }),
+    defineTool({
       name: "my_bookings",
       description: "The signed-in tourist's own bookings: reference, tour, date, status, amount still due and the next step. Optionally one booking by reference (BK-...).",
       inputSchema: z.object({ reference: z.string().max(40).nullable() }),
@@ -219,6 +238,8 @@ export async function runAssistant(
   const declarations = tools.map((tool) => ({ name: tool.name, description: tool.description, parametersJsonSchema: toJsonSchema(tool.inputSchema) }));
   const system = assistantSystemPrompt({ today: ctx.today, signedIn: Boolean(ctx.userId), trip: ctx.trip });
   const contents: Content[] = history.map((turn) => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] }));
+  // The photo goes with the latest message only.
+  if (ctx.image) contents[contents.length - 1].parts!.push({ inlineData: { mimeType: ctx.image.mimeType, data: ctx.image.data } });
 
   let stopReason: string | null = null;
   for (let round = 0; round < MAX_ITERATIONS; round++) {

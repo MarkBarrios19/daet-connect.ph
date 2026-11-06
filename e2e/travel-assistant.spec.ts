@@ -3,8 +3,8 @@ import { checkA11y, signInAs } from "./fixtures";
 
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true });
 
-async function openAssistant(page: Page, path = "/tours/browse") {
-  await page.goto(path, { waitUntil: "networkidle" });
+async function openAssistant(page: Page, path = "/tours/browse", waitUntil: "networkidle" | "load" = "networkidle") {
+  await page.goto(path, { waitUntil });
   await page.getByRole("button", { name: "Daet AI assistant" }).click();
   const dialog = page.getByRole("dialog", { name: "Daet AI assistant" });
   await expect(dialog).toBeVisible();
@@ -115,4 +115,87 @@ test("near me asks for the location, which the traveller shares with one tap", a
   await dialog.getByRole("listitem").getByRole("button", { name: "Use my location" }).click();
   await expect(dialog.getByRole("button", { name: /Using your location/ })).toBeVisible();
   await expect(dialog.getByText(/Food near your location: Bagasbas Beach eateries/)).toBeVisible();
+});
+
+for (const [path, kind, answer] of [
+  ["/tours/packages/aa000000-0000-4000-8000-000000000001", "tour", /open dates|No open dates/i],
+  ["/tours/attractions/bagasbas-beach", "place", /Bagasbas/],
+  ["/tours/events/e1000000-0000-4000-8000-000000000001", "event", /\d|free|venue|Coming up/i],
+] as const) {
+  test(`on a ${kind} page the assistant greets with three questions about it, answered from the listings`, async ({ page }) => {
+    const dialog = await openAssistant(page, path, "load");
+    const name = (await page.locator("main h1").first().textContent())!.trim();
+    await expect(dialog.getByText(`Ask me about ${name}.`)).toBeVisible();
+    const questions = dialog.getByRole("button", { name: new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
+    await expect(questions).toHaveCount(3);
+    const first = (await questions.first().textContent())!;
+    await questions.first().click();
+    await expect(dialog.getByText(first, { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("listitem").last()).toHaveText(answer, { timeout: 15000 });
+    await page.screenshot({ path: `/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/greet-${kind}.png` });
+    await checkA11y(page, `assistant greeting on a ${kind} page`);
+  });
+}
+
+test("each answer asks Was this helpful?, and the choice is sent once", async ({ page }) => {
+  const sent: unknown[] = [];
+  await page.route("**/api/assistant/feedback", async (route) => {
+    sent.push(route.request().postDataJSON());
+    await route.fulfill({ json: { ok: true } });
+  });
+  const dialog = await openAssistant(page);
+  await dialog.getByLabel("Ask the Daet AI assistant").fill("How do I cancel and get a refund?");
+  await dialog.getByRole("button", { name: "Send" }).click();
+  await expect(dialog.getByText(/48 hours/)).toBeVisible();
+  const group = dialog.getByRole("group", { name: "Was this helpful?" }).last();
+  await group.getByRole("button", { name: "Yes" }).click();
+  await expect(group.getByText("Thanks for telling us.")).toBeVisible();
+  await expect(group.getByRole("button", { name: "Yes" })).toHaveAttribute("aria-pressed", "true");
+  await expect(group.getByRole("button", { name: "No" })).toBeDisabled();
+  await page.screenshot({ path: "/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/helpful.png" });
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toMatchObject({ helpful: true, question: "How do I cancel and get a refund?" });
+  await checkA11y(page, "assistant feedback");
+});
+
+test("ask by voice: what is heard is sent", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { SpeechRecognition: unknown; webkitSpeechRecognition: unknown };
+    w.SpeechRecognition = w.webkitSpeechRecognition = class {
+      onresult: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        setTimeout(() => {
+          this.onresult?.({ results: [[{ transcript: "How do I cancel and get a refund?" }]] });
+          this.onend?.();
+        }, 50);
+      }
+      stop() {}
+    };
+  });
+  const dialog = await openAssistant(page);
+  await dialog.getByRole("button", { name: "Ask by voice" }).click();
+  await expect(dialog.getByRole("button", { name: "Ask by voice" })).toBeVisible();
+  await expect(dialog.getByText("How do I cancel and get a refund?")).toBeVisible();
+  await expect(dialog.getByText(/48 hours/)).toBeVisible();
+});
+
+test("a signed-in visitor can send a photo; basic mode says it can't look at photos", async ({ page, context }) => {
+  await signInAs(context, "tourist");
+  // Signed-in phones reach the assistant from Messages or the help page, not the floating button.
+  await page.goto("/tours/help", { waitUntil: "networkidle" });
+  const dialog = page.getByRole("main");
+  await dialog.locator('input[type="file"]').setInputFiles("public/photos/bagasbas-beach.jpg");
+  await expect(dialog.getByRole("img", { name: "Your photo" })).toBeVisible();
+  await expect(dialog.getByText(/used for this answer only, never saved/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Send" }).click();
+  await expect(dialog.getByText("Photo sent")).toBeVisible();
+  await expect(dialog.getByText(/can't look at photos right now/)).toBeVisible();
+  await page.screenshot({ path: "/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/photo-chat.png" });
+  await checkA11y(page, "assistant photo");
+});
+
+test("visitors who are not signed in get no photo button", async ({ page }) => {
+  const dialog = await openAssistant(page);
+  await expect(dialog.getByRole("button", { name: "Add a photo" })).toHaveCount(0);
 });

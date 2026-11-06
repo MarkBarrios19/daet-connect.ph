@@ -182,3 +182,63 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
 6. **Sample plans** (35). "No dates yet" drafts a plan without dates; Save and Book ask for dates.
 7. **Money for foreign visitors** (24). A rough amount in the visitor's currency, from a daily rate, USD if unknown, marked "approx.".
 8. **Voice and photos in the chat** (38, 39). A microphone in the message box; photos for signed-in visitors with AI answers only, used for that answer and not kept.
+
+## Trip-day answers (decisions 12, 21, 22, 30, 31, 32)
+
+- Emergencies: 911 first, then the numbers the Tourism Office keeps at
+  `/tours/admin/emergency` (with "last checked"), then "tell your guide or operator".
+  Migration `20261118_emergency_contacts.sql` (applied 2026-11-06).
+- "Is my tour on today?": the signed-in visitor's tours today and tomorrow, on /
+  called off (reason and next step) / not confirmed. Not signed in: sign in.
+- "What's open near me": needs Use my location; open places within 3 km first,
+  then places with no hours ("check before you go"); at most 5; closed ones left out.
+- Code: `src/lib/tours/assistant/trip-day.ts` (basic mode and AI tools
+  `emergency_numbers`, `tour_today`, `open_near_me`).
+
+## Page greetings (decisions 17, 33)
+
+- Opened on a tour, place or event page, the assistant greets "Ask me about {name}."
+  with three questions that name it, so basic mode answers them from the listings:
+  tour: open dates, what's included, how to get there; place: how to get there,
+  opening time, tours that go there; event: when and where, free or not, where to stay.
+- On tour pages the chat button sits above the "Book this trip" bar on phones.
+
+## Trip memory and feedback (decisions 25, 26, 29, 34)
+
+- Dates, travellers and origin are kept on the phone (localStorage, key
+  `daet-trip-context-v1`) across visits; dates that have passed are dropped. Not
+  yet kept in the account for signed-in visitors (child ages stay off the server
+  until a trip is saved).
+- "Was this helpful? Yes / No" under each answer; the choice goes to
+  `tours_ai_feedback` (question and answer excerpts, mode, page; no account).
+  Migration `20261119_ai_feedback.sql` (applied 2026-11-06). Recorded only.
+
+## Sample plans (decision 35)
+
+- "Before I draft" has "No dates yet, show me a sample plan" with "How many days?".
+  The plan uses a stand-in weekend (the Saturday at least a week away) for
+  opening hours, but shows only weekdays: "Your sample 2-day Daet plan", "No dates
+  yet", a note, and Book links without a date (the booking form asks for one).
+- "Pick dates to save" replaces Save: it clears the stand-in dates and asks for
+  real ones, which drafts a dated plan that can be saved.
+
+## Rough prices for visitors from abroad (decision 24)
+
+- Peso prices on trip cards, the tour page and Bookable cards get "≈ £14 approx."
+  in the visitor's currency, guessed from the phone's language region (USD when
+  unknown). Nothing is shown on a phone set to Philippine time or a PH locale.
+- Rates: `/api/rates`, from open.er-api.com (free, no key), cached for a day; if
+  it fails, the rough amounts are simply not shown.
+- Code: `src/lib/currency/approx.ts`, `src/components/ui/approx-price.tsx`.
+
+## Voice and photos in the chat (decisions 38, 39)
+
+- A microphone beside "Use my location" asks by voice: what is heard is sent.
+  Speech recognition in the browser (Chrome, Edge, Safari), Philippine English;
+  hidden where the browser can't listen. Shared with the search bar
+  (`src/components/ui/use-speech.ts`).
+- Signed-in visitors get "Add a photo". It is shrunk to 1280 px JPEG in the
+  browser, sent with that one message to the AI only, and never stored (the
+  saved chat keeps "Photo sent" and the text). Not signed in, or no AI answer
+  available: the assistant says so instead of guessing. The prompt says to
+  describe only what is plainly in the photo and never identify people.
