@@ -9,7 +9,8 @@ import { TypingDots } from "@/components/assistant/assistant-chat";
 import { LineIcon } from "@/components/ui/icons";
 import { Notice } from "@/components/ui/notice";
 import { usePolling } from "@/components/live/use-polling";
-import { CHAT_POLL_MS } from "@/lib/live/schedule";
+import { useLive } from "@/components/live/live-provider";
+import { CHAT_POLL_LIVE_MS, CHAT_POLL_MS } from "@/lib/live/schedule";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { MESSAGE_MAX_LENGTH, MESSAGE_PAGE_SIZE, mergeMessages, messageTime, presenceOf, senderLabel, type ChatMembers, type ChatMessage } from "@/lib/tours/messaging";
 import {
@@ -132,10 +133,10 @@ export function ChatWindow(props: ChatWindowProps) {
     };
   }, [conversationId, viewerId, announceRead]);
 
-  // Safety net: while Realtime is not connected, ask for anything newer every few seconds.
+  // Safety net: always ask for anything newer (every 5s without Realtime, every 15s with it), since a connected channel can still miss an event.
   const latestAt = useRef<string | null>(null);
   latestAt.current = messages.filter((m) => !m.draft).at(-1)?.created_at ?? null;
-  usePolling(
+  const { trigger: pollChat } = usePolling(
     async () => {
       const after = latestAt.current;
       if (!after) return;
@@ -149,9 +150,14 @@ export function ChatWindow(props: ChatWindowProps) {
       setReactions((current) => [...current.filter((r) => !page.reactions.some((n) => n.message_id === r.message_id && n.profile_id === r.profile_id)), ...page.reactions]);
       if (page.messages.some((m) => m.sender_id !== viewerId) && document.visibilityState === "visible") announceRead();
     },
-    CHAT_POLL_MS,
-    live !== "live",
+    live === "live" ? CHAT_POLL_LIVE_MS : CHAT_POLL_MS,
   );
+  // The shared poll noticing a new message anywhere asks this chat to catch up now.
+  const chatStamp = useLive()?.summary.chatStamp ?? null;
+  useEffect(() => {
+    if (chatStamp) pollChat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatStamp]);
 
   // Typing dots, the online dot and "seen" pings: a private channel for members only.
   useEffect(() => {
