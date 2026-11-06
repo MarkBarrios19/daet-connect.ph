@@ -1,3 +1,4 @@
+import { LiveCount } from "@/components/live/live-count";
 import { badgeTone } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
@@ -284,7 +285,7 @@ export default async function OperatorBookingsPage({
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-bold transition active:scale-[0.98] ${active ? "bg-blue-600 text-white" : "bg-surface text-daet-ink hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
                   >
                     {label}
-                    <span className={`rounded-full px-2 text-sm ${active ? "bg-white/20" : value === "pending" && count > 0 ? badgeTone("warning") : "bg-muted"}`}>{count}</span>
+                    <span className={`rounded-full px-2 text-sm ${active ? "bg-white/20" : value === "pending" && count > 0 ? badgeTone("warning") : "bg-muted"}`}>{value === "pending" ? <LiveCount name="operatorPending" initial={count} /> : count}</span>
                   </Link>
                 </li>
               );

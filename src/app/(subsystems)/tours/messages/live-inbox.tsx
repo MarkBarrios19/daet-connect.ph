@@ -1,32 +1,35 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useEffect, useRef, type ReactNode } from "react";
+import { useLive } from "@/components/live/live-provider";
 
 /**
- * Keeps the chat list current: any new message in the viewer's chats (row-
- * level security limits the feed to them) or a chat being read refreshes it.
+ * Keeps the chat list current. The shared live poll reports when any of the
+ * viewer's chats got a new message (Realtime makes that sooner); the list
+ * then refreshes. A chat being read in this tab refreshes it too.
  */
-export function LiveInbox({ viewerId, children }: { viewerId: string; children: ReactNode }) {
+export function LiveInbox({ children }: { viewerId?: string; children: ReactNode }) {
   const router = useRouter();
+  const stamp = useLive()?.summary.chatStamp ?? null;
+  const seen = useRef(stamp);
+  useEffect(() => {
+    if (stamp === seen.current) return;
+    seen.current = stamp;
+    const timer = window.setTimeout(() => router.refresh(), 300);
+    return () => window.clearTimeout(timer);
+  }, [stamp, router]);
   useEffect(() => {
     let timer: number | null = null;
-    const refresh = () => {
+    const onRead = () => {
       if (timer) window.clearTimeout(timer);
       timer = window.setTimeout(() => router.refresh(), 400);
     };
-    const supabase = createSupabaseBrowserClient();
-    const channel = supabase
-      .channel(`inbox:${viewerId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tours_messages" }, refresh)
-      .subscribe();
-    window.addEventListener("daet:chat-read", refresh);
+    window.addEventListener("daet:chat-read", onRead);
     return () => {
       if (timer) window.clearTimeout(timer);
-      window.removeEventListener("daet:chat-read", refresh);
-      void supabase.removeChannel(channel);
+      window.removeEventListener("daet:chat-read", onRead);
     };
-  }, [router, viewerId]);
+  }, [router]);
   return <>{children}</>;
 }

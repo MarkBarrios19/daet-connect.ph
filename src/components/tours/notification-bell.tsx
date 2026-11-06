@@ -1,69 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { useLive } from "@/components/live/live-provider";
 import { LineIcon } from "@/components/ui/icons";
 import { notificationIcon, safeNotificationLink, timeAgo, type NotificationRow } from "@/lib/tours/notifications";
 import { announceOverlay } from "@/lib/ui-overlay";
 import { markNotificationsRead } from "@/app/(subsystems)/tours/notifications/actions";
 
-const SELECT = "id, type, title, body, link, read_at, created_at";
-
 /** Header bell: unread count, latest notifications, live updates. Hidden when signed out. */
 export function NotificationBell({ initial = null }: { initial?: { userId: string; items: NotificationRow[]; unread: number } | null }) {
-  const [userId, setUserId] = useState<string | null>(initial?.userId ?? null);
-  const [items, setItems] = useState<NotificationRow[]>(initial?.items ?? []);
-  const [unread, setUnread] = useState(initial?.unread ?? 0);
-  // A server refresh (router.refresh, navigation) brings newer data: take it.
-  useEffect(() => {
-    if (!initial) return;
-    setUserId(initial.userId);
-    setItems(initial.items);
-    setUnread(initial.unread);
-  }, [initial]);
+  // The shared live poll (Realtime makes it sooner) feeds the bell; the
+  // server-loaded list is the first paint and the fallback outside a provider.
+  const live = useLive();
+  const items = live?.ready ? live.summary.notifications.items : (initial?.items ?? []);
+  const unread = live?.ready ? live.summary.notifications.unread : (initial?.unread ?? 0);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(async (supabase: ReturnType<typeof createSupabaseBrowserClient>) => {
-    const [{ data }, { count }] = await Promise.all([
-      supabase.from("tours_notifications").select(SELECT).order("created_at", { ascending: false }).limit(15),
-      supabase.from("tours_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-    ]);
-    setItems((data ?? []) as NotificationRow[]);
-    setUnread(count ?? 0);
-  }, []);
-
-  useEffect(() => {
-    if (!isSupabaseConfigured()) return;
-    const supabase = createSupabaseBrowserClient();
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let cancelled = false;
-
-    void supabase.auth.getUser().then(({ data: { user } }) => {
-      if (cancelled || !user) return;
-      setUserId(user.id);
-      // The server already supplied the list; only fetch here when it did not.
-      if (!initial) void load(supabase).catch(() => {});
-      channel = supabase
-        .channel(`notifications:${user.id}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "tours_notifications", filter: `profile_id=eq.${user.id}` },
-          (payload) => {
-            const row = payload.new as NotificationRow;
-            setItems((current) => [row, ...current.filter((item) => item.id !== row.id)].slice(0, 15));
-            setUnread((count) => count + 1);
-          },
-        )
-        .subscribe();
-    }).catch(() => {});
-    return () => {
-      cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
-    };
-  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,16 +40,9 @@ export function NotificationBell({ initial = null }: { initial?: { userId: strin
     };
   }, [open]);
 
-  // Only mounted by the header for a signed-in user, so it always renders:
-  // a failed client-side lookup must not make the bell vanish (userId is only
-  // needed for live updates).
-  void userId;
-
   function markRead(ids?: string[]) {
-    const now = new Date().toISOString();
-    setItems((current) => current.map((item) => (!ids || ids.includes(item.id) ? { ...item, read_at: item.read_at ?? now } : item)));
-    setUnread((count) => (ids ? Math.max(0, count - ids.length) : 0));
-    void markNotificationsRead(ids);
+    if (live) live.markRead(ids);
+    else void markNotificationsRead(ids);
   }
 
   return (

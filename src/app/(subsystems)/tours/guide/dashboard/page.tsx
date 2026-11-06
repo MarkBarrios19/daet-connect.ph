@@ -1,3 +1,4 @@
+import { LiveCount } from "@/components/live/live-count";
 import { LineIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -118,6 +119,9 @@ export default async function GuideDashboardPage({ searchParams }: { searchParam
         <div className="space-y-6">
           <Card>
             <CardHeader description={formatDayHeading(today)} title="Today" />
+            <p className="mb-3 text-sm text-daet-ink/70">
+              <LiveCount name="guideToday" initial={todays.length} className="font-bold" /> today · <LiveCount name="guideUpcoming" initial={upcomingTours.length} className="font-bold" /> upcoming
+            </p>
             {todays.length === 0 ? (
               <p className="text-sm text-daet-ink/70">No tours assigned to you today.</p>
             ) : (
