@@ -171,9 +171,9 @@ export function assistantTools(ctx: ToolContext): AssistantTool[] {
     }),
     defineTool({
       name: "emergency_numbers",
-      description: "Emergency numbers for Daet: the national 911 hotline and the Tourism Office's checked list (police, rescue, hospital, coast guard). Call it for any emergency, accident or safety question, and give 911 first.",
-      inputSchema: z.object({}),
-      run: () => guard(() => emergencyNumbers(ctx)),
+      description: "Emergency numbers for Daet: the national 911 hotline and the Tourism Office's checked list (police, rescue, hospital, coast guard). Call it for any emergency, accident or safety question, and give 911 first. Pass need: what happened and the town, in their words (e.g. \"drowning at Mercedes\").",
+      inputSchema: z.object({ need: z.string().max(200).nullable() }),
+      run: (input) => guard(() => emergencyNumbers(ctx, input.need ?? "")),
     }),
     defineTool({
       name: "tour_today",
