@@ -101,9 +101,12 @@ export function ChatDock() {
           )}
         </div>
       ))}
-      {state.heads.length ? (
+      {/* The assistant has no head of its own: the floating assistant button in
+          the corner is the same round icon and reopens it, so a head would be a
+          second, identical button beside it. */}
+      {state.heads.some((id) => id !== "ai") ? (
         <ul className="pointer-events-auto mb-24 flex flex-col gap-2" aria-label="Minimised chats">
-          {state.heads.map((id) => (
+          {state.heads.filter((id) => id !== "ai").map((id) => (
             <li key={id} className="group relative">
               <button
                 type="button"
