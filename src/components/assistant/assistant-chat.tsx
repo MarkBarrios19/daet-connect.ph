@@ -13,6 +13,9 @@ import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import type { ChatActions } from "@/components/assistant/chat-actions";
+import { AiAvatar } from "@/components/chat/ai-avatar";
+import { bubbleRadius, bubbleShape } from "@/lib/tours/assistant/bubble-groups";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
 import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
@@ -159,6 +162,7 @@ export function AssistantChat({
   initialText = "",
   startWith,
   afterPlan,
+  actionsRef,
 }: {
   signedIn: boolean;
   onNavigate?: () => void;
@@ -176,6 +180,8 @@ export function AssistantChat({
   startWith?: string;
   /** Shown under the latest plan in the chat (the planner's pace and getting-around chips). */
   afterPlan?: React.ReactNode;
+  /** When a header with a "⋯" menu is present it drives New chat / Delete history / feedback; the in-chat strip hides those buttons. */
+  actionsRef?: React.MutableRefObject<ChatActions | null>;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   // A photo for the next message (decision 39): signed-in visitors, answered by the AI only.
@@ -351,6 +357,41 @@ export function AssistantChat({
   const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
   // Ask by voice (decision 38): what is heard is sent as the message.
   const speech = useSpeech((heard) => void send(heard));
+  useEffect(() => {
+    if (!actionsRef) return;
+    actionsRef.current = {
+      hasMessages: turns.length > 0,
+      savedOnServer: signedIn,
+      canGiveFeedback: !busy && turns.some((t) => t.role === "assistant" && t.content && t.helpful === undefined),
+      newChat: () => {
+        setTurns([]);
+        save([]);
+        inputRef.current?.focus();
+      },
+      deleteHistory: async () => {
+        if (!signedIn) {
+          setTurns([]);
+          save([]);
+          return;
+        }
+        const response = await fetch("/api/assistant", { method: "DELETE" }).catch(() => null);
+        if (response?.ok) {
+          setTurns([]);
+          inputRef.current?.focus();
+        } else setError("Your chat could not be deleted. Please try again.");
+      },
+      feedback: () => {
+        const groups = logRef.current?.querySelectorAll<HTMLElement>('[role="group"][aria-label="Was this helpful?"]');
+        const last = groups?.[groups.length - 1];
+        last?.scrollIntoView({ block: "center" });
+        last?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+      },
+    };
+    return () => {
+      actionsRef.current = null;
+    };
+  });
+  const roles = turns.map((t) => t.role);
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
@@ -358,7 +399,7 @@ export function AssistantChat({
       <div className="flex items-center justify-between gap-2 bg-canvas px-4 py-1 text-sm text-slate-600 dark:text-slate-400">
         <span className="min-w-0">{/* Basic mode carries no notice (decision 6 in docs/TRIP_PLANNER.md). */}
           {lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
-        {turns.length && !signedIn ? (
+        {turns.length && !signedIn && !actionsRef ? (
           <button
             type="button"
             onClick={() => {
@@ -371,7 +412,7 @@ export function AssistantChat({
             New chat
           </button>
         ) : null}
-        {turns.length && signedIn ? (
+        {turns.length && signedIn && !actionsRef ? (
           confirmClear ? (
             <span className="flex items-center gap-1">
               <button
@@ -411,7 +452,7 @@ export function AssistantChat({
       >
         {turns.length === 0 && suggestions ? (
           <li className="space-y-3">
-            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">{suggestions.greeting}</p>
+            <p className="max-w-[85%] rounded-[1.25rem] rounded-bl-md bg-muted px-3.5 py-2 text-daet-ink">{suggestions.greeting}</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.questions.map((q) => (
                 <button key={q} type="button" onClick={() => send(q)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
@@ -422,7 +463,7 @@ export function AssistantChat({
           </li>
         ) : turns.length === 0 ? (
           <li className="space-y-3">
-            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
+            <p className="max-w-[85%] rounded-[1.25rem] rounded-bl-md bg-muted px-3.5 py-2 text-daet-ink">
               Hi! I&apos;m your local guide for Daet. Ask where to eat or stay, how to get somewhere and what it costs, where your tour meets, or about tours and events
               {signedIn ? ", your bookings, payments and tickets" : ""}. I can also pass you to a person.
             </p>
@@ -440,16 +481,21 @@ export function AssistantChat({
             </div>
           </li>
         ) : null}
-        {turns.map((turn, i) => (
-          <li key={i} className={turn.role === "user" ? "flex justify-end" : ""}>
+        {turns.map((turn, i) => {
+          const shape = bubbleShape(roles, i);
+          return (
+          <li key={i} className={`${turn.role === "user" ? "flex justify-end" : "flex items-end gap-2"} ${shape.last ? "pb-1.5" : ""}`}>
             {turn.role === "user" ? (
-              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">
+              <p className={`max-w-[85%] whitespace-pre-wrap break-words ${bubbleRadius("user", shape)} bg-blue-600 px-3.5 py-2 text-white`}>
                 {turn.photo ? <span className="mb-1 flex items-center gap-1 text-sm font-semibold"><LineIcon name="image" className="h-4 w-4" /> Photo sent</span> : null}
                 {turn.content}
               </p>
             ) : (
-              <div className="min-w-0 max-w-[92%] space-y-2">
-                <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
+              <>
+              {/* The avatar sits beside the last reply of a group; other replies keep its column so bubbles line up. */}
+              <span className="w-7 shrink-0 self-end">{shape.last ? <AiAvatar size="xs" /> : null}</span>
+              <div className="min-w-0 max-w-[85%] space-y-2">
+                <p className={`whitespace-pre-wrap break-words ${bubbleRadius("assistant", shape)} bg-muted px-3.5 py-2 text-daet-ink`}>
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots label="AI is thinking…" /> : null)}
                 </p>
                 {turn.status && busy && i === turns.length - 1 ? (
@@ -490,9 +536,11 @@ export function AssistantChat({
                   />
                 ) : null}
               </div>
+              </>
             )}
           </li>
-        ))}
+          );
+        })}
       </ol>
 
       <form
@@ -540,6 +588,11 @@ export function AssistantChat({
               </svg>
             </button>
           ) : null}
+        </div>
+        <label htmlFor="assistant-input" className="sr-only">
+          Ask the {ASSISTANT_NAME}
+        </label>
+        <div className="flex items-end gap-2">
           {signedIn ? (
             <>
               <input
@@ -560,16 +613,11 @@ export function AssistantChat({
                   }
                 }}
               />
-              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-daet-ink hover:bg-muted-strong">
-                <LineIcon name="image" className="h-5 w-5" />
+              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+                <LineIcon name="image" className="h-6 w-6" />
               </button>
             </>
           ) : null}
-        </div>
-        <label htmlFor="assistant-input" className="sr-only">
-          Ask the {ASSISTANT_NAME}
-        </label>
-        <div className="flex items-end gap-2">
           <textarea
             id="assistant-input"
             ref={inputRef}
@@ -584,12 +632,21 @@ export function AssistantChat({
               }
             }}
             placeholder="Ask anything about your trip…"
-            className="block min-h-11 w-full resize-none rounded-2xl bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
+            aria-describedby="assistant-input-hint"
+            className="block max-h-32 min-h-11 w-full resize-none rounded-[1.375rem] bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
-          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim() && !photo} aria-label="Send">
-            Send
-          </Button>
+          <button
+            type="submit"
+            disabled={busy || (!text.trim() && !photo)}
+            aria-label="Send"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:bg-muted disabled:text-slate-500 dark:disabled:text-slate-400"
+          >
+            <LineIcon name="arrowRight" className="h-5 w-5 -rotate-90" />
+          </button>
         </div>
+        <span id="assistant-input-hint" className="sr-only">
+          Ask anything about your trip. Press Enter to send, Shift and Enter for a new line.
+        </span>
         <p className="mt-2 text-xs leading-4 text-slate-600 dark:text-slate-400">
           {photo ? "Your photo is used for this answer only, never saved. " : ""}
           {here ? "Your location is sent only with your next questions, never saved. " : ""}
@@ -622,7 +679,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
       {cards.map((card, i) => {
         if (card.type === "tour") {
           return (
-            <div key={i} className="rounded-2xl bg-canvas p-3">
+            <div key={i} className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
               <p className="font-bold text-daet-ink">{card.title}</p>
               <p className="text-sm text-slate-600 dark:text-slate-400">{[card.location, card.duration, card.priceFrom ? `from ${formatPeso(card.priceFrom)} per person` : null].filter(Boolean).join(" · ")}</p>
               <Link href={card.href} onClick={onNavigate} className={`${pill} mt-2`}>
@@ -633,7 +690,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
         }
         if (card.type === "booking") {
           return (
-            <div key={i} className="rounded-2xl bg-canvas p-3">
+            <div key={i} className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
               <p className="font-bold text-daet-ink">
                 {card.title} <span className="font-normal text-slate-600 dark:text-slate-400">· {card.reference}</span>
               </p>
@@ -653,7 +710,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
         }
         if (card.type === "place") return <PlaceCardView key={i} card={card} />;
         if (card.type === "cost") return <CostCardView key={i} card={card} />;
-        if (card.type === "transport") return <TransportCardView key={i} card={card} />;
+        if (card.type === "transport") return <TransportCardView key={i} card={card} inChat />;
         if (card.type === "handoff") return <HandoffPanel key={i} card={card} signedIn={signedIn} onNavigate={onNavigate} />;
         return null;
       })}
@@ -683,7 +740,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
 
 function PlaceCardView({ card }: { card: PlaceCard }) {
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-bold text-daet-ink">{card.name}</p>
@@ -709,7 +766,7 @@ function PlaceCardView({ card }: { card: PlaceCard }) {
 
 function CostCardView({ card }: { card: CostCard }) {
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <p className="font-bold text-daet-ink">Trip estimate</p>
       <p className="text-sm text-slate-600 dark:text-slate-400">{card.title}</p>
       <ul className="mt-2 space-y-1.5">
@@ -747,7 +804,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
 
   if (!signedIn || !card.signedIn) {
     return (
-      <div className="rounded-2xl bg-canvas p-3 text-sm">
+      <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3 text-sm">
         <p className="text-daet-ink">Sign in so {who} can reply to you.</p>
         <Link href="/login" onClick={onNavigate} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-blue-600 px-4 text-sm font-bold text-white">
           Sign in to message
@@ -766,7 +823,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
     );
   }
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <label htmlFor={id} className="text-sm font-bold text-daet-ink">
         Message to {who} (edit before sending)
       </label>
@@ -806,7 +863,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
 function PlanSummaryCard({ itinerary, onNavigate }: { itinerary: ItineraryResult; onNavigate?: () => void }) {
   const { plan } = itinerary;
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <p className="font-bold text-daet-ink">Your {plan.days.length}-day plan</p>
       <ol className="mt-1 space-y-0.5 text-sm text-daet-ink">
         {plan.days.map((d, i) => (

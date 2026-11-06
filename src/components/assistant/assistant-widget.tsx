@@ -1,11 +1,12 @@
 "use client";
 
+import { LineIcon } from "@/components/ui/icons";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { useEffect, useRef, useState } from "react";
 import { OPEN_ASSISTANT_EVENT, OVERLAY_EVENT, type OverlayDetail } from "@/lib/ui-overlay";
 import { usePathname } from "next/navigation";
 import { pageFromPath } from "@/lib/tours/assistant/context";
-import { AssistantChat } from "@/components/assistant/assistant-chat";
+import { AssistantPane } from "@/components/assistant/assistant-pane";
 import { DOCK_BUSY_EVENT, openInDock } from "@/components/chat-dock/dock-bus";
 
 /** Pages where a floating chat button would get in the way. */
@@ -99,7 +100,7 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
       <button
         type="button"
         onClick={() => {
-          // Signed in on a wide screen: the assistant opens as a chat head in the dock.
+              // Signed in on a wide screen: the assistant opens as a chat head in the dock.
           if (signedIn && openInDock("ai")) return;
           dialogRef.current?.showModal();
           setOpen(true);
@@ -121,18 +122,23 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
         className="m-0 h-dvh max-h-dvh w-full max-w-full bg-surface p-0 text-daet-ink backdrop:bg-slate-950/50 sm:ml-auto sm:h-dvh sm:w-[26rem] sm:max-w-[26rem] sm:rounded-l-3xl"
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between gap-3 bg-blue-600 px-4 py-3 text-white">
-            <div>
-              <h2 id="assistant-title" className="text-base font-bold">
-                Daet AI assistant
-              </h2>
-              <p className="text-xs text-white">Your local guide, 24/7 · from CONNECT-Daet&apos;s listings</p>
-            </div>
-            <button type="button" onClick={close} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-lg hover:bg-white/10" aria-label="Close the assistant">
-              ✕
-            </button>
-          </div>
-          {open ? <AssistantChat signedIn={signedIn} onNavigate={close} autoFocus page={pageFromPath(pathname)} /> : null}
+          {open ? (
+            <AssistantPane
+              header={{
+                headingId: "assistant-title",
+                controls: (
+                  <button type="button" onClick={close} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white hover:bg-white/15" aria-label="Close the assistant">
+                    <LineIcon name="close" className="h-5 w-5" />
+                  </button>
+                ),
+              }}
+              chat={{ signedIn, onNavigate: close, autoFocus: true, page: pageFromPath(pathname) }}
+            />
+          ) : (
+            <h2 id="assistant-title" className="sr-only">
+              Daet AI assistant
+            </h2>
+          )}
         </div>
       </dialog>
     </>
