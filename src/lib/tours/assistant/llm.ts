@@ -3,6 +3,7 @@ import { ABILITIES } from "@/lib/tours/assistant/abilities";
 import type { Content, FunctionCall, Part } from "@google/genai";
 import { z } from "zod/v4";
 import { createGeminiClient, GEMINI_DEFAULT_MODEL, isGeminiConfigured, stopReasonOf, toJsonSchema, withBusyFallback, type GeminiClient } from "@/lib/ai/gemini";
+import { createLeakGuard } from "@/lib/tours/assistant/leak-guard";
 import { assistantSystemPrompt } from "@/lib/tours/assistant/prompt";
 import type { ChatTurn } from "@/lib/tours/assistant/respond";
 import {
@@ -220,6 +221,7 @@ export async function runAssistant(
   const byName = new Map(tools.map((tool) => [tool.name, tool]));
   const declarations = tools.map((tool) => ({ name: tool.name, description: tool.description, parametersJsonSchema: toJsonSchema(tool.inputSchema) }));
   const system = assistantSystemPrompt({ today: ctx.today, signedIn: Boolean(ctx.userId), trip: ctx.trip });
+  const emit = createLeakGuard(system, onText);
   const contents: Content[] = history.map((turn) => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] }));
   // The photo goes with the latest message only.
   if (ctx.image) contents[contents.length - 1].parts!.push({ inlineData: { mimeType: ctx.image.mimeType, data: ctx.image.data } });
@@ -244,7 +246,7 @@ export async function runAssistant(
       for (const part of candidate?.content?.parts ?? []) {
         modelParts.push(part);
         if (part.thought) continue;
-        if (part.text) onText(part.text);
+        if (part.text) emit(part.text);
         if (part.functionCall) calls.push(part.functionCall);
       }
       if (chunk.promptFeedback?.blockReason) last = { ...last, promptFeedback: chunk.promptFeedback };
