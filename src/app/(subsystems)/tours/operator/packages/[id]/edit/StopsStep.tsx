@@ -1,5 +1,6 @@
 "use client";
 
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { LocationPicker } from "@/components/maps/location-picker";
 import { LineIcon } from "@/components/ui/icons";
 import React, { useCallback, useState } from "react";
@@ -269,43 +270,30 @@ export function StopsStep({
             </h3>
 
             <div className="space-y-4">
-              {/* Location Name */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <input
+              <Field id="edit-stop-location" label="Location" required>
+                <Input
                   type="text"
                   value={formData.locationName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, locationName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
                   maxLength={EDIT_LIMITS.stopLocation.max}
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none"
                   placeholder="e.g., Taal Volcano"
                 />
-              </div>
+              </Field>
 
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Description
-                </label>
-                <textarea
+              <Field id="edit-stop-description" label="Description">
+                <Textarea
                   value={formData.description || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value || null })
-                  }
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
                   maxLength={EDIT_LIMITS.stopDescription.max}
                   rows={3}
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none resize-none"
+                  className="resize-none"
                   placeholder="Optional description of the stop"
                 />
-              </div>
+              </Field>
 
               {/* Pick the spot on a map; the numbers stay available underneath. */}
               <div>
-                <p className="block text-sm font-medium text-daet-ink/80 mb-1">
+                <p className="block text-sm font-bold text-daet-ink mb-1">
                   Where is it? <span className="text-red-500">*</span>
                 </p>
                 <LocationPicker
@@ -325,67 +313,44 @@ export function StopsStep({
               <details className="rounded-2xl border border-daet-ink/15 px-3 py-2">
                 <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-daet-ink/80">Enter coordinates yourself</summary>
                 <div className="space-y-4 pb-2">
-                  {/* Latitude */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Latitude <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  min={-90}
-                  max={90}
-                  value={formData.latitude ?? ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })
-                  }
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none"
-                  placeholder="e.g., 14.1122"
-                />
-              </div>
-
-              {/* Longitude */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Longitude <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  min={-180}
-                  max={180}
-                  value={formData.longitude ?? ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })
-                  }
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none"
-                  placeholder="e.g., 122.9553"
-                />
-              </div>
-
+                  <Field id="edit-stop-lat" label="Latitude" required>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.0001"
+                      min={-90}
+                      max={90}
+                      value={formData.latitude ?? ""}
+                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                      placeholder="e.g., 14.1122"
+                    />
+                  </Field>
+                  <Field id="edit-stop-lng" label="Longitude" required>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.0001"
+                      min={-180}
+                      max={180}
+                      value={formData.longitude ?? ""}
+                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                      placeholder="e.g., 122.9553"
+                    />
+                  </Field>
                 </div>
               </details>
 
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Estimated Duration (minutes)
-                </label>
-                <input
+              <Field id="edit-stop-minutes" label="Estimated duration (minutes)">
+                <Input
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   max="1440"
                   value={formData.estimatedDurationMinutes ?? ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      estimatedDurationMinutes: e.target.value ? parseInt(e.target.value) : null,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none"
+                  onChange={(e) => setFormData({ ...formData, estimatedDurationMinutes: e.target.value ? parseInt(e.target.value) : null })}
                   placeholder="e.g., 60"
                 />
-              </div>
+              </Field>
 
               {/* Buttons */}
               <div className="flex gap-3 pt-4">

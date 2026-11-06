@@ -137,7 +137,7 @@ export default async function AdminPackageReviewPage({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Status</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Status</p>
               <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                 packageWithOperator.status === 'pending_review' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200' :
                 packageWithOperator.status === 'published' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' :
@@ -149,7 +149,7 @@ export default async function AdminPackageReviewPage({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Description</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Description</p>
               <p className="text-daet-ink whitespace-pre-wrap">{packageWithOperator.description}</p>
             </div>
           </div>
@@ -161,22 +161,22 @@ export default async function AdminPackageReviewPage({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Business Name</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Business Name</p>
               <p className="text-daet-ink">{operator?.business_name || 'N/A'}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Contact Person</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Contact Person</p>
               <p className="text-daet-ink">{operator?.contact_person || 'N/A'}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Contact Number</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Contact Number</p>
               <p className="text-daet-ink">{operator?.contact_phone || 'N/A'}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-daet-ink/80 mb-1">Email</label>
+              <p className="block text-sm font-bold text-daet-ink/80 mb-1">Email</p>
               <p className="text-daet-ink">{operator?.contact_email || 'N/A'}</p>
             </div>
           </div>

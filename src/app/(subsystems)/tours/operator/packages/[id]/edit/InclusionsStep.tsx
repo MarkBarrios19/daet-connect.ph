@@ -1,5 +1,6 @@
 "use client";
 
+import { Field, Textarea } from "@/components/ui/field";
 import { LineIcon } from "@/components/ui/icons";
 import React, { useCallback, useState } from "react";
 import { useFeedback } from "@/components/ui/feedback";
@@ -175,6 +176,7 @@ export function InclusionsStep({
                     type="text"
                     value={item.text}
                     onChange={() => {}}
+                    aria-label={`Item ${index + 1}`}
                     className="flex-1 px-2 py-1 border border-daet-ink/20 rounded-2xl bg-surface"
                     disabled
                   />
@@ -310,27 +312,20 @@ export function InclusionsStep({
             </h3>
 
             <div className="space-y-4">
-              {/* Item Text */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-1">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
+              <Field id="inc-description" label="Description" required hint={`${formData.text.length}/${EDIT_LIMITS.inclusionText.max}`}>
+                <Textarea
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
                   maxLength={EDIT_LIMITS.inclusionText.max}
                   rows={3}
-                  className="w-full px-3 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 outline-none resize-none"
+                  className="resize-none"
                   placeholder="e.g., Hotel accommodation"
                 />
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  {formData.text.length}/{EDIT_LIMITS.inclusionText.max}
-                </p>
-              </div>
+              </Field>
 
               {/* Is Included Toggle */}
-              <div>
-                <label className="block text-sm font-medium text-daet-ink/80 mb-2">Status</label>
+              <fieldset>
+                <legend className="mb-2 block text-sm font-bold text-daet-ink">Status</legend>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -351,7 +346,7 @@ export function InclusionsStep({
                     <span className="text-sm text-daet-ink/80">Excluded</span>
                   </label>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Buttons */}
               <div className="flex gap-3 pt-4">
