@@ -99,6 +99,10 @@ function markerElement(
     img.alt = "";
     img.decoding = "async";
     img.className = "h-full w-full object-cover";
+    // Leaflet's stylesheet gives every image in the marker pane `width: auto`, which beats the class above
+    // and leaves a tall photo narrower than its circle. An inline size wins.
+    img.style.width = "100%";
+    img.style.height = "100%";
     frame.append(img);
     el.append(drop, frame, nameUnder(m.title));
     return el;
