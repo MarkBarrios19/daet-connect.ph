@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { dockThread, type DockThread } from "@/app/(subsystems)/tours/messages/actions";
-import { AssistantChat } from "@/components/assistant/assistant-chat";
+import { AssistantPane } from "@/components/assistant/assistant-pane";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { LineIcon } from "@/components/ui/icons";
@@ -204,15 +204,10 @@ function ThreadDockWindow({ id, onLoaded, onMinimize, onClose }: { id: string; o
 function AiDockWindow({ onMinimize, onClose }: { onMinimize: () => void; onClose: () => void }) {
   return (
     <section aria-label={ASSISTANT_NAME} className="flex h-full min-h-0 flex-col">
-      <header className="flex items-center gap-2 bg-blue-600 px-2 py-1.5 text-white">
-        <AiAvatar size="sm" />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-bold">{ASSISTANT_NAME}</h2>
-          <p className="truncate text-sm text-white/90">Your local guide · always on</p>
-        </div>
-        <WindowControls name={ASSISTANT_NAME} href="/tours/messages/ai" onMinimize={onMinimize} onClose={onClose} />
-      </header>
-      <AssistantChat signedIn autoFocus />
+      <AssistantPane
+        header={{ controls: <WindowControls name={ASSISTANT_NAME} href="/tours/messages/ai" onMinimize={onMinimize} onClose={onClose} /> }}
+        chat={{ signedIn: true, autoFocus: true }}
+      />
     </section>
   );
 }

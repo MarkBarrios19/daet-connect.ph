@@ -4,9 +4,10 @@ import { LineIcon } from "@/components/ui/icons";
 import type { TransportCard } from "@/lib/tours/assistant/guide-tools";
 
 /** Ways to travel between two places, leg by leg, with fares from tours_fares. Used in the chat and the plan panel. */
-export function TransportCardView({ card }: { card: TransportCard }) {
+export function TransportCardView({ card, inChat = false }: { card: TransportCard; /** In the conversation it is styled like a reply bubble. */ inChat?: boolean }) {
+  const surface = inChat ? "rounded-[1.25rem] rounded-bl-md bg-muted" : "rounded-2xl bg-canvas";
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className={`p-3 ${surface}`}>
       <p className="font-bold text-daet-ink">{card.title}</p>
       <ol className="mt-2 space-y-3">
         {card.options.map((option, i) => (

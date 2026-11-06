@@ -7,7 +7,7 @@ import { MAX_ADULTS, MAX_CHILDREN, MAX_TRIP_DAYS, ORIGIN_CHIPS, sampleDates, tri
 type Answers = Required<Pick<TripContext, "dates" | "travelers" | "origin">> & { sample?: boolean };
 type Errors = Partial<Record<"dates" | "children" | "origin", string>>;
 
-const field = "block min-h-11 w-full rounded-xl bg-muted px-3 text-base text-daet-ink focus:outline-none focus:ring-2 focus:ring-blue-600/40";
+const field = "block min-h-11 w-full rounded-xl bg-surface px-3 text-base text-daet-ink focus:outline-none focus:ring-2 focus:ring-blue-600/40";
 const chip = (on: boolean) =>
   `inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold transition active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${on ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300"}`;
 
@@ -54,7 +54,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
   }
 
   return (
-    <form onSubmit={submit} noValidate aria-label={title} className="min-w-0 space-y-4 rounded-2xl bg-canvas p-3">
+    <form onSubmit={submit} noValidate aria-label={title} className="min-w-0 space-y-4 rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <p className="font-bold text-daet-ink">{title}</p>
 
       <fieldset className="space-y-2">
@@ -146,7 +146,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
 }
 
 function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
-  const btn = "inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted text-lg font-bold text-daet-ink disabled:opacity-40";
+  const btn = "inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface text-lg font-bold text-daet-ink disabled:opacity-40";
   return (
     <div className="flex items-center gap-2">
       <button type="button" className={btn} disabled={value <= min} onClick={() => onChange(value - 1)} aria-label={`Fewer ${label}`}>
