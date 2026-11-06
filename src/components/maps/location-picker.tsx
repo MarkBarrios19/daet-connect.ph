@@ -7,7 +7,7 @@ import { DARK_TILE_FILTER, MAP_ATTRIBUTION, MAP_TILES, TILE_MAX_ZOOM } from "@/l
 import { insideBounds, PICKER_BOUNDS, roundCoord, type PlaceResult } from "@/lib/maps/picker";
 
 const PIN =
-  "grid h-8 w-8 -translate-x-1/2 -translate-y-full place-items-center rounded-full rounded-br-none -rotate-45 border-2 border-white bg-blue-600";
+  "grid h-8 w-8 -translate-x-1/2 -translate-y-full place-items-center rounded-full rounded-br-none -rotate-45 border-2 border-surface bg-blue-600";
 
 type Props = {
   latitude: number | null;
@@ -52,7 +52,7 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
       });
       const dark = document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
       L.tileLayer(MAP_TILES.light, { attribution: MAP_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM, className: dark ? "picker-dark-tiles" : "" }).addTo(map);
-      const icon = L.divIcon({ className: "", html: `<span data-theme="light" class="${PIN}"><span class="block h-2.5 w-2.5 rotate-45 rounded-full bg-white"></span></span>`, iconSize: [0, 0] });
+      const icon = L.divIcon({ className: "", html: `<span class="${PIN}"><span class="block h-2.5 w-2.5 rotate-45 rounded-full bg-surface"></span></span>`, iconSize: [0, 0] });
       const marker = L.marker(start, { icon, draggable: true, keyboard: true, alt: "Stop location. Drag to move." }).addTo(map);
       const move = (lat: number, lng: number) => {
         if (!insideBounds(lat, lng)) {
@@ -169,7 +169,7 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
           className="w-full rounded-2xl border border-daet-ink/20 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-daet-forest/30"
         />
         {results.length > 0 ? (
-          <ul className="absolute inset-x-0 top-full z-[1100] mt-1 max-h-56 overflow-y-auto rounded-2xl card-edge bg-surface shadow-[var(--shadow-float)]">
+          <ul className="absolute inset-x-0 top-full z-[1100] mt-1 max-h-56 overflow-y-auto rounded-2xl card-edge bg-surface">
             {results.map((place) => (
               <li key={`${place.lat},${place.lng},${place.name}`}>
                 <button type="button" onClick={() => choose(place)} className="block min-h-11 w-full px-3 py-2 text-left hover:bg-canvas">

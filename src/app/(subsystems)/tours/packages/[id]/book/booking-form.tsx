@@ -45,7 +45,9 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
   const [start] = useState(() =>
     bookingPrefill(prefill, dateOptions, new Date(Date.now() + (8 + 24) * 60 * 60 * 1000).toISOString().split("T")[0], priceVariants.find((v) => v.id === selectedVariantId)),
   );
-  const [tourDate, setTourDate] = useState(start.date);
+  // With a list of open dates, start empty unless the prefilled date is one of them
+  // (tomorrow usually isn't, which left the dropdown blank).
+  const [tourDate, setTourDate] = useState(dateOptions && !dateOptions.some((option) => option.date === start.date && !option.full) ? "" : start.date);
   const [numberOfPax, setNumberOfPax] = useState(start.pax);
   const [contactName, setContactName] = useState(userProfile.fullName);
   const [contactEmail, setContactEmail] = useState(userProfile.email);
@@ -187,6 +189,9 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
                 required
                 className="mt-1 min-h-11 w-full rounded-2xl border border-daet-ink/20 bg-surface px-4 py-2.5 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
               >
+                <option value="" disabled>
+                  Select a date
+                </option>
                 {dateOptions.map((option) => (
                   <option key={option.date} value={option.date} disabled={option.full}>
                     {formatOpenDate(option.date)} — {option.full ? "fully booked" : `${option.seatsLeft} seat${option.seatsLeft === 1 ? "" : "s"} left`}

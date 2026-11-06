@@ -1,3 +1,4 @@
+import { durationText } from "@/lib/tours/duration";
 import { LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
 import { notFound, redirect } from "next/navigation";
@@ -299,8 +300,7 @@ export default async function OperatorPackageDetailPage({ params }: PageProps) {
                 <div>
                   <dt className="font-bold text-daet-ink/70">Duration</dt>
                   <dd className="mt-1 text-daet-ink">
-                    <LineIcon name="clock" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {pkg.duration_value}{" "}
-                    {pkg.duration_type === "hours" ? "hours" : "days"}
+                    <LineIcon name="clock" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {durationText(Number(pkg.duration_value), pkg.duration_type) ?? ""}
                   </dd>
                 </div>
                 <div>

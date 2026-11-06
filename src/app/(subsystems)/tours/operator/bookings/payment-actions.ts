@@ -1,5 +1,6 @@
 "use server";
 
+import { emailPaymentReceived } from "@/lib/email/notify-booking";
 import { formatPeso } from "@/lib/money";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -102,6 +103,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     }
 
     // The trigger will automatically update booking payment status
+    emailPaymentReceived(input.bookingId, input.amount);
     revalidatePath("/tours/operator/bookings");
 
     // Calculate new status for message
@@ -214,6 +216,7 @@ export async function reviewPaymentProof(formData: FormData): Promise<{ success:
   }
 
   await supabase.from("tours_payment_proofs").update({ payment_id: payment.id }).eq("id", proofId);
+  emailPaymentReceived(proof.booking_id, amount);
 
   revalidatePath("/tours/operator/bookings");
   revalidatePath("/tours/operator/payments");

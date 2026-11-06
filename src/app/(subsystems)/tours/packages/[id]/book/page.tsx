@@ -1,3 +1,4 @@
+import { durationText } from "@/lib/tours/duration";
 import { LineIcon } from "@/components/ui/icons";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -110,19 +111,18 @@ export default async function BookPackagePage({ params, searchParams }: PageProp
 
         {/* Package Header */}
         <div className="mb-8 rounded-2xl card-edge bg-surface p-6">
-          <div className="flex gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
             {pkg.cover_image_url && (
               <img
                 src={pkg.cover_image_url}
                 alt={pkg.title}
-                className="h-32 w-48 rounded-2xl object-cover"
+                className="h-48 w-full rounded-2xl object-cover sm:h-32 sm:w-48 sm:shrink-0"
               />
             )}
-            <div className="flex-1">
-              <h1 className="display-2 text-daet-ink">{pkg.title}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="display-2 break-words text-daet-ink">{pkg.title}</h1>
               <p className="mt-2 text-sm text-daet-ink/70">
-                <LineIcon name="pin" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {pkg.location_name} · <LineIcon name="clock" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {pkg.duration_value}{" "}
-                {pkg.duration_type === "hours" ? "hours" : "days"}
+                <LineIcon name="pin" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {pkg.location_name} · <LineIcon name="clock" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> {durationText(Number(pkg.duration_value), pkg.duration_type) ?? ""}
               </p>
               {Array.isArray(pkg.tours_operators) && pkg.tours_operators[0] && (
                 <p className="mt-1 text-sm font-bold text-daet-forest dark:text-blue-300">

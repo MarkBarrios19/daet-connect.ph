@@ -1,7 +1,7 @@
 "use server";
 
 import { scheduleErrorMessage } from "@/lib/tours/guide-swap";
-import { emailBookingConfirmed, emailTripCalledOff } from "@/lib/email/notify-booking";
+import { emailBookingConfirmed, emailGuideAssigned, emailTripCalledOff } from "@/lib/email/notify-booking";
 import { parseCallOffReason } from "@/lib/tours/call-off";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -101,6 +101,8 @@ export async function assignGuideToBooking(
       console.error("Guide assignment error:", updateError);
       return { success: false, error: "Failed to assign guide" };
     }
+
+    if (guideId) emailGuideAssigned(bookingId, guideId);
 
     // Revalidate the bookings page
     revalidatePath("/tours/operator/bookings");

@@ -115,6 +115,30 @@ export function paymentReceivedEmail(b: BookingEmailData, amount: number) {
   ]);
 }
 
+/** Sent to the operator when a payment is recorded on one of their bookings. */
+export function paymentReceivedForOperatorEmail(b: BookingEmailData, amount: number, operatorUrl: string) {
+  const due = Math.max(0, b.totalAmount - b.totalPaid);
+  return render(`Payment received: ${b.tourTitle} (${b.reference})`, [
+    "Hi,",
+    `${b.contactName ?? "A tourist"} paid ${formatPeso(amount)} for a booking.${due > 0 ? ` ${formatPeso(due)} is still due.` : " The booking is now fully paid."}`,
+    "",
+    ...tripLines(b),
+    `Paid: ${formatPeso(b.totalPaid)} of ${formatPeso(b.totalAmount)}`,
+    { label: "Open bookings", href: operatorUrl },
+  ]);
+}
+
+/** Sent to a guide when an operator assigns them a tour. */
+export function guideAssignedEmail(b: BookingEmailData, guideName: string | null, toursUrl: string) {
+  return render(`New tour assigned: ${b.tourTitle} on ${longDate(b.tourDate)}`, [
+    hello(guideName),
+    `${b.operatorName ?? "An operator"} assigned you a tour.`,
+    "",
+    ...tripLines(b),
+    { label: "View my tours", href: toursUrl },
+  ]);
+}
+
 /** Sent when the operator calls the trip off: why, and the two choices. */
 export function tripCalledOffEmail(b: BookingEmailData, reason: string) {
   return render(`Trip called off: ${b.tourTitle} on ${longDate(b.tourDate)}`, [
