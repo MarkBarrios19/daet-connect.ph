@@ -1,5 +1,5 @@
 import "server-only";
-import { emergencyNumbers, openNearMe, tourToday } from "@/lib/tours/assistant/trip-day";
+import { ABILITIES } from "@/lib/tours/assistant/abilities";
 import type { Content, FunctionCall, Part } from "@google/genai";
 import { z } from "zod/v4";
 import { createGeminiClient, GEMINI_DEFAULT_MODEL, isGeminiConfigured, stopReasonOf, toJsonSchema, withBusyFallback, type GeminiClient } from "@/lib/ai/gemini";
@@ -169,24 +169,7 @@ export function assistantTools(ctx: ToolContext): AssistantTool[] {
       inputSchema: z.object({ packageId: z.string().nullable(), bookingReference: z.string().max(40).nullable() }),
       run: (input) => guard(() => meetingPoint(ctx, input)),
     }),
-    defineTool({
-      name: "emergency_numbers",
-      description: "Emergency numbers for Daet: the national 911 hotline and the Tourism Office's checked list (police, rescue, hospital, coast guard). Call it for any emergency, accident or safety question, and give 911 first. Pass need: what happened and the town, in their words (e.g. \"drowning at Mercedes\").",
-      inputSchema: z.object({ need: z.string().max(200).nullable() }),
-      run: (input) => guard(() => emergencyNumbers(ctx, input.need ?? "")),
-    }),
-    defineTool({
-      name: "tour_today",
-      description: "Whether the signed-in tourist's tour today or tomorrow is on, called off by the operator (with the reason and what they chose), or not yet confirmed. Use it for \"is my tour on?\".",
-      inputSchema: z.object({}),
-      run: () => guard(() => tourToday(ctx)),
-    }),
-    defineTool({
-      name: "open_near_me",
-      description: "Places open now within 3 km of the tourist's shared location, closest first (at most 5), then places with no listed hours marked check before you go. Needs Use my location.",
-      inputSchema: z.object({}),
-      run: () => guard(() => openNearMe(ctx)),
-    }),
+    ...ABILITIES.map((a) => defineTool({ name: a.name, description: a.description, inputSchema: a.input, run: (input) => guard(() => a.run(ctx, input)) })),
     defineTool({
       name: "my_bookings",
       description: "The signed-in tourist's own bookings: reference, tour, date, status, amount still due and the next step. Optionally one booking by reference (BK-...).",
