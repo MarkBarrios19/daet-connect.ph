@@ -76,6 +76,8 @@ describe("BookSummary", () => {
     expect(screen.getByText("Total if you book both")).toBeInTheDocument();
     expect(screen.getByText("₱7,200.00")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Book Surf lesson · ₱2,400.00" })).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-06&pax=2");
-    expect(screen.getByText(/2 travelers · Sat, Nov 7/)).toBeInTheDocument();
+    // The trips are on different days, so each button carries its own date; the intro names the group.
+    expect(screen.getByText("2 travelers")).toBeInTheDocument();
+    expect(screen.getByText("Sat, Nov 7 · ₱4,800.00")).toBeInTheDocument();
   });
 });
