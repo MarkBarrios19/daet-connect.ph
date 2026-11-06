@@ -365,8 +365,9 @@ export function AssistantChat({
   useEffect(() => {
     const box = inputRef.current;
     if (!box) return;
+    // Empty: keep the one-line height (a wrapped placeholder must not make the box tall).
     box.style.height = "auto";
-    box.style.height = `${box.scrollHeight}px`;
+    if (text) box.style.height = `${box.scrollHeight}px`;
   }, [text, compact]);
   useEffect(() => {
     if (!actionsRef) return;
@@ -588,7 +589,7 @@ export function AssistantChat({
                 aria-pressed={Boolean(here)}
                 aria-label={here ? "Using your location. Stop" : locating ? "Finding you…" : "Use my location"}
                 title={here ? "Using your location. Tap to stop" : "Use my location"}
-                className={`grid h-11 w-11 shrink-0 place-items-center rounded-full disabled:opacity-60 ${here ? "bg-green-500 text-slate-950" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
+                className={`grid h-11 w-9 shrink-0 place-items-center rounded-full disabled:opacity-60 ${here ? "bg-green-500 text-slate-950" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
               >
                 <LineIcon name="pin" className="h-6 w-6" />
               </button>
@@ -599,7 +600,7 @@ export function AssistantChat({
                   disabled={busy}
                   aria-pressed={speech.listening}
                   aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
-                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
+                  className={`grid h-11 w-9 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d={MIC_PATH} />
@@ -609,7 +610,7 @@ export function AssistantChat({
             </>
           ) : (
             // Typing: the tools fold into one "+" so the box gets the full width.
-            <button type="button" onClick={() => setToolsOpen(true)} aria-label="Show tools: location, voice, photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+            <button type="button" onClick={() => setToolsOpen(true)} aria-label="Show tools: location, voice, photo" className="grid h-11 w-9 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -636,7 +637,7 @@ export function AssistantChat({
                 }}
               />
               {compact ? (
-                <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+                <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-9 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
                   <LineIcon name="image" className="h-6 w-6" />
                 </button>
               ) : null}
@@ -661,7 +662,7 @@ export function AssistantChat({
                 void send(text);
               }
             }}
-            placeholder="Ask anything about your trip…"
+            placeholder="Ask about your trip…"
             aria-describedby="assistant-input-hint"
             className="block max-h-32 min-h-11 w-full resize-none rounded-[1.375rem] bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
