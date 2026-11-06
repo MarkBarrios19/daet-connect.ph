@@ -1,9 +1,9 @@
+import { ShowOnMap, StopFocus, TripFocusProvider, TripMap } from "@/components/planner/trip-focus";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { PageFrame } from "@/components/ui/page-frame";
 import { ConfirmSubmitButton } from "@/components/tours/confirm-submit-button";
 import { LineIcon } from "@/components/ui/icons";
-import { RouteMap } from "@/components/maps/route-map";
 import { GettingThere } from "@/components/planner/plan-panel";
 import { gettingThereFrom } from "@/lib/tours/assistant/plan-tool";
 import { formatClock } from "@/lib/tours/itinerary/types";
@@ -81,6 +81,15 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
     bookableAt.set(at, [...(bookableAt.get(at) ?? []), { title: t.title, price: t.price ? `from ${formatPeso(t.price.amount)} ${t.price.perPerson ? "per person" : "per group"}` : null }]);
   }
   const points = days.flatMap((d) => d.items.flatMap((i) => (i.kind === "visit" && i.lat !== null && i.lng !== null ? [{ lat: i.lat, lng: i.lng, label: i.name }] : [])));
+  // Each visit's number and map pin id, exactly as the map numbers its pins (across all days).
+  const stopInfo = new Map<(typeof days)[number]["items"][number], { number: number | null; id: string | null }>();
+  let pinIndex = 0;
+  for (const d of days) {
+    for (const i of d.items) {
+      if (i.kind !== "visit") continue;
+      stopInfo.set(i, i.lat !== null && i.lng !== null ? { number: pinIndex + 1, id: `p${pinIndex++}` } : { number: null, id: null });
+    }
+  }
   const line = [
     itinerary.start_date ? (itinerary.end_date && itinerary.end_date !== itinerary.start_date ? `${monthDay(itinerary.start_date)} to ${monthDay(itinerary.end_date)}` : monthDay(itinerary.start_date)) : null,
     group ? `${group} traveler${group === 1 ? "" : "s"}` : null,
@@ -133,6 +142,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
           </Link>
         ))}
 
+        <TripFocusProvider>
         <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
           <section aria-label="Day by day" className="min-w-0 flex-1 space-y-3">
             {days.length === 0 ? <p className="rounded-2xl bg-surface p-4 text-slate-600 dark:text-slate-400">This plan has no stops.</p> : null}
@@ -156,32 +166,33 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                   {/* One timeline: time on the left, the stop's number (as on the map) on a rail, one card per stop. */}
                   <ol aria-label={`Day ${day.dayNumber} stops`}>
                     {(() => {
-                      let visitNumber = 0;
                       return day.items.map((item, i) => {
                         const extra = extras.get(item.name);
                         const cost = item.kind === "lunch" ? "Lunch" : extra?.fee ? `${formatPeso(extra.fee)} entrance` : "Free, on your own";
-                        if (item.kind !== "lunch") visitNumber += 1;
+                        const info = stopInfo.get(item) ?? { number: null, id: null };
                         const last = i === day.items.length - 1;
                         return (
                           <li key={i} className="grid grid-cols-[4.25rem_1.75rem_minmax(0,1fr)] gap-x-3">
                             <p className="pt-3.5 text-right text-sm font-bold text-daet-ink/80">{item.start !== null ? formatClock(item.start) : ""}</p>
                             <div aria-hidden="true" className="flex flex-col items-center">
                               <span className="mt-2.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                                {item.kind === "lunch" ? <LineIcon name="plate" className="h-4 w-4" /> : visitNumber}
+                                {info.number !== null ? info.number : <LineIcon name={item.kind === "lunch" ? "plate" : "pin"} className="h-4 w-4" />}
                               </span>
                               {last ? null : <span className="w-0.5 flex-1 bg-blue-200 dark:bg-blue-900" />}
                             </div>
                             <div className={last ? "" : "pb-3"}>
-                              <div className="space-y-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
+                              <StopFocus id={info.id} className="space-y-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
                                 <div className="flex min-w-0 items-center gap-3">
-                                  {extra?.photo ? (
-                                    // eslint-disable-next-line @next/next/no-img-element -- listing photos come from storage of any size
-                                    <img src={extra.photo} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-                                  ) : (
-                                    <span aria-hidden="true" className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface text-blue-800 dark:text-blue-300">
-                                      <LineIcon name={item.kind === "lunch" ? "plate" : "pin"} className="h-6 w-6" />
-                                    </span>
-                                  )}
+                                  <ShowOnMap id={info.id} name={item.name}>
+                                    {extra?.photo ? (
+                                      // eslint-disable-next-line @next/next/no-img-element -- listing photos come from storage of any size
+                                      <img src={extra.photo} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+                                    ) : (
+                                      <span aria-hidden="true" className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface text-blue-800 dark:text-blue-300">
+                                        <LineIcon name={item.kind === "lunch" ? "plate" : "pin"} className="h-6 w-6" />
+                                      </span>
+                                    )}
+                                  </ShowOnMap>
                                   <div className="min-w-0">
                                     <p className="font-bold text-daet-ink">
                                       {item.slug ? (
@@ -195,7 +206,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                                     <p className="text-sm text-slate-600 dark:text-slate-400">{cost}</p>
                                   </div>
                                 </div>
-                              </div>
+                              </StopFocus>
                             </div>
                           </li>
                         );
@@ -205,10 +216,9 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                   {(() => {
                     // The day's tours, each once, with the stops it passes (numbers as on the map).
                     const tours = new Map<string, { title: string; price: string | null; stops: number[] }>();
-                    let number = 0;
                     for (const item of day.items) {
-                      if (item.kind === "lunch") continue;
-                      number += 1;
+                      const number = stopInfo.get(item)?.number ?? null;
+                      if (item.kind === "lunch" || number === null) continue;
                       for (const t of bookableAt.get(item.name) ?? []) {
                         const known = tours.get(t.title) ?? { title: t.title, price: t.price ?? null, stops: [] };
                         known.stops.push(number);
@@ -243,9 +253,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
 
           <aside aria-label="Trip summary" className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:w-[24rem]">
             {points.length ? (
-              <div className="overflow-hidden rounded-2xl">
-                <RouteMap points={points} connect title="Map of the whole trip" />
-              </div>
+              <TripMap points={points} />
             ) : null}
             <BookSummary packages={tours} group={group} />
             <section id="share" aria-labelledby="share-title" className="scroll-mt-24 rounded-2xl bg-surface p-5">
@@ -254,6 +262,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
             </section>
           </aside>
         </div>
+        </TripFocusProvider>
 
         <div className="mt-6 space-y-6 lg:max-w-[calc(100%-25.5rem)]">
           <SaveTripOffline ticketPaths={tickets.map((t) => `/tours/bookings/${t.id}/ticket`)} />
