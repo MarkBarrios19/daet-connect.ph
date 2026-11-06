@@ -649,7 +649,8 @@ export function AssistantChat({
             maxLength={MESSAGE_MAX}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onFocus={() => {
+            // A tap on the box expands it; the automatic focus when the window opens does not.
+            onPointerDown={() => {
               setFocused(true);
               setToolsOpen(false);
             }}
