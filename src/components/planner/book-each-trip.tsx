@@ -4,6 +4,7 @@ import { formatPeso } from "@/lib/money";
 import { bookHref, type DatedPackage } from "@/lib/tours/itinerary/bookable";
 import type { BookablePackage } from "@/lib/tours/itinerary/data";
 import { ApproxPrice } from "@/components/ui/approx-price";
+import { BookLink } from "@/components/planner/book-link";
 
 export const WEATHER_RULE = "If the operator calls off the trip for weather, you pick a new date or get a full refund.";
 
@@ -95,16 +96,19 @@ export function BookSummary({ packages, group }: { packages: DatedPackage[]; gro
       <h2 id="book-summary" className="font-[family-name:var(--font-display)] text-[1.75rem] font-semibold leading-8 text-daet-ink">
         Book each trip
       </h2>
-      <ul className="space-y-3">
+      <ul className="group/books space-y-3">
         {rows.map(({ p, price }) => (
-          <li key={p.id} className="flex justify-between gap-3">
-            <span className="min-w-0">
-              <Link href={`/tours/packages/${p.id}`} className="font-semibold text-daet-ink hover:underline">
+          <li key={p.id} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 transition-colors has-[[data-pending=true]]:bg-blue-100 dark:bg-blue-950/40 dark:has-[[data-pending=true]]:bg-blue-900/50">
+            <span className="min-w-0 flex-1">
+              <Link href={`/tours/packages/${p.id}`} className="font-bold text-daet-ink hover:underline">
                 {p.title}
               </Link>
               <span className="block text-sm text-slate-600 dark:text-slate-400">{[who, p.date ? tourDay(p.date) : null].filter(Boolean).join(" · ")}</span>
             </span>
-            <strong className="shrink-0 text-daet-ink">{price !== null ? formatPeso(price) : "See price"}</strong>
+            <span className="flex shrink-0 flex-col items-end gap-1.5">
+              <strong className="text-daet-ink">{price !== null ? formatPeso(price) : "See price"}</strong>
+              <BookLink href={bookHref(p.id, p.date, group)} label={`Book ${p.title}${price !== null ? ` · ${formatPeso(price)}` : ""}`} />
+            </span>
           </li>
         ))}
       </ul>
@@ -114,14 +118,6 @@ export function BookSummary({ packages, group }: { packages: DatedPackage[]; gro
           <strong className="text-xl text-daet-ink">{formatPeso(known.reduce((a, b) => a + b, 0))}</strong>
         </p>
       ) : null}
-      <div className="space-y-2">
-        {rows.map(({ p, price }) => (
-          <Link key={p.id} href={bookHref(p.id, p.date, group)} className="flex min-h-12 items-center justify-center rounded-full bg-blue-600 px-5 text-center font-bold text-white hover:bg-blue-700">
-            Book {p.title}
-            {price !== null ? ` · ${formatPeso(price)}` : ""}
-          </Link>
-        ))}
-      </div>
       <p className="text-sm text-slate-600 dark:text-slate-400">You pay each operator separately. {WEATHER_RULE}</p>
     </section>
   );
