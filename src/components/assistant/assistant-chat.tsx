@@ -578,6 +578,11 @@ export function AssistantChat({
               </svg>
             </button>
           ) : null}
+        </div>
+        <label htmlFor="assistant-input" className="sr-only">
+          Ask the {ASSISTANT_NAME}
+        </label>
+        <div className="flex items-end gap-2">
           {signedIn ? (
             <>
               <input
@@ -598,16 +603,11 @@ export function AssistantChat({
                   }
                 }}
               />
-              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-daet-ink hover:bg-muted-strong">
-                <LineIcon name="image" className="h-5 w-5" />
+              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+                <LineIcon name="image" className="h-6 w-6" />
               </button>
             </>
           ) : null}
-        </div>
-        <label htmlFor="assistant-input" className="sr-only">
-          Ask the {ASSISTANT_NAME}
-        </label>
-        <div className="flex items-end gap-2">
           <textarea
             id="assistant-input"
             ref={inputRef}
@@ -622,12 +622,21 @@ export function AssistantChat({
               }
             }}
             placeholder="Ask anything about your trip…"
-            className="block min-h-11 w-full resize-none rounded-2xl bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
+            aria-describedby="assistant-input-hint"
+            className="block max-h-32 min-h-11 w-full resize-none rounded-[1.375rem] bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
-          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim() && !photo} aria-label="Send">
-            Send
-          </Button>
+          <button
+            type="submit"
+            disabled={busy || (!text.trim() && !photo)}
+            aria-label="Send"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:bg-muted disabled:text-slate-500 dark:disabled:text-slate-400"
+          >
+            <LineIcon name="arrowRight" className="h-5 w-5 -rotate-90" />
+          </button>
         </div>
+        <span id="assistant-input-hint" className="sr-only">
+          Ask anything about your trip. Press Enter to send, Shift and Enter for a new line.
+        </span>
         <p className="mt-2 text-xs leading-4 text-slate-600 dark:text-slate-400">
           {photo ? "Your photo is used for this answer only, never saved. " : ""}
           {here ? "Your location is sent only with your next questions, never saved. " : ""}
