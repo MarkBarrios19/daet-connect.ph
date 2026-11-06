@@ -138,7 +138,7 @@ function WindowControls({ name, onMinimize, onClose, href }: { name: string; onM
         <LineIcon name="arrowRight" className="h-5 w-5 -rotate-45" />
       </a>
       <button type="button" onClick={onMinimize} aria-label={`Minimise ${name}`} className={btn}>
-        <span aria-hidden="true" className="h-0.5 w-4 rounded bg-surface" />
+        <span aria-hidden="true" className="h-0.5 w-4 rounded bg-current" />
       </button>
       <button type="button" onClick={onClose} aria-label={`Close ${name}`} className={btn}>
         <LineIcon name="close" className="h-5 w-5" />
