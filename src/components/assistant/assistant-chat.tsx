@@ -1,5 +1,6 @@
 "use client";
 
+import { askedToday, markAsked } from "@/lib/tours/assistant/feedback-ask";
 import { formatPeso } from "@/lib/money";
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -90,6 +91,9 @@ async function shrinkPhoto(file: File): Promise<Photo> {
  * short thanks so the click isn't silent.
  */
 function WasThisHelpful({ value, onAnswer }: { value: boolean | undefined; onAnswer: (helpful: boolean) => void }) {
+  // Asked once a day at most per device: hidden until we know, so it never flashes up and goes.
+  const [askedAlready, setAskedAlready] = useState(true);
+  useEffect(() => setAskedAlready(askedToday(window.localStorage)), []);
   if (value !== undefined) {
     return (
       <p className="sr-only" role="status">
@@ -97,14 +101,19 @@ function WasThisHelpful({ value, onAnswer }: { value: boolean | undefined; onAns
       </p>
     );
   }
+  if (askedAlready) return null;
+  const answer = (helpful: boolean) => {
+    markAsked(window.localStorage);
+    onAnswer(helpful);
+  };
   const pill = "inline-flex min-h-11 items-center rounded-full border border-slate-400 px-5 text-sm font-semibold text-slate-600 transition hover:border-slate-600 dark:text-slate-300";
   return (
     <div className="flex flex-wrap items-center gap-3 px-1" role="group" aria-label="Was this helpful?">
       <span className="text-sm text-slate-700 dark:text-slate-300">Was this helpful?</span>
-      <button type="button" onClick={() => onAnswer(true)} className={pill}>
+      <button type="button" onClick={() => answer(true)} className={pill}>
         Yes
       </button>
-      <button type="button" onClick={() => onAnswer(false)} className={pill}>
+      <button type="button" onClick={() => answer(false)} className={pill}>
         No
       </button>
     </div>
@@ -532,7 +541,7 @@ export function AssistantChat({
                 ) : null}
                 {turn.cards?.length ? <AssistantCards cards={turn.cards} signedIn={signedIn} onNavigate={onNavigate} onShareLocation={shareAndRetry} /> : null}
                 {turn.signIn && !signedIn && i === lastSignIn ? <SignInCard /> : null}
-                {turn.content && !(busy && i === turns.length - 1) ? (
+                {turn.content && i === turns.length - 1 && !busy ? (
                   <WasThisHelpful
                     value={turn.helpful}
                     onAnswer={(helpful) => {
