@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { GoogleSignIn, OrDivider } from "@/components/ui/google-sign-in";
 import { Notice } from "@/components/ui/notice";
 import { INITIAL_AUTH_STATE } from "@/lib/auth/action-state";
@@ -43,7 +44,7 @@ export function LoginForm({ nextUrl, notice }: LoginFormProps) {
         </Field>
 
         <Field id="password" label="Password" required error={state.fieldErrors?.password}>
-          <Input type="password" name="password" required autoComplete="current-password" />
+          <PasswordInput name="password" required autoComplete="current-password" />
         </Field>
 
         <p className="-mt-2 text-sm">

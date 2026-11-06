@@ -28,6 +28,7 @@ export async function signUpWithPassword(_previous: AuthActionState, formData: F
     fullName: formString(formData, "fullName"),
     email: formString(formData, "email"),
     password: formString(formData, "password"),
+    confirm: formString(formData, "confirm"),
   });
 
   if (!parsed.success) {
