@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AiAvatar } from "@/components/chat/ai-avatar";
-import { LineIcon } from "@/components/ui/icons";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import type { ChatActions } from "@/components/assistant/chat-actions";
 
@@ -30,7 +29,7 @@ export function AssistantHeader({
   const Heading = headingLevel;
   const brand = tone === "brand";
   return (
-    <header className={`flex items-center gap-2 px-2 ${brand ? "bg-blue-600 py-1 text-white" : "py-1.5 text-daet-ink sm:px-3"}`}>
+    <header className={`flex items-center gap-2 px-2 ${brand ? "bg-blue-600 py-0.5 text-white" : "py-1.5 text-daet-ink sm:px-3"}`}>
       {leading}
       <AiAvatar size="sm" />
       <div className="min-w-0 flex-1">
@@ -84,7 +83,11 @@ function AssistantMenu({ actionsRef, brand }: { actionsRef: React.MutableRefObje
         onClick={() => setOpen((v) => !v)}
         className={`grid place-items-center rounded-full ${brand ? "h-9 w-9 text-white hover:bg-white/15" : "h-11 w-11 text-daet-ink hover:bg-muted"}`}
       >
-        <LineIcon name="more" className="h-5 w-5" />
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
+          <circle cx="6" cy="12" r="1.9" />
+          <circle cx="12" cy="12" r="1.9" />
+          <circle cx="18" cy="12" r="1.9" />
+        </svg>
       </button>
       {open ? (
         <div role="menu" aria-label="Chat options" className="absolute right-0 top-full z-10 mt-1 w-56 overflow-hidden rounded-2xl bg-surface py-1 shadow-[var(--shadow-float)] card-edge">
