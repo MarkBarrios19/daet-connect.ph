@@ -187,7 +187,7 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
 
 - Emergencies: 911 first, then the numbers the Tourism Office keeps at
   `/tours/admin/emergency` (with "last checked"), then "tell your guide or operator".
-  Migration `20261118_emergency_contacts.sql` (not applied yet).
+  Migration `20261118_emergency_contacts.sql` (applied 2026-11-06).
 - "Is my tour on today?": the signed-in visitor's tours today and tomorrow, on /
   called off (reason and next step) / not confirmed. Not signed in: sign in.
 - "What's open near me": needs Use my location; open places within 3 km first,
