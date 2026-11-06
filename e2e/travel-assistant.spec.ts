@@ -3,8 +3,8 @@ import { checkA11y, signInAs } from "./fixtures";
 
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true });
 
-async function openAssistant(page: Page, path = "/tours/browse") {
-  await page.goto(path, { waitUntil: "networkidle" });
+async function openAssistant(page: Page, path = "/tours/browse", waitUntil: "networkidle" | "load" = "networkidle") {
+  await page.goto(path, { waitUntil });
   await page.getByRole("button", { name: "Daet AI assistant" }).click();
   const dialog = page.getByRole("dialog", { name: "Daet AI assistant" });
   await expect(dialog).toBeVisible();
@@ -116,3 +116,23 @@ test("near me asks for the location, which the traveller shares with one tap", a
   await expect(dialog.getByRole("button", { name: /Using your location/ })).toBeVisible();
   await expect(dialog.getByText(/Food near your location: Bagasbas Beach eateries/)).toBeVisible();
 });
+
+for (const [path, kind, answer] of [
+  ["/tours/packages/aa000000-0000-4000-8000-000000000001", "tour", /open dates|No open dates/i],
+  ["/tours/attractions/bagasbas-beach", "place", /Bagasbas/],
+  ["/tours/events/e1000000-0000-4000-8000-000000000001", "event", /\d|free|venue|Coming up/i],
+] as const) {
+  test(`on a ${kind} page the assistant greets with three questions about it, answered from the listings`, async ({ page }) => {
+    const dialog = await openAssistant(page, path, "load");
+    const name = (await page.locator("main h1").first().textContent())!.trim();
+    await expect(dialog.getByText(`Ask me about ${name}.`)).toBeVisible();
+    const questions = dialog.getByRole("button", { name: new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
+    await expect(questions).toHaveCount(3);
+    const first = (await questions.first().textContent())!;
+    await questions.first().click();
+    await expect(dialog.getByText(first, { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("listitem").last()).toHaveText(answer, { timeout: 15000 });
+    await page.screenshot({ path: `/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/greet-${kind}.png` });
+    await checkA11y(page, `assistant greeting on a ${kind} page`);
+  });
+}

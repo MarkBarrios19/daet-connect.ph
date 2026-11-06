@@ -188,7 +188,7 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
   }
 
   // Opening hours of a place
-  if (has(t, /\b(open|close|closing|hours|what time|anong oras|bukas ba|entrance|fee)\b/) && !has(t, /\b(tour|tours|booking)\b/)) {
+  if (has(t, /\b(open|close|closing|hours|what time|anong oras|bukas ba|entrance|fee)\b/) && !has(t, /\b(tour|tours|booking|dates|date|available|availability|slots|seats)\b/)) {
     const name = t.replace(/\b(what time|anong oras|does|do|is|are|the|open|opens|close|closes|closing|hours|of|at|bukas ba|entrance|fee|how much|magkano)\b/g, " ").replace(/\s+/g, " ").trim();
     if (name.length >= 3) {
       const result = await attractionInfo(ctx, { name });

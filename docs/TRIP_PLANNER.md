@@ -194,3 +194,11 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
   then places with no hours ("check before you go"); at most 5; closed ones left out.
 - Code: `src/lib/tours/assistant/trip-day.ts` (basic mode and AI tools
   `emergency_numbers`, `tour_today`, `open_near_me`).
+
+## Page greetings (decisions 17, 33)
+
+- Opened on a tour, place or event page, the assistant greets "Ask me about {name}."
+  with three questions that name it, so basic mode answers them from the listings:
+  tour: open dates, what's included, how to get there; place: how to get there,
+  opening time, tours that go there; event: when and where, free or not, where to stay.
+- On tour pages the chat button sits above the "Book this trip" bar on phones.

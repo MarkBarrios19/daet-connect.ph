@@ -11,7 +11,7 @@ import type { AssistantEvent } from "@/lib/tours/assistant/respond";
 import type { AssistantCard, HandoffCard } from "@/lib/tours/assistant/tools";
 import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import { pageSuggestions, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
@@ -276,6 +276,14 @@ export function AssistantChat({
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
   const lastPlanTurn = turns.reduce((at, t, i) => (t.itinerary ? i : at), -1);
+  // On a tour, place or event page: a greeting about it and three questions (decisions 17, 33).
+  const [pageName, setPageName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!page) return setPageName(null);
+    const h1 = document.querySelector("main h1")?.textContent?.replace(/\s+/g, " ").trim();
+    setPageName(h1 && h1.length <= 80 ? h1 : null);
+  }, [page]);
+  const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
@@ -334,7 +342,18 @@ export function AssistantChat({
         aria-label="Conversation"
         className="scrollbar-quiet min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-3 py-4"
       >
-        {turns.length === 0 ? (
+        {turns.length === 0 && suggestions ? (
+          <li className="space-y-3">
+            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">{suggestions.greeting}</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.questions.map((q) => (
+                <button key={q} type="button" onClick={() => send(q)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                  {q}
+                </button>
+              ))}
+            </div>
+          </li>
+        ) : turns.length === 0 ? (
           <li className="space-y-3">
             <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
               Hi! I&apos;m your local guide for Daet. Ask where to eat or stay, how to get somewhere and what it costs, where your tour meets, or about tours and events

@@ -17,7 +17,7 @@ const dateKey = z.string().refine(isDateKey, "Use YYYY-MM-DD.");
 
 export const TripContextSchema = z.object({
   /** The page the assistant was opened on, so "this tour" and "here" mean something. */
-  page: z.object({ kind: z.enum(["package", "attraction", "place"]), id: z.string().regex(/^[A-Za-z0-9_-]{1,120}$/) }).nullable().optional(),
+  page: z.object({ kind: z.enum(["package", "attraction", "place", "event"]), id: z.string().regex(/^[A-Za-z0-9_-]{1,120}$/) }).nullable().optional(),
   dates: z.object({ start: dateKey, end: dateKey }).nullable().optional(),
   travelers: z.object({ adults: z.number().int().min(1).max(MAX_ADULTS), children: z.array(z.number().int().min(0).max(17)).max(MAX_CHILDREN) }).nullable().optional(),
   /** A city chip or whatever the traveller typed. */
@@ -90,8 +90,23 @@ export function contextPrompt(context: TripContext | null | undefined): string {
   return ["", "What the app already knows (do not ask for these again):", ...lines].join("\n");
 }
 
-/** The package or attraction page the assistant was opened on, so "this tour" has a meaning. */
-export function pageFromPath(pathname: string): { kind: "package" | "attraction"; id: string } | null {
-  const match = /^\/tours\/(packages|attractions)\/([A-Za-z0-9_-]{1,120})\/?$/.exec(pathname);
-  return match ? { kind: match[1] === "packages" ? "package" : "attraction", id: match[2] } : null;
+const PAGE_KINDS = { packages: "package", attractions: "attraction", events: "event" } as const;
+
+/** The tour, place or event page the assistant was opened on, so "this tour" has a meaning. */
+export function pageFromPath(pathname: string): { kind: "package" | "attraction" | "event"; id: string } | null {
+  const match = /^\/tours\/(packages|attractions|events)\/([A-Za-z0-9_-]{1,120})\/?$/.exec(pathname);
+  return match ? { kind: PAGE_KINDS[match[1] as keyof typeof PAGE_KINDS], id: match[2] } : null;
+}
+
+/**
+ * The greeting and three suggested questions on a tour, place or event page
+ * (decisions 17 and 33). Each question names the page's subject so basic mode
+ * can answer it from the listings.
+ */
+export function pageSuggestions(kind: "package" | "attraction" | "place" | "event", name: string): { greeting: string; questions: string[] } {
+  if (kind === "package")
+    return { greeting: `Ask me about ${name}.`, questions: [`Open dates for ${name}?`, `What's included in ${name}?`, `How do I get to ${name}?`] };
+  if (kind === "event")
+    return { greeting: `Ask me about ${name}.`, questions: [`When and where is the ${name} event?`, `Is the ${name} event free?`, `Where to stay near ${name}?`] };
+  return { greeting: `Ask me about ${name}.`, questions: [`How do I get to ${name}?`, `What time does ${name} open?`, `Tours that go to ${name}?`] };
 }
