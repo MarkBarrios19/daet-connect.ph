@@ -98,7 +98,7 @@ export function BookSummary({ packages, group }: { packages: DatedPackage[]; gro
       </h2>
       <ul className="group/books space-y-3">
         {rows.map(({ p, price }) => (
-          <li key={p.id} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 outline-2 outline-blue-600 has-[[data-pending=true]]:outline dark:bg-blue-950/40">
+          <li key={p.id} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 transition-colors has-[[data-pending=true]]:bg-blue-100 dark:bg-blue-950/40 dark:has-[[data-pending=true]]:bg-blue-900/50">
             <span className="min-w-0 flex-1">
               <Link href={`/tours/packages/${p.id}`} className="font-bold text-daet-ink hover:underline">
                 {p.title}

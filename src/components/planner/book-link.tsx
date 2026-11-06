@@ -23,7 +23,7 @@ function Label() {
  * The Book pill on a trip's row. A tap answers at once (spinner and "Opening…");
  * while one is opening the other pills dim and stop taking taps. Put the pills
  * inside a `group/books` element, and give the row `has-[[data-pending=true]]`
- * styling to mark the one that is opening.
+ * styling (a stronger tint) to mark the one that is opening.
  */
 export function BookLink({ href, label }: { href: string; label: string }) {
   return (
