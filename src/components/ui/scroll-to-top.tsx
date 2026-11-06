@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { pageFromPath } from "@/lib/tours/assistant/context";
 
 /**
  * Back to the top, at the foot of the page.
@@ -35,6 +37,9 @@ import { useEffect, useState } from "react";
  */
 export function ScrollToTop({ raised = false }: { raised?: boolean }) {
   const [shown, setShown] = useState(false);
+  // A tour page has a "Book this trip" bar along the foot below 1024px, and the
+  // assistant button rides above it (bottom-28); stack on top of that, not the bar.
+  const overBookBar = pageFromPath(usePathname() ?? "")?.kind === "package";
 
   useEffect(() => {
     const onScroll = () => setShown(window.scrollY > window.innerHeight);
@@ -63,9 +68,11 @@ export function ScrollToTop({ raised = false }: { raised?: boolean }) {
         // foot of a phone, 1.5rem on a wide screen: this lands half a rem above
         // its top edge either way. With a tab bar the pill steps down to 5rem —
         // and off a phone's screen entirely — so the corner is the tab bar's.
-        raised
-          ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-20"
-          : "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-20"
+        overBookBar
+          ? "bottom-[10.5rem] lg:bottom-20"
+          : raised
+            ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-20"
+            : "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-20"
       }`}
     >
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
