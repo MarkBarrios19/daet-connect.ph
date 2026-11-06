@@ -211,4 +211,4 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
   until a trip is saved).
 - "Was this helpful? Yes / No" under each answer; the choice goes to
   `tours_ai_feedback` (question and answer excerpts, mode, page; no account).
-  Migration `20261119_ai_feedback.sql` (not applied yet). Recorded only.
+  Migration `20261119_ai_feedback.sql` (applied 2026-11-06). Recorded only.
