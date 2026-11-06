@@ -1,6 +1,6 @@
 "use client";
 
-import { LineIcon } from "@/components/ui/icons";
+import { AiAvatar } from "@/components/chat/ai-avatar";
 import { useEffect, useRef, useState } from "react";
 import { OPEN_ASSISTANT_EVENT, OVERLAY_EVENT, type OverlayDetail } from "@/lib/ui-overlay";
 import { usePathname } from "next/navigation";
@@ -105,10 +105,11 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={`fixed right-4 z-40 ${pill} h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-3 text-sm font-bold text-white shadow-[var(--shadow-float)] transition hover:bg-blue-700 active:scale-95 sm:right-6 sm:px-4 print:hidden ${overBookBar ? "bottom-28 lg:bottom-6" : raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"}`}
+        aria-label="Open the Daet AI assistant"
+        title="Daet AI assistant"
+        className={`fixed right-4 z-40 ${pill} h-12 w-12 items-center justify-center rounded-full shadow-[var(--shadow-float)] transition hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:right-6 print:hidden ${overBookBar ? "bottom-28 lg:bottom-6" : raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"}`}
       >
-        <LineIcon name="sparkle" className="h-6 w-6 sm:h-5 sm:w-5" />
-        <span className="sr-only sm:not-sr-only">Daet AI assistant</span>
+        <AiAvatar />
       </button>
       <dialog
         ref={dialogRef}
