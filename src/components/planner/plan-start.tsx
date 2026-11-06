@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LineIcon } from "@/components/ui/icons";
+import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
@@ -29,6 +30,8 @@ export function PlanStart({ signedIn, initialText = "", onSend }: { signedIn: bo
   const [trip, setTrip] = useState<TripAnswers>({});
   const [editing, setEditing] = useState(false);
   useEffect(() => setTrip(loadTrip()), []);
+  // Speech to text: what is heard is added to the box, so it can be edited before sending.
+  const speech = useSpeech((heard) => setText((current) => `${current}${current && !/\s$/.test(current) ? " " : ""}${heard}`.slice(0, 1000)));
 
   const send = (value: string) => {
     const message = value.trim();
@@ -70,11 +73,26 @@ export function PlanStart({ signedIn, initialText = "", onSend }: { signedIn: bo
           placeholder="Plan 3 days in Daet for two. We like beaches and a bit of history."
           className="block w-full flex-1 resize-none bg-transparent text-lg leading-7 text-daet-ink placeholder:text-slate-500 focus:outline-none"
         />
-        <button type="submit" aria-label="Send" disabled={!text.trim()} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 19V5M6 11l6-6 6 6" />
-          </svg>
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {speech.supported ? (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              aria-pressed={speech.listening}
+              aria-label={speech.listening ? "Stop listening" : "Speak your message"}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={MIC_PATH} />
+              </svg>
+            </button>
+          ) : null}
+          <button type="submit" aria-label="Send" disabled={!text.trim()} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 19V5M6 11l6-6 6 6" />
+            </svg>
+          </button>
+        </div>
       </form>
 
       <div className="mt-4 flex flex-wrap justify-center gap-3">
