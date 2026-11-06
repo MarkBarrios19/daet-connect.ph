@@ -450,7 +450,7 @@ export function AssistantChat({
             ) : (
               <div className="min-w-0 max-w-[92%] space-y-2">
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
-                  {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
+                  {turn.content || (busy && i === turns.length - 1 ? <TypingDots label="AI is thinking…" /> : null)}
                 </p>
                 {turn.status && busy && i === turns.length - 1 ? (
                   <p className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-400">{turn.status}…</p>
@@ -600,12 +600,15 @@ export function AssistantChat({
   );
 }
 
-export function TypingDots() {
+export function TypingDots({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 py-1" role="status" aria-label="Typing">
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
-      ))}
+    <span className="inline-flex items-center gap-2 py-1" role="status" aria-label={label ?? "Typing"}>
+      <span aria-hidden="true" className="inline-flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
+        ))}
+      </span>
+      {label ? <span aria-hidden="true" className="text-sm text-slate-600 dark:text-slate-400">{label}</span> : null}
     </span>
   );
 }
