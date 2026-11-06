@@ -37,7 +37,7 @@ export function NotificationBell() {
     void supabase.auth.getUser().then(({ data: { user } }) => {
       if (cancelled || !user) return;
       setUserId(user.id);
-      void load(supabase);
+      void load(supabase).catch(() => {});
       channel = supabase
         .channel(`notifications:${user.id}`)
         .on(
@@ -50,7 +50,7 @@ export function NotificationBell() {
           },
         )
         .subscribe();
-    });
+    }).catch(() => {});
     return () => {
       cancelled = true;
       if (channel) void supabase.removeChannel(channel);
@@ -79,7 +79,10 @@ export function NotificationBell() {
     };
   }, [open]);
 
-  if (!userId) return null;
+  // Only mounted by the header for a signed-in user, so it always renders:
+  // a failed client-side lookup must not make the bell vanish (userId is only
+  // needed for live updates).
+  void userId;
 
   function markRead(ids?: string[]) {
     const now = new Date().toISOString();

@@ -61,6 +61,31 @@ function tripLines(b: BookingEmailData): string[] {
 
 const hello = (name: string | null) => `Hi${name ? ` ${name.split(" ")[0]}` : ""},`;
 
+/** Sent to the tourist as soon as they book: received, waiting for the operator. */
+export function bookingReceivedEmail(b: BookingEmailData) {
+  return render(`Booking request received: ${b.tourTitle} (${b.reference})`, [
+    hello(b.contactName),
+    `We received your booking request. ${b.operatorName ?? "The operator"} will review it and you'll get another email once it's confirmed. You don't need to pay yet.`,
+    "",
+    ...tripLines(b),
+    `Total: ${formatPeso(b.totalAmount)}`,
+    { label: "View booking", href: b.bookingUrl },
+    CALL_OFF_RULE,
+  ]);
+}
+
+/** Sent to the operator when a new booking request arrives. */
+export function newBookingForOperatorEmail(b: BookingEmailData, operatorUrl: string) {
+  return render(`New booking request: ${b.tourTitle} (${b.reference})`, [
+    "Hi,",
+    `You have a new booking request from ${b.contactName ?? "a tourist"}. Please confirm or decline it.`,
+    "",
+    ...tripLines(b),
+    `Total: ${formatPeso(b.totalAmount)}`,
+    { label: "Review request", href: operatorUrl },
+  ]);
+}
+
 /** Sent when the operator confirms: the booking is accepted and can be paid. */
 export function bookingConfirmedEmail(b: BookingEmailData) {
   const due = Math.max(0, b.totalAmount - b.totalPaid);
