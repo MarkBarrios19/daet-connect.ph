@@ -182,3 +182,15 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
 6. **Sample plans** (35). "No dates yet" drafts a plan without dates; Save and Book ask for dates.
 7. **Money for foreign visitors** (24). A rough amount in the visitor's currency, from a daily rate, USD if unknown, marked "approx.".
 8. **Voice and photos in the chat** (38, 39). A microphone in the message box; photos for signed-in visitors with AI answers only, used for that answer and not kept.
+
+## Trip-day answers (decisions 12, 21, 22, 30, 31, 32)
+
+- Emergencies: 911 first, then the numbers the Tourism Office keeps at
+  `/tours/admin/emergency` (with "last checked"), then "tell your guide or operator".
+  Migration `20261118_emergency_contacts.sql` (not applied yet).
+- "Is my tour on today?": the signed-in visitor's tours today and tomorrow, on /
+  called off (reason and next step) / not confirmed. Not signed in: sign in.
+- "What's open near me": needs Use my location; open places within 3 km first,
+  then places with no hours ("check before you go"); at most 5; closed ones left out.
+- Code: `src/lib/tours/assistant/trip-day.ts` (basic mode and AI tools
+  `emergency_numbers`, `tour_today`, `open_near_me`).

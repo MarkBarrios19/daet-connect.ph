@@ -7,6 +7,7 @@ import { estimateCost, findPlaces, howToGetThere, meetingPoint, tripRoutes } fro
 import { detectTripLang, readTripQuestion, tripAnswer } from "@/lib/tours/assistant/trip";
 import { isMeetingQuestion, readCostQuestion, readDirectionsQuestion, readPlaceQuestion } from "@/lib/tours/assistant/guide-intents";
 import { normalizeText } from "@/lib/tours/itinerary/assistant";
+import { emergencyNumbers, openNearMe, tourToday } from "@/lib/tours/assistant/trip-day";
 
 /**
  * Basic mode: answers without a language model. Used when no Gemini key
@@ -16,6 +17,12 @@ import { normalizeText } from "@/lib/tours/itinerary/assistant";
 
 const has = (t: string, pattern: RegExp) => pattern.test(t);
 const STOP = new Set(["what", "when", "where", "which", "the", "are", "is", "for", "any", "open", "dates", "date", "available", "availability", "seats", "slots", "tour", "tours", "this", "next", "weekend", "week", "there", "still", "have", "you", "do", "can", "book", "how", "much", "price", "cost", "meron", "pa", "ba", "ang", "sa", "ng", "may", "magkano"]);
+
+export const isEmergency = (t: string) => /\b(emergency|911|police|pulis|hospital|ospital|ambulance|ambulansya|rescue|coast guard|accident|aksidente|drowning|nalulunod|injured|sugatan|saklolo)\b/.test(t);
+export const asksTourToday = (t: string) =>
+  /\b(my|ko|namin|our)\b/.test(t) && /\b(tour|booking|trip)\b/.test(t) && /\b(today|tomorrow|ngayon|bukas|tuloy|still on|on today|on tomorrow|called off|cancelled|canceled)\b/.test(t);
+export const asksOpenNearMe = (t: string) =>
+  (/\b(open|bukas)\b/.test(t) && /\b(near me|nearby|malapit|around here|dito)\b/.test(t)) || /\bwhat s open\b|\bwhats open\b|\banong bukas\b/.test(t);
 
 export const OFF_TOPIC = "I can only help with trips in and around Daet: tours, places, getting here, costs and your bookings.";
 
@@ -44,6 +51,11 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
   if (has(t, /\b(weather|forecast|rain|raining|typhoon|storm|bagyo|panahon|ulan|umuulan|signal no)\b/) && !has(t, /\b(what to do|things to do|ano gagawin|ano ang gagawin|activities)\b/)) {
     return "I can't check today's weather. For the forecast and storm signals, see PAGASA (pagasa.dost.gov.ph) or a weather app. Boat trips to Calaguas and the Mercedes islands stop when the Coast Guard says the sea is rough. If your operator calls off your trip for weather, you pick a new date or get a full refund. On a rainy day, ask me what to do in Daet when it rains.";
   }
+
+  // Trip day (part 3): emergencies first, then "is my tour on?", then what's open near me.
+  if (isEmergency(t)) return (await emergencyNumbers(ctx)).answer;
+  if (asksTourToday(t)) return (await tourToday(ctx)).answer;
+  if (asksOpenNearMe(t)) return (await openNearMe(ctx)).answer;
 
   // Off-topic (decision 36): one line, back to Daet.
   if (isOffTopic(t)) return OFF_TOPIC;

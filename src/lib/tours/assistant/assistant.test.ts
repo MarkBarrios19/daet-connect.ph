@@ -139,7 +139,7 @@ describe("tour durations", () => {
 
 describe("basic mode", () => {
   it("says it can't check whether a boat or tour runs today, and points to the operator (decision 11)", async () => {
-    for (const q of ["Is the Calaguas boat running tomorrow?", "May biyahe ba ang bangka ngayon?", "Anong oras ang alis ng bangka?", "Is my tour still on today?"]) {
+    for (const q of ["Is the Calaguas boat running tomorrow?", "May biyahe ba ang bangka ngayon?", "Anong oras ang alis ng bangka?"]) {
       const reply = await basicReply(q, ctx(null));
       expect(reply).toMatch(/can't check that/);
       expect(reply).toMatch(/operator/);
