@@ -1,3 +1,4 @@
+import { PresenceHeartbeat } from "@/components/chat/presence-heartbeat";
 import type { ReactNode } from "react";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { ChatDock } from "@/components/chat-dock/chat-dock";
@@ -130,6 +131,7 @@ export async function PageFrame({
             : undefined
         }
       />
+      {role !== undefined ? <PresenceHeartbeat /> : null}
       <AssistantWidget signedIn={role !== undefined} raised={tabs.length > 0} />
       {/* The way back to the top of a long page; lifted over the tab bar when there is one. */}
       <ScrollToTop raised={tabs.length > 0} />

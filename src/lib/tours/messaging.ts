@@ -298,4 +298,24 @@ export type InboxRow = {
   last_message: string | null;
   last_sender_id: string | null;
   unread: number;
+  /** The person on the other end (null for the Tourism Office), their photo and last activity. */
+  other_profile_id?: string | null;
+  other_avatar_url?: string | null;
+  other_last_seen?: string | null;
 };
+
+/** Online within this long of the last heartbeat; "recent" up to an hour. */
+export const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+export const RECENT_WINDOW_MS = 60 * 60 * 1000;
+
+export type Presence = { state: "online" | "recent" | "offline"; /** "13m" or "2h", only when recent */ label: string | null };
+
+/** Messenger-style status from a last-seen time: online now, active Nm/Nh ago, or nothing. */
+export function presenceOf(lastSeen: string | null | undefined, now: number = Date.now()): Presence {
+  if (!lastSeen) return { state: "offline", label: null };
+  const age = now - new Date(lastSeen).getTime();
+  if (!Number.isFinite(age) || age > RECENT_WINDOW_MS) return { state: "offline", label: null };
+  if (age <= ONLINE_WINDOW_MS) return { state: "online", label: null };
+  const minutes = Math.round(age / 60000);
+  return { state: "recent", label: minutes < 60 ? `${minutes}m` : "1h" };
+}
