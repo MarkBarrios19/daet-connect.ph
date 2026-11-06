@@ -153,45 +153,71 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                       <GettingThere value={gettingThere} />
                     </div>
                   ) : null}
-                  <ol className="grid gap-3 sm:grid-cols-2">
-                    {day.items.map((item, i) => {
-                      const extra = extras.get(item.name);
-                      const bookable = bookableAt.get(item.name);
-                      const cost = item.kind === "lunch" ? "Lunch" : extra?.fee ? `${formatPeso(extra.fee)} entrance` : "Free, on your own";
-                      return (
-                        <li key={i} className="flex min-w-0 items-center gap-3">
-                          {extra?.photo ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- listing photos come from storage of any size
-                            <img src={extra.photo} alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
-                          ) : (
-                            <span aria-hidden="true" className="inline-flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-                              <LineIcon name={item.kind === "lunch" ? "plate" : "pin"} className="h-7 w-7" />
-                            </span>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-bold text-daet-ink">
-                              {item.slug ? (
-                                <Link href={`/tours/attractions/${item.slug}`} className="hover:underline">
-                                  {item.name}
-                                </Link>
-                              ) : (
-                                item.name
-                              )}
-                            </p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{[item.start !== null ? formatClock(item.start) : null, cost].filter(Boolean).join(" · ")}</p>
-                            {bookable?.map((t) => (
-                              <span key={t.title} className="mt-1 block text-sm text-daet-ink">
-                                <span className="mr-1.5 inline-flex min-h-6 items-center gap-1 rounded-full bg-green-500 px-2.5 font-bold text-slate-900">
-                                  <LineIcon name="check" className="h-3.5 w-3.5" /> Bookable
-                                </span>
-                                {t.title}
-                                {t.price ? ` · ${t.price}` : ""}
+                  {/* One timeline: time on the left, the stop's number (as on the map) on a rail, one card per stop. */}
+                  <ol aria-label={`Day ${day.dayNumber} stops`}>
+                    {(() => {
+                      let visitNumber = 0;
+                      return day.items.map((item, i) => {
+                        const extra = extras.get(item.name);
+                        const bookable = bookableAt.get(item.name);
+                        const cost = item.kind === "lunch" ? "Lunch" : extra?.fee ? `${formatPeso(extra.fee)} entrance` : "Free, on your own";
+                        if (item.kind !== "lunch") visitNumber += 1;
+                        const last = i === day.items.length - 1;
+                        return (
+                          <li key={i} className="grid grid-cols-[4.25rem_1.75rem_minmax(0,1fr)] gap-x-3">
+                            <p className="pt-3.5 text-right text-sm font-bold text-daet-ink/80">{item.start !== null ? formatClock(item.start) : ""}</p>
+                            <div aria-hidden="true" className="flex flex-col items-center">
+                              <span className="mt-2.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                                {item.kind === "lunch" ? <LineIcon name="plate" className="h-4 w-4" /> : visitNumber}
                               </span>
-                            ))}
-                          </div>
-                        </li>
-                      );
-                    })}
+                              {last ? null : <span className="w-0.5 flex-1 bg-blue-200 dark:bg-blue-900" />}
+                            </div>
+                            <div className={last ? "" : "pb-3"}>
+                              <div className="space-y-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  {extra?.photo ? (
+                                    // eslint-disable-next-line @next/next/no-img-element -- listing photos come from storage of any size
+                                    <img src={extra.photo} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+                                  ) : (
+                                    <span aria-hidden="true" className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface text-blue-800 dark:text-blue-300">
+                                      <LineIcon name={item.kind === "lunch" ? "plate" : "pin"} className="h-6 w-6" />
+                                    </span>
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-daet-ink">
+                                      {item.slug ? (
+                                        <Link href={`/tours/attractions/${item.slug}`} className="hover:underline">
+                                          {item.name}
+                                        </Link>
+                                      ) : (
+                                        item.name
+                                      )}
+                                    </p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">{cost}</p>
+                                  </div>
+                                </div>
+                                {bookable?.length ? (
+                                  <div className="rounded-xl bg-surface px-3 py-2">
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">Tours that pass here</p>
+                                    <ul>
+                                      {bookable.map((t) => (
+                                        <li key={t.title} className="flex flex-wrap items-center gap-x-2.5 gap-y-1 py-2 text-sm text-daet-ink">
+                                          <span className="inline-flex min-h-6 shrink-0 items-center gap-1 rounded-full bg-green-500 px-2.5 font-bold text-slate-900">
+                                            <LineIcon name="check" className="h-3.5 w-3.5" /> Bookable
+                                          </span>
+                                          <span className="min-w-0 flex-1 font-semibold">{t.title}</span>
+                                          {t.price ? <span className="shrink-0 text-slate-600 dark:text-slate-300">{t.price}</span> : null}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      });
+                    })()}
                   </ol>
                 </article>
               );
