@@ -202,3 +202,13 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
   tour: open dates, what's included, how to get there; place: how to get there,
   opening time, tours that go there; event: when and where, free or not, where to stay.
 - On tour pages the chat button sits above the "Book this trip" bar on phones.
+
+## Trip memory and feedback (decisions 25, 26, 29, 34)
+
+- Dates, travellers and origin are kept on the phone (localStorage, key
+  `daet-trip-context-v1`) across visits; dates that have passed are dropped. Not
+  yet kept in the account for signed-in visitors (child ages stay off the server
+  until a trip is saved).
+- "Was this helpful? Yes / No" under each answer; the choice goes to
+  `tours_ai_feedback` (question and answer excerpts, mode, page; no account).
+  Migration `20261119_ai_feedback.sql` (not applied yet). Recorded only.

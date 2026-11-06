@@ -24,7 +24,7 @@ export { loadTrip, saveTrip, type TripAnswers };
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
 export const HANDOFF_KEY = "daet-plan-handoff-v1";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean };
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean; helpful?: boolean };
 type PageRef = NonNullable<TripContext["page"]>;
 type Point = { lat: number; lng: number };
 
@@ -54,6 +54,23 @@ function save(turns: Turn[]) {
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
   }
+}
+
+/** "Was this helpful? Yes / No" under an answer (decisions 26, 29); the choice is recorded only. */
+function WasThisHelpful({ value, onAnswer }: { value: boolean | undefined; onAnswer: (helpful: boolean) => void }) {
+  const pill = (on: boolean) =>
+    `inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold transition ${on ? "border-2 border-daet-ink text-daet-ink" : "border border-slate-400 text-slate-600 hover:border-slate-600 dark:text-slate-300"}`;
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-1" role="group" aria-label="Was this helpful?">
+      <span className="text-sm text-slate-700 dark:text-slate-300">{value === undefined ? "Was this helpful?" : "Thanks for telling us."}</span>
+      <button type="button" aria-pressed={value === true} disabled={value !== undefined} onClick={() => onAnswer(true)} className={pill(value === true)}>
+        Yes
+      </button>
+      <button type="button" aria-pressed={value === false} disabled={value !== undefined} onClick={() => onAnswer(false)} className={pill(value === false)}>
+        No
+      </button>
+    </div>
+  );
 }
 
 /**
@@ -402,6 +419,23 @@ export function AssistantChat({
                 ) : null}
                 {turn.cards?.length ? <AssistantCards cards={turn.cards} signedIn={signedIn} onNavigate={onNavigate} onShareLocation={shareAndRetry} /> : null}
                 {turn.signIn && !signedIn && i === lastSignIn ? <SignInCard /> : null}
+                {turn.content && !(busy && i === turns.length - 1) ? (
+                  <WasThisHelpful
+                    value={turn.helpful}
+                    onAnswer={(helpful) => {
+                      setTurns((all) => {
+                        const next = all.map((t, j) => (j === i ? { ...t, helpful } : t));
+                        save(next);
+                        return next;
+                      });
+                      void fetch("/api/assistant/feedback", {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ helpful, mode: turn.mode ?? "basic", question: turns[i - 1]?.role === "user" ? turns[i - 1].content : null, answer: turn.content, page: window.location.pathname }),
+                      }).catch(() => {});
+                    }}
+                  />
+                ) : null}
               </div>
             )}
           </li>

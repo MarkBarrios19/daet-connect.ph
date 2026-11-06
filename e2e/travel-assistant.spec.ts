@@ -136,3 +136,24 @@ for (const [path, kind, answer] of [
     await checkA11y(page, `assistant greeting on a ${kind} page`);
   });
 }
+
+test("each answer asks Was this helpful?, and the choice is sent once", async ({ page }) => {
+  const sent: unknown[] = [];
+  await page.route("**/api/assistant/feedback", async (route) => {
+    sent.push(route.request().postDataJSON());
+    await route.fulfill({ json: { ok: true } });
+  });
+  const dialog = await openAssistant(page);
+  await dialog.getByLabel("Ask the Daet AI assistant").fill("How do I cancel and get a refund?");
+  await dialog.getByRole("button", { name: "Send" }).click();
+  await expect(dialog.getByText(/48 hours/)).toBeVisible();
+  const group = dialog.getByRole("group", { name: "Was this helpful?" }).last();
+  await group.getByRole("button", { name: "Yes" }).click();
+  await expect(group.getByText("Thanks for telling us.")).toBeVisible();
+  await expect(group.getByRole("button", { name: "Yes" })).toHaveAttribute("aria-pressed", "true");
+  await expect(group.getByRole("button", { name: "No" })).toBeDisabled();
+  await page.screenshot({ path: "/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/helpful.png" });
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toMatchObject({ helpful: true, question: "How do I cancel and get a refund?" });
+  await checkA11y(page, "assistant feedback");
+});
