@@ -25,6 +25,8 @@ export const AssistantRequestSchema = z.object({
   location: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).nullable().optional(),
   /** The page it was opened on and the trip answers so far (dates, travellers, origin). */
   context: TripContextSchema.nullable().optional(),
+  /** A photo with this message (decision 39): signed-in visitors, AI answers only, never stored. About 1 MB at most. */
+  image: z.object({ mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().max(1_500_000).regex(/^[A-Za-z0-9+/=]+$/) }).nullable().optional(),
 });
 
 /** About 100 m: enough for "nearest eatery", without an exact position. */
@@ -71,7 +73,7 @@ export type RespondDeps = {
 };
 
 /** Validates and trims the conversation; null when it isn't usable. */
-export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: number; lng: number } | null; trip: TripContext | null } | { error: string } {
+export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: number; lng: number } | null; trip: TripContext | null; image: { mimeType: string; data: string } | null } | { error: string } {
   const parsed = AssistantRequestSchema.safeParse(raw);
   if (!parsed.success) return { error: "Send a message to the assistant." };
   const turns = parsed.data.messages.map((m) => ({ role: m.role, content: m.content.replace(/\s+$/g, "").trim() })).filter((m) => m.content);
@@ -81,7 +83,7 @@ export function cleanHistory(raw: unknown): { history: ChatTurn[]; here: { lat: 
   let history = turns.slice(-ASSISTANT_HISTORY_MAX).map((m) => ({ ...m, content: m.content.slice(0, m.role === "user" ? ASSISTANT_MESSAGE_MAX : 2000) }));
   // The API needs the conversation to start with the tourist.
   while (history.length && history[0].role !== "user") history = history.slice(1);
-  return { history, here: parsed.data.location ? roundLocation(parsed.data.location) : null, trip: parsed.data.context ?? null };
+  return { history, here: parsed.data.location ? roundLocation(parsed.data.location) : null, trip: parsed.data.context ?? null, image: parsed.data.image ?? null };
 }
 
 /** Events that close a turn: the form, the plan and its follow-ups, the cards. */
@@ -101,8 +103,16 @@ export async function* respond(raw: unknown, deps: RespondDeps): AsyncGenerator<
     yield { t: "error", message: cleaned.error };
     return;
   }
-  const { history, here, trip } = cleaned;
-  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], route: deps.route, here, trip };
+  const { history, here, trip, image } = cleaned;
+  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], route: deps.route, here, trip, image };
+
+  // Photos need a signed-in visitor and a full AI answer; basic mode can't look at one.
+  if (image && (!deps.userId || !deps.aiAllowed)) {
+    yield { t: "mode", mode: deps.aiAllowed ? "ai" : "basic" };
+    yield { t: "text", v: deps.userId ? "I can't look at photos right now. Describe what you see, or ask again later." : "Sign in to send a photo. You can still describe what you see and I'll help." };
+    yield { t: "done" };
+    return;
+  }
 
   // A plan needs dates, who is coming and where from. Ask once, before any model call.
   const latest = history[history.length - 1].content;

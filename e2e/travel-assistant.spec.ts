@@ -157,3 +157,45 @@ test("each answer asks Was this helpful?, and the choice is sent once", async ({
   expect(sent[0]).toMatchObject({ helpful: true, question: "How do I cancel and get a refund?" });
   await checkA11y(page, "assistant feedback");
 });
+
+test("ask by voice: what is heard is sent", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { SpeechRecognition: unknown; webkitSpeechRecognition: unknown };
+    w.SpeechRecognition = w.webkitSpeechRecognition = class {
+      onresult: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        setTimeout(() => {
+          this.onresult?.({ results: [[{ transcript: "How do I cancel and get a refund?" }]] });
+          this.onend?.();
+        }, 50);
+      }
+      stop() {}
+    };
+  });
+  const dialog = await openAssistant(page);
+  await dialog.getByRole("button", { name: "Ask by voice" }).click();
+  await expect(dialog.getByRole("button", { name: "Ask by voice" })).toBeVisible();
+  await expect(dialog.getByText("How do I cancel and get a refund?")).toBeVisible();
+  await expect(dialog.getByText(/48 hours/)).toBeVisible();
+});
+
+test("a signed-in visitor can send a photo; basic mode says it can't look at photos", async ({ page, context }) => {
+  await signInAs(context, "tourist");
+  // Signed-in phones reach the assistant from Messages or the help page, not the floating button.
+  await page.goto("/tours/help", { waitUntil: "networkidle" });
+  const dialog = page.getByRole("main");
+  await dialog.locator('input[type="file"]').setInputFiles("public/photos/bagasbas-beach.jpg");
+  await expect(dialog.getByRole("img", { name: "Your photo" })).toBeVisible();
+  await expect(dialog.getByText(/used for this answer only, never saved/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Send" }).click();
+  await expect(dialog.getByText("Photo sent")).toBeVisible();
+  await expect(dialog.getByText(/can't look at photos right now/)).toBeVisible();
+  await page.screenshot({ path: "/tmp/claude-0/-home-user-daet-connect-ph/006bdc63-072e-5fca-8fa2-b75843fb5995/scratchpad/photo-chat.png" });
+  await checkA11y(page, "assistant photo");
+});
+
+test("visitors who are not signed in get no photo button", async ({ page }) => {
+  const dialog = await openAssistant(page);
+  await expect(dialog.getByRole("button", { name: "Add a photo" })).toHaveCount(0);
+});

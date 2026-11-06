@@ -1,25 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
+import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
 import { LineIcon } from "@/components/ui/icons";
-
-type Recognition = {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-type RecognitionCtor = new () => Recognition;
-
-const speechApi = (): RecognitionCtor | null => {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-};
 
 /**
  * A search bar: the field and its search button joined in one pill, and a round
@@ -44,36 +27,12 @@ export function SearchBox({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const recRef = useRef<Recognition | null>(null);
-  const [canListen, setCanListen] = useState(false);
-  const [listening, setListening] = useState(false);
-  useEffect(() => setCanListen(speechApi() !== null), []);
-  useEffect(() => () => recRef.current?.stop(), []);
-
-  const listen = () => {
-    if (listening) {
-      recRef.current?.stop();
-      return;
+  const { supported: canListen, listening, toggle: listen } = useSpeech((text) => {
+    if (inputRef.current) {
+      inputRef.current.value = text;
+      formRef.current?.requestSubmit();
     }
-    const Api = speechApi();
-    if (!Api) return;
-    const rec = new Api();
-    rec.lang = "en-PH";
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    rec.onresult = (e) => {
-      const text = e.results[0]?.[0]?.transcript?.trim();
-      if (text && inputRef.current) {
-        inputRef.current.value = text;
-        formRef.current?.requestSubmit();
-      }
-    };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
-    recRef.current = rec;
-    setListening(true);
-    rec.start();
-  };
+  });
 
   return (
     <form ref={formRef} role="search" action={action} method="get" className={`flex w-full max-w-2xl items-center gap-3 ${className}`}>
@@ -110,7 +69,7 @@ export function SearchBox({
           }`}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" />
+            <path d={MIC_PATH} />
           </svg>
         </button>
       ) : null}

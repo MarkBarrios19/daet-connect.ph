@@ -230,3 +230,15 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
 - Rates: `/api/rates`, from open.er-api.com (free, no key), cached for a day; if
   it fails, the rough amounts are simply not shown.
 - Code: `src/lib/currency/approx.ts`, `src/components/ui/approx-price.tsx`.
+
+## Voice and photos in the chat (decisions 38, 39)
+
+- A microphone beside "Use my location" asks by voice: what is heard is sent.
+  Speech recognition in the browser (Chrome, Edge, Safari), Philippine English;
+  hidden where the browser can't listen. Shared with the search bar
+  (`src/components/ui/use-speech.ts`).
+- Signed-in visitors get "Add a photo". It is shrunk to 1280 px JPEG in the
+  browser, sent with that one message to the AI only, and never stored (the
+  saved chat keeps "Photo sent" and the text). Not signed in, or no AI answer
+  available: the assistant says so instead of guessing. The prompt says to
+  describe only what is plainly in the photo and never identify people.

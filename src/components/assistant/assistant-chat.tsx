@@ -15,6 +15,7 @@ import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
+import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
 import { TransportCardView } from "@/components/assistant/transport-card";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
@@ -24,7 +25,7 @@ export { loadTrip, saveTrip, type TripAnswers };
 /** Session storage key the widget uses to hand a drafted plan to /tours/plan. */
 export const HANDOFF_KEY = "daet-plan-handoff-v1";
 
-type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean; helpful?: boolean };
+type Turn = { role: "user" | "assistant"; content: string; cards?: AssistantCard[]; mode?: "ai" | "basic"; questions?: { missing: MissingInput[]; prefill: TripContext | null }; status?: string; choices?: string[]; itinerary?: ItineraryResult; signIn?: boolean; helpful?: boolean; photo?: boolean };
 type PageRef = NonNullable<TripContext["page"]>;
 type Point = { lat: number; lng: number };
 
@@ -53,6 +54,30 @@ function save(turns: Turn[]) {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-30).map(({ questions: _questions, status: _status, itinerary: _itinerary, ...turn }) => turn)));
   } catch {
     // Private mode or storage full: the chat still works, it just isn't kept.
+  }
+}
+
+type Photo = { mimeType: "image/jpeg"; data: string; preview: string };
+
+/** A photo shrunk to at most 1280 px as JPEG, so it is quick on mobile data. Used for the answer only, never kept. */
+async function shrinkPhoto(file: File): Promise<Photo> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+    const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const preview = canvas.toDataURL("image/jpeg", 0.8);
+    return { mimeType: "image/jpeg", data: preview.split(",")[1], preview };
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
 
@@ -143,6 +168,9 @@ export function AssistantChat({
   afterPlan?: React.ReactNode;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
+  // A photo for the next message (decision 39): signed-in visitors, answered by the AI only.
+  const [photo, setPhoto] = useState<Photo | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(initialText.slice(0, 500));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -214,19 +242,21 @@ export function AssistantChat({
   }
 
   async function send(value: string, location: Point | null = here, answers: TripAnswers = trip, base: Turn[] = turns, datesConfirmed = false) {
-    const question = value.trim().slice(0, MESSAGE_MAX);
+    const attached = photo;
+    const question = (value.trim() || (attached ? "What is this?" : "")).slice(0, MESSAGE_MAX);
     if (!question || busy) return;
+    setPhoto(null);
     setError(null);
     setText("");
     setBusy(true);
-    const history: Turn[] = [...base, { role: "user", content: question }];
+    const history: Turn[] = [...base, { role: "user", content: question, ...(attached ? { photo: true } : {}) }];
     let reply: Turn = { role: "assistant", content: "" };
     setTurns([...history, reply]);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers, ...(datesConfirmed ? { datesConfirmed: true } : {}) } }),
+        body: JSON.stringify({ messages: history.filter((t) => t.content).map((t) => ({ role: t.role, content: t.content })), location, context: { page, ...answers, ...(datesConfirmed ? { datesConfirmed: true } : {}) }, ...(attached ? { image: { mimeType: attached.mimeType, data: attached.data } } : {}) }),
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
@@ -309,6 +339,8 @@ export function AssistantChat({
     setPageName(h1 && h1.length <= 80 ? h1 : null);
   }, [page]);
   const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
+  // Ask by voice (decision 38): what is heard is sent as the message.
+  const speech = useSpeech((heard) => void send(heard));
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
@@ -401,7 +433,10 @@ export function AssistantChat({
         {turns.map((turn, i) => (
           <li key={i} className={turn.role === "user" ? "flex justify-end" : ""}>
             {turn.role === "user" ? (
-              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">{turn.content}</p>
+              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">
+                {turn.photo ? <span className="mb-1 flex items-center gap-1 text-sm font-semibold"><LineIcon name="image" className="h-4 w-4" /> Photo sent</span> : null}
+                {turn.content}
+              </p>
             ) : (
               <div className="min-w-0 max-w-[92%] space-y-2">
                 <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
@@ -462,6 +497,15 @@ export function AssistantChat({
             {error}
           </p>
         ) : null}
+        {photo ? (
+          <div className="mb-2 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL */}
+            <img src={photo.preview} alt="Your photo" className="h-14 w-14 rounded-xl object-cover" />
+            <button type="button" onClick={() => setPhoto(null)} className="min-h-11 rounded-full px-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/40">
+              Remove photo
+            </button>
+          </div>
+        ) : null}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {here ? (
             <button type="button" onClick={() => setHere(null)} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-green-500 px-4 text-sm font-bold text-slate-950">
@@ -472,6 +516,45 @@ export function AssistantChat({
               <LineIcon name="pin" className="h-4 w-4" /> {locating ? "Finding you…" : "Use my location"}
             </button>
           )}
+          {speech.supported ? (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              disabled={busy}
+              aria-pressed={speech.listening}
+              aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "bg-muted text-daet-ink hover:bg-muted-strong"}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={MIC_PATH} />
+              </svg>
+            </button>
+          ) : null}
+          {signedIn ? (
+            <>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  try {
+                    setPhoto(await shrinkPhoto(file));
+                  } catch {
+                    setError("That photo couldn't be read. Try another one.");
+                  }
+                }}
+              />
+              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-daet-ink hover:bg-muted-strong">
+                <LineIcon name="image" className="h-5 w-5" />
+              </button>
+            </>
+          ) : null}
         </div>
         <label htmlFor="assistant-input" className="sr-only">
           Ask the {ASSISTANT_NAME}
@@ -493,11 +576,12 @@ export function AssistantChat({
             placeholder="Ask anything about your trip…"
             className="block min-h-11 w-full resize-none rounded-2xl bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
-          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim()} aria-label="Send">
+          <Button type="submit" loading={busy} loadingText="…" disabled={!text.trim() && !photo} aria-label="Send">
             Send
           </Button>
         </div>
         <p className="mt-2 text-xs leading-4 text-slate-600 dark:text-slate-400">
+          {photo ? "Your photo is used for this answer only, never saved. " : ""}
           {here ? "Your location is sent only with your next questions, never saved. " : ""}
           {signedIn ? "Saved to your account. Delete it anytime." : "Chats aren't saved on our servers."} Never share passwords or card numbers.
         </p>

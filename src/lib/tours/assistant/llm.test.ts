@@ -36,6 +36,14 @@ describe("runAssistant", () => {
     expect(call.config.tools[0].functionDeclarations.length).toBeGreaterThan(5);
   });
 
+  it("sends a photo with the latest message only (decision 39)", async () => {
+    const client = clientWith([[text("A beach.", "STOP")]]);
+    await runAssistant({ ...ctx, image: { mimeType: "image/jpeg", data: "AAAA" } }, [{ role: "user", content: "old" }, { role: "assistant", content: "ok" }, { role: "user", content: "What is this?" }], () => {}, client);
+    const call = client.models.generateContentStream.mock.calls[0][0];
+    expect(call.contents[2].parts).toEqual([{ text: "What is this?" }, { inlineData: { mimeType: "image/jpeg", data: "AAAA" } }]);
+    expect(call.contents[0].parts).toEqual([{ text: "old" }]);
+  });
+
   it("runs a tool call and sends its result back", async () => {
     const call = { candidates: [{ content: { parts: [{ functionCall: { id: "1", name: "policy", args: { topic: "cancel" } }, thoughtSignature: "sig" }] }, finishReason: "STOP" }] };
     const client = clientWith([[call], [text("Done.", "STOP")]]);

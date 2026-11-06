@@ -237,6 +237,18 @@ describe("respond", () => {
   const deps = (overrides: Partial<RespondDeps> = {}): RespondDeps => ({ supabase: fakeSupabase(tables()), userId: ME, today: TODAY, aiAllowed: true, runAi: async () => ({ stopReason: "end_turn" }), ...overrides });
   const ask = (content: string) => ({ messages: [{ role: "user", content }] });
 
+  it("answers a photo only with the AI, for a signed-in visitor (decision 39)", async () => {
+    const withPhoto = { messages: [{ role: "user", content: "What is this?" }], image: { mimeType: "image/jpeg", data: "AAAA" } };
+    let seen: unknown = null;
+    const ok = await collect(respond(withPhoto, deps({ runAi: async (c, _h, onText) => { seen = c.image; onText("A beach."); return { stopReason: "end_turn" }; } })));
+    expect(seen).toEqual({ mimeType: "image/jpeg", data: "AAAA" });
+    expect(ok.some((e) => e.t === "text" && e.v === "A beach.")).toBe(true);
+    const signedOut = await collect(respond(withPhoto, deps({ userId: null })));
+    expect(signedOut.find((e) => e.t === "text")).toMatchObject({ v: expect.stringMatching(/Sign in to send a photo/) });
+    const noAi = await collect(respond(withPhoto, deps({ aiAllowed: false })));
+    expect(noAi.find((e) => e.t === "text")).toMatchObject({ v: expect.stringMatching(/can't look at photos right now/) });
+  });
+
   it("streams the model's text and the cards its tools added", async () => {
     const events = await collect(
       respond(ask("Calaguas this weekend?"), deps({

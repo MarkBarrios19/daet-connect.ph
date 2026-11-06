@@ -238,6 +238,8 @@ export async function runAssistant(
   const declarations = tools.map((tool) => ({ name: tool.name, description: tool.description, parametersJsonSchema: toJsonSchema(tool.inputSchema) }));
   const system = assistantSystemPrompt({ today: ctx.today, signedIn: Boolean(ctx.userId), trip: ctx.trip });
   const contents: Content[] = history.map((turn) => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] }));
+  // The photo goes with the latest message only.
+  if (ctx.image) contents[contents.length - 1].parts!.push({ inlineData: { mimeType: ctx.image.mimeType, data: ctx.image.data } });
 
   let stopReason: string | null = null;
   for (let round = 0; round < MAX_ITERATIONS; round++) {
