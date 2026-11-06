@@ -30,7 +30,7 @@ export function AssistantHeader({
   const Heading = headingLevel;
   const brand = tone === "brand";
   return (
-    <header className={`flex items-center gap-2 px-2 py-1.5 ${brand ? "bg-blue-600 text-white" : "text-daet-ink sm:px-3"}`}>
+    <header className={`flex items-center gap-2 px-2 ${brand ? "bg-blue-600 py-1 text-white" : "py-1.5 text-daet-ink sm:px-3"}`}>
       {leading}
       <AiAvatar size="sm" />
       <div className="min-w-0 flex-1">
@@ -82,7 +82,7 @@ function AssistantMenu({ actionsRef, brand }: { actionsRef: React.MutableRefObje
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className={`grid h-11 w-11 place-items-center rounded-full ${brand ? "text-white hover:bg-white/15" : "text-daet-ink hover:bg-muted"}`}
+        className={`grid place-items-center rounded-full ${brand ? "h-9 w-9 text-white hover:bg-white/15" : "h-11 w-11 text-daet-ink hover:bg-muted"}`}
       >
         <LineIcon name="more" className="h-5 w-5" />
       </button>

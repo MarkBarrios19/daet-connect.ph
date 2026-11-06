@@ -131,7 +131,7 @@ export function ChatDock() {
 }
 
 function WindowControls({ name, onMinimize, onClose, href }: { name: string; onMinimize: () => void; onClose: () => void; href: string }) {
-  const btn = "grid h-11 w-11 shrink-0 place-items-center rounded-full text-white hover:bg-white/15";
+  const btn = "grid h-9 w-9 shrink-0 place-items-center rounded-full text-white hover:bg-white/15";
   return (
     <span className="flex shrink-0">
       <a href={href} aria-label={`Open ${name} full screen`} className={btn}>
