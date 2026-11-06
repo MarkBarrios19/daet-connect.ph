@@ -1,3 +1,6 @@
+import { durationText } from "@/lib/tours/duration";
+import type { MissingInput, TripContext } from "@/lib/tours/assistant/context";
+import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
 import { hasTicket } from "@/lib/tours/ticket";
 import { formatPeso } from "@/lib/money";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -6,7 +9,7 @@ import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { STATUS_LABELS, isBookingStatus } from "@/lib/tours/booking-lifecycle";
 import { faqById, FAQS, type FaqLink } from "@/lib/tours/assistant/knowledge";
 import { hoursToText } from "@/lib/tours/opening-hours";
-import { directionsUrl, estimateLeg, formatDistance, formatDuration, type LatLng, type Leg } from "@/lib/maps/geo";
+import { directionsUrl, estimateLeg, formatDistance, formatDuration, haversineMeters, type LatLng, type Leg } from "@/lib/maps/geo";
 import { boatOptionsTo, findBoatLeg, findTransportPlace, TRANSPORT_CHECKED } from "@/lib/tours/assistant/transport";
 import type { CostCard, PlaceCard, TransportCard } from "@/lib/tours/assistant/guide-tools";
 
@@ -35,6 +38,16 @@ export type ToolContext = {
   route?: (from: LatLng, to: LatLng) => Promise<Leg>;
   /** The traveller's location, rounded, when they chose to share it for this message. Never stored. */
   here?: LatLng | null;
+  /** The page it was opened on and the trip answers so far, from the browser. Hints only. */
+  trip?: TripContext | null;
+  /** A photo sent with this message, for the AI only; never stored. */
+  image?: { mimeType: string; data: string } | null;
+  /** Set by plan_trip: the drafted plan the panel shows. */
+  itinerary?: ItineraryResult | null;
+  /** Set by plan_trip when the form still needs answers. */
+  questions?: MissingInput[] | null;
+  /** Short progress labels while a tool runs ("Checking operators"). */
+  onStatus?: (label: string) => void;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,7 +71,6 @@ function priceFrom(variants: VariantRow[] | null | undefined): number | null {
   const prices = (variants ?? []).map((v) => Number(v.price_per_pax ?? v.flat_price)).filter((n) => Number.isFinite(n) && n > 0);
   return prices.length ? Math.min(...prices) : null;
 }
-const durationText = (value: number | null, type: string | null) => (value && type ? `${value} ${type}${value === 1 ? "" : "s"}`.replace(/ss$/, "s") : null);
 
 // ------------------------------------------------------------------ tours
 
@@ -310,10 +322,36 @@ export async function resolvePlace(ctx: ToolContext, name: string): Promise<{ na
   const town = findTransportPlace(term);
   if (town && town.aliases.includes(term.toLowerCase())) return { name: town.name, point: town.point };
   const { data } = await ctx.supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true).ilike("name", `%${term}%`).limit(1);
-  const attraction = data?.[0] ? toAttraction(data[0] as Record<string, unknown>) : null;
+  let attraction = data?.[0] ? toAttraction(data[0] as Record<string, unknown>) : null;
+  // "jose rizal" typed without the accent still finds "José Rizal".
+  if (!attraction) attraction = (await listedSights(ctx)).find((a) => plain(a.name).includes(plain(term))) ?? null;
   if (attraction && attraction.latitude !== null && attraction.longitude !== null) return { name: attraction.name, point: { lat: attraction.latitude, lng: attraction.longitude } };
   const place = findTransportPlace(name);
   return place ? { name: place.name, point: place.point } : null;
+}
+
+/** Lowercase without accents or punctuation, for matching names as people type them. */
+const plain = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+async function listedSights(ctx: ToolContext) {
+  const { data } = await ctx.supabase.from("tours_attractions").select(ATTRACTION_COLUMNS).eq("is_active", true).limit(300);
+  return (data ?? []).map((row) => toAttraction(row as Record<string, unknown>));
+}
+
+/** Listed places to see closest to a point, nearest first, with their distance; the place itself is left out. */
+export async function nearbySights(ctx: ToolContext, point: LatLng, exclude: string | null, limit = 3) {
+  const skip = exclude ? plain(exclude) : null;
+  return (await listedSights(ctx))
+    .flatMap((a) => (a.latitude !== null && a.longitude !== null && plain(a.name) !== skip ? [{ name: a.name, slug: a.slug, meters: haversineMeters(point, { lat: a.latitude, lng: a.longitude }) }] : []))
+    .sort((x, y) => x.meters - y.meters)
+    .slice(0, limit);
 }
 
 const minutesText = ([low, high]: [number, number]) => `about ${formatDuration(low * 60)}–${formatDuration(high * 60)}`;
@@ -361,3 +399,5 @@ export async function travelTime(ctx: ToolContext, input: { from?: string | null
     note: leg.estimated || mode === "walk" ? "Estimated from the map distance; traffic and stops add time." : "From the road route; traffic can add time.",
   };
 }
+
+export { durationText };

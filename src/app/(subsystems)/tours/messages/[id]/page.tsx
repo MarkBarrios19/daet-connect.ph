@@ -65,6 +65,7 @@ export default async function ConversationPage({ params }: PageProps) {
             title={view.title}
             subtitle={[KIND_LABELS[header.kind] ?? "Chat", view.subtitle].filter(Boolean).join(" · ")}
             link={view.link}
+            otherLastSeen={inbox.find((row) => row.conversation_id === header.id)?.other_last_seen ?? null}
             initialMessages={messages}
             initialAttachmentUrls={extras.attachmentUrls}
             initialReactions={extras.reactions}

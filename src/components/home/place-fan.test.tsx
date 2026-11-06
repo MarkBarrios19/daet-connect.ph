@@ -109,10 +109,10 @@ describe("PlaceFan", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers Find a tour, and the assistant for a signed-out visitor", () => {
+  it("offers Book Now, and the assistant for a signed-out visitor", () => {
     renderFan(false);
 
-    expect(screen.getByRole("link", { name: "Find a tour" })).toHaveAttribute("href", "/tours/browse");
+    expect(screen.getByRole("link", { name: "Book Now" })).toHaveAttribute("href", "/tours/browse");
     expect(screen.getByRole("button", { name: "Ask the travel guide" })).toBeInTheDocument();
   });
 
@@ -136,8 +136,8 @@ describe("PlaceFan", () => {
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading.style.getPropertyValue("--display-scale")).toBe("0.9");
 
-    ["Find a tour", "Ask the travel guide"].forEach((name) => {
-      const control = screen.getByRole(name === "Find a tour" ? "link" : "button", { name });
+    ["Book Now", "Ask the travel guide"].forEach((name) => {
+      const control = screen.getByRole(name === "Book Now" ? "link" : "button", { name });
       expect(control.className).toContain("wayra");
       // lg + 5%, and a fill and label the sweep can use.
       expect(control.className).toContain("min-h-[3.15rem]");
@@ -266,7 +266,7 @@ describe("PlaceFan opening a place", () => {
     const { container } = renderFan();
 
     const row = (name: string) => screen.getByRole("link", { name }).parentElement;
-    expect(row("Find a tour")).not.toHaveAttribute("inert");
+    expect(row("Book Now")).not.toHaveAttribute("inert");
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -274,7 +274,7 @@ describe("PlaceFan opening a place", () => {
       }),
     );
 
-    expect(row("Find a tour")).toHaveAttribute("inert");
+    expect(row("Book Now")).toHaveAttribute("inert");
     expect(container.querySelector("[data-headline]")).not.toBeNull();
   });
 
@@ -833,7 +833,7 @@ describe("PlaceFan's hero", () => {
 
     expect(screen.getByRole("heading", { level: 1 }).className).toContain("display-2");
     expect(screen.queryByText(/Beaches, islands and old-town walks/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Find a tour" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Book Now" })).toBeInTheDocument();
   });
 
   it("still offers the assistant on a short screen", () => {
@@ -928,7 +928,7 @@ describe("PlaceFan on a phone", () => {
     // One button fits beside the hint; the long subline and the second button
     // still do not, because the band is only as tall as the gap between the fans.
     expect(screen.getByText("Tap a place to see it")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Find a tour" })).toHaveAttribute("href", "/tours/browse");
+    expect(screen.getByRole("link", { name: "Book Now" })).toHaveAttribute("href", "/tours/browse");
     expect(screen.queryByRole("button", { name: "Ask the travel guide" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Beaches, islands and old-town walks/)).not.toBeInTheDocument();
   });
@@ -937,7 +937,7 @@ describe("PlaceFan on a phone", () => {
     const { container } = renderFan();
     setHeroSize(390, 844);
 
-    const row = screen.getByRole("link", { name: "Find a tour" }).parentElement;
+    const row = screen.getByRole("link", { name: "Book Now" }).parentElement;
     expect(row).not.toHaveAttribute("inert");
 
     fireEvent.click(
@@ -957,7 +957,7 @@ describe("PlaceFan on a phone", () => {
 
     expect(container.querySelectorAll("[data-chip]")).toHaveLength(0);
     expect(container.querySelectorAll("[data-wedge]")).toHaveLength(6);
-    expect(screen.getByRole("link", { name: "Find a tour" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Book Now" })).toBeInTheDocument();
   });
 
   it("opens a phone's card as a folded bar at the top, not a sheet over the photo", () => {

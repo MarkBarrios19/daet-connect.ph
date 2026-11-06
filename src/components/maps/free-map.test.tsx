@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FreeMap } from "@/components/maps/free-map";
 import type { FreeMapMarker } from "@/components/maps/map-types";
 import { DARK_TILE_FILTER, MAP_TILES } from "@/lib/maps/map-style";
@@ -342,7 +342,7 @@ describe("FreeMap", () => {
     expect(mockState.markerEls.at(-1)?.parentElement?.className).toContain("-translate-y-full");
   });
 
-  it("draws the focused place's pin as a blue-ringed circle, its tail one shape with it", async () => {
+  it("draws a photo pin as an orange teardrop with the photo in a white ring and the name under it", async () => {
     const photo = { src: "/photos/bagasbas.jpg" };
     const shown = markers.map((m) => (m.id === "b" ? { ...m, kind: "place" as const, photo } : m));
 
@@ -350,29 +350,64 @@ describe("FreeMap", () => {
     await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
 
     const pin = mockState.markerEls[1];
-    const frame = pin.querySelector("span") as HTMLElement;
-    // A circle with the site's blue drawn round it: the old white ring vanished
-    // against dark tiles, and the crop showed the photo reading as a dark blob.
-    expect(frame).toHaveClass("rounded-full", "border-blue-600");
-    // Its point is a triangle tucked under the circle, not a diamond floating
-    // below it — one pin, not two shapes with the map's labels between them.
-    const tail = pin.querySelectorAll("span")[1] as HTMLElement;
-    expect(tail).toHaveClass("border-t-blue-600", "top-[38px]");
-    expect(tail.parentElement).toBe(pin);
+    const [drop, frame, name] = Array.from(pin.children) as HTMLElement[];
+    expect(drop).toHaveClass("bg-orange-500", "rotate-45");
+    expect(frame).toHaveClass("rounded-full", "border-white");
+    expect(frame.querySelector("img")?.getAttribute("src")).toBe("/photos/bagasbas.jpg");
+    expect(name.textContent).toBe(shown[1].title);
+    // The pin hangs from its point.
+    expect(pin.parentElement?.className).toContain("-translate-y-full");
   });
 
-  it("leaves the wheel to the page until a map asks for it", async () => {
+  it("names each place beside its pin on a labelled map", async () => {
+    const places = markers.map((m) => ({ ...m, kind: "place" as const }));
+    render(<FreeMap markers={places} title="Places map" labels />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+    expect(mockState.markerEls[0].textContent).toContain(places[0].title);
+  });
+
+  it("zooms with the wheel on every map, unless a map turns it off", async () => {
     const { rerender } = render(<FreeMap markers={markers} title="Places map" />);
     await waitFor(() => expect(mockState.map).not.toBeNull());
-    // A map in a long page does not swallow the wheel.
-    expect(mockState.wheel).toBe(false);
-
-    rerender(<FreeMap markers={markers} title="Places map" wheelZoom />);
-    // The map the visitor is working in does.
+    // Scroll to zoom is on by default (the owner asked for it on all maps).
     await waitFor(() => expect(mockState.wheel).toBe(true));
 
-    rerender(<FreeMap markers={markers} title="Places map" />);
+    rerender(<FreeMap markers={markers} title="Places map" wheelZoom={false} />);
     await waitFor(() => expect(mockState.wheel).toBe(false));
+  });
+
+  it("draws a category pin with its stop number and name, and the board's buttons over the map", async () => {
+    const pins: FreeMapMarker[] = markers.map((m, i) => ({ ...m, icon: i === 0 ? "heritage" : "beach" }));
+    render(<FreeMap markers={pins} title="Day 1 map" chip="Day 1 route" labels />);
+    await waitFor(() => expect(mockState.markerEls).toHaveLength(2));
+    const pin = mockState.markerEls[1];
+    // A dark circle with the category's line icon, the number as a badge, the name beside it.
+    expect(pin.querySelector("span.bg-slate-900 svg path")).not.toBeNull();
+    expect(pin).toHaveAttribute("aria-label", "Stop 2: Bagasbas Beach");
+    expect(pin.textContent).toContain("2");
+    expect(pin.textContent).toContain("Bagasbas Beach");
+
+    expect(screen.getByText("Day 1 route")).toBeInTheDocument();
+    for (const name of ["Expand map", "Show my location", "Zoom in", "Zoom out"]) expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    // Expand opens a full-screen copy over the page; its button and Escape close it.
+    fireEvent.click(screen.getByRole("button", { name: "Expand map" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Close the full map" })).toBeInTheDocument());
+    // An X at the top right, above the location button (owner's note, image-49).
+    const close = screen.getByRole("button", { name: "Close the full map" });
+    expect(close).toHaveClass("right-3", "top-3");
+    expect(close.querySelector("path")).toHaveAttribute("d", "M6 6l12 12M18 6L6 18");
+    expect(screen.getAllByRole("button", { name: "Show my location" }).at(-1)).toHaveClass("right-3", "top-16");
+    expect(screen.getByRole("region", { name: "Day 1 map (full screen)" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Close the full map" })).toBeNull());
+  });
+
+  it("keeps only zoom over a map that has its own card", async () => {
+    render(<FreeMap markers={markers} title="Places map" controls="zoom" />);
+    await waitFor(() => expect(mockState.map).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand map" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show my location" })).toBeNull();
   });
 
   it("puts the focused place's photo in its pin, the point on the spot", async () => {

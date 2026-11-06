@@ -22,6 +22,7 @@ import { CheckIcon, LineIcon, MapPinIcon, ShieldCheckIcon } from "@/components/u
 import { mapsDirectionsUrl } from "@/lib/tours/guide/maps";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 import { buildStopDetails, type AttractionRef } from "@/lib/tours/stop-details";
+import { ApproxPrice } from "@/components/ui/approx-price";
 
 export const dynamic = "force-dynamic";
 
@@ -362,6 +363,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
             <p className="text-sm font-semibold text-daet-ink/75">From</p>
             <p className="text-4xl font-bold text-daet-ink">{formatPeso(displayPrice)}</p>
             <p className="text-daet-ink/80">{priceLabel}</p>
+            <ApproxPrice pesos={displayPrice} />
             {pkg.tours_package_price_variants && pkg.tours_package_price_variants.length > 1 ? (
               <p className="mt-2 text-sm text-daet-ink/80">{pkg.tours_package_price_variants.length} price options</p>
             ) : null}
@@ -385,6 +387,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
           <p className="leading-tight">
             <span className="block text-sm text-daet-ink/75">From</span>
             <span className="text-xl font-bold text-daet-ink">{formatPeso(displayPrice)}</span> <span className="text-sm text-daet-ink/75">{priceLabel}</span>
+            <ApproxPrice pesos={displayPrice} className="text-xs" />
           </p>
           <ButtonLink href={`/tours/packages/${pkg.id}/book`} size="lg" className="shrink-0">
             Book this trip

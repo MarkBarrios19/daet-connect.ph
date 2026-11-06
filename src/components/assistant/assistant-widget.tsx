@@ -4,11 +4,13 @@ import { LineIcon } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { OPEN_ASSISTANT_EVENT, OVERLAY_EVENT, type OverlayDetail } from "@/lib/ui-overlay";
 import { usePathname } from "next/navigation";
+import { pageFromPath } from "@/lib/tours/assistant/context";
 import { AssistantChat } from "@/components/assistant/assistant-chat";
 import { DOCK_BUSY_EVENT, openInDock } from "@/components/chat-dock/dock-bus";
 
 /** Pages where a floating chat button would get in the way. */
-const HIDDEN = [/^\/login/, /^\/signup/, /^\/forgot-password/, /^\/tours\/help/, /^\/tours\/messages\/[^/]+$/, /^\/tours\/guide\/check-in/, /\/ticket$/];
+// /tours/plan is the assistant itself (chat beside the plan).
+const HIDDEN = [/^\/tours\/plan\/?$/, /^\/login/, /^\/signup/, /^\/forgot-password/, /^\/tours\/help/, /^\/tours\/messages\/[^/]+$/, /^\/tours\/guide\/check-in/, /\/ticket$/];
 
 /**
  * Floating "Ask the assistant" button on every page, opening the travel
@@ -20,6 +22,8 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
   // first, so the floating button would only cover cards and buttons.
   const phoneHidden = signedIn && raised;
   const pathname = usePathname() ?? "";
+  // A tour page has a "Book this trip" bar along the bottom below 1024px; sit above it.
+  const overBookBar = pageFromPath(pathname)?.kind === "package";
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   // On phones, step aside while the notifications sheet or the phone menu is open.
@@ -101,7 +105,7 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={`fixed right-4 z-40 ${pill} h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-3 text-sm font-bold text-white shadow-[var(--shadow-float)] transition hover:bg-blue-700 active:scale-95 sm:bottom-6 sm:right-6 sm:px-4 print:hidden ${raised ? "bottom-20" : "bottom-4"}`}
+        className={`fixed right-4 z-40 ${pill} h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-3 text-sm font-bold text-white shadow-[var(--shadow-float)] transition hover:bg-blue-700 active:scale-95 sm:right-6 sm:px-4 print:hidden ${overBookBar ? "bottom-28 lg:bottom-6" : raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"}`}
       >
         <LineIcon name="sparkle" className="h-6 w-6 sm:h-5 sm:w-5" />
         <span className="sr-only sm:not-sr-only">Daet AI assistant</span>
@@ -127,7 +131,7 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
               ✕
             </button>
           </div>
-          {open ? <AssistantChat signedIn={signedIn} onNavigate={close} autoFocus /> : null}
+          {open ? <AssistantChat signedIn={signedIn} onNavigate={close} autoFocus page={pageFromPath(pathname)} /> : null}
         </div>
       </dialog>
     </>

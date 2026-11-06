@@ -108,6 +108,9 @@ const CATEGORY_SHAPES: Record<string, string> = {
   lunch: "M7 3v7a2 2 0 0 0 2 0V3M8 10v11M17 3c-2.5 1.5-3 5-1 8h1v10",
 };
 
+/** The path of a category's line icon, for maps that draw markers outside React. */
+export const categoryShape = (category: string): string => CATEGORY_SHAPES[category] ?? CATEGORY_SHAPES.park;
+
 /** Line icon for an attraction category (or "lunch"). */
 export function CategoryIcon({ category, className = "h-5 w-5" }: { category: string; className?: string }) {
   return <Icon className={className}>{p(CATEGORY_SHAPES[category] ?? CATEGORY_SHAPES.park)}</Icon>;

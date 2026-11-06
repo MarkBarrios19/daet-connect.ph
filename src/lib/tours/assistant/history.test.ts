@@ -28,7 +28,8 @@ describe("saved assistant chats", () => {
       { t: "done" },
     ];
     expect(await drain(savingReply(events(reply), supabase, " Where to eat? "))).toEqual(reply);
-    expect(insert).toHaveBeenCalledWith([
+    // Question first, then the answer, in separate inserts so each gets its own time.
+    expect(insert.mock.calls.map((c) => c[0])).toEqual([
       { role: "user", content: "Where to eat?" },
       { role: "assistant", content: "Food near Bagasbas.", cards: [{ type: "link", href: "/x", label: "X" }], mode: "basic" },
     ]);

@@ -102,9 +102,22 @@ export async function reactToMessage(messageId: string, reaction: string | null)
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Please sign in again." };
-  const { error } = reaction
-    ? await supabase.from("tours_message_reactions").upsert({ message_id: messageId, reaction }, { onConflict: "message_id,profile_id" })
-    : await supabase.from("tours_message_reactions").delete().eq("message_id", messageId).eq("profile_id", user.id);
+  const table = () => supabase.from("tours_message_reactions");
+  // An upsert also rewrites message_id on conflict, and only `reaction` is
+  // updatable for this table, so change the row first and add it if missing.
+  const change = (value: string) => table().update({ reaction: value }).eq("message_id", messageId).eq("profile_id", user.id).select("message_id");
+  let error: { code?: string } | null;
+  if (reaction) {
+    const updated = await change(reaction);
+    error = updated.error;
+    if (!error && (updated.data ?? []).length === 0) {
+      error = (await table().insert({ message_id: messageId, reaction })).error;
+      // Two quick taps raced to insert: the row exists now, so change it.
+      if (error?.code === "23505") error = (await change(reaction)).error;
+    }
+  } else {
+    error = (await table().delete().eq("message_id", messageId).eq("profile_id", user.id)).error;
+  }
   if (error) {
     console.error("Reaction error:", error);
     return { ok: false, error: "The reaction could not be saved." };

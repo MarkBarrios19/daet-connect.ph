@@ -7,6 +7,7 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isLlmEnabled } from "@/lib/tours/itinerary/llm";
 import { addDays } from "@/lib/tours/itinerary/types";
 import { PlannerApp } from "./planner-app";
+import { PlannerV2 } from "./planner-v2";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Plan your trip", description: "Build a day-by-day Daet itinerary that fits opening hours and your budget." };
@@ -26,6 +27,15 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // The merged chat + plan planner. TRIP_PLANNER_V2=off brings back the old form.
+  if (process.env.TRIP_PLANNER_V2 !== "off") {
+    return (
+      <PageFrame bleed>
+        <PlannerV2 signedIn={Boolean(user)} initialDescription={initialDescription} />
+      </PageFrame>
+    );
+  }
 
   return (
     <PageFrame>

@@ -1,4 +1,4 @@
-import { attachmentPath, chatOperators, chatRpc, dayLabel, describeThread, inboxFilters, isConversationKind, mergeMessages, messageTime, parseMessageForm, senderLabel, type ChatMessage, type ChatTarget, type ConversationHeader } from "@/lib/tours/messaging";
+import { attachmentPath, chatOperators, chatRpc, dayLabel, describeThread, inboxFilters, isConversationKind, mergeMessages, messageTime, parseMessageForm, presenceOf, senderLabel, type ChatMessage, type ChatTarget, type ConversationHeader } from "@/lib/tours/messaging";
 
 function form(values: Record<string, string | File>): FormData {
   const data = new FormData();
@@ -173,5 +173,16 @@ describe("tourist ↔ Tourism Office chat", () => {
     expect(senderLabel("admin-1", "t", tourist.members)).toBe("Daet Tourism Office");
     expect(describeThread(header, "admin-1", "admin").title).toBe("Juan");
     expect(inboxFilters(["booking", "tourist_office"]).map((f) => f.label)).toEqual(["All", "Booking chats", "Tourism Office help"]);
+  });
+});
+
+describe("presenceOf", () => {
+  const now = Date.parse("2026-11-06T12:00:00Z");
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+  it("is online within two minutes, recent up to an hour, then nothing", () => {
+    expect(presenceOf(ago(30_000), now)).toEqual({ state: "online", label: null });
+    expect(presenceOf(ago(13 * 60_000), now)).toEqual({ state: "recent", label: "13m" });
+    expect(presenceOf(ago(2 * 3600_000), now)).toEqual({ state: "offline", label: null });
+    expect(presenceOf(null, now)).toEqual({ state: "offline", label: null });
   });
 });

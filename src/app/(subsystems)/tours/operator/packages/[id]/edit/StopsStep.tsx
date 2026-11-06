@@ -1,5 +1,6 @@
 "use client";
 
+import { LocationPicker } from "@/components/maps/location-picker";
 import { LineIcon } from "@/components/ui/icons";
 import React, { useCallback, useState } from "react";
 import { useFeedback } from "@/components/ui/feedback";
@@ -40,7 +41,11 @@ export function StopsStep({
     estimatedDurationMinutes: null,
   });
 
-  const canAddStops = permissions.stops.add;
+  // Published packages normally can't add stops, but one with none would be
+  // stuck on "at least one stop is required", so allow adding in that case.
+  const canAddStops =
+    permissions.stops.add ||
+    (packageStatus === "published" && originalData.length === 0);
   const canEditStops = permissions.stops.editDetails;
   const canRemoveStops = permissions.stops.remove;
 
@@ -298,7 +303,29 @@ export function StopsStep({
                 />
               </div>
 
-              {/* Latitude */}
+              {/* Pick the spot on a map; the numbers stay available underneath. */}
+              <div>
+                <p className="block text-sm font-medium text-daet-ink/80 mb-1">
+                  Where is it? <span className="text-red-500">*</span>
+                </p>
+                <LocationPicker
+                  latitude={formData.latitude ?? null}
+                  longitude={formData.longitude ?? null}
+                  onChange={(latitude, longitude, placeName) =>
+                    setFormData((current) => ({
+                      ...current,
+                      latitude,
+                      longitude,
+                      locationName: placeName && !current.locationName?.trim() ? placeName.slice(0, EDIT_LIMITS.stopLocation.max) : current.locationName,
+                    }))
+                  }
+                />
+              </div>
+
+              <details className="rounded-2xl border border-daet-ink/15 px-3 py-2">
+                <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-daet-ink/80">Enter coordinates yourself</summary>
+                <div className="space-y-4 pb-2">
+                  {/* Latitude */}
               <div>
                 <label className="block text-sm font-medium text-daet-ink/80 mb-1">
                   Latitude <span className="text-red-500">*</span>
@@ -335,6 +362,9 @@ export function StopsStep({
                   placeholder="e.g., 122.9553"
                 />
               </div>
+
+                </div>
+              </details>
 
               {/* Duration */}
               <div>

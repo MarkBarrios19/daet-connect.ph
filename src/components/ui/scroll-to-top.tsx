@@ -58,7 +58,7 @@ export function ScrollToTop({ raised = false }: { raised?: boolean }) {
       type="button"
       onClick={toTop}
       aria-label="Back to top"
-      className={`fixed right-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-surface/92 text-blue-700 ring-1 ring-daet-ink/10 backdrop-blur-md transition hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-muted-strong print:hidden dark:bg-slate-950/85 dark:text-white dark:ring-white/15 dark:hover:bg-slate-900 dark:active:bg-white/20 ${
+      className={`fixed right-4 z-30 grid h-11 w-11 place-items-center rounded-full bg-blue-600 text-white shadow-[0_2px_8px_rgba(15,23,42,0.3)] ring-2 ring-white/80 transition hover:bg-blue-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:bg-blue-800 print:hidden dark:ring-slate-950/60 ${
         // Clear of the assistant pill, which is 48px tall and sits 1rem off the
         // foot of a phone, 1.5rem on a wide screen: this lands half a rem above
         // its top edge either way. With a tab bar the pill steps down to 5rem —

@@ -56,7 +56,29 @@ export function QrScanner() {
     setCameraError(null);
     setResult(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+      let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+      // Some Android phones open the 0.5x ultra-wide lens by default. Labels
+      // are only readable once permission is granted, so look again now and
+      // switch to a back camera that isn't the ultra-wide one.
+      try {
+        const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
+        const current = stream.getVideoTracks()[0]?.getSettings().deviceId;
+        const wide = (label: string) => /ultra|0\.5/i.test(label);
+        const mainBack = devices.find((d) => /back|rear|environment/i.test(d.label) && !wide(d.label));
+        if (mainBack && mainBack.deviceId && mainBack.deviceId !== current) {
+          const better = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: mainBack.deviceId } }, audio: false });
+          stream.getTracks().forEach((track) => track.stop());
+          stream = better;
+        }
+        // Where the browser exposes zoom, a minimum below 1 is the ultra-wide: go to 1x.
+        const track = stream.getVideoTracks()[0];
+        const zoom = (track?.getCapabilities?.() as { zoom?: { min: number; max: number } } | undefined)?.zoom;
+        if (track && zoom && zoom.min < 1 && zoom.max >= 1) {
+          await track.applyConstraints({ advanced: [{ zoom: 1 } as MediaTrackConstraintSet] }).catch(() => {});
+        }
+      } catch {
+        // Keep the camera we already have.
+      }
       streamRef.current = stream;
       const video = videoRef.current;
       if (!video) return;

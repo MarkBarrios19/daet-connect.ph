@@ -119,7 +119,11 @@ export function findRestrictedChanges(
     });
   }
 
-  if (original.stops.length !== next.stops.length) {
+  // A published package with no stops is stuck otherwise (a stop is required),
+  // so the first stops may be added; later add/remove stays locked.
+  if (original.stops.length === 0 && next.stops.length > 0) {
+    // allowed
+  } else if (original.stops.length !== next.stops.length) {
     violations.push("Stops cannot be added or removed on a published package.");
   } else {
     original.stops.forEach((before, index) => {

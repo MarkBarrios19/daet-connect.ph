@@ -3,9 +3,10 @@ import type { LatLng } from "@/lib/maps/geo";
 /**
  * stop: numbered stop on a route · place: a pin · guide: the live guide ·
  * guest: a guest sharing live · town: a guest sharing the nearest town only ·
- * paused: a guest whose sharing paused (last known spot) · flare: "I'm separated".
+ * paused: a guest whose sharing paused (last known spot) · flare: "I'm separated" ·
+ * me: the viewer's own position (the map's locate button).
  */
-export type MapMarkerKind = "stop" | "place" | "guide" | "guest" | "town" | "paused" | "flare";
+export type MapMarkerKind = "stop" | "place" | "guide" | "guest" | "town" | "paused" | "flare" | "me";
 
 export type FreeMapMarker = LatLng & {
   id: string;
@@ -25,6 +26,12 @@ export type FreeMapMarker = LatLng & {
    * plain dots.
    */
   photo?: { src: string; alt?: string };
+  /**
+   * The place's category ("beach", "heritage", …): drawn as a white line icon in
+   * a dark pin, with `label` (the stop number) as a small badge on its shoulder
+   * (Desktop-Results board).
+   */
+  icon?: string;
 };
 
 export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };
@@ -36,7 +43,7 @@ export type FreeMapLine = { id: string; path: LatLng[]; dashed?: boolean };
  * card, with its tail) has to clear this much before it can sit above the pin
  * rather than on top of it.
  */
-export const PHOTO_PIN_RISE = 48;
+export const PHOTO_PIN_RISE = 58;
 
 /** The marker look on the tile map (HTML markers). The sketch draws the same shapes in SVG. */
 export const MARKER_CLASSES: Record<MapMarkerKind | "stopActive", string> = {
@@ -49,5 +56,6 @@ export const MARKER_CLASSES: Record<MapMarkerKind | "stopActive", string> = {
   /** A stop the viewer has picked (FreeMap focusId): bigger, with an amber ring. */
   stopActive:
     "grid h-10 w-10 place-items-center rounded-full border-[3px] border-white bg-blue-700 text-base font-extrabold text-white ring-[6px] ring-amber-400/80",
+  me: "block h-4 w-4 rounded-full border-[2.5px] border-white bg-[#2f80ed] ring-[10px] ring-[#2f80ed]/20",
   flare: "grid h-9 w-9 place-items-center rounded-full border-[3px] border-white bg-red-600 text-sm font-extrabold text-white ring-8 ring-red-600/30 motion-safe:animate-pulse",
 };

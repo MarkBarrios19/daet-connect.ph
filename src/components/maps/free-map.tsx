@@ -2,8 +2,10 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Map as LeafletMap, Marker as LeafletMarker, Polyline } from "leaflet";
 import { MARKER_CLASSES, type FreeMapLine, type FreeMapMarker } from "@/components/maps/map-types";
+import { categoryShape } from "@/components/ui/icons";
 import { SketchMap } from "@/components/maps/sketch-map";
 import type { LatLng } from "@/lib/maps/geo";
 import {
@@ -34,6 +36,32 @@ const STOP_PIN =
 const LABEL_HALO =
   "text-slate-900 [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_0_6px_#fff] dark:text-slate-100 dark:[text-shadow:0_0_2px_#0f172a,0_0_4px_#0f172a]";
 
+/**
+ * Hide a pin's name where it would cover a name already shown, so close pins
+ * stay readable when zoomed out. Photo pins and the picked stop go first.
+ */
+export function hideCrowdedNames(root: HTMLElement) {
+  const names = Array.from(root.querySelectorAll<HTMLElement>(".map-name"));
+  names.forEach((n) => (n.style.visibility = ""));
+  const rank = (n: HTMLElement) => (n.closest("[aria-current]") ? 0 : n.parentElement?.querySelector("img") ? 1 : 2);
+  const shown: DOMRect[] = [];
+  for (const n of names.sort((a, b) => rank(a) - rank(b))) {
+    const r = n.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) continue;
+    if (shown.some((s) => r.left < s.right && r.right > s.left && r.top < s.bottom && r.bottom > s.top)) n.style.visibility = "hidden";
+    else shown.push(r);
+  }
+}
+
+/** The place's name under a photo pin, on a halo so it reads on any tile. */
+function nameUnder(text: string) {
+  const name = document.createElement("span");
+  name.setAttribute("aria-hidden", "true");
+  name.className = `map-name pointer-events-none absolute left-1/2 top-full mt-1 block w-max max-w-[10rem] -translate-x-1/2 truncate text-center text-[13px] font-bold ${LABEL_HALO}`;
+  name.textContent = text;
+  return name;
+}
+
 function markerElement(
   m: FreeMapMarker,
   active: boolean,
@@ -55,32 +83,78 @@ function markerElement(
   if (!m.href && !onClick) el.setAttribute("role", "img");
   el.setAttribute("aria-label", m.title);
 
-  // A place with its photo in the pin: the marker the open place's card points
-  // at. A circle with the site's blue drawn round it (so it reads on dark tiles,
-  // where the old white ring vanished), and a blue tail that grows straight out
-  // of the circle rather than floating under it — the owner's crop (image-44)
-  // showed the two as separate shapes with the map's own label between them.
+  // A place with its photo in the pin: an orange teardrop with the photo in a
+  // white ring, its point on the place, and the place's name under it.
   if (m.photo) {
-    el.className = "relative block h-12 w-12";
+    // The drop is a square turned 45°, so its point reaches 58px down.
+    el.className = "relative block h-[58px] w-12";
+    const drop = document.createElement("span");
+    drop.setAttribute("aria-hidden", "true");
+    drop.className =
+      "absolute left-0 top-0 h-12 w-12 rotate-45 rounded-[50%_50%_0_50%] bg-orange-500 shadow-[0_4px_12px_rgba(15,23,42,0.4)]";
     const frame = document.createElement("span");
-    frame.className =
-      "block h-full w-full overflow-hidden rounded-full border-[3px] border-blue-600 bg-surface shadow-[0_4px_14px_rgba(15,23,42,0.45)] dark:border-blue-400 dark:bg-slate-900";
+    frame.className = "absolute left-[5px] top-[5px] block h-[38px] w-[38px] overflow-hidden rounded-full border-2 border-white bg-orange-100";
     const img = document.createElement("img");
     img.src = m.photo.src;
     img.alt = "";
     img.decoding = "async";
     img.className = "h-full w-full object-cover";
-    // The point: a triangle whose top is tucked under the circle's lower arc, so
-    // the two shapes are one pin at any size.
-    const tail = document.createElement("span");
-    tail.setAttribute("aria-hidden", "true");
-    tail.className =
-      "absolute left-1/2 top-[38px] h-0 w-0 -translate-x-1/2 border-x-[7px] border-t-[10px] border-x-transparent border-t-blue-600 dark:border-t-blue-400";
     frame.append(img);
-    el.append(frame, tail);
+    el.append(drop, frame, nameUnder(m.title));
     return el;
   }
 
+  // A category pin (Desktop-Results board): a dark circle with the place's line
+  // icon, the stop number as a white badge on its shoulder, and the name beside it.
+  if (m.icon) {
+    el.setAttribute("aria-label", m.label ? `Stop ${m.label}: ${m.title}${m.subtitle ? `, ${m.subtitle}` : ""}` : m.title);
+    el.className = "relative block";
+    const circle = document.createElement("span");
+    circle.className = `relative grid h-[34px] w-[34px] place-items-center rounded-full border-[2.5px] border-white bg-slate-900 text-white shadow-[0_2px_6px_rgba(15,23,42,0.35)] ${active ? "ring-4 ring-blue-500/70" : ""}`;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "18");
+    svg.setAttribute("height", "18");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", categoryShape(m.icon));
+    svg.append(path);
+    circle.append(svg);
+    el.append(circle);
+    if (m.label) {
+      const badge = document.createElement("span");
+      badge.setAttribute("aria-hidden", "true");
+      badge.className = "absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-surface px-1 text-[11px] font-extrabold leading-none text-blue-700 dark:text-blue-300 shadow-[0_1px_3px_rgba(15,23,42,0.3)]";
+      badge.textContent = m.label;
+      el.append(badge);
+    }
+    if (labels) {
+      const name = document.createElement("span");
+      name.setAttribute("aria-hidden", "true");
+      name.className = `map-name pointer-events-none absolute left-full top-1/2 ml-2 block w-max max-w-[10rem] -translate-y-1/2 truncate text-[13px] font-bold ${LABEL_HALO}`;
+      name.textContent = m.title;
+      el.append(name);
+    }
+    return el;
+  }
+
+  if (labels && m.kind === "place") {
+    el.className = "relative block";
+    const dot = document.createElement("span");
+    dot.className = `${MARKER_CLASSES.place} bg-orange-500`;
+    dot.textContent = m.label;
+    const name = document.createElement("span");
+    name.setAttribute("aria-hidden", "true");
+    name.className = `map-name pointer-events-none absolute left-full top-1/2 ml-1.5 block w-max max-w-[10rem] -translate-y-1/2 truncate text-[13px] font-bold ${LABEL_HALO}`;
+    name.textContent = m.title;
+    el.append(dot, name);
+    return el;
+  }
   if (!(labels && m.kind === "stop")) {
     el.className = MARKER_CLASSES[active && m.kind === "stop" ? "stopActive" : m.kind];
     el.textContent = m.label;
@@ -104,7 +178,7 @@ function markerElement(
   }
   const label = document.createElement("span");
   label.setAttribute("aria-hidden", "true");
-  label.className = `pointer-events-none absolute left-full top-0 ml-1.5 flex w-max max-w-[10rem] flex-col text-left leading-tight ${LABEL_HALO}`;
+  label.className = `map-name pointer-events-none absolute left-full top-0 ml-1.5 flex w-max max-w-[10rem] flex-col text-left leading-tight ${LABEL_HALO}`;
   // The whole name is in the page and CSS shortens it, so the visible words match the accessible name.
   const name = document.createElement("span");
   name.className = "block max-w-[9rem] truncate text-xs font-bold";
@@ -121,7 +195,18 @@ function markerElement(
 }
 
 const signature = (m: FreeMapMarker, active: boolean, clickable: boolean, labels: boolean) =>
-  `${m.kind}|${m.label}|${m.title}|${m.subtitle ?? ""}|${m.href ?? ""}|${m.photo?.src ?? ""}|${active}|${clickable}|${labels}`;
+  `${m.kind}|${m.label}|${m.title}|${m.subtitle ?? ""}|${m.href ?? ""}|${m.photo?.src ?? ""}|${m.icon ?? ""}|${active}|${clickable}|${labels}`;
+
+/** The round white buttons over the map (Desktop-Results board). */
+const CONTROL = "pointer-events-auto inline-flex h-11 w-11 items-center justify-center bg-surface text-daet-ink shadow-[0_1px_4px_rgba(15,23,42,0.25)] hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60";
+
+function ControlIcon({ d, size = 20 }: { d: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
 
 /** The camera after a flight lands: a slow push in, like a drone settling. */
 const DRIFT_ZOOM = 0.6;
@@ -176,8 +261,11 @@ export function FreeMap({
   labels = false,
   animateFit = false,
   focusOffsetY = 0,
-  wheelZoom = false,
+  wheelZoom = true,
   onFocusPoint,
+  chip,
+  controls = "full",
+  onCloseFull,
 }: {
   markers: FreeMapMarker[];
   lines?: FreeMapLine[];
@@ -197,13 +285,19 @@ export function FreeMap({
    */
   focusOffsetY?: number;
   /**
-   * Whether the wheel over the map zooms it.
-   *
-   * Off by default: most of these maps sit in a page that has to be scrolled
-   * past, and a map that swallows the wheel is a trap. A map the visitor is
-   * working in — the card over the open place — turns it on.
+   * Whether the wheel over the map zooms it. On for every map (the owner asked
+   * for scroll to zoom everywhere); a map can still turn it off.
    */
   wheelZoom?: boolean;
+  /** A short label in the top-left corner, e.g. "Day 2 route". */
+  chip?: string;
+  /**
+   * The buttons over the map: "full" is expand and show-my-location as well as
+   * zoom; "zoom" only zoom (a map with its own card over it); "none" nothing.
+   */
+  controls?: "full" | "zoom" | "none";
+  /** Set on the full-screen copy of a map (Expand map): its button and Escape close it. */
+  onCloseFull?: () => void;
   /**
    * Where the focused marker is right now, in the map's own pixels.
    *
@@ -226,6 +320,12 @@ export function FreeMap({
   const firstFit = useRef(true);
   const [mode, setMode] = useState<"map" | "sketch">("map");
   const [ready, setReady] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [me, setMe] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  // The viewer's own dot joins the markers once they ask for it.
+  const shown: FreeMapMarker[] = me ? [...markers, { id: "__me", kind: "me", lat: me.lat, lng: me.lng, label: "", title: "Your location" }] : markers;
   latest.current = { markers, lines };
   clickRef.current = onMarkerClick;
   focusPointRef.current = onFocusPoint;
@@ -290,7 +390,6 @@ export function FreeMap({
           return;
         }
         mapRef.current = map;
-        lib.control.zoom({ position: "topright" }).addTo(map);
 
         const tiles_ = lib
           .tileLayer(MAP_TILES.light, {
@@ -370,7 +469,7 @@ export function FreeMap({
     const lib = libRef.current;
     if (!ready || !map || !lib) return;
     const seen = new Set<string>();
-    for (const m of markers) {
+    for (const m of shown) {
       seen.add(m.id);
       const active = m.id === focusId;
       const sig = signature(m, active, clickable, labels);
@@ -407,7 +506,21 @@ export function FreeMap({
         markerRefs.current.delete(id);
       }
     }
-  }, [markers, ready, focusId, clickable, labels]);
+    if (labels && container.current) hideCrowdedNames(container.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `shown` is markers plus `me`
+  }, [markers, me, ready, focusId, clickable, labels]);
+
+  // Names re-checked for overlaps after each zoom.
+  useEffect(() => {
+    const map = mapRef.current;
+    const box = container.current;
+    if (!ready || !map || !labels || !box) return;
+    const check = () => hideCrowdedNames(box);
+    map.on("zoomend", check);
+    return () => {
+      map.off?.("zoomend", check);
+    };
+  }, [ready, labels]);
 
   // The wheel zooms where the map is something being worked in, and scrolls the
   // page everywhere else.
@@ -461,14 +574,10 @@ export function FreeMap({
       const drawn = lib
         .polyline(
           line.path.map((p) => [p.lat, p.lng] as [number, number]),
-          {
-            color: "#2563eb",
-            weight: 4,
-            opacity: 0.85,
-            dashArray: line.dashed ? "8 8" : undefined,
-            lineCap: "round",
-            lineJoin: "round",
-          },
+          // A straight leg (no road known, or a boat) is the board's dotted line; a road is solid.
+          line.dashed
+            ? { color: "#2563eb", weight: 3, opacity: 1, dashArray: "2 8", lineCap: "round", lineJoin: "round" }
+            : { color: "#2563eb", weight: 4, opacity: 0.85, lineCap: "round", lineJoin: "round" },
         )
         .addTo(map);
       lineRefs.current.set(line.id, { line: drawn, sig });
@@ -539,25 +648,137 @@ export function FreeMap({
     firstFit.current = false;
   }, [fitKey, ready, animateFit, focusId]);
 
+  // The full-screen copy: Escape closes it, and the page behind it doesn't scroll.
+  const closeRef = useRef(onCloseFull);
+  closeRef.current = onCloseFull;
+  const isFull = Boolean(onCloseFull);
+  useEffect(() => {
+    if (!isFull) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeRef.current?.();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isFull]);
+
+  const locate = () => {
+    if (!("geolocation" in navigator)) {
+      setNotice("Your location isn't available on this device.");
+      return;
+    }
+    setLocating(true);
+    setNotice(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setMe(here);
+        const map = mapRef.current;
+        if (map) map.setView([here.lat, here.lng], Math.max(map.getZoom(), 14), { animate: !reducedMotion() });
+      },
+      () => {
+        setLocating(false);
+        setNotice("Your location isn't available. Allow location for this site and try again.");
+      },
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 120_000 },
+    );
+  };
+
   if (markers.length === 0 && lines.length === 0) return null;
   if (mode === "sketch")
-    return <SketchMap markers={markers} lines={lines} title={title} focusId={focusId} pins={labels} />;
+    return (
+      <div className="relative">
+        <SketchMap markers={markers} lines={lines} title={title} focusId={focusId} pins={labels} />
+        {chip ? <span className="pointer-events-none absolute left-3 top-3 inline-flex min-h-8 items-center rounded-full bg-surface px-3 text-sm font-bold text-daet-ink shadow-[0_1px_4px_rgba(15,23,42,0.2)]">{chip}</span> : null}
+      </div>
+    );
+
+  // The box the map fills. Positioned so the buttons can sit over it; a caller's
+  // own `absolute inset-0` keeps its position (and its size comes from that).
+  const positioned = /\b(absolute|fixed)\b/.test(className);
+  const box = `${positioned ? "" : "relative "}${className}`;
 
   return (
-    <figure>
-      {/* The ground is the map's own land colour, not the page's near-white: it is
-          what shows in the moment before a tile arrives. Inline, because Leaflet's
-          own stylesheet paints `.leaflet-container` grey. */}
-      {/* `isolate` is load-bearing: Leaflet gives its panes z-index 400–700, and
-          without a stacking context here those panes win against the whole page —
-          they painted over the chat dock's left edge. */}
-      <div
-        ref={container}
-        role="region"
-        aria-label={title}
-        className={`isolate w-full overflow-hidden rounded-2xl ${className}`}
-        style={{ background: "var(--color-map-ground)" }}
-      />
+    // `contents`: the figure draws no box of its own, so a height like `h-full`
+    // on the map's box is measured against the caller's box, not a zero-height figure.
+    <figure className="contents">
+      {/* Expand map: a second copy of the map over the whole page, outside any
+          sticky or clipped box this one sits in (those trap a fixed element under the page). */}
+      {expanded && !isFull
+        ? createPortal(
+            <div className="fixed inset-0 z-[100] bg-slate-900/60 p-3 sm:p-8" onClick={(e) => e.target === e.currentTarget && setExpanded(false)}>
+              <FreeMap
+                markers={markers}
+                lines={lines}
+                title={`${title} (full screen)`}
+                fitKey={fitKey}
+                focusId={focusId}
+                onMarkerClick={onMarkerClick}
+                labels={labels}
+                chip={chip}
+                className="h-full"
+                onCloseFull={() => setExpanded(false)}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
+      <div className={box}>
+        {/* The ground is the map's own land colour, not the page's near-white: it is
+            what shows in the moment before a tile arrives. Inline, because Leaflet's
+            own stylesheet paints `.leaflet-container` grey. */}
+        {/* `isolate` is load-bearing: Leaflet gives its panes z-index 400–700, and
+            without a stacking context here those panes win against the whole page —
+            they painted over the chat dock's left edge. */}
+        <div
+          ref={container}
+          role="region"
+          aria-label={title}
+          className="absolute inset-0 isolate overflow-hidden rounded-2xl"
+          style={{ background: "var(--color-map-ground)" }}
+        />
+        {controls !== "none" ? (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            {chip ? <span className="absolute left-3 top-3 inline-flex min-h-8 items-center rounded-full bg-surface px-3 text-sm font-bold text-daet-ink shadow-[0_1px_4px_rgba(15,23,42,0.2)]">{chip}</span> : null}
+            {controls === "full" ? (
+              <>
+                <button
+                  type="button"
+                  aria-label={isFull ? "Close the full map" : "Expand map"}
+                  onClick={() => (isFull ? onCloseFull?.() : setExpanded(true))}
+                  // Full screen: the close button is an X at the top right, above the location button.
+                  className={`${CONTROL} absolute rounded-full ${isFull ? "right-3 top-3" : `left-3 ${chip ? "top-14" : "top-3"}`}`}
+                >
+                  <ControlIcon d={isFull ? "M6 6l12 12M18 6L6 18" : "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"} />
+                </button>
+                <button type="button" aria-label="Show my location" disabled={locating} onClick={locate} className={`${CONTROL} absolute right-3 ${isFull ? "top-16" : "top-3"} rounded-xl text-blue-600 dark:text-blue-300`}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                  </svg>
+                </button>
+              </>
+            ) : null}
+            <div className="absolute bottom-3 right-3 flex flex-col gap-2">
+              <button type="button" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()} className={`${CONTROL} rounded-xl`}>
+                <ControlIcon d="M12 5v14M5 12h14" />
+              </button>
+              <button type="button" aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()} className={`${CONTROL} rounded-xl`}>
+                <ControlIcon d="M5 12h14" />
+              </button>
+            </div>
+            {notice ? (
+              <p role="status" className="pointer-events-auto absolute inset-x-3 bottom-3 mr-14 rounded-xl bg-surface px-3 py-2 text-sm font-semibold text-daet-ink shadow-[0_1px_4px_rgba(15,23,42,0.2)]">
+                {notice}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
       <ul className="sr-only">
         {markers.map((m) => (
           <li key={m.id}>{m.title}</li>

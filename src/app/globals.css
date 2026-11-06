@@ -55,7 +55,9 @@
   --color-ticket-frame: #e8d7b9;
   --color-ticket-panel: #faf6ef;
   /* The tear: white dashes on the cream (owner's design, image-67). In dark mode
-     it is the lettering's own cyan, which is what marks the tear there. */
+     it is the page's own ground — the same colour the two bites in the edges are
+     cut down to, so the dashes and the bites read as one hole through the paper
+     (owner's note on image-95: the cyan there was louder than the band). */
   --color-ticket-perf: rgb(255 255 255 / 0.9);
   /* The map's own ground: OpenStreetMap's land colour, so a tile that has not
      arrived yet reads as land rather than as a white flash. */
@@ -92,6 +94,27 @@
        is offset by it. site-header.tsx sets its min-height from this value, so
        it is written here once and nowhere else. */
     --header-h: 3.5rem;
+  }
+
+  /* The browser's own widgets follow this — scrollbars above all, then date
+     pickers, selects and text fields. It has to be declared here rather than
+     with the dark values in @layer theme: those lost to the `:root` above
+     (same specificity, earlier layer), so a dark page kept the browser's light
+     scrollbars (owner's note, image-97 and image-98). */
+  [data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+    }
+  }
+
+  /* A light island inside a dark page (printed badge, QR codes) keeps light
+     widgets. Last, so it wins over the media rule above at equal weight. */
+  :root [data-theme="light"] {
+    color-scheme: light;
   }
 
   @media (min-width: 40rem) {
@@ -362,7 +385,6 @@
    light values: they pass contrast on both grounds. */
 @layer theme {
   [data-theme="dark"] {
-    color-scheme: dark;
     --color-daet-ink: #e2e8f0;
     --color-daet-sand: #172446;
     --color-surface: #111a2e;
@@ -376,16 +398,15 @@
     /* The ticket, seated in the dark ground (the owner's own dark band,
        image-67): the paper is a slate blue well off the near-black page, and the
        card of moves sits under it, darker than the paper it is printed on. The
-       tear is the lettering's cyan. The photograph is washed with the ground
-       rather than left blazing. */
+       tear is that page ground showing through, as the bites do. The photograph
+       is washed with the ground rather than left blazing. */
     --color-ticket-frame: #334561;
     --color-ticket-panel: #162648;
-    --color-ticket-perf: #14a9de;
+    --color-ticket-perf: var(--color-canvas);
     --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      color-scheme: dark;
       --color-daet-ink: #e2e8f0;
       --color-daet-sand: #172446;
       --color-surface: #111a2e;
@@ -398,7 +419,7 @@
       --color-hairline: #2b3a57;
       --color-ticket-frame: #334561;
       --color-ticket-panel: #162648;
-      --color-ticket-perf: #14a9de;
+      --color-ticket-perf: var(--color-canvas);
       --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
   }
@@ -407,7 +428,6 @@
 /* A light island inside a dark page (printed badge, QR codes). */
 @layer theme {
   :root [data-theme="light"] {
-    color-scheme: light;
     --color-daet-ink: #0f172a;
     --color-daet-sand: #eff6ff;
     --color-surface: #ffffff;
@@ -464,6 +484,44 @@
   font-size: calc(var(--display-scale, 1) * clamp(1.75rem, 5vw, 3rem));
   line-height: 1.05;
   letter-spacing: -0.025em;
+}
+
+/* Scrollbars, the page's own and the panels': a hairline in the theme's line
+   colour, on the page's ground. Windows draws a light slab with arrow buttons
+   whatever the page is made of, so a dark page wore a white scrollbar down its
+   right edge and every textarea in the dark chat the same (owner's note:
+   image-97, image-98). The colour comes from --color-line, which already turns
+   over with the theme, so light keeps its `#cbd5e1` hairline and dark takes the
+   slate one. scrollbar-color is inherited, which covers the page and every
+   scroller inside it; the ::-webkit- rules are for Safari and older Chromium,
+   which ignore it (and, once they are set, Chromium stops drawing the arrows).
+   In the base layer, so a utility can still ask for something else. */
+@layer base {
+  :root {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: var(--color-line);
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-strong);
+  }
 }
 
 /* Scrollbars inside panels, not the page. Windows' default light scrollbars in a

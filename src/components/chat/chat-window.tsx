@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { loadOlderMessages, markConversationRead, reactToMessage, sendMessage, signAttachments } from "@/app/(subsystems)/tours/messages/actions";
+import { PresenceBadge, presenceText } from "@/components/chat/presence-badge";
 import { ReactionBar, ReactionPills } from "@/components/chat/reactions";
 import { TypingDots } from "@/components/assistant/assistant-chat";
 import { LineIcon } from "@/components/ui/icons";
 import { Notice } from "@/components/ui/notice";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { MESSAGE_MAX_LENGTH, MESSAGE_PAGE_SIZE, mergeMessages, messageTime, senderLabel, type ChatMembers, type ChatMessage } from "@/lib/tours/messaging";
+import { MESSAGE_MAX_LENGTH, MESSAGE_PAGE_SIZE, mergeMessages, messageTime, presenceOf, senderLabel, type ChatMembers, type ChatMessage } from "@/lib/tours/messaging";
 import {
   applyReaction,
   bubbleCorners,
@@ -35,6 +36,8 @@ export type ChatWindowProps = {
   members: ChatMembers;
   title: string;
   subtitle?: string | null;
+  /** The other person's last-seen time, for the status under the name. */
+  otherLastSeen?: string | null;
   link?: { href: string; label: string } | null;
   initialMessages: ChatMessage[];
   initialAttachmentUrls: Record<string, string>;
@@ -288,6 +291,8 @@ export function ChatWindow(props: ChatWindowProps) {
     },
   });
 
+  const stored = presenceOf(props.otherLastSeen);
+  const status = online ? ({ state: "online", label: null } as const) : stored;
   const headingId = `chat-title-${conversationId}`;
   const Heading = props.headingLevel === 1 ? "h1" : "h2";
 
@@ -301,14 +306,14 @@ export function ChatWindow(props: ChatWindowProps) {
         ) : null}
         <span className="relative shrink-0" aria-hidden="true">
           <span className={`grid ${compact ? "h-8 w-8 bg-white/20" : "h-10 w-10 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300"} place-items-center rounded-full font-bold`}>{props.title.slice(0, 1).toUpperCase()}</span>
-          {online ? <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" /> : null}
+          <PresenceBadge presence={status} ring={compact ? "border-blue-600" : "border-surface"} />
         </span>
         <div className="min-w-0 flex-1">
           <Heading id={headingId} className={`truncate font-bold ${compact ? "text-base" : "text-lg text-daet-ink"}`}>
             {props.title}
           </Heading>
           <p className={`truncate text-sm ${compact ? "text-white/90" : "text-slate-600 dark:text-slate-400"}`} aria-live="polite">
-            {typingNow.length ? "typing…" : online ? "Active now" : live === "offline" ? "Offline: refresh to see new messages" : props.subtitle}
+            {typingNow.length ? "typing…" : presenceText(status) ?? (live === "offline" ? "Offline: refresh to see new messages" : props.subtitle)}
           </p>
         </div>
         {props.link && !compact ? (

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { checkA11y, signInAs } from "./fixtures";
+import { checkA11y, draftPlan, signInAs } from "./fixtures";
 
 /**
  * The evaluator walkthrough, screen by screen: plan → book → pay → check-in →
@@ -14,8 +14,7 @@ test("tourist → guide → admin walkthrough screens", async ({ browser }) => {
 
   // 1. Plan a trip and get a schedule.
   await page.goto("/tours/plan", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /plan my trip/i }).click();
-  await expect(page.getByText(/Day 1/).first()).toBeVisible({ timeout: 30_000 });
+  await draftPlan(page);
   await checkA11y(page, "plan result");
 
   // 2. Open a package and reach the booking form with open dates.

@@ -112,7 +112,7 @@ export default async function AttractionPage({ params }: PageProps) {
           <h2 className="mb-3 text-2xl font-semibold text-daet-ink">Location</h2>
           {pin ? (
             <>
-              <RouteMap points={[{ ...pin, label: attraction.name }]} title={`Map showing ${attraction.name}`} />
+              <RouteMap points={[{ ...pin, label: attraction.name, photo: attraction.photo_url ?? (photoKey ? PHOTOS[photoKey].src : undefined) }]} title={`Map showing ${attraction.name}`} />
               {!attraction.location_verified ? (
                 <p className="mt-2 text-sm text-daet-ink/75">Approximate pin from public sources, not yet confirmed by the Tourism Office.</p>
               ) : null}

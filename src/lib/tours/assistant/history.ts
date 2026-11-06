@@ -45,9 +45,13 @@ export async function* savingReply(events: AsyncGenerator<AssistantEvent>, supab
   }
   const answer = text.trim();
   if (!done || !answer || !question.trim()) return;
-  const { error } = await supabase.from("tours_ai_messages").insert([
-    { role: "user", content: question.trim().slice(0, 4000) },
-    { role: "assistant", content: answer.slice(0, 4000), cards: cards.length ? cards : null, mode },
-  ]);
+  // Two inserts, question first: each gets its own now() (the app may not write
+  // created_at), so the chat always loads the question above its answer.
+  const asked = await supabase.from("tours_ai_messages").insert({ role: "user", content: question.trim().slice(0, 4000) });
+  if (asked.error) {
+    console.error("Save assistant chat error:", asked.error.message);
+    return;
+  }
+  const { error } = await supabase.from("tours_ai_messages").insert({ role: "assistant", content: answer.slice(0, 4000), cards: cards.length ? cards : null, mode });
   if (error) console.error("Save assistant chat error:", error.message);
 }
