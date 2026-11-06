@@ -200,8 +200,8 @@ export function PlanPanel({
 
   return (
     <section ref={sectionRef} aria-labelledby="plan-title" className="min-w-0 space-y-4">
-      {/* Title, trip line, actions and day pills stay in view while the stops scroll (tablet and wider); the map hangs from just below them. */}
-      <div ref={barRef} className="z-30 space-y-3 bg-canvas py-3 md:sticky md:top-[var(--header-h)]">
+      {/* Title, trip line, actions and day pills stay in view while the stops scroll (desktop layout; on phones the plan is a sheet); the map hangs from just below them. */}
+      <div ref={barRef} className="z-30 space-y-3 bg-canvas py-3 lg:sticky lg:top-[var(--header-h)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 id="plan-title" className="font-[family-name:var(--font-display)] text-2xl font-semibold text-daet-ink sm:text-3xl">
