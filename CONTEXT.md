@@ -32,6 +32,12 @@ The full-page view where a plan is drafted and changed beside the chat. The
 assistant hands plan requests over to it.
 _Avoid_: Itinerary builder, trip builder
 
+**Ability**:
+One thing the assistant can do on a trip day (emergency numbers, "is my tour
+on?", what's open near me). It is defined once and serves both basic mode and
+the AI, so the two always give the same answer.
+_Avoid_: Skill, feature, intent
+
 **Basic mode**:
 The assistant answering from fixed rules and listings: when the AI is
 unavailable, after a visitor's daily allowance of AI answers, or after 3

@@ -1,5 +1,6 @@
 import { fakeSupabase, type Tables } from "@/lib/tours/assistant/__fixtures__/fake-supabase";
-import { asksOpenNearMe, asksTourToday, basicReply, isEmergency } from "@/lib/tours/assistant/basic";
+import { asksOpenNearMe, asksTourToday, isEmergency } from "@/lib/tours/assistant/abilities";
+import { basicReply } from "@/lib/tours/assistant/basic";
 import { emergencyNumbers, openNearMe, tourToday } from "@/lib/tours/assistant/trip-day";
 import { emergencyAnswer } from "@/lib/tours/emergency/contacts";
 import type { ToolContext } from "@/lib/tours/assistant/tools";
