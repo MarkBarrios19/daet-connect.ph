@@ -6,6 +6,7 @@ import { formatPeso } from "@/lib/money";
 import { PHOTOS } from "@/lib/photo-credits";
 import type { RatingSummary } from "@/lib/tours/reviews";
 import { durationLabel, fromPrice, placePhoto } from "@/lib/tours/trip-board";
+import { ApproxPrice } from "@/components/ui/approx-price";
 
 interface PackageCardProps {
   package: {
@@ -77,6 +78,7 @@ export function PackageCard({ package: pkg, rating = null, headingLevel = 2 }: P
                 <span className="block text-sm text-daet-ink/75">From</span>
                 <span className="text-xl font-bold text-daet-ink">{formatPeso(price.amount)}</span>
                 <span className="text-sm text-daet-ink/75"> {price.perPerson ? "/ person" : "/ group"}</span>
+                <ApproxPrice pesos={price.amount} />
               </p>
             ) : null}
           </div>

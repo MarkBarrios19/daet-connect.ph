@@ -221,3 +221,12 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
   yet", a note, and Book links without a date (the booking form asks for one).
 - "Pick dates to save" replaces Save: it clears the stand-in dates and asks for
   real ones, which drafts a dated plan that can be saved.
+
+## Rough prices for visitors from abroad (decision 24)
+
+- Peso prices on trip cards, the tour page and Bookable cards get "≈ £14 approx."
+  in the visitor's currency, guessed from the phone's language region (USD when
+  unknown). Nothing is shown on a phone set to Philippine time or a PH locale.
+- Rates: `/api/rates`, from open.er-api.com (free, no key), cached for a day; if
+  it fails, the rough amounts are simply not shown.
+- Code: `src/lib/currency/approx.ts`, `src/components/ui/approx-price.tsx`.
