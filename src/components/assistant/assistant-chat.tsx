@@ -13,6 +13,7 @@ import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import type { ChatActions } from "@/components/assistant/chat-actions";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { bubbleRadius, bubbleShape } from "@/lib/tours/assistant/bubble-groups";
 import { QuestionsCard } from "@/components/assistant/questions-card";
@@ -151,6 +152,7 @@ export function AssistantChat({
   initialText = "",
   startWith,
   afterPlan,
+  actionsRef,
 }: {
   signedIn: boolean;
   onNavigate?: () => void;
@@ -168,6 +170,8 @@ export function AssistantChat({
   startWith?: string;
   /** Shown under the latest plan in the chat (the planner's pace and getting-around chips). */
   afterPlan?: React.ReactNode;
+  /** When a header with a "⋯" menu is present it drives New chat / Delete history / feedback; the in-chat strip hides those buttons. */
+  actionsRef?: React.MutableRefObject<ChatActions | null>;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   // A photo for the next message (decision 39): signed-in visitors, answered by the AI only.
@@ -343,6 +347,40 @@ export function AssistantChat({
   const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
   // Ask by voice (decision 38): what is heard is sent as the message.
   const speech = useSpeech((heard) => void send(heard));
+  useEffect(() => {
+    if (!actionsRef) return;
+    actionsRef.current = {
+      hasMessages: turns.length > 0,
+      savedOnServer: signedIn,
+      canGiveFeedback: !busy && turns.some((t) => t.role === "assistant" && t.content && t.helpful === undefined),
+      newChat: () => {
+        setTurns([]);
+        save([]);
+        inputRef.current?.focus();
+      },
+      deleteHistory: async () => {
+        if (!signedIn) {
+          setTurns([]);
+          save([]);
+          return;
+        }
+        const response = await fetch("/api/assistant", { method: "DELETE" }).catch(() => null);
+        if (response?.ok) {
+          setTurns([]);
+          inputRef.current?.focus();
+        } else setError("Your chat could not be deleted. Please try again.");
+      },
+      feedback: () => {
+        const groups = logRef.current?.querySelectorAll<HTMLElement>('[role="group"][aria-label="Was this helpful?"]');
+        const last = groups?.[groups.length - 1];
+        last?.scrollIntoView({ block: "center" });
+        last?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+      },
+    };
+    return () => {
+      actionsRef.current = null;
+    };
+  });
   const roles = turns.map((t) => t.role);
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
@@ -351,7 +389,7 @@ export function AssistantChat({
       <div className="flex items-center justify-between gap-2 bg-canvas px-4 py-1 text-sm text-slate-600 dark:text-slate-400">
         <span className="min-w-0">{/* Basic mode carries no notice (decision 6 in docs/TRIP_PLANNER.md). */}
           {lastMode === "ai" ? <Badge tone="info">AI</Badge> : "Answers come from CONNECT-Daet's own listings."}</span>
-        {turns.length && !signedIn ? (
+        {turns.length && !signedIn && !actionsRef ? (
           <button
             type="button"
             onClick={() => {
@@ -364,7 +402,7 @@ export function AssistantChat({
             New chat
           </button>
         ) : null}
-        {turns.length && signedIn ? (
+        {turns.length && signedIn && !actionsRef ? (
           confirmClear ? (
             <span className="flex items-center gap-1">
               <button
