@@ -27,6 +27,11 @@ export function RouteMap({
   title,
   chip,
   mapClassName,
+  focusId = null,
+  onMarkerClick,
+  fitKey,
+  animateFit,
+  onReset,
 }: {
   points: MapPoint[];
   polylines?: Array<string | null>;
@@ -37,6 +42,14 @@ export function RouteMap({
   chip?: string;
   /** The map's own height classes (default h-72 sm:h-96). */
   mapClassName?: string;
+  /** Fly to this marker (`p<index>`) and mark it picked. */
+  focusId?: string | null;
+  onMarkerClick?: (id: string) => void;
+  /** Reframe all points whenever this changes. */
+  fitKey?: string;
+  animateFit?: boolean;
+  /** Adds a "Show the whole trip" button. */
+  onReset?: () => void;
 }) {
   const markers = useMemo<FreeMapMarker[]>(
     () => points.map((p, i) => ({ id: `p${i}`, lat: p.lat, lng: p.lng, kind: connect ? "stop" : "place", label: connect ? String(i + 1) : "", title: p.label, href: p.href, icon: p.icon, photo: p.photo ? { src: p.photo } : undefined })),
@@ -55,7 +68,7 @@ export function RouteMap({
   if (points.length === 0) return null;
   return (
     <div className={className}>
-      <FreeMap markers={markers} lines={lines} title={title} chip={chip} labels {...(mapClassName ? { className: mapClassName } : {})} />
+      <FreeMap markers={markers} lines={lines} title={title} chip={chip} labels focusId={focusId} onMarkerClick={onMarkerClick} fitKey={fitKey} animateFit={animateFit} onReset={onReset} {...(mapClassName ? { className: mapClassName } : {})} />
     </div>
   );
 }
