@@ -59,3 +59,31 @@ export async function confirmCheckoutReturn(bookingId: string, sessionId: string
     method: paid[0]?.method ?? null,
   };
 }
+
+/**
+ * Confirms a booking's PayMongo payment on return. The cookie names the
+ * session that started checkout on this browser; when it is missing (a return
+ * on another address or browser) the booking's most recent sessions, kept in
+ * the database, are tried instead. Stops at the first paid one.
+ */
+export async function confirmBookingReturn(bookingId: string, cookieSessionId: string | undefined): Promise<ReturnCheck> {
+  const ids: string[] = cookieSessionId ? [cookieSessionId] : [];
+  try {
+    const { data } = await createSupabaseAdminClient()
+      .from("tours_checkout_sessions")
+      .select("session_id")
+      .eq("booking_id", bookingId)
+      .order("created_at", { ascending: false })
+      .limit(3);
+    for (const row of data ?? []) if (!ids.includes(row.session_id)) ids.push(row.session_id);
+  } catch (error) {
+    console.error("Checkout sessions lookup failed:", error instanceof Error ? error.message : error);
+  }
+  if (ids.length === 0) return { status: "unknown", reason: "no_session" };
+  let last: ReturnCheck = { status: "unknown", reason: "no_session" };
+  for (const id of ids) {
+    last = await confirmCheckoutReturn(bookingId, id);
+    if (last.status === "paid") return last;
+  }
+  return last;
+}

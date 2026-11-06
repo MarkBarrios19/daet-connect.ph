@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { bookingConfirmedEmail, bookingReceivedEmail, newBookingForOperatorEmail, paymentReceivedEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
+import { bookingConfirmedEmail, bookingReceivedEmail, guideAssignedEmail, newBookingForOperatorEmail, paymentReceivedEmail, paymentReceivedForOperatorEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 
@@ -35,15 +35,15 @@ type BookingRow = {
     meeting_lat?: number | string | null;
     meeting_lng?: number | string | null;
     meeting_time?: string | null;
-    tours_operators: { business_name: string } | Array<{ business_name: string }> | null;
+    tours_operators: { business_name: string; contact_email?: string | null } | Array<{ business_name: string; contact_email?: string | null }> | null;
   } | null;
 };
 
-async function loadBooking(bookingId: string): Promise<{ to: string; data: BookingEmailData } | null> {
+async function loadBooking(bookingId: string): Promise<{ to: string; data: BookingEmailData; operatorEmail: string | null } | null> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("tours_bookings")
-    .select("id, booking_reference, contact_name, contact_email, tour_date, number_of_pax, total_amount, total_paid, tours_packages ( title, location_name, meeting_point_name, meeting_lat, meeting_lng, meeting_time, tours_operators ( business_name ) )")
+    .select("id, booking_reference, contact_name, contact_email, tour_date, number_of_pax, total_amount, total_paid, tours_packages ( title, location_name, meeting_point_name, meeting_lat, meeting_lng, meeting_time, tours_operators ( business_name, contact_email ) )")
     .eq("id", bookingId)
     .maybeSingle();
   if (error || !data) return null;
@@ -54,6 +54,7 @@ async function loadBooking(bookingId: string): Promise<{ to: string; data: Booki
   const base = appUrl();
   return {
     to: row.contact_email,
+    operatorEmail: one(pkg.tours_operators)?.contact_email ?? null,
     data: {
       reference: row.booking_reference,
       contactName: row.contact_name,
@@ -88,16 +89,8 @@ export function emailBookingReceived(bookingId: string) {
     const booking = await loadBooking(bookingId);
     if (!booking) return;
     await sendEmail({ to: booking.to, ...bookingReceivedEmail(booking.data) });
-    const admin = createSupabaseAdminClient();
-    const { data } = await admin
-      .from("tours_bookings")
-      .select("tours_packages ( tours_operators ( contact_email ) )")
-      .eq("id", bookingId)
-      .maybeSingle();
-    const pkg = one((data as { tours_packages?: unknown } | null)?.tours_packages as { tours_operators: { contact_email: string } | Array<{ contact_email: string }> | null } | null);
-    const operatorEmail = one(pkg?.tours_operators)?.contact_email;
-    if (operatorEmail) {
-      await sendEmail({ to: operatorEmail, ...newBookingForOperatorEmail(booking.data, `${appUrl()}/tours/operator/bookings?status=pending`) });
+    if (booking.operatorEmail) {
+      await sendEmail({ to: booking.operatorEmail, ...newBookingForOperatorEmail(booking.data, `${appUrl()}/tours/operator/bookings?status=pending`) });
     }
   });
 }
@@ -114,7 +107,29 @@ export function emailPaymentReceived(bookingId: string, amount: number) {
   if (!isEmailConfigured()) return;
   later(async () => {
     const booking = await loadBooking(bookingId);
-    if (booking) await sendEmail({ to: booking.to, ...paymentReceivedEmail(booking.data, amount) });
+    if (!booking) return;
+    await sendEmail({ to: booking.to, ...paymentReceivedEmail(booking.data, amount) });
+    if (booking.operatorEmail) {
+      await sendEmail({ to: booking.operatorEmail, ...paymentReceivedForOperatorEmail(booking.data, amount, `${appUrl()}/tours/operator/bookings`) });
+    }
+  });
+}
+
+/** Tells a guide they were assigned a tour. The address is the guide's sign-in email. */
+export function emailGuideAssigned(bookingId: string, guideId: string) {
+  if (!isEmailConfigured()) return;
+  later(async () => {
+    const booking = await loadBooking(bookingId);
+    if (!booking) return;
+    const admin = createSupabaseAdminClient();
+    const { data: guide } = await admin.from("tours_guides").select("profile_id").eq("id", guideId).maybeSingle();
+    if (!guide?.profile_id) return;
+    const [{ data: authUser }, { data: profile }] = await Promise.all([
+      admin.auth.admin.getUserById(guide.profile_id),
+      admin.from("profiles").select("full_name").eq("id", guide.profile_id).maybeSingle(),
+    ]);
+    const to = authUser?.user?.email;
+    if (to) await sendEmail({ to, ...guideAssignedEmail(booking.data, profile?.full_name ?? null, `${appUrl()}/tours/guide/my-tours`) });
   });
 }
 
