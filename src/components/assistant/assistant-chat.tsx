@@ -442,7 +442,7 @@ export function AssistantChat({
       >
         {turns.length === 0 && suggestions ? (
           <li className="space-y-3">
-            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">{suggestions.greeting}</p>
+            <p className="max-w-[85%] rounded-[1.25rem] rounded-bl-md bg-muted px-3.5 py-2 text-daet-ink">{suggestions.greeting}</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.questions.map((q) => (
                 <button key={q} type="button" onClick={() => send(q)} className="min-h-11 rounded-full bg-blue-50 px-4 text-left text-sm font-semibold text-blue-800 transition hover:bg-blue-100 active:scale-[0.98] dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/40">
@@ -453,7 +453,7 @@ export function AssistantChat({
           </li>
         ) : turns.length === 0 ? (
           <li className="space-y-3">
-            <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
+            <p className="max-w-[85%] rounded-[1.25rem] rounded-bl-md bg-muted px-3.5 py-2 text-daet-ink">
               Hi! I&apos;m your local guide for Daet. Ask where to eat or stay, how to get somewhere and what it costs, where your tour meets, or about tours and events
               {signedIn ? ", your bookings, payments and tickets" : ""}. I can also pass you to a person.
             </p>
@@ -666,7 +666,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
       {cards.map((card, i) => {
         if (card.type === "tour") {
           return (
-            <div key={i} className="rounded-2xl bg-canvas p-3">
+            <div key={i} className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
               <p className="font-bold text-daet-ink">{card.title}</p>
               <p className="text-sm text-slate-600 dark:text-slate-400">{[card.location, card.duration, card.priceFrom ? `from ${formatPeso(card.priceFrom)} per person` : null].filter(Boolean).join(" · ")}</p>
               <Link href={card.href} onClick={onNavigate} className={`${pill} mt-2`}>
@@ -677,7 +677,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
         }
         if (card.type === "booking") {
           return (
-            <div key={i} className="rounded-2xl bg-canvas p-3">
+            <div key={i} className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
               <p className="font-bold text-daet-ink">
                 {card.title} <span className="font-normal text-slate-600 dark:text-slate-400">· {card.reference}</span>
               </p>
@@ -697,7 +697,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
         }
         if (card.type === "place") return <PlaceCardView key={i} card={card} />;
         if (card.type === "cost") return <CostCardView key={i} card={card} />;
-        if (card.type === "transport") return <TransportCardView key={i} card={card} />;
+        if (card.type === "transport") return <TransportCardView key={i} card={card} inChat />;
         if (card.type === "handoff") return <HandoffPanel key={i} card={card} signedIn={signedIn} onNavigate={onNavigate} />;
         return null;
       })}
@@ -727,7 +727,7 @@ function AssistantCards({ cards, signedIn, onNavigate, onShareLocation }: { card
 
 function PlaceCardView({ card }: { card: PlaceCard }) {
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-bold text-daet-ink">{card.name}</p>
@@ -753,7 +753,7 @@ function PlaceCardView({ card }: { card: PlaceCard }) {
 
 function CostCardView({ card }: { card: CostCard }) {
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <p className="font-bold text-daet-ink">Trip estimate</p>
       <p className="text-sm text-slate-600 dark:text-slate-400">{card.title}</p>
       <ul className="mt-2 space-y-1.5">
@@ -791,7 +791,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
 
   if (!signedIn || !card.signedIn) {
     return (
-      <div className="rounded-2xl bg-canvas p-3 text-sm">
+      <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3 text-sm">
         <p className="text-daet-ink">Sign in so {who} can reply to you.</p>
         <Link href="/login" onClick={onNavigate} className="mt-2 inline-flex min-h-11 items-center rounded-full bg-blue-600 px-4 text-sm font-bold text-white">
           Sign in to message
@@ -810,7 +810,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
     );
   }
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <label htmlFor={id} className="text-sm font-bold text-daet-ink">
         Message to {who} (edit before sending)
       </label>
@@ -850,7 +850,7 @@ function HandoffPanel({ card, signedIn, onNavigate }: { card: HandoffCard; signe
 function PlanSummaryCard({ itinerary, onNavigate }: { itinerary: ItineraryResult; onNavigate?: () => void }) {
   const { plan } = itinerary;
   return (
-    <div className="rounded-2xl bg-canvas p-3">
+    <div className="rounded-[1.25rem] rounded-bl-md bg-muted p-3">
       <p className="font-bold text-daet-ink">Your {plan.days.length}-day plan</p>
       <ol className="mt-1 space-y-0.5 text-sm text-daet-ink">
         {plan.days.map((d, i) => (
