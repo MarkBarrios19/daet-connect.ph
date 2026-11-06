@@ -51,3 +51,12 @@ export function dockMinimize(state: { open: string[]; heads: string[] }, id: str
 export function dockClose(state: { open: string[]; heads: string[] }, id: string) {
   return { open: state.open.filter((x) => x !== id), heads: state.heads.filter((x) => x !== id) };
 }
+
+/**
+ * The heads to draw. The assistant ("ai") never gets one: the floating
+ * assistant button is the same round icon and reopens it, so a head would be
+ * a second, identical button beside it.
+ */
+export function visibleHeads(heads: string[]): string[] {
+  return heads.filter((id) => id !== "ai");
+}

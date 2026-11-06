@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { DOCK_BUSY_EVENT, dockClose, dockMinimize, dockOpen, setDockBusy } from "@/components/chat-dock/dock-bus";
+import { DOCK_BUSY_EVENT, dockClose, dockMinimize, dockOpen, setDockBusy, visibleHeads } from "@/components/chat-dock/dock-bus";
 
 describe("chat dock", () => {
   it("keeps two chats open, newest first, and folds older ones into heads", () => {
@@ -29,5 +29,12 @@ describe("chat dock", () => {
     expect(s).toEqual({ open: ["b"], heads: ["a", "c"] });
     s = dockClose(s, "a");
     expect(s).toEqual({ open: ["b"], heads: ["c"] });
+  });
+});
+
+describe("visibleHeads", () => {
+  it("never draws a head for the assistant", () => {
+    expect(visibleHeads(["ai", "c1", "c2"])).toEqual(["c1", "c2"]);
+    expect(visibleHeads(["ai"])).toEqual([]);
   });
 });

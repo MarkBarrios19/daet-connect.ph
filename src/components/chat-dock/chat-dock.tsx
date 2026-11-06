@@ -8,7 +8,7 @@ import { AiAvatar } from "@/components/chat/ai-avatar";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { LineIcon } from "@/components/ui/icons";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import { dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, setDockActive, setDockBusy } from "@/components/chat-dock/dock-bus";
+import { dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, setDockActive, setDockBusy, visibleHeads } from "@/components/chat-dock/dock-bus";
 
 const STORAGE_KEY = "daet-dock-v1";
 const WIDE = "(min-width: 1024px)";
@@ -101,12 +101,9 @@ export function ChatDock() {
           )}
         </div>
       ))}
-      {/* The assistant has no head of its own: the floating assistant button in
-          the corner is the same round icon and reopens it, so a head would be a
-          second, identical button beside it. */}
-      {state.heads.some((id) => id !== "ai") ? (
+      {visibleHeads(state.heads).length ? (
         <ul className="pointer-events-auto mb-24 flex flex-col gap-2" aria-label="Minimised chats">
-          {state.heads.filter((id) => id !== "ai").map((id) => (
+          {visibleHeads(state.heads).map((id) => (
             <li key={id} className="group relative">
               <button
                 type="button"
