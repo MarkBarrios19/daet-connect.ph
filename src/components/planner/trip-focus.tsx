@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { RouteMap, type MapPoint } from "@/components/maps/route-map";
 
-type Focus = { focusId: string | null; focus: (id: string) => void };
+type Focus = { focusId: string | null; focus: (id: string | null) => void };
 const FocusContext = createContext<Focus | null>(null);
 
 /** Shares "which stop is picked" between the day's stop cards and the trip map. */
@@ -50,6 +50,8 @@ export function TripMap({ points }: { points: MapPoint[] }) {
   const ctx = useContext(FocusContext);
   const box = useRef<HTMLDivElement>(null);
   const focusId = ctx?.focusId ?? null;
+  // Bumped by "Show the whole trip" so the map reframes even when no stop was picked.
+  const [overview, setOverview] = useState(0);
   useEffect(() => {
     const el = box.current;
     if (!focusId || !el) return;
@@ -59,7 +61,19 @@ export function TripMap({ points }: { points: MapPoint[] }) {
   }, [focusId]);
   return (
     <div ref={box} className="overflow-hidden rounded-2xl">
-      <RouteMap points={points} connect title="Map of the whole trip" focusId={focusId} onMarkerClick={ctx?.focus} />
+      <RouteMap
+        points={points}
+        connect
+        title="Map of the whole trip"
+        focusId={focusId}
+        onMarkerClick={ctx?.focus}
+        fitKey={`overview-${overview}`}
+        animateFit
+        onReset={() => {
+          ctx?.focus(null);
+          setOverview((n) => n + 1);
+        }}
+      />
     </div>
   );
 }

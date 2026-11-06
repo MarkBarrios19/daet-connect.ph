@@ -266,6 +266,7 @@ export function FreeMap({
   chip,
   controls = "full",
   onCloseFull,
+  onReset,
 }: {
   markers: FreeMapMarker[];
   lines?: FreeMapLine[];
@@ -298,6 +299,8 @@ export function FreeMap({
   controls?: "full" | "zoom" | "none";
   /** Set on the full-screen copy of a map (Expand map): its button and Escape close it. */
   onCloseFull?: () => void;
+  /** Adds a "Show the whole trip" button over the map: it should clear any focus and reframe all markers. */
+  onReset?: () => void;
   /**
    * Where the focused marker is right now, in the map's own pixels.
    *
@@ -721,6 +724,8 @@ export function FreeMap({
                 chip={chip}
                 className="h-full"
                 onCloseFull={() => setExpanded(false)}
+                onReset={onReset}
+                animateFit={animateFit}
               />
             </div>,
             document.body,
@@ -764,6 +769,11 @@ export function FreeMap({
               </>
             ) : null}
             <div className="absolute bottom-3 right-3 flex flex-col gap-2">
+              {onReset ? (
+                <button type="button" aria-label="Show the whole trip" title="Show the whole trip" onClick={onReset} className={`${CONTROL} rounded-xl`}>
+                  <ControlIcon d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                </button>
+              ) : null}
               <button type="button" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()} className={`${CONTROL} rounded-xl`}>
                 <ControlIcon d="M12 5v14M5 12h14" />
               </button>
