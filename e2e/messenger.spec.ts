@@ -64,13 +64,13 @@ test.describe("desktop chat heads", () => {
     await dock.getByRole("button", { name: "Minimise Bagasbas Sunrise Surf Lesson" }).click();
     await expect(dock.getByRole("button", { name: "Open chat: Bagasbas Sunrise Surf Lesson" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Daet AI assistant", exact: true }).click();
+    await page.getByRole("button", { name: "Open the Daet AI assistant", exact: true }).click();
     await expect(dock.getByRole("heading", { level: 2, name: "Daet AI assistant" })).toBeVisible();
     await checkA11y(page, "chat dock");
 
     // The floating pill sits where an open window lands, so it stands down
     // instead of overlapping the panel's corner.
-    await expect(page.getByRole("button", { name: "Daet AI assistant", exact: true })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Open the Daet AI assistant", exact: true })).toBeHidden();
 
     // A narrow window must never scroll its conversation sideways.
     const list = dock.getByRole("list", { name: "Conversation" }).first();
@@ -90,7 +90,7 @@ test.describe("desktop chat heads", () => {
 
     // Open the assistant from the pill: signed in on a wide screen, that lands in
     // the dock.
-    const pill = page.getByRole("button", { name: "Daet AI assistant", exact: true });
+    const pill = page.getByRole("button", { name: "Open the Daet AI assistant", exact: true });
     await expect(pill).toBeVisible();
     await pill.click();
     const dock = page.getByRole("region", { name: "Open chats" });

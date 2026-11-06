@@ -136,6 +136,8 @@ export function ChatWindow(props: ChatWindowProps) {
   // Safety net: always ask for anything newer (every 5s without Realtime, every 15s with it), since a connected channel can still miss an event.
   const latestAt = useRef<string | null>(null);
   latestAt.current = messages.filter((m) => !m.draft).at(-1)?.created_at ?? null;
+  const knownIds = useRef<Set<string>>(new Set());
+  knownIds.current = new Set(messages.map((m) => m.id));
   const { trigger: pollChat } = usePolling(
     async () => {
       const after = latestAt.current;
@@ -143,6 +145,9 @@ export function ChatWindow(props: ChatWindowProps) {
       const response = await fetch(`/api/chat/${conversationId}/messages?after=${encodeURIComponent(after)}`, { cache: "no-store", credentials: "same-origin" });
       if (!response.ok) throw new Error(`messages ${response.status}`);
       const page = (await response.json()) as { messages: ChatMessage[]; reactions: Reaction[]; quoted: ChatMessage[]; attachmentUrls: Record<string, string> };
+      // Only what this chat does not have yet counts as news; anything else must not mark the chat read again.
+      const have = knownIds.current;
+      page.messages = page.messages.filter((m) => !have.has(m.id));
       if (page.messages.length === 0) return;
       setMessages((current) => mergeMessages(current, page.messages) as ThreadMessage[]);
       setQuoted((q) => ({ ...q, ...Object.fromEntries(page.quoted.map((m) => [m.id, m])) }));
