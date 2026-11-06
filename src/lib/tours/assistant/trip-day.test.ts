@@ -37,6 +37,42 @@ describe("emergency numbers (decisions 22, 32)", () => {
   });
 });
 
+describe("emergency numbers picked by need and town", () => {
+  const c = (label: string, kind: string, area: string | null, sort_order: number) => ({ id: label, label, kind, phone: "0917-000-0000", area, checked_on: "2026-11-06", is_active: true, sort_order });
+  const list = [
+    c("Philippine National Police hotline", "police", "Camarines Norte", 1),
+    c("Bureau of Fire Protection", "fire", "Camarines Norte", 2),
+    c("PDRRMO rescue", "rescue", "Camarines Norte", 4),
+    c("Coast Guard Station Camarines Norte", "coast_guard", "Camarines Norte", 5),
+    c("Daet MDRRMO", "rescue", "Daet", 6),
+    c("Camarines Norte Provincial Hospital", "hospital", "Daet", 8),
+    c("Labo District Hospital", "hospital", "Labo", 20),
+    c("Coast Guard Sub-Station Mercedes", "coast_guard", "Mercedes", 25),
+    c("Mercedes MDRRMO", "rescue", "Mercedes", 30),
+  ];
+  const names = async (q: string) => {
+    const r = await emergencyNumbers(ctx({ tours_emergency_contacts: list }), q);
+    return r.contacts.map((x) => x.name);
+  };
+
+  it("puts the Coast Guard first for trouble at sea, and the named town's station first", async () => {
+    const got = await names("May nalulunod sa Mercedes!");
+    expect(got[0]).toBe("Coast Guard Sub-Station Mercedes");
+    expect(got.slice(0, 3)).toContain("Mercedes MDRRMO");
+    expect(got).toContain("Coast Guard Station Camarines Norte");
+  });
+
+  it("puts hospitals first for an injury, nearest town first", async () => {
+    const got = await names("Injured, need a hospital in Labo");
+    expect(got[0]).toBe("Labo District Hospital");
+    expect(got[1]).toBe("Camarines Norte Provincial Hospital");
+  });
+
+  it("keeps the Tourism Office's order when nothing specific is asked", async () => {
+    expect((await names("Emergency!"))[0]).toBe("Philippine National Police hotline");
+  });
+});
+
 describe("is my tour on today? (decisions 12, 30)", () => {
   const booking = (extra: Record<string, unknown>) => ({ user_id: "u1", booking_reference: "bk-1", tour_date: TODAY, status: "confirmed", called_off_at: null, called_off_reason: null, call_off_resolution: null, tours_packages: { title: "Calaguas Island Hopping" }, ...extra });
 
