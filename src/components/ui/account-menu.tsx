@@ -49,7 +49,7 @@ function Avatar({
           alt=""
           width={small ? 26 : 40}
           height={small ? 26 : 40}
-          className="h-full w-full rounded-full object-cover"
+          className="absolute inset-0 h-full w-full rounded-full object-cover"
         />
       ) : (
         initial

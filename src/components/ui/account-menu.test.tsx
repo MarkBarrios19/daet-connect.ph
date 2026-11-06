@@ -34,6 +34,9 @@ describe("AccountMenu", () => {
     expect(image).toHaveAttribute("src", PHOTO);
     // Decoration, not a second announcement: the button already carries the name.
     expect(image).toHaveAttribute("alt", "");
+    // Pinned to the circle: a portrait photo must not grow past it (the
+    // circle no longer clips, so the unread dot can sit on its edge).
+    expect(image).toHaveClass("absolute", "inset-0", "rounded-full", "object-cover");
     expect(
       container.querySelector("span[aria-hidden='true']"),
     ).toHaveTextContent("");
