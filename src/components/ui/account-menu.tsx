@@ -41,7 +41,7 @@ function Avatar({
   return (
     <span
       aria-hidden="true"
-      className={`relative grid place-items-center overflow-hidden rounded-full bg-blue-700 font-bold text-white ${small ? "h-[1.625rem] w-[1.625rem] text-[13px]" : "h-10 w-10 text-base"} ${ring ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-surface" : ""}`}
+      className={`relative grid place-items-center rounded-full bg-blue-700 font-bold text-white ${small ? "h-[1.625rem] w-[1.625rem] text-[13px]" : "h-10 w-10 text-base"} ${ring ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-surface" : ""}`}
     >
       {src ? (
         <img
@@ -49,14 +49,14 @@ function Avatar({
           alt=""
           width={small ? 26 : 40}
           height={small ? 26 : 40}
-          className="h-full w-full object-cover"
+          className="h-full w-full rounded-full object-cover"
         />
       ) : (
         initial
       )}
       {unread ? (
         <span
-          className={`absolute rounded-full border-2 border-surface bg-yellow-500 ${small ? "-right-1 -top-[3px] h-2.5 w-2.5" : "right-0 top-0 h-3 w-3"}`}
+          className={`absolute rounded-full border-2 border-surface bg-yellow-500 ${small ? "-right-1 -top-[3px] h-2.5 w-2.5" : "-right-0.5 -top-0.5 h-3 w-3"}`}
         />
       ) : null}
     </span>
