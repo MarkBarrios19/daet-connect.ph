@@ -368,6 +368,8 @@ export function AssistantChat({
     // Empty: keep the one-line height (a wrapped placeholder must not make the box tall).
     box.style.height = "auto";
     if (text) box.style.height = `${box.scrollHeight}px`;
+    // A scrollbar only once the text outgrows the box, so it never takes width from a one-line box.
+    box.style.overflowY = box.scrollHeight > box.clientHeight + 1 && text ? "auto" : "hidden";
   }, [text, compact]);
   useEffect(() => {
     if (!actionsRef) return;
@@ -664,7 +666,7 @@ export function AssistantChat({
             }}
             placeholder="Ask about your trip…"
             aria-describedby="assistant-input-hint"
-            className="block max-h-32 min-h-9 w-full resize-none rounded-[1.125rem] bg-muted px-3.5 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
+            className="block max-h-32 min-h-9 w-full resize-none overflow-hidden rounded-[1.125rem] bg-muted px-3.5 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
           <button
             type="submit"
