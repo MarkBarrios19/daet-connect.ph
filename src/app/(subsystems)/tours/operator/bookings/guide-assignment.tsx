@@ -89,13 +89,13 @@ export function GuideAssignment({
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <select
           aria-label="Guide for this booking"
           value={selectedGuideId}
           onChange={(e) => setSelectedGuideId(e.target.value)}
           disabled={isSubmitting}
-          className="flex-1 rounded-2xl border border-daet-ink/20 min-h-11 px-4 py-2 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
+          className="min-w-0 flex-1 basis-48 rounded-2xl border border-daet-ink/20 min-h-11 px-4 py-2 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
         >
           <option value="">Select a guide...</option>
           {[...availableGuides]
@@ -116,7 +116,7 @@ export function GuideAssignment({
           <button
             onClick={handleUnassign}
             disabled={isSubmitting}
-            className="inline-flex min-h-11 items-center rounded-full bg-muted px-4 text-sm font-bold text-daet-ink transition hover:bg-muted-strong disabled:opacity-50"
+            className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-4 text-sm font-bold text-daet-ink transition hover:bg-muted-strong disabled:opacity-50"
           >
             {isSubmitting ? "Unassigning..." : "Unassign"}
           </button>
@@ -124,7 +124,7 @@ export function GuideAssignment({
           <button
             onClick={handleAssign}
             disabled={isSubmitting || !selectedGuideId}
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-daet-forest px-6 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-daet-forest px-6 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
           >
             {isSubmitting ? "Assigning..." : "Assign"}
           </button>

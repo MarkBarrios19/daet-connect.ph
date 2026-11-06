@@ -271,7 +271,7 @@ function TourCard({ booking, today, swap }: { booking: AssignedBooking; today: s
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {[
             ["Date", shortDate(booking.tour_date)],
-            ["Guests", `${booking.number_of_pax} guest{booking.number_of_pax === 1 ? "" : "s"}`],
+            ["Guests", `${booking.number_of_pax} guest${booking.number_of_pax === 1 ? "" : "s"}`],
             ["Operator", operator?.business_name || "—"],
             ["Reference", booking.booking_reference],
           ].map(([label, value]) => (

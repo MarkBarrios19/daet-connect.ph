@@ -3,7 +3,8 @@ import { AiAvatar } from "@/components/chat/ai-avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import { dayLabel, isConversationKind, KIND_LABELS, type InboxRow } from "@/lib/tours/messaging";
+import { PresenceBadge } from "@/components/chat/presence-badge";
+import { dayLabel, isConversationKind, KIND_LABELS, presenceOf, type InboxRow } from "@/lib/tours/messaging";
 
 /**
  * The chat list, Messenger-style: the Daet AI assistant pinned on top, then
@@ -35,17 +36,24 @@ export function InboxList({ rows, viewerId, activeId = null }: { rows: InboxRow[
       {rows.map((r) => {
         const title = r.title ?? "Conversation";
         const unread = r.unread > 0;
+        const presence = presenceOf(r.other_last_seen);
         const preview = r.last_message ?? (r.last_sender_id ? "Photo" : "No messages yet");
         return (
           <li key={r.conversation_id}>
             <Link href={`/tours/messages/${r.conversation_id}`} aria-current={activeId === r.conversation_id ? "page" : undefined} className={row(activeId === r.conversation_id)}>
-              <span aria-hidden="true" className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-lg font-bold text-blue-800 dark:text-blue-300">
-                {title.slice(0, 1).toUpperCase()}
+              <span aria-hidden="true" className="relative shrink-0">
+                <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900/40 text-lg font-bold text-blue-800 dark:text-blue-300">
+                  {r.other_avatar_url ? <img src={r.other_avatar_url} alt="" width={48} height={48} className="h-full w-full object-cover" /> : title.slice(0, 1).toUpperCase()}
+                </span>
+                <PresenceBadge presence={presence} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
                   <span className={`truncate text-daet-ink ${unread ? "font-bold" : "font-semibold"}`}>{title}</span>
-                  <span className="shrink-0 text-xs text-slate-600 dark:text-slate-400">{dayLabel(r.last_message_at)}</span>
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                    {presence.state === "online" ? <span className="h-2.5 w-2.5 rounded-full bg-green-500" role="img" aria-label="Online now" /> : null}
+                    {dayLabel(r.last_message_at)}
+                  </span>
                 </span>
                 <span className="block truncate text-sm text-slate-600 dark:text-slate-400">
                   {isConversationKind(r.kind) ? KIND_LABELS[r.kind] : "Chat"}

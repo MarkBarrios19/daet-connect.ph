@@ -2513,6 +2513,9 @@ export type Database = {
           last_message: string
           last_message_at: string
           last_sender_id: string
+          other_avatar_url: string
+          other_last_seen: string
+          other_profile_id: string
           subtitle: string
           title: string
           unread: number
