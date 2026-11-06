@@ -11,7 +11,7 @@ import type { AssistantEvent } from "@/lib/tours/assistant/respond";
 import type { AssistantCard, HandoffCard } from "@/lib/tours/assistant/tools";
 import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import { pageSuggestions, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
+import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
@@ -134,7 +134,7 @@ export function AssistantChat({
   /** Follow-up chips ("Make it more relaxed") edit the plan beside the chat; without it they are not shown. */
   onChoice?: (text: string) => void;
   /** Lets the plan panel send a message ("Tell me about …") into this chat. */
-  sendRef?: React.MutableRefObject<((text: string) => void) | null>;
+  sendRef?: React.MutableRefObject<((text: string, answers?: TripAnswers) => void) | null>;
   /** Words to start the message box with (the assistant's "Open the trip planner" link carries them). Never sent on its own. */
   initialText?: string;
   /** A first message (typed on the planner's start view), sent once the saved chat has loaded. */
@@ -288,7 +288,15 @@ export function AssistantChat({
 
   // Re-pointed after every render so the panel always sends with the latest chat.
   useEffect(() => {
-    if (sendRef) sendRef.current = (value: string) => void send(value);
+    if (sendRef)
+      sendRef.current = (value: string, answers?: TripAnswers) => {
+        // New trip answers (e.g. a sample plan's dates cleared) replace the kept ones first.
+        if (answers) {
+          setTrip(answers);
+          saveTrip(answers);
+        }
+        void send(value, here, answers ?? trip);
+      };
   });
 
   const lastMode = [...turns].reverse().find((t) => t.mode)?.mode;
@@ -741,7 +749,7 @@ function TripLine({ trip, onChange }: { trip: TripAnswers; onChange: (answers: T
   const group = trip.travelers ? trip.travelers.adults + trip.travelers.children.length : 0;
   const label = trip.dates
     ? [
-        trip.dates.start === trip.dates.end ? tripDate(trip.dates.start) : `${tripDate(trip.dates.start)} to ${tripDate(trip.dates.end)}`,
+        trip.sample ? `No dates yet, ${tripDays(trip.dates)} day${tripDays(trip.dates) === 1 ? "" : "s"}` : trip.dates.start === trip.dates.end ? tripDate(trip.dates.start) : `${tripDate(trip.dates.start)} to ${tripDate(trip.dates.end)}`,
         group ? `${group} traveler${group === 1 ? "" : "s"}` : null,
         trip.origin?.city ? `from ${trip.origin.city}` : null,
       ]

@@ -33,6 +33,8 @@ export type ItineraryResult = {
   generatedAt: string;
   /** How they get around between stops (the planner's chips); travel times stay road estimates. */
   transport?: Transport | null;
+  /** Drafted with "No dates yet": the dates are a stand-in weekend, so it can't be saved until real dates are picked. */
+  sample?: boolean;
 };
 
 export const TRANSPORTS = ["motorbike", "car", "tricycle"] as const;
@@ -93,7 +95,7 @@ export async function planTrip(ctx: ToolContext, wants: PlanWants) {
 
   ctx.onStatus?.("Checking operators");
   const [packages, gettingThere] = await Promise.all([bookablePackages(ctx.supabase, stops).catch(() => []), gettingThereFrom(ctx, ctx.trip.origin?.city)]);
-  ctx.itinerary = { plan, input, stops, packages, travelers: ctx.trip.travelers, gettingThere, generatedAt: new Date().toISOString() };
+  ctx.itinerary = { plan, input, stops, packages, travelers: ctx.trip.travelers, gettingThere, generatedAt: new Date().toISOString(), ...(ctx.trip.sample ? { sample: true } : {}) };
 
   // What the model gets back to explain: names and times only, from the plan itself.
   return {
@@ -127,10 +129,11 @@ export function describeItinerary(result: ItineraryResult): string {
   const stops = result.plan.totals.visits;
   if (!stops) return "I couldn't fit any places into those days. Try a bigger budget or different dates.";
   const tours = result.packages.length ? ` ${result.packages.length === 1 ? "One tour" : `${result.packages.length} tours`} you can book pass${result.packages.length === 1 ? "es" : ""} near your stops.` : "";
-  const weekday = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+  // A sample plan's dates are stand-ins: name only the weekday.
+  const weekday = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", result.sample ? { weekday: "long", timeZone: "UTC" } : { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
   const perDay = result.plan.days.map((d, i) => {
     const names = d.blocks.filter((b) => b.kind === "visit").map((b) => b.name);
     return `• Day ${i + 1} (${weekday(d.date)}): ${names.length ? names.join(", ") : "free day"}`;
   });
-  return [`Here is a ${days}-day plan with ${stops} stop${stops === 1 ? "" : "s"} for your dates.`, ...perDay, `Costs shown are entrance fees for your group.${tours} Tap a stop to swap or remove it.`].join("\n");
+  return [`Here is a ${days}-day plan with ${stops} stop${stops === 1 ? "" : "s"} ${result.sample ? ", as a sample for a weekend. Pick your dates to save it" : " for your dates"}.`, ...perDay, `Costs shown are entrance fees for your group.${tours} Tap a stop to swap or remove it.`].join("\n");
 }

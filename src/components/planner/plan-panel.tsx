@@ -29,7 +29,7 @@ export type PanelActions = {
 };
 export type PanelUpdate = { ok: true; plan: ItineraryResult["plan"]; stops: ItineraryResult["stops"]; packages: BookablePackage[] } | { ok: false; message: string };
 
-const longDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+const longDay = (date: string, sample = false) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", sample ? { weekday: "long", timeZone: "UTC" } : { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 const shortDate = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
 const PACE_LABEL = { relaxed: "Relaxed pace", normal: "Balanced pace", packed: "Packed pace" } as const;
 
@@ -42,7 +42,7 @@ const pillClass = (on: boolean) =>
 export function tripLine(itinerary: ItineraryResult): string {
   const days = itinerary.plan.days;
   const group = itinerary.travelers.adults + itinerary.travelers.children.length;
-  const dates = days.length > 1 ? `${shortDate(days[0].date)} to ${shortDate(days[days.length - 1].date)}` : days[0] ? shortDate(days[0].date) : "";
+  const dates = itinerary.sample ? "No dates yet" : days.length > 1 ? `${shortDate(days[0].date)} to ${shortDate(days[days.length - 1].date)}` : days[0] ? shortDate(days[0].date) : "";
   const pace = PACE_LABEL[itinerary.input.pace as keyof typeof PACE_LABEL];
   const around = itinerary.transport ? TRAVEL_LABEL[itinerary.transport] : null;
   return [dates, `${group} traveler${group === 1 ? "" : "s"}`, pace, around].filter(Boolean).join(" · ");
@@ -92,6 +92,7 @@ export function PlanPanel({
   onAsk,
   actions,
   footer,
+  onPickDates,
   request,
 }: {
   itinerary: ItineraryResult;
@@ -101,6 +102,8 @@ export function PlanPanel({
   actions: PanelActions;
   /** Saving (and sharing once saved); opened with the Save to a trip button. */
   footer?: React.ReactNode;
+  /** A sample plan (no dates yet): ask for real dates, which drafts a dated plan to save. */
+  onPickDates?: () => void;
   /** A change asked from outside the panel (a follow-up chip); runs once per new value. */
   request?: { text: string; id: number } | null;
 }) {
@@ -119,7 +122,8 @@ export function PlanPanel({
   const current = day === "all" ? null : Math.min(day, plan.days.length - 1);
   const shown = current === null ? plan.days.map((d, i) => ({ d, i })) : [{ d: plan.days[current], i: current }];
   const { byStop, rest } = placePackages(plan.days, itinerary.packages);
-  const datedFor = (p: BookablePackage) => dayFor(p.matched, plan.days.map((d) => ({ date: d.date, names: d.blocks.map((b) => b.name) })));
+  // A sample plan's days are stand-ins, so the booking form asks for the date itself.
+  const datedFor = (p: BookablePackage) => itinerary.sample ? null : dayFor(p.matched, plan.days.map((d) => ({ date: d.date, names: d.blocks.map((b) => b.name) })));
 
   // A new plan (regenerated, or from another request) starts again on Day 1.
   useEffect(() => {
@@ -185,7 +189,7 @@ export function PlanPanel({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h2 id="plan-title" className="font-[family-name:var(--font-display)] text-2xl font-semibold text-daet-ink sm:text-3xl">
-            Your {plan.days.length}-day Daet plan
+            Your {itinerary.sample ? "sample " : ""}{plan.days.length}-day Daet plan
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{editing ? `Editing · ${tripLine(itinerary)}` : tripLine(itinerary)}</p>
         </div>
@@ -233,7 +237,11 @@ export function PlanPanel({
             <Button variant="secondary" loading={pending} loadingText="Working…" onClick={() => run("Here is a fresh plan.", () => actions.regenerate(itinerary))}>
               <LineIcon name="return" className="h-4 w-4" /> Regenerate
             </Button>
-            {footer ? (
+            {itinerary.sample && onPickDates ? (
+              <Button onClick={onPickDates}>
+                <LineIcon name="calendar" className="h-4 w-4" /> Pick dates to save
+              </Button>
+            ) : footer ? (
               <Button aria-expanded={saveOpen} aria-controls="plan-save" onClick={() => setSaveOpen((v) => !v)}>
                 <LineIcon name="plus" className="h-4 w-4" /> Save to a trip
               </Button>
@@ -241,6 +249,12 @@ export function PlanPanel({
           </div>
         )}
       </div>
+
+      {itinerary.sample ? (
+        <p role="note" className="rounded-2xl border border-blue-600 bg-blue-50 p-3 text-sm text-daet-ink dark:bg-blue-950/40">
+          <strong>Sample plan, no dates yet.</strong> Times follow a typical weekend; opening hours and open dates change by day. Pick your dates to save it or to book.
+        </p>
+      ) : null}
 
       {footer && saveOpen && !editing ? (
         <div id="plan-save" className="rounded-2xl bg-surface p-4">
@@ -255,7 +269,7 @@ export function PlanPanel({
           </button>
         ) : null}
         {plan.days.map((d, i) => (
-          <button key={d.date} type="button" aria-pressed={day === i} aria-label={`Day ${i + 1}, ${longDay(d.date)}`} onClick={() => setDay(i)} className={pillClass(day === i)}>
+          <button key={d.date} type="button" aria-pressed={day === i} aria-label={`Day ${i + 1}, ${longDay(d.date, itinerary.sample)}`} onClick={() => setDay(i)} className={pillClass(day === i)}>
             Day {i + 1}
           </button>
         ))}
@@ -292,7 +306,7 @@ export function PlanPanel({
             <div key={d.date} className="space-y-3">
               <div>
                 <h3 className="font-bold text-daet-ink">
-                  Day {i + 1} · {longDay(d.date)}
+                  Day {i + 1} · {longDay(d.date, itinerary.sample)}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{daySummary(d)}</p>
               </div>

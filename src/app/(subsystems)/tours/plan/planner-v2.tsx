@@ -8,7 +8,7 @@ import {
 } from "@/components/assistant/assistant-chat";
 import { PlanPanel, type PanelActions } from "@/components/planner/plan-panel";
 import { PlanStart } from "@/components/planner/plan-start";
-import { loadTrip, saveTrip } from "@/components/assistant/trip-storage";
+import { loadTrip, saveTrip, type TripAnswers } from "@/components/assistant/trip-storage";
 import { PlanChoices } from "@/components/planner/plan-choices";
 import { Button } from "@/components/ui/button";
 import type { ItineraryResult } from "@/lib/tours/assistant/plan-tool";
@@ -50,7 +50,7 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
   const [first, setFirst] = useState<string | null>(null);
   const [paceBusy, startPace] = useTransition();
   const [paceStatus, setPaceStatus] = useState<string | null>(null);
-  const sendRef = useRef<((text: string) => void) | null>(null);
+  const sendRef = useRef<((text: string, answers?: TripAnswers) => void) | null>(null);
   const [request, setRequest] = useState<{ text: string; id: number } | null>(
     null,
   );
@@ -130,6 +130,13 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
       onAsk={ask}
       actions={actions}
       request={request}
+      onPickDates={() => {
+        // Clear the stand-in dates; the chat then asks for real ones and drafts a dated plan.
+        const days = itinerary.plan.days.length;
+        const { dates: _standIn, sample: _sample, ...rest } = loadTrip();
+        setSheetOpen(false);
+        sendRef.current?.(`Plan my ${days}-day trip`, rest);
+      }}
       footer={
         <SaveBar
           key={itinerary.generatedAt}

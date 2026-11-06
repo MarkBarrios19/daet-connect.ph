@@ -212,3 +212,12 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
 - "Was this helpful? Yes / No" under each answer; the choice goes to
   `tours_ai_feedback` (question and answer excerpts, mode, page; no account).
   Migration `20261119_ai_feedback.sql` (applied 2026-11-06). Recorded only.
+
+## Sample plans (decision 35)
+
+- "Before I draft" has "No dates yet, show me a sample plan" with "How many days?".
+  The plan uses a stand-in weekend (the Saturday at least a week away) for
+  opening hours, but shows only weekdays: "Your sample 2-day Daet plan", "No dates
+  yet", a note, and Book links without a date (the booking form asks for one).
+- "Pick dates to save" replaces Save: it clears the stand-in dates and asks for
+  real ones, which drafts a dated plan that can be saved.

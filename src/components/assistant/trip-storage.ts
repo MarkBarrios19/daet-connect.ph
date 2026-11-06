@@ -1,7 +1,7 @@
 import type { TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 
-export type TripAnswers = Pick<TripContext, "dates" | "travelers" | "origin">;
+export type TripAnswers = Pick<TripContext, "dates" | "travelers" | "origin" | "sample">;
 
 /**
  * Dates, travellers and origin, kept on this phone so the form isn't asked

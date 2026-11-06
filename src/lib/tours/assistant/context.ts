@@ -25,6 +25,8 @@ export const TripContextSchema = z.object({
   locale: z.string().max(12).optional(),
   /** The traveller just filled in or confirmed the dates, so a different day count in their words is not asked about again. */
   datesConfirmed: z.boolean().optional(),
+  /** "No dates yet" (decision 35): the dates are a typical weekend for a sample plan; it gets real dates before saving. */
+  sample: z.boolean().optional(),
 });
 export type TripContext = z.infer<typeof TripContextSchema>;
 
@@ -91,6 +93,16 @@ export function contextPrompt(context: TripContext | null | undefined): string {
 }
 
 const PAGE_KINDS = { packages: "package", attractions: "attraction", events: "event" } as const;
+
+/** A sample plan's stand-in dates: the next Saturday at least a week away, for `days` days. */
+export function sampleDates(today: string, days: number): { start: string; end: string } {
+  const d = new Date(`${today}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 7);
+  while (d.getUTCDay() !== 6) d.setUTCDate(d.getUTCDate() + 1);
+  const start = d.toISOString().slice(0, 10);
+  d.setUTCDate(d.getUTCDate() + Math.min(Math.max(days, 1), MAX_TRIP_DAYS) - 1);
+  return { start, end: d.toISOString().slice(0, 10) };
+}
 
 /** The tour, place or event page the assistant was opened on, so "this tour" has a meaning. */
 export function pageFromPath(pathname: string): { kind: "package" | "attraction" | "event"; id: string } | null {
