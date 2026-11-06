@@ -354,6 +354,9 @@ describe("FreeMap", () => {
     expect(drop).toHaveClass("bg-orange-500", "rotate-45");
     expect(frame).toHaveClass("rounded-full", "border-white");
     expect(frame.querySelector("img")?.getAttribute("src")).toBe("/photos/bagasbas.jpg");
+    // Sized inline: Leaflet's own CSS sets width:auto on marker images and beats the classes.
+    const img = frame.querySelector("img") as HTMLImageElement;
+    expect([img.style.width, img.style.height]).toEqual(["100%", "100%"]);
     expect(name.textContent).toBe(shown[1].title);
     // The pin hangs from its point.
     expect(pin.parentElement?.className).toContain("-translate-y-full");
