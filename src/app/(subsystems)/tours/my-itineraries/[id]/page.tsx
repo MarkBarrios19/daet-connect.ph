@@ -159,7 +159,6 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                       let visitNumber = 0;
                       return day.items.map((item, i) => {
                         const extra = extras.get(item.name);
-                        const bookable = bookableAt.get(item.name);
                         const cost = item.kind === "lunch" ? "Lunch" : extra?.fee ? `${formatPeso(extra.fee)} entrance` : "Free, on your own";
                         if (item.kind !== "lunch") visitNumber += 1;
                         const last = i === day.items.length - 1;
@@ -196,22 +195,6 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                                     <p className="text-sm text-slate-600 dark:text-slate-400">{cost}</p>
                                   </div>
                                 </div>
-                                {bookable?.length ? (
-                                  <div className="rounded-xl bg-surface px-3 py-2">
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">Tours that pass here</p>
-                                    <ul>
-                                      {bookable.map((t) => (
-                                        <li key={t.title} className="flex flex-wrap items-center gap-x-2.5 gap-y-1 py-2 text-sm text-daet-ink">
-                                          <span className="inline-flex min-h-6 shrink-0 items-center gap-1 rounded-full bg-green-500 px-2.5 font-bold text-slate-900">
-                                            <LineIcon name="check" className="h-3.5 w-3.5" /> Bookable
-                                          </span>
-                                          <span className="min-w-0 flex-1 font-semibold">{t.title}</span>
-                                          {t.price ? <span className="shrink-0 text-slate-600 dark:text-slate-300">{t.price}</span> : null}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                ) : null}
                               </div>
                             </div>
                           </li>
@@ -219,6 +202,38 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
                       });
                     })()}
                   </ol>
+                  {(() => {
+                    // The day's tours, each once, with the stops it passes (numbers as on the map).
+                    const tours = new Map<string, { title: string; price: string | null; stops: number[] }>();
+                    let number = 0;
+                    for (const item of day.items) {
+                      if (item.kind === "lunch") continue;
+                      number += 1;
+                      for (const t of bookableAt.get(item.name) ?? []) {
+                        const known = tours.get(t.title) ?? { title: t.title, price: t.price ?? null, stops: [] };
+                        known.stops.push(number);
+                        tours.set(t.title, known);
+                      }
+                    }
+                    if (tours.size === 0) return null;
+                    return (
+                      <div className="space-y-2">
+                        <h3 className="font-bold text-daet-ink">Tours you can book near these stops</h3>
+                        <ul className="grid gap-3 sm:grid-cols-3">
+                          {[...tours.values()].map((t) => (
+                            <li key={t.title} className="flex min-w-0 flex-col items-start gap-1.5 rounded-xl bg-blue-50 p-3 dark:bg-blue-950/40">
+                              <span className="inline-flex min-h-6 items-center gap-1 rounded-full bg-green-500 px-2.5 text-sm font-bold text-slate-900">
+                                <LineIcon name="check" className="h-3.5 w-3.5" /> Bookable
+                              </span>
+                              <span className="font-bold leading-5 text-daet-ink">{t.title}</span>
+                              {t.price ? <span className="text-sm text-slate-700 dark:text-slate-300">{t.price}</span> : null}
+                              <span className="text-sm text-slate-600 dark:text-slate-400">Passes {t.stops.length === 1 ? "stop" : "stops"} {t.stops.join(", ")}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
                 </article>
               );
             })}
