@@ -52,19 +52,11 @@ export function dockClose(state: { open: string[]; heads: string[] }, id: string
   return { open: state.open.filter((x) => x !== id), heads: state.heads.filter((x) => x !== id) };
 }
 
-/** The assistant finished a reply. The dock marks its minimised head unread when no window shows it. */
-export const ASSISTANT_REPLY_EVENT = "daet:assistant-reply";
-
-export function announceAssistantReply() {
-  window.dispatchEvent(new Event(ASSISTANT_REPLY_EVENT));
-}
-
-/** Ids with an unread reply after the assistant answered: only a chat that is not open on screen collects one. */
-export function unreadAfterReply(open: readonly string[], unread: readonly string[], id = "ai"): string[] {
-  return open.includes(id) || unread.includes(id) ? [...unread] : [...unread, id];
-}
-
-/** Opening a chat reads it. */
-export function markRead(unread: readonly string[], id: string): string[] {
-  return unread.filter((x) => x !== id);
+/**
+ * The heads to draw. The assistant ("ai") never gets one: the floating
+ * assistant button is the same round icon and reopens it, so a head would be
+ * a second, identical button beside it.
+ */
+export function visibleHeads(heads: string[]): string[] {
+  return heads.filter((id) => id !== "ai");
 }

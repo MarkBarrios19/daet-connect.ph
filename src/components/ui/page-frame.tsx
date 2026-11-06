@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import type { PhotoKey } from "@/lib/photo-credits";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { accountLinks, barTabs, roleTabs } from "@/lib/tours/dashboards";
+import { loadNotifications } from "@/lib/tours/notifications-server";
 import { getMyProfile } from "@/lib/tours/my-profile";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { displayName, initials } from "@/lib/profile/name";
@@ -72,7 +73,7 @@ export async function PageFrame({
   /** The page lays out its own full-width sections (public pages); no inner padding or max width. */
   bleed?: boolean;
 }) {
-  const viewer = await signedInViewer();
+  const [viewer, notifications] = await Promise.all([signedInViewer(), loadNotifications()]);
   const role = viewer?.role;
   const tabs = role === undefined ? [] : roleTabs(role);
   const staff = isStaffRole(role);
@@ -101,6 +102,7 @@ export async function PageFrame({
         role={isStaffRole(role) ? role : undefined}
         tabs={tabs}
         account={account}
+        notifications={notifications}
       />
       <main
         id="main-content"

@@ -56,7 +56,7 @@ describe("ScrollToTop", () => {
     expect(screen.queryByRole("button", { name: "Back to top" })).not.toBeInTheDocument();
   });
 
-  it("is a 44px target in the bottom-right corner, over the assistant pill", () => {
+  it("is a 48px target in the bottom-right corner, in line with the assistant", () => {
     const button = (() => {
       render(<ScrollToTop />);
       scrollTo(1400);
@@ -65,7 +65,8 @@ describe("ScrollToTop", () => {
 
     // A thumb-sized target, fixed and right-aligned — not a link in the flow, and
     // not the page's centreline any more (owner's note, image-91).
-    expect(button).toHaveClass("h-11", "w-11", "fixed", "right-4");
+    // Same size and right edge as the assistant button, so the two line up.
+    expect(button).toHaveClass("h-12", "w-12", "fixed", "right-4", "sm:right-6");
     expect(button.className).not.toContain("left-1/2");
     // Clear of a phone's bottom edge, and lifted over a dashboard's tab bar.
     expect(button.className).toContain("env(safe-area-inset-bottom)");

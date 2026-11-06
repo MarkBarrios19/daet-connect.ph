@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/tours/mask-email";
 import { hasTicket } from "@/lib/tours/ticket";
 import Image from "next/image";
 import { LineIcon } from "@/components/ui/icons";
@@ -204,6 +205,9 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             </p>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 sm:mt-4">Booking reference</p>
             <p className="font-mono text-lg font-bold tracking-wide text-daet-ink sm:text-2xl">{booking.booking_reference}</p>
+            {maskEmail(booking.contact_email) ? (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">We email updates about this booking to {maskEmail(booking.contact_email)}. Check spam if you don&apos;t see them.</p>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
               {/* The ticket QR appears once the booking is paid in full; until then paying is the next step. */}
               {hasTicket(booking) && booking.status === "confirmed" ? (

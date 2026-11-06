@@ -5,7 +5,8 @@ jest.mock("@/lib/paymongo/webhook-store", () => ({ createSupabaseWebhookStore: j
 
 import { retrieveCheckoutSession } from "@/lib/paymongo/client";
 import { createSupabaseWebhookStore } from "@/lib/paymongo/webhook-store";
-import { confirmCheckoutReturn } from "./return";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { confirmBookingReturn, confirmCheckoutReturn } from "./return";
 
 const BOOKING_ID = "410520f7-428e-4a5e-9f7c-e6c14a2399e5";
 
@@ -49,5 +50,27 @@ describe("confirmCheckoutReturn", () => {
     retrieve.mockRejectedValueOnce(new Error("PayMongo down"));
     await expect(confirmCheckoutReturn(BOOKING_ID, "cs_1")).resolves.toEqual({ status: "unknown", reason: "error" });
     await expect(confirmCheckoutReturn(BOOKING_ID, undefined)).resolves.toEqual({ status: "unknown", reason: "no_session" });
+  });
+});
+
+describe("confirmBookingReturn", () => {
+  const admin = createSupabaseAdminClient as jest.Mock;
+  const sessionsFor = (ids: string[]) =>
+    admin.mockReturnValue({
+      from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: () => Promise.resolve({ data: ids.map((session_id) => ({ session_id })) }) }) }) }) }),
+    });
+  beforeEach(() => jest.spyOn(console, "error").mockImplementation(() => {}));
+
+  it("falls back to the sessions saved in the database when there is no cookie", async () => {
+    const insertPayments = jest.fn().mockResolvedValue(1);
+    store.mockReturnValue({ insertPayments });
+    sessionsFor(["cs_new", "cs_old"]);
+    retrieve.mockResolvedValueOnce({ ...session("pending"), id: "cs_new" }).mockResolvedValueOnce({ ...session("paid"), id: "cs_old" });
+    await expect(confirmBookingReturn(BOOKING_ID, undefined)).resolves.toMatchObject({ status: "paid", recorded: 1 });
+  });
+
+  it("reports no session when neither the cookie nor the database has one", async () => {
+    sessionsFor([]);
+    await expect(confirmBookingReturn(BOOKING_ID, undefined)).resolves.toEqual({ status: "unknown", reason: "no_session" });
   });
 });

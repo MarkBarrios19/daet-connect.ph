@@ -8,7 +8,7 @@ import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
 import { formatPeso } from "@/lib/money";
 import { centavosToPesos } from "@/lib/paymongo/checkout";
-import { checkoutCookieName, confirmCheckoutReturn } from "@/lib/paymongo/return";
+import { checkoutCookieName, confirmBookingReturn } from "@/lib/paymongo/return";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
@@ -44,7 +44,7 @@ export default async function PaymentSuccessPage({ params }: PageProps) {
   const { data: owned } = await supabase.from("tours_bookings").select("id").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (!owned) notFound();
 
-  const check = await confirmCheckoutReturn(id, (await cookies()).get(checkoutCookieName(id))?.value);
+  const check = await confirmBookingReturn(id, (await cookies()).get(checkoutCookieName(id))?.value);
 
   // Read after recording, so the totals include this payment.
   const [{ data: booking }, { data: lastPayment }] = await Promise.all([

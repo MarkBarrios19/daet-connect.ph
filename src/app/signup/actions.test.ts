@@ -18,6 +18,7 @@ const GOOD = {
   fullName: "Juan Dela Cruz",
   email: "juan@example.ph",
   password: "bagasbas-waves-at-sunrise",
+  confirm: "bagasbas-waves-at-sunrise",
 };
 
 function form(entries: Record<string, string> = GOOD) {
@@ -54,11 +55,24 @@ describe("signing up", () => {
   it("never reaches the auth service when a field is wrong", async () => {
     const state = await signUpWithPassword(
       { status: "idle" },
-      form({ fullName: "J", email: "not-an-email", password: "short" }),
+      form({ fullName: "J", email: "not-an-email", password: "short", confirm: "short" }),
     );
 
     expect(state.status).toBe("error");
     expect(Object.keys(state.fieldErrors ?? {}).sort()).toEqual(["email", "fullName", "password"]);
+    expect(mockClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects mismatched passwords on the server before contacting Supabase", async () => {
+    clientWith();
+
+    const state = await signUpWithPassword(
+      { status: "idle" },
+      form({ ...GOOD, confirm: "something-different" }),
+    );
+
+    expect(state.status).toBe("error");
+    expect(state.fieldErrors?.confirm).toBe("The two passwords do not match.");
     expect(mockClient).not.toHaveBeenCalled();
   });
 

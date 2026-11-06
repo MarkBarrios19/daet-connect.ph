@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { GoogleSignIn, OrDivider } from "@/components/ui/google-sign-in";
 import { Notice } from "@/components/ui/notice";
 import { INITIAL_AUTH_STATE } from "@/lib/auth/action-state";
@@ -75,13 +76,29 @@ export function SignupForm({ nextUrl = "/" }: { nextUrl?: string }) {
           hint={`At least ${PASSWORD_MIN} characters. A phrase you can remember beats a common password.`}
           error={state.fieldErrors?.password}
         >
-          <Input
-            type="password"
+          <PasswordInput
             name="password"
             required
             minLength={PASSWORD_MIN}
             maxLength={72}
             autoComplete="new-password"
+          />
+        </Field>
+
+        <Field
+          id="confirm"
+          label="Confirm password"
+          required
+          hint="Enter the same password again."
+          error={state.fieldErrors?.confirm}
+        >
+          <PasswordInput
+            name="confirm"
+            required
+            minLength={PASSWORD_MIN}
+            maxLength={72}
+            autoComplete="new-password"
+            toggleLabel="confirmation password"
           />
         </Field>
 

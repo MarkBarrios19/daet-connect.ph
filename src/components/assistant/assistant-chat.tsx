@@ -14,7 +14,6 @@ import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import type { ChatActions } from "@/components/assistant/chat-actions";
-import { announceAssistantReply } from "@/components/chat-dock/dock-bus";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { bubbleRadius, bubbleShape } from "@/lib/tours/assistant/bubble-groups";
 import { QuestionsCard } from "@/components/assistant/questions-card";
@@ -85,17 +84,27 @@ async function shrinkPhoto(file: File): Promise<Photo> {
   }
 }
 
-/** "Was this helpful? Yes / No" under an answer (decisions 26, 29); the choice is recorded only. */
+/**
+ * "Was this helpful? Yes / No" under an answer (decisions 26, 29); the choice
+ * is recorded only. Once answered the row goes away; screen readers hear a
+ * short thanks so the click isn't silent.
+ */
 function WasThisHelpful({ value, onAnswer }: { value: boolean | undefined; onAnswer: (helpful: boolean) => void }) {
-  const pill = (on: boolean) =>
-    `inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold transition ${on ? "border-2 border-daet-ink text-daet-ink" : "border border-slate-400 text-slate-600 hover:border-slate-600 dark:text-slate-300"}`;
+  if (value !== undefined) {
+    return (
+      <p className="sr-only" role="status">
+        Thanks for the feedback.
+      </p>
+    );
+  }
+  const pill = "inline-flex min-h-11 items-center rounded-full border border-slate-400 px-5 text-sm font-semibold text-slate-600 transition hover:border-slate-600 dark:text-slate-300";
   return (
     <div className="flex flex-wrap items-center gap-3 px-1" role="group" aria-label="Was this helpful?">
-      <span className="text-sm text-slate-700 dark:text-slate-300">{value === undefined ? "Was this helpful?" : "Thanks for telling us."}</span>
-      <button type="button" aria-pressed={value === true} disabled={value !== undefined} onClick={() => onAnswer(true)} className={pill(value === true)}>
+      <span className="text-sm text-slate-700 dark:text-slate-300">Was this helpful?</span>
+      <button type="button" onClick={() => onAnswer(true)} className={pill}>
         Yes
       </button>
-      <button type="button" aria-pressed={value === false} disabled={value !== undefined} onClick={() => onAnswer(false)} className={pill(value === false)}>
+      <button type="button" onClick={() => onAnswer(false)} className={pill}>
         No
       </button>
     </div>
@@ -297,7 +306,6 @@ export function AssistantChat({
       const final = [...history, reply];
       setTurns(final);
       remember(final);
-      announceAssistantReply();
     } catch {
       setTurns(history);
       remember(history);

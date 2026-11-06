@@ -1,6 +1,7 @@
 "use client";
 
 import { LineIcon } from "@/components/ui/icons";
+import { AiAvatar } from "@/components/chat/ai-avatar";
 import { useEffect, useRef, useState } from "react";
 import { OPEN_ASSISTANT_EVENT, OVERLAY_EVENT, type OverlayDetail } from "@/lib/ui-overlay";
 import { usePathname } from "next/navigation";
@@ -10,7 +11,6 @@ import { DOCK_BUSY_EVENT, openInDock } from "@/components/chat-dock/dock-bus";
 
 /** Pages where a floating chat button would get in the way. */
 // /tours/plan is the assistant itself (chat beside the plan).
-const USED_KEY = "daet-assistant-used-v1";
 const HIDDEN = [/^\/tours\/plan\/?$/, /^\/login/, /^\/signup/, /^\/forgot-password/, /^\/tours\/help/, /^\/tours\/messages\/[^/]+$/, /^\/tours\/guide\/check-in/, /\/ticket$/];
 
 /**
@@ -27,23 +27,6 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
   const overBookBar = pageFromPath(pathname)?.kind === "package";
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
-  // First-time visitors get a labelled pill; once they have opened the assistant it shrinks to a round head.
-  const [used, setUsed] = useState(false);
-  useEffect(() => {
-    try {
-      setUsed(window.localStorage.getItem(USED_KEY) === "1");
-    } catch {
-      // Storage blocked: the pill keeps its label.
-    }
-  }, []);
-  const markUsed = () => {
-    setUsed(true);
-    try {
-      window.localStorage.setItem(USED_KEY, "1");
-    } catch {
-      // Not remembered this time.
-    }
-  };
   // On phones, step aside while the notifications sheet or the phone menu is open.
   const [covered, setCovered] = useState<string[]>([]);
   useEffect(() => {
@@ -87,7 +70,6 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
   // Pages raise this event instead of reaching into the dialog themselves.
   useEffect(() => {
     const onOpen = () => {
-      markUsed();
       if (signedIn && openInDock("ai")) return;
       dialogRef.current?.showModal();
       setOpen(true);
@@ -118,17 +100,17 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
       <button
         type="button"
         onClick={() => {
-          markUsed();
-          // Signed in on a wide screen: the assistant opens as a chat head in the dock.
+              // Signed in on a wide screen: the assistant opens as a chat head in the dock.
           if (signedIn && openInDock("ai")) return;
           dialogRef.current?.showModal();
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className={`fixed right-4 z-40 ${pill} h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-blue-600 ${used ? "px-0" : "px-3 sm:px-4"} text-sm font-bold text-white shadow-[var(--shadow-float)] transition hover:bg-blue-700 active:scale-95 sm:right-6 print:hidden ${overBookBar ? "bottom-28 lg:bottom-6" : raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"}`}
+        aria-label="Open the Daet AI assistant"
+        title="Daet AI assistant"
+        className={`fixed right-4 z-40 ${pill} h-12 w-12 items-center justify-center rounded-full shadow-[var(--shadow-float)] transition hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:right-6 print:hidden ${overBookBar ? "bottom-28 lg:bottom-6" : raised ? "bottom-20 sm:bottom-6" : "bottom-4 sm:bottom-6"}`}
       >
-        <LineIcon name="sparkle" className="h-6 w-6 sm:h-5 sm:w-5" />
-        <span className={used ? "sr-only" : "sr-only sm:not-sr-only"}>Daet AI assistant</span>
+        <AiAvatar />
       </button>
       <dialog
         ref={dialogRef}
