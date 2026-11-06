@@ -12,10 +12,17 @@ import { markNotificationsRead } from "@/app/(subsystems)/tours/notifications/ac
 const SELECT = "id, type, title, body, link, read_at, created_at";
 
 /** Header bell: unread count, latest notifications, live updates. Hidden when signed out. */
-export function NotificationBell() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [items, setItems] = useState<NotificationRow[]>([]);
-  const [unread, setUnread] = useState(0);
+export function NotificationBell({ initial = null }: { initial?: { userId: string; items: NotificationRow[]; unread: number } | null }) {
+  const [userId, setUserId] = useState<string | null>(initial?.userId ?? null);
+  const [items, setItems] = useState<NotificationRow[]>(initial?.items ?? []);
+  const [unread, setUnread] = useState(initial?.unread ?? 0);
+  // A server refresh (router.refresh, navigation) brings newer data: take it.
+  useEffect(() => {
+    if (!initial) return;
+    setUserId(initial.userId);
+    setItems(initial.items);
+    setUnread(initial.unread);
+  }, [initial]);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +44,8 @@ export function NotificationBell() {
     void supabase.auth.getUser().then(({ data: { user } }) => {
       if (cancelled || !user) return;
       setUserId(user.id);
-      void load(supabase).catch(() => {});
+      // The server already supplied the list; only fetch here when it did not.
+      if (!initial) void load(supabase).catch(() => {});
       channel = supabase
         .channel(`notifications:${user.id}`)
         .on(

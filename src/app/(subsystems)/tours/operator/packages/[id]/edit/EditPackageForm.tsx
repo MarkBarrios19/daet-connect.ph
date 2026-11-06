@@ -226,6 +226,11 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           concurrencyError: null,
         }));
 
+        // Reload the page data: the status (a save can send a published package
+        // back to review) and the version stamp are the server's, and a second
+        // save on the old ones would be refused.
+        router.refresh();
+
         // Auto-dismiss success message
         setTimeout(() => {
           setState((prev) => ({
@@ -257,7 +262,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
         submissionError: EDIT_MESSAGES.unexpected,
       }));
     }
-  }, [state, packageData.id, packageData.updatedAt]);
+  }, [state, packageData.id, packageData.updatedAt, router]);
 
   // Handle Submit for Review
   const handleSubmitForReview = useCallback(async () => {

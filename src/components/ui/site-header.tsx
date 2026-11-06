@@ -6,6 +6,7 @@ import { LineIcon } from "@/components/ui/icons";
 import { MobileMenu, type MenuLink } from "@/components/ui/mobile-menu";
 import { SiteNavLink } from "@/components/ui/site-nav-link";
 import { NotificationBell } from "@/components/tours/notification-bell";
+import type { LoadedNotifications } from "@/lib/tours/notifications-server";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   accountLinks,
@@ -51,6 +52,7 @@ export function SiteHeader({
   role,
   tabs = [],
   account,
+  notifications = null,
 }: {
   showAdminLink?: boolean;
   signedIn?: boolean;
@@ -60,6 +62,8 @@ export function SiteHeader({
   tabs?: Tab[];
   /** Who is signed in, for the avatar. */
   account?: { initial: string; name: string; avatarUrl?: string | null };
+  /** The bell's first load, read on the server; the bell falls back to the browser without it. */
+  notifications?: LoadedNotifications | null;
 }) {
   const explorer = !signedIn || !role || role === "tourist";
   const destinations = explorer ? DESTINATION_LINKS : [];
@@ -144,7 +148,7 @@ export function SiteHeader({
         <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2 md:flex-1">
           {signedIn ? (
             <>
-              <NotificationBell />
+              <NotificationBell initial={notifications} />
               {account ? (
                 // Tourists on phones use the You tab instead.
                 <span className={explorer ? "hidden sm:contents" : "contents"}>
