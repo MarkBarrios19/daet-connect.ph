@@ -1,4 +1,4 @@
-import { PresenceHeartbeat } from "@/components/chat/presence-heartbeat";
+import { LiveProvider } from "@/components/live/live-provider";
 import type { ReactNode } from "react";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { ChatDock } from "@/components/chat-dock/chat-dock";
@@ -55,6 +55,11 @@ async function signedInViewer(): Promise<Viewer | undefined> {
   }
 }
 
+/** The shared poller, only for signed-in visitors. */
+function Live({ initial, children }: { initial: Parameters<typeof LiveProvider>[0]["initial"]; children: ReactNode }) {
+  return initial ? <LiveProvider initial={initial}>{children}</LiveProvider> : <>{children}</>;
+}
+
 const isStaffRole = (
   role: string | null | undefined,
 ): role is "operator" | "guide" | "admin" =>
@@ -88,6 +93,7 @@ export async function PageFrame({
     // data-has-tabs: the phone tab bar is drawn, so anything docked to the foot
     // of the screen (the home page's open-place sheet) must clear it. See
     // --tab-bar-h in globals.css.
+    <Live initial={role !== undefined ? notifications : null}>
     <div className="min-h-screen" data-has-tabs={tabs.length > 0 ? "" : undefined}>
       <RevealObserver />
       <a
@@ -133,11 +139,11 @@ export async function PageFrame({
             : undefined
         }
       />
-      {role !== undefined ? <PresenceHeartbeat /> : null}
       <AssistantWidget signedIn={role !== undefined} raised={tabs.length > 0} />
       {/* The way back to the top of a long page; lifted over the tab bar when there is one. */}
       <ScrollToTop raised={tabs.length > 0} />
       {role !== undefined ? <ChatDock /> : null}
     </div>
+    </Live>
   );
 }

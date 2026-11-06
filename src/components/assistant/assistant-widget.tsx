@@ -127,7 +127,7 @@ export function AssistantWidget({ signedIn, raised }: { signedIn: boolean; raise
               header={{
                 headingId: "assistant-title",
                 controls: (
-                  <button type="button" onClick={close} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white hover:bg-white/15" aria-label="Close the assistant">
+                  <button type="button" onClick={close} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white hover:bg-white/15" aria-label="Close the assistant">
                     <LineIcon name="close" className="h-5 w-5" />
                   </button>
                 ),

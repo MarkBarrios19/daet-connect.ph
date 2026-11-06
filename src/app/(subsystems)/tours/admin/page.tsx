@@ -1,3 +1,4 @@
+import { LiveCount } from "@/components/live/live-count";
 import { LineIcon } from "@/components/ui/icons";
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -90,9 +91,9 @@ export default async function AdminDashboardPage() {
       <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {(
           [
-            { label: "Operators to review", value: pendingOperators || 0, href: "/tours/admin/operators", icon: "building", waiting: true },
-            { label: "Guides to verify", value: pendingGuides || 0, href: "/tours/admin/guides", icon: "user", waiting: true },
-            { label: "Packages to approve", value: pendingPackages || 0, href: "/tours/admin/packages", icon: "box", waiting: true },
+            { label: "Operators to review", value: pendingOperators || 0, href: "/tours/admin/operators", icon: "building", waiting: true, live: "adminOperators" as const },
+            { label: "Guides to verify", value: pendingGuides || 0, href: "/tours/admin/guides", icon: "user", waiting: true, live: "adminGuides" as const },
+            { label: "Packages to approve", value: pendingPackages || 0, href: "/tours/admin/packages", icon: "box", waiting: true, live: "adminPackages" as const },
             { label: "Published packages", value: publishedPackages || 0, href: null, icon: "check", waiting: false },
             { label: "Bookings, all time", value: totalBookings || 0, href: null, icon: "calendar", waiting: false },
           ] as const
@@ -103,7 +104,11 @@ export default async function AdminDashboardPage() {
                 <span className="text-sm text-slate-600 dark:text-slate-400">{stat.label}</span>
                 <LineIcon name={stat.icon} className="h-5 w-5 shrink-0 text-daet-ink/60" />
               </span>
-              <span className={`mt-1 block text-3xl font-bold ${stat.waiting && stat.value > 0 ? "text-yellow-800 dark:text-yellow-200" : "text-daet-ink"}`}>{stat.value}</span>
+              {"live" in stat && stat.live ? (
+                <LiveCount name={stat.live} initial={stat.value} waiting className="mt-1 block text-3xl font-bold" />
+              ) : (
+                <span className="mt-1 block text-3xl font-bold text-daet-ink">{stat.value}</span>
+              )}
               {stat.href ? <span className="mt-1 block text-sm font-bold text-blue-700 dark:text-blue-300">{stat.value > 0 ? "Review →" : "Open →"}</span> : null}
             </>
           );

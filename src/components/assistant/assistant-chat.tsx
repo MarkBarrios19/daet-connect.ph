@@ -357,6 +357,20 @@ export function AssistantChat({
   const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
   // Ask by voice (decision 38): what is heard is sent as the message.
   const speech = useSpeech((heard) => void send(heard));
+  // Compact composer: tool icons beside a short box. Focusing or typing gives the box the full width.
+  const [focused, setFocused] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const compact = toolsOpen || (!focused && !text && !photo);
+  // The box grows with what is typed, up to its max height.
+  useEffect(() => {
+    const box = inputRef.current;
+    if (!box) return;
+    // Empty: keep the one-line height (a wrapped placeholder must not make the box tall).
+    box.style.height = "auto";
+    if (text) box.style.height = `${box.scrollHeight}px`;
+    // A scrollbar only once the text outgrows the box, so it never takes width from a one-line box.
+    box.style.overflowY = box.scrollHeight > box.clientHeight + 1 && text ? "auto" : "hidden";
+  }, [text, compact]);
   useEffect(() => {
     if (!actionsRef) return;
     actionsRef.current = {
@@ -496,7 +510,7 @@ export function AssistantChat({
               <span className="w-7 shrink-0 self-end">{shape.last ? <AiAvatar size="xs" /> : null}</span>
               <div className="min-w-0 max-w-[85%] space-y-2">
                 <p className={`whitespace-pre-wrap break-words ${bubbleRadius("assistant", shape)} bg-muted px-3.5 py-2 text-daet-ink`}>
-                  {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
+                  {turn.content || (busy && i === turns.length - 1 ? <TypingDots label="AI is thinking…" /> : null)}
                 </p>
                 {turn.status && busy && i === turns.length - 1 ? (
                   <p className="px-1 text-sm font-semibold text-slate-600 dark:text-slate-400">{turn.status}…</p>
@@ -564,35 +578,46 @@ export function AssistantChat({
             </button>
           </div>
         ) : null}
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          {here ? (
-            <button type="button" onClick={() => setHere(null)} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-green-500 px-4 text-sm font-bold text-slate-950">
-              <LineIcon name="pin" className="h-4 w-4" /> Using your location <span aria-hidden="true">·</span> Stop
-            </button>
-          ) : (
-            <button type="button" onClick={() => void shareLocation()} disabled={locating} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-muted px-4 text-sm font-bold text-daet-ink transition hover:bg-muted-strong disabled:opacity-60">
-              <LineIcon name="pin" className="h-4 w-4" /> {locating ? "Finding you…" : "Use my location"}
-            </button>
-          )}
-          {speech.supported ? (
-            <button
-              type="button"
-              onClick={speech.toggle}
-              disabled={busy}
-              aria-pressed={speech.listening}
-              aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
-              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "bg-muted text-daet-ink hover:bg-muted-strong"}`}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d={MIC_PATH} />
-              </svg>
-            </button>
-          ) : null}
-        </div>
         <label htmlFor="assistant-input" className="sr-only">
           Ask the {ASSISTANT_NAME}
         </label>
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1">
+          {compact ? (
+            <>
+              <button
+                type="button"
+                onClick={() => (here ? setHere(null) : void shareLocation())}
+                disabled={locating}
+                aria-pressed={Boolean(here)}
+                aria-label={here ? "Using your location. Stop" : locating ? "Finding you…" : "Use my location"}
+                title={here ? "Using your location. Tap to stop" : "Use my location"}
+                className={`grid h-9 w-8 shrink-0 place-items-center rounded-full disabled:opacity-60 ${here ? "bg-green-500 text-slate-950" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
+              >
+                <LineIcon name="pin" className="h-6 w-6" />
+              </button>
+              {speech.supported ? (
+                <button
+                  type="button"
+                  onClick={speech.toggle}
+                  disabled={busy}
+                  aria-pressed={speech.listening}
+                  aria-label={speech.listening ? "Stop listening" : "Ask by voice"}
+                  className={`grid h-9 w-8 shrink-0 place-items-center rounded-full ${speech.listening ? "bg-red-600 text-white motion-safe:animate-pulse" : "text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"}`}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d={MIC_PATH} />
+                  </svg>
+                </button>
+              ) : null}
+            </>
+          ) : (
+            // Typing: the tools fold into one "+" so the box gets the full width.
+            <button type="button" onClick={() => setToolsOpen(true)} aria-label="Show tools: location, voice, photo" className="grid h-9 w-8 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          )}
           {signedIn ? (
             <>
               <input
@@ -613,9 +638,11 @@ export function AssistantChat({
                   }
                 }}
               />
-              <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
-                <LineIcon name="image" className="h-6 w-6" />
-              </button>
+              {compact ? (
+                <button type="button" onClick={() => photoRef.current?.click()} disabled={busy} aria-label="Add a photo" className="grid h-9 w-8 shrink-0 place-items-center rounded-full text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+                  <LineIcon name="image" className="h-6 w-6" />
+                </button>
+              ) : null}
             </>
           ) : null}
           <textarea
@@ -625,21 +652,27 @@ export function AssistantChat({
             maxLength={MESSAGE_MAX}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            // A tap on the box expands it; the automatic focus when the window opens does not.
+            onPointerDown={() => {
+              setFocused(true);
+              setToolsOpen(false);
+            }}
+            onBlur={() => setFocused(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 void send(text);
               }
             }}
-            placeholder="Ask anything about your trip…"
+            placeholder="Ask about your trip…"
             aria-describedby="assistant-input-hint"
-            className="block max-h-32 min-h-11 w-full resize-none rounded-[1.375rem] bg-muted px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
+            className="block max-h-32 min-h-9 w-full resize-none overflow-hidden rounded-[1.125rem] bg-muted px-3.5 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-600/40"
           />
           <button
             type="submit"
             disabled={busy || (!text.trim() && !photo)}
             aria-label="Send"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:bg-muted disabled:text-slate-500 dark:disabled:text-slate-400"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:bg-muted disabled:text-slate-500 dark:disabled:text-slate-400"
           >
             <LineIcon name="arrowRight" className="h-5 w-5 -rotate-90" />
           </button>
@@ -657,12 +690,15 @@ export function AssistantChat({
   );
 }
 
-export function TypingDots() {
+export function TypingDots({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 py-1" role="status" aria-label="Typing">
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
-      ))}
+    <span className="inline-flex items-center gap-2 py-1" role="status" aria-label={label ?? "Typing"}>
+      <span aria-hidden="true" className="inline-flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
+        ))}
+      </span>
+      {label ? <span aria-hidden="true" className="text-sm text-slate-600 dark:text-slate-400">{label}</span> : null}
     </span>
   );
 }

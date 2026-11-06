@@ -70,12 +70,16 @@ self.addEventListener("push", (event) => {
   }
   const url = typeof data.url === "string" && data.url.startsWith("/tours/") ? data.url : "/tours/notifications";
   event.waitUntil(
-    self.registration.showNotification(data.title || "CONNECT-Daet", {
+    // A tab the person is looking at already shows this as a toast: skip the system popup.
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      if (windows.some((client) => client.visibilityState === "visible" && client.focused)) return undefined;
+      return self.registration.showNotification(data.title || "CONNECT-Daet", {
       body: data.body || "",
       tag: data.tag,
       renotify: Boolean(data.tag),
       data: { url },
       lang: "en-PH",
+      });
     }),
   );
 });

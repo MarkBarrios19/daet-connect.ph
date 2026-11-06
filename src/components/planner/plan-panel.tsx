@@ -165,6 +165,20 @@ export function PlanPanel({
     return () => window.clearTimeout(timer);
   }, [undo]);
 
+  // The map hangs from just below the sticky bar, whose height changes with wrapping.
+  const barRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = barRef.current;
+    const section = sectionRef.current;
+    if (!bar || !section || typeof ResizeObserver === "undefined") return;
+    const set = () => section.style.setProperty("--plan-bar-h", `${bar.offsetHeight}px`);
+    set();
+    const observer = new ResizeObserver(set);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, []);
+
   const lastRequest = useRef<number | null>(null);
   useEffect(() => {
     if (!request || lastRequest.current === request.id) return;
@@ -185,8 +199,10 @@ export function PlanPanel({
   const known = prices.filter((p): p is number => p !== null);
 
   return (
-    <section aria-labelledby="plan-title" className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <section ref={sectionRef} aria-labelledby="plan-title" className="min-w-0 space-y-4">
+      {/* Title, trip line, actions and day pills stay in view while the stops scroll (desktop layout; on phones the plan is a sheet); the map hangs from just below them. */}
+      <div ref={barRef} className="z-30 space-y-3 bg-canvas py-3 lg:sticky lg:top-[var(--header-h)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 id="plan-title" className="font-[family-name:var(--font-display)] text-2xl font-semibold text-daet-ink sm:text-3xl">
             Your {itinerary.sample ? "sample " : ""}{plan.days.length}-day Daet plan
@@ -249,6 +265,19 @@ export function PlanPanel({
           </div>
         )}
       </div>
+      <div className="scrollbar-quiet -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Choose a day">
+        {plan.days.length > 1 ? (
+          <button type="button" aria-pressed={day === "all"} onClick={() => setDay("all")} className={pillClass(day === "all")}>
+            All days
+          </button>
+        ) : null}
+        {plan.days.map((d, i) => (
+          <button key={d.date} type="button" aria-pressed={day === i} aria-label={`Day ${i + 1}, ${longDay(d.date, itinerary.sample)}`} onClick={() => setDay(i)} className={pillClass(day === i)}>
+            Day {i + 1}
+          </button>
+        ))}
+      </div>
+      </div>
 
       {itinerary.sample ? (
         <p role="note" className="rounded-2xl border border-blue-600 bg-blue-50 p-3 text-sm text-daet-ink dark:bg-blue-950/40">
@@ -262,26 +291,13 @@ export function PlanPanel({
         </div>
       ) : null}
 
-      <div className="scrollbar-quiet -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Choose a day">
-        {plan.days.length > 1 ? (
-          <button type="button" aria-pressed={day === "all"} onClick={() => setDay("all")} className={pillClass(day === "all")}>
-            All days
-          </button>
-        ) : null}
-        {plan.days.map((d, i) => (
-          <button key={d.date} type="button" aria-pressed={day === i} aria-label={`Day ${i + 1}, ${longDay(d.date, itinerary.sample)}`} onClick={() => setDay(i)} className={pillClass(day === i)}>
-            Day {i + 1}
-          </button>
-        ))}
-      </div>
-
       <p role="status" aria-live="polite" className={message ? "rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-900 dark:bg-blue-950/40 dark:text-blue-200" : "sr-only"}>
         {message ?? ""}
       </p>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] xl:gap-6">
         {points.length ? (
-          <div className="relative h-60 min-w-0 overflow-hidden rounded-2xl sm:h-72 xl:sticky xl:top-4 xl:order-2 xl:h-[min(42rem,calc(100dvh-8rem))]">
+          <div className="relative h-60 min-w-0 overflow-hidden rounded-2xl sm:h-72 xl:sticky xl:top-[calc(var(--header-h)+var(--plan-bar-h,8rem)+0.75rem)] xl:order-2 xl:h-[min(42rem,calc(100dvh-var(--header-h)-var(--plan-bar-h,8rem)-2rem))]">
             <RouteMap points={points} connect={current !== null} title={current === null ? "Map of all days" : `Map of day ${current + 1}`} chip={mapTitle} className="h-full" mapClassName="h-full" />
           </div>
         ) : null}
