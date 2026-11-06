@@ -141,11 +141,17 @@ export const signInSchema = z.object({
     .min(1, "Enter your password."),
 });
 
-export const signUpSchema = z.object({
-  fullName: fullNameSchema,
-  email: emailSchema,
-  password: passwordSchema,
-});
+export const signUpSchema = z
+  .object({
+    fullName: fullNameSchema,
+    email: emailSchema,
+    password: passwordSchema,
+    confirm: z.string({ error: "Type the password again." }).min(1, "Type the password again."),
+  })
+  .refine((value) => value.password === value.confirm, {
+    path: ["confirm"],
+    message: "The two passwords do not match.",
+  });
 
 export const newPasswordSchema = z
   .object({

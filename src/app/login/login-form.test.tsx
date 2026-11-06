@@ -37,6 +37,20 @@ describe("the sign-in form", () => {
     expect(screen.getByLabelText(/^password/i)).toHaveAttribute("autocomplete", "current-password");
   });
 
+  it("lets the visitor show and hide the password", () => {
+    render(<LoginForm nextUrl="/" />);
+    const password = screen.getByLabelText(/^password/i);
+
+    expect(password).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Hide password" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(password).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "Show password" })).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("puts a field's error beside the field, and marks it invalid for a screen reader", async () => {
     mockSignIn.mockResolvedValue({
       status: "error",

@@ -127,6 +127,7 @@ describe("the form schemas", () => {
       fullName: "  Juan Dela Cruz ",
       email: " Juan@Example.PH ",
       password: "bagasbas-waves-at-sunrise",
+      confirm: "bagasbas-waves-at-sunrise",
     });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
@@ -134,7 +135,21 @@ describe("the form schemas", () => {
         fullName: "Juan Dela Cruz",
         email: "juan@example.ph",
         password: "bagasbas-waves-at-sunrise",
+        confirm: "bagasbas-waves-at-sunrise",
       });
+    }
+  });
+
+  it("requires the sign-up password and confirmation to match", () => {
+    const parsed = signUpSchema.safeParse({
+      fullName: "Juan Dela Cruz",
+      email: "juan@example.ph",
+      password: "bagasbas-waves-at-sunrise",
+      confirm: "another-password",
+    });
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(fieldErrorsOf(parsed.error)).toEqual({ confirm: "The two passwords do not match." });
     }
   });
 
@@ -164,11 +179,11 @@ describe("form helpers", () => {
   });
 
   it("keeps the first message per field", () => {
-    const parsed = signUpSchema.safeParse({ fullName: "", email: "nope", password: "" });
+    const parsed = signUpSchema.safeParse({ fullName: "", email: "nope", password: "", confirm: "" });
     expect(parsed.success).toBe(false);
     if (!parsed.success) {
       const fields = fieldErrorsOf(parsed.error);
-      expect(Object.keys(fields).sort()).toEqual(["email", "fullName", "password"]);
+      expect(Object.keys(fields).sort()).toEqual(["confirm", "email", "fullName", "password"]);
       expect(fields.email).toMatch(/valid email/i);
     }
   });

@@ -32,7 +32,42 @@ describe("the sign-up form", () => {
     expect(screen.getByLabelText(/full name/i)).toHaveAttribute("autocomplete", "name");
     expect(screen.getByLabelText(/email address/i)).toHaveAttribute("autocomplete", "email");
     expect(screen.getByLabelText(/^password/i)).toHaveAttribute("autocomplete", "new-password");
+    expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute("autocomplete", "new-password");
     expect(screen.getByText(/your account stays inactive until you open it/i)).toBeInTheDocument();
+  });
+
+  it("lets the visitor reveal and hide each password independently", () => {
+    render(<SignupForm />);
+    const password = screen.getByLabelText(/^password/i);
+    const confirmation = screen.getByLabelText(/confirm password/i);
+
+    expect(password).toHaveAttribute("type", "password");
+    expect(confirmation).toHaveAttribute("type", "password");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
+    expect(confirmation).toHaveAttribute("type", "password");
+
+    fireEvent.click(screen.getByRole("button", { name: "Show confirmation password" }));
+    expect(confirmation).toHaveAttribute("type", "text");
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(password).toHaveAttribute("type", "password");
+    expect(confirmation).toHaveAttribute("type", "text");
+  });
+
+  it("shows a mismatch beside the confirmation field", async () => {
+    mockSignUp.mockResolvedValue({
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      fieldErrors: { confirm: "The two passwords do not match." },
+    });
+    render(<SignupForm />);
+
+    submit();
+
+    expect(await screen.findByText("The two passwords do not match.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute("aria-invalid", "true");
   });
 
   it("stops at the confirmation step, and swaps the form for what to do next", async () => {

@@ -32,7 +32,8 @@ test.describe("signing up, signing in and proving the address", () => {
 
     await page.getByLabel("Full name").fill("Juan Dela Cruz");
     await page.getByLabel("Email address").fill("maria.santos@example.ph");
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel(/^Password/i).fill(PASSWORD);
+    await page.getByLabel(/confirm password/i).fill(PASSWORD);
     await page.getByRole("button", { name: "Create account" }).click();
 
     await expect(page.getByText("Check your inbox")).toBeVisible();
@@ -54,7 +55,8 @@ test.describe("signing up, signing in and proving the address", () => {
 
     await page.getByLabel("Full name").fill("Someone Else");
     await page.getByLabel("Email address").fill("taken@example.ph");
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel(/^Password/i).fill(PASSWORD);
+    await page.getByLabel(/confirm password/i).fill(PASSWORD);
     await page.getByRole("button", { name: "Create account" }).click();
 
     // Same panel, same promise — nothing says "that email is taken".
@@ -70,7 +72,8 @@ test.describe("signing up, signing in and proving the address", () => {
 
     await page.getByLabel("Full name").fill("J");
     await page.getByLabel("Email address").fill("not-an-email");
-    await page.getByLabel("Password").fill("short");
+    await page.getByLabel(/^Password/i).fill("short");
+    await page.getByLabel(/confirm password/i).fill("short");
     await page.getByRole("button", { name: "Create account" }).click();
 
     await expect(page.getByText("Enter your full name.")).toBeVisible();
@@ -79,11 +82,25 @@ test.describe("signing up, signing in and proving the address", () => {
     expect(await authLog(page)).toEqual([]);
   });
 
+  test("rejects a mismatched confirmation before sending anything to Supabase", async ({ page }) => {
+    await clearAuthLog(page);
+    await visit(page, "/signup", /create account/i);
+
+    await page.getByLabel("Full name").fill("Juan Dela Cruz");
+    await page.getByLabel("Email address").fill("juan@example.ph");
+    await page.getByLabel(/^Password/i).fill(PASSWORD);
+    await page.getByLabel(/confirm password/i).fill("different-password");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    await expect(page.getByText("The two passwords do not match.")).toBeVisible();
+    expect(await authLog(page)).toEqual([]);
+  });
+
   test("stops an unconfirmed account at the door, with a way to get a new link", async ({ page }) => {
     await visit(page, "/login", /sign in/i);
 
     await page.getByLabel("Email address").fill("unverified@example.ph");
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel(/^Password/i).fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect(page.getByText("Confirm your email first")).toBeVisible();
@@ -97,7 +114,7 @@ test.describe("signing up, signing in and proving the address", () => {
     await visit(page, "/login", /sign in/i);
 
     await page.getByLabel("Email address").fill("juan@example.ph");
-    await page.getByLabel("Password").fill("not-the-password");
+    await page.getByLabel(/^Password/i).fill("not-the-password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
     // Next renders its own route announcer with role="alert", so pick ours out
@@ -111,7 +128,12 @@ test.describe("signing up, signing in and proving the address", () => {
     await visit(page, "/login", /sign in/i);
 
     await page.getByLabel("Email address").fill("juan@example.ph");
-    await page.getByLabel("Password").fill(PASSWORD);
+    const password = page.getByLabel(/^Password/i);
+    await password.fill(PASSWORD);
+    await page.getByRole("button", { name: "Show password" }).click();
+    await expect(password).toHaveAttribute("type", "text");
+    await page.getByRole("button", { name: "Hide password" }).click();
+    await expect(password).toHaveAttribute("type", "password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
