@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { bookingConfirmedEmail, paymentReceivedEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
+import { bookingConfirmedEmail, bookingReceivedEmail, newBookingForOperatorEmail, paymentReceivedEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 
@@ -79,6 +79,27 @@ function later(task: () => Promise<unknown>) {
   } catch {
     void run();
   }
+}
+
+/** A new request: tell the tourist it was received and the operator to review it. */
+export function emailBookingReceived(bookingId: string) {
+  if (!isEmailConfigured()) return;
+  later(async () => {
+    const booking = await loadBooking(bookingId);
+    if (!booking) return;
+    await sendEmail({ to: booking.to, ...bookingReceivedEmail(booking.data) });
+    const admin = createSupabaseAdminClient();
+    const { data } = await admin
+      .from("tours_bookings")
+      .select("tours_packages ( tours_operators ( contact_email ) )")
+      .eq("id", bookingId)
+      .maybeSingle();
+    const pkg = one((data as { tours_packages?: unknown } | null)?.tours_packages as { tours_operators: { contact_email: string } | Array<{ contact_email: string }> | null } | null);
+    const operatorEmail = one(pkg?.tours_operators)?.contact_email;
+    if (operatorEmail) {
+      await sendEmail({ to: operatorEmail, ...newBookingForOperatorEmail(booking.data, `${appUrl()}/tours/operator/bookings?status=pending`) });
+    }
+  });
 }
 
 export function emailBookingConfirmed(bookingId: string) {

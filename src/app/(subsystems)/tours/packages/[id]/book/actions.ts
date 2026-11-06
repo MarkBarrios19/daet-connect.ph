@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateCreateBooking, type CreateBookingInput } from "@/lib/tours/booking-contract";
 import { userFacingDbError } from "@/lib/tours/db-errors";
+import { emailBookingReceived } from "@/lib/email/notify-booking";
 
 interface CreateBookingResult {
   success: boolean;
@@ -128,6 +129,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
       return { success: false, error: userFacingDbError(bookingError, "Failed to create booking. Please try again.") };
     }
 
+    emailBookingReceived(booking.id);
 
     return {
       success: true,
