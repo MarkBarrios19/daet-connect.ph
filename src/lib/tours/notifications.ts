@@ -36,6 +36,7 @@ const KINDS: Record<string, NotificationKind> = {
   accreditation_rejected: "note",
   package_approved: "check",
   package_rejected: "note",
+  package_submitted: "note",
   review_received: "star",
   review_reply: "message",
   points_earned: "gift",
