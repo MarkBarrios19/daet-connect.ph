@@ -239,7 +239,13 @@ export default async function OperatorBookingsPage({
   };
 
   // Calculate stats
-  const allBookings = bookings || [];
+  // Counts cover every booking, not just the selected filter, so the chips
+  // read the same whichever one is open.
+  const { data: statusRows } = await supabase
+    .from("tours_bookings")
+    .select("status, tours_packages!inner(operator_id)")
+    .eq("tours_packages.operator_id", operator.id);
+  const allBookings = statusRows ?? [];
   const stats = {
     total: allBookings.length,
     pending: allBookings.filter((b) => b.status === "pending").length,
