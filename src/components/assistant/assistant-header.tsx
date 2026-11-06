@@ -30,7 +30,7 @@ export function AssistantHeader({
   const Heading = headingLevel;
   const brand = tone === "brand";
   return (
-    <header className={`flex items-center gap-2 px-2 py-1.5 ${brand ? "bg-blue-600 text-white" : "text-daet-ink sm:px-3"}`}>
+    <header className={`relative flex items-center gap-2 px-2 py-1.5 ${brand ? "bg-blue-600 text-white" : "text-daet-ink sm:px-3"}`}>
       {leading}
       <AiAvatar size="sm" />
       <div className="min-w-0 flex-1">
@@ -74,8 +74,10 @@ function AssistantMenu({ actionsRef, brand }: { actionsRef: React.MutableRefObje
     setConfirm(false);
   };
 
+  // Not `relative`: the menu hangs from the header, so in a narrow window it
+  // stays inside it instead of running off the left edge.
   return (
-    <div ref={root} className="relative shrink-0">
+    <div ref={root} className="shrink-0">
       <button
         type="button"
         aria-label="Chat options"
@@ -87,7 +89,7 @@ function AssistantMenu({ actionsRef, brand }: { actionsRef: React.MutableRefObje
         <LineIcon name="more" className="h-5 w-5" />
       </button>
       {open ? (
-        <div role="menu" aria-label="Chat options" className="absolute right-0 top-full z-10 mt-1 w-56 overflow-hidden rounded-2xl bg-surface py-1 shadow-[var(--shadow-float)] card-edge">
+        <div role="menu" aria-label="Chat options" className="absolute right-2 top-full z-20 mt-1 w-56 max-w-[calc(100%-1rem)] overflow-hidden rounded-2xl bg-surface py-1 shadow-[var(--shadow-float)] card-edge">
           {confirm ? (
             <div className="space-y-1 p-3">
               <p className="text-sm text-daet-ink">Delete this chat history?</p>
@@ -130,6 +132,7 @@ function AssistantMenu({ actionsRef, brand }: { actionsRef: React.MutableRefObje
                 type="button"
                 role="menuitem"
                 disabled={!actions?.canGiveFeedback}
+                title={actions?.canGiveFeedback ? undefined : "Available after the assistant replies"}
                 onClick={() => {
                   actionsRef.current?.feedback();
                   close();
