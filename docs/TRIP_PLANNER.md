@@ -63,7 +63,7 @@ Settled in the design interview. Words follow `CONTEXT.md`.
 | 26 | Feedback | "Was this helpful? Yes / No" under each answer. |
 | 27 | Operator's phone | Public: shown to visitors who are not signed in. Only messaging in the site needs sign-in. |
 | 28 | Telling them about sign-in | After the 3rd answer, a small card "Sign in to keep getting full answers" with Google sign-in. Answers stay simple until they sign in. |
-| 29 | After "No" | Recorded only. |
+| 29 | After "No" | Recorded; admins read them at /tours/admin/feedback (changed 2026-11-06). |
 | 30 | "Is my tour on today?" when not signed in | Ask them to sign in to see their bookings. No lookup by reference. |
 | 31 | Open near me now | Known-open places first, then "Hours not listed" ones marked "Check before you go"; within 3 km, closest first, at most 5. |
 | 32 | Emergency numbers not yet entered | The national 911 hotline, plus "Tell the operator or your guide". |
@@ -211,7 +211,8 @@ Each slice is one PR, tested at 375 and 1440 px with axe. Numbers refer to the d
   until a trip is saved).
 - "Was this helpful? Yes / No" under each answer; the choice goes to
   `tours_ai_feedback` (question and answer excerpts, mode, page; no account).
-  Migration `20261119_ai_feedback.sql` (applied 2026-11-06). Recorded only.
+  Migration `20261119_ai_feedback.sql` (applied 2026-11-06). Admins read them at
+  `/tours/admin/feedback`: Not helpful first, last 30 days Yes/No and % helpful.
 
 ## Sample plans (decision 35)
 

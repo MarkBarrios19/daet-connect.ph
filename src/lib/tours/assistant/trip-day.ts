@@ -1,6 +1,6 @@
 import { formatDistance, haversineMeters, type LatLng } from "@/lib/maps/geo";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, toAttraction } from "@/lib/tours/attractions";
-import { emergencyAnswer, loadEmergencyContacts, NATIONAL_HOTLINE } from "@/lib/tours/emergency/contacts";
+import { emergencyAnswer, loadEmergencyContacts, NATIONAL_HOTLINE, pickContacts } from "@/lib/tours/emergency/contacts";
 import { GUIDE_PLACE_COLUMNS, GUIDE_PLACE_KINDS, toGuidePlace } from "@/lib/tours/guide/places";
 import { openStatus } from "@/lib/tours/opening-hours";
 import { addDays } from "@/lib/tours/itinerary/types";
@@ -13,8 +13,9 @@ import { addCard, type ToolContext } from "@/lib/tours/assistant/tools";
  */
 
 /** Police, rescue, hospital, coast guard: 911 first, then the Tourism Office's list. */
-export async function emergencyNumbers(ctx: ToolContext) {
-  const contacts = await loadEmergencyContacts(ctx.supabase);
+export async function emergencyNumbers(ctx: ToolContext, question = "") {
+  // The numbers for what they need and where they are come first (a drowning → Coast Guard, "Mercedes" → Mercedes).
+  const contacts = pickContacts(await loadEmergencyContacts(ctx.supabase), question);
   addCard(ctx, { type: "link", href: `tel:${NATIONAL_HOTLINE}`, label: `Call ${NATIONAL_HOTLINE}` });
   for (const c of contacts.slice(0, 4)) addCard(ctx, { type: "link", href: `tel:${c.phone.replace(/[^0-9+]/g, "")}`, label: `Call ${c.label}` });
   return {

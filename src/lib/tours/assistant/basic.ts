@@ -18,7 +18,7 @@ import { emergencyNumbers, openNearMe, tourToday } from "@/lib/tours/assistant/t
 const has = (t: string, pattern: RegExp) => pattern.test(t);
 const STOP = new Set(["what", "when", "where", "which", "the", "are", "is", "for", "any", "open", "dates", "date", "available", "availability", "seats", "slots", "tour", "tours", "this", "next", "weekend", "week", "there", "still", "have", "you", "do", "can", "book", "how", "much", "price", "cost", "meron", "pa", "ba", "ang", "sa", "ng", "may", "magkano"]);
 
-export const isEmergency = (t: string) => /\b(emergency|911|police|pulis|hospital|ospital|ambulance|ambulansya|rescue|coast guard|accident|aksidente|drowning|nalulunod|injured|sugatan|saklolo)\b/.test(t);
+export const isEmergency = (t: string) => /\b(emergency|911|police|pulis|hospital|ospital|ambulance|ambulansya|rescue|coast guard|accident|aksidente|drowning|nalulunod|nalunod|tumaob|sunog|injured|sugatan|saklolo)\b/.test(t);
 export const asksTourToday = (t: string) =>
   /\b(my|ko|namin|our)\b/.test(t) && /\b(tour|booking|trip)\b/.test(t) && /\b(today|tomorrow|ngayon|bukas|tuloy|still on|on today|on tomorrow|called off|cancelled|canceled)\b/.test(t);
 export const asksOpenNearMe = (t: string) =>
@@ -53,7 +53,7 @@ export async function basicReply(text: string, ctx: ToolContext): Promise<string
   }
 
   // Trip day (part 3): emergencies first, then "is my tour on?", then what's open near me.
-  if (isEmergency(t)) return (await emergencyNumbers(ctx)).answer;
+  if (isEmergency(t)) return (await emergencyNumbers(ctx, text)).answer;
   if (asksTourToday(t)) return (await tourToday(ctx)).answer;
   if (asksOpenNearMe(t)) return (await openNearMe(ctx)).answer;
 
