@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
+import { SoundToggle } from "@/components/tours/sound-toggle";
 import { PushOptIn } from "@/components/tours/push-opt-in";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -46,6 +47,9 @@ export default async function NotificationsPage() {
 
         <Card className="mt-6">
           <PushOptIn variant="settings" />
+          <div className="mt-4 border-t border-daet-ink/10 pt-4">
+            <SoundToggle />
+          </div>
         </Card>
 
         {error ? (

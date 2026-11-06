@@ -8,6 +8,8 @@ import { ReactionBar, ReactionPills } from "@/components/chat/reactions";
 import { TypingDots } from "@/components/assistant/assistant-chat";
 import { LineIcon } from "@/components/ui/icons";
 import { Notice } from "@/components/ui/notice";
+import { usePolling } from "@/components/live/use-polling";
+import { CHAT_POLL_MS } from "@/lib/live/schedule";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { MESSAGE_MAX_LENGTH, MESSAGE_PAGE_SIZE, mergeMessages, messageTime, presenceOf, senderLabel, type ChatMembers, type ChatMessage } from "@/lib/tours/messaging";
 import {
@@ -129,6 +131,27 @@ export function ChatWindow(props: ChatWindowProps) {
       void supabase.removeChannel(channel);
     };
   }, [conversationId, viewerId, announceRead]);
+
+  // Safety net: while Realtime is not connected, ask for anything newer every few seconds.
+  const latestAt = useRef<string | null>(null);
+  latestAt.current = messages.filter((m) => !m.draft).at(-1)?.created_at ?? null;
+  usePolling(
+    async () => {
+      const after = latestAt.current;
+      if (!after) return;
+      const response = await fetch(`/api/chat/${conversationId}/messages?after=${encodeURIComponent(after)}`, { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok) throw new Error(`messages ${response.status}`);
+      const page = (await response.json()) as { messages: ChatMessage[]; reactions: Reaction[]; quoted: ChatMessage[]; attachmentUrls: Record<string, string> };
+      if (page.messages.length === 0) return;
+      setMessages((current) => mergeMessages(current, page.messages) as ThreadMessage[]);
+      setQuoted((q) => ({ ...q, ...Object.fromEntries(page.quoted.map((m) => [m.id, m])) }));
+      setUrls((current) => ({ ...current, ...page.attachmentUrls }));
+      setReactions((current) => [...current.filter((r) => !page.reactions.some((n) => n.message_id === r.message_id && n.profile_id === r.profile_id)), ...page.reactions]);
+      if (page.messages.some((m) => m.sender_id !== viewerId) && document.visibilityState === "visible") announceRead();
+    },
+    CHAT_POLL_MS,
+    live !== "live",
+  );
 
   // Typing dots, the online dot and "seen" pings: a private channel for members only.
   useEffect(() => {
@@ -313,7 +336,7 @@ export function ChatWindow(props: ChatWindowProps) {
             {props.title}
           </Heading>
           <p className={`truncate text-sm ${compact ? "text-white/90" : "text-slate-600 dark:text-slate-400"}`} aria-live="polite">
-            {typingNow.length ? "typing…" : presenceText(status) ?? (live === "offline" ? "Offline: refresh to see new messages" : props.subtitle)}
+            {typingNow.length ? "typing…" : presenceText(status) ?? (live === "offline" ? "Reconnecting…" : props.subtitle)}
           </p>
         </div>
         {props.link && !compact ? (
