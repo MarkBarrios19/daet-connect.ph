@@ -1,45 +1,39 @@
 "use client";
 
 import Link, { useLinkStatus } from "next/link";
-import { LineIcon } from "@/components/ui/icons";
 
-/** The arrow, which becomes a spinner the moment the tap is accepted. A fixed-size slot, so nothing shifts. */
-function Hint() {
+/** A fixed-size spinner slot: it only fades in, so the pill never changes width when it is tapped. */
+function Spinner() {
   const { pending } = useLinkStatus();
   return (
-    <span aria-hidden="true" className="relative grid h-6 w-6 shrink-0 place-items-center">
-      <LineIcon name="arrowRight" className={`h-6 w-6 transition-opacity duration-150 ${pending ? "opacity-0" : "opacity-100"}`} />
-      <span
-        data-pending={pending ? "true" : "false"}
-        className={`absolute h-5 w-5 rounded-full border-2 border-white/35 border-t-white transition-opacity duration-150 motion-safe:animate-spin ${pending ? "opacity-100" : "opacity-0"}`}
-      />
-    </span>
+    <span
+      aria-hidden="true"
+      data-pending={pending ? "true" : "false"}
+      className={`h-4 w-4 shrink-0 rounded-full border-2 border-white/35 border-t-white motion-safe:animate-spin ${pending ? "inline-block" : "hidden"}`}
+    />
   );
 }
 
-/** The second line says "Opening…" while the next page loads. */
-function Detail({ children }: { children: string }) {
+function Label() {
   const { pending } = useLinkStatus();
-  return <span className="block text-sm leading-5 text-blue-100">{pending ? "Opening…" : children}</span>;
+  return <span>{pending ? "Opening…" : "Book"}</span>;
 }
 
 /**
- * A booking button: the trip's name, then its price, then an arrow. A tap
- * answers at once (spinner and "Opening…"), and while one is opening the
- * others dim and stop taking taps (put them inside a `group/books` element).
+ * The Book pill on a trip's row. A tap answers at once (spinner and "Opening…");
+ * while one is opening the other pills dim and stop taking taps. Put the pills
+ * inside a `group/books` element, and give the row `has-[[data-pending=true]]`
+ * styling to mark the one that is opening.
  */
-export function BookLink({ href, title, detail, label }: { href: string; title: string; detail: string; label: string }) {
+export function BookLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
       aria-label={label}
-      className="flex min-h-16 items-center gap-3 rounded-full bg-blue-600 py-2.5 pl-5 pr-3 text-left text-white transition-opacity hover:bg-blue-700 group-has-[[data-pending=true]]/books:[&:not(:has([data-pending=true]))]:pointer-events-none group-has-[[data-pending=true]]/books:[&:not(:has([data-pending=true]))]:opacity-45"
+      className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 rounded-full bg-blue-600 px-[18px] text-[15px] font-bold text-white transition-opacity hover:bg-blue-700 group-has-[[data-pending=true]]/books:[&:not(:has([data-pending=true]))]:pointer-events-none group-has-[[data-pending=true]]/books:[&:not(:has([data-pending=true]))]:opacity-45"
     >
-      <span className="min-w-0 flex-1">
-        <span className="block font-bold leading-5">{title}</span>
-        <Detail>{detail}</Detail>
-      </span>
-      <Hint />
+      <Spinner />
+      <Label />
     </Link>
   );
 }
