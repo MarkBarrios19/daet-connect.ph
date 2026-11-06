@@ -13,6 +13,8 @@ import type { CostCard, PlaceCard } from "@/lib/tours/assistant/guide-tools";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import { AiAvatar } from "@/components/chat/ai-avatar";
+import { bubbleRadius, bubbleShape } from "@/lib/tours/assistant/bubble-groups";
 import { QuestionsCard } from "@/components/assistant/questions-card";
 import { GoogleMark } from "@/components/ui/google-sign-in";
 import { MIC_PATH, useSpeech } from "@/components/ui/use-speech";
@@ -341,6 +343,7 @@ export function AssistantChat({
   const suggestions = page && pageName ? pageSuggestions(page.kind, pageName) : null;
   // Ask by voice (decision 38): what is heard is sent as the message.
   const speech = useSpeech((heard) => void send(heard));
+  const roles = turns.map((t) => t.role);
   const lastSignIn = turns.reduce((at, t, i) => (t.signIn ? i : at), -1);
 
   return (
@@ -430,16 +433,21 @@ export function AssistantChat({
             </div>
           </li>
         ) : null}
-        {turns.map((turn, i) => (
-          <li key={i} className={turn.role === "user" ? "flex justify-end" : ""}>
+        {turns.map((turn, i) => {
+          const shape = bubbleShape(roles, i);
+          return (
+          <li key={i} className={`${turn.role === "user" ? "flex justify-end" : "flex items-end gap-2"} ${shape.last ? "pb-1.5" : ""}`}>
             {turn.role === "user" ? (
-              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-blue-600 px-3 py-2 text-white">
+              <p className={`max-w-[85%] whitespace-pre-wrap break-words ${bubbleRadius("user", shape)} bg-blue-600 px-3.5 py-2 text-white`}>
                 {turn.photo ? <span className="mb-1 flex items-center gap-1 text-sm font-semibold"><LineIcon name="image" className="h-4 w-4" /> Photo sent</span> : null}
                 {turn.content}
               </p>
             ) : (
-              <div className="min-w-0 max-w-[92%] space-y-2">
-                <p className="whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-daet-ink">
+              <>
+              {/* The avatar sits beside the last reply of a group; other replies keep its column so bubbles line up. */}
+              <span className="w-7 shrink-0 self-end">{shape.last ? <AiAvatar size="xs" /> : null}</span>
+              <div className="min-w-0 max-w-[85%] space-y-2">
+                <p className={`whitespace-pre-wrap break-words ${bubbleRadius("assistant", shape)} bg-muted px-3.5 py-2 text-daet-ink`}>
                   {turn.content || (busy && i === turns.length - 1 ? <TypingDots /> : null)}
                 </p>
                 {turn.status && busy && i === turns.length - 1 ? (
@@ -480,9 +488,11 @@ export function AssistantChat({
                   />
                 ) : null}
               </div>
+              </>
             )}
           </li>
-        ))}
+          );
+        })}
       </ol>
 
       <form
