@@ -132,6 +132,7 @@ export default async function AdminDashboardPage() {
             ["/tours/admin/guides", "Guides"],
             ["/tours/admin/packages", "Packages"],
             ["/tours/admin/emergency", "Emergency numbers"],
+            ["/tours/admin/feedback", "Assistant feedback"],
           ].map(([href, label]) => (
             <Link key={href} href={href} className="flex min-h-12 items-center rounded-2xl bg-canvas px-4 font-bold leading-snug text-daet-ink transition hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-[0.98]">
               {label}

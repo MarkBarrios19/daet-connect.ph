@@ -1094,6 +1094,10 @@ function build(role) {
     tours_attractions: attractions,
     tours_guide_places: guidePlaces,
     tours_fares: fares,
+    tours_ai_feedback: [
+      { id: "f1", helpful: false, mode: "basic", question: "Is the Calaguas boat running tomorrow?", answer: "Here are some tours you can book. Open one to see its open dates.", page: "/tours/browse", created_at: new Date(Date.now() - 3600000).toISOString() },
+      { id: "f2", helpful: true, mode: "ai", question: "Paano pumunta sa Daet from Manila?", answer: "Bus from Cubao or PITX, about 8 to 10 hours.", page: "/tours/help", created_at: new Date(Date.now() - 7200000).toISOString() },
+    ],
     tours_notifications: notifications,
     tours_conversations: [conversation],
     tours_messages: messages,
