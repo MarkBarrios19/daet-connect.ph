@@ -143,11 +143,11 @@ export function LiveProvider({ initial, children }: { initial: LiveInitial; chil
   return (
     <LiveContext.Provider value={value}>
       {children}
-      {toast ? (
-        <div className="pointer-events-none fixed inset-x-0 top-[4.5rem] z-[60] flex justify-center px-4">
+      {/* The live region holds the link: a link given role="status" loses its name from its content. */}
+      <div role="status" className="pointer-events-none fixed inset-x-0 top-[4.5rem] z-[60] flex justify-center px-4">
+        {toast ? (
           <Link
             href={toast.href}
-            role="status"
             onClick={() => {
               if (toast.ids.length) markRead(toast.ids);
               setToast(null);
@@ -157,8 +157,8 @@ export function LiveProvider({ initial, children }: { initial: LiveInitial; chil
             <LineIcon name="bell" className="h-6 w-6 shrink-0 text-blue-600 dark:text-blue-300" />
             <span className="min-w-0 flex-1 truncate text-sm font-bold">{toast.text}</span>
           </Link>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </LiveContext.Provider>
   );
 }

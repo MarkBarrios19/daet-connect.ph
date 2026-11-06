@@ -35,7 +35,7 @@ test.describe("mobile layout at 360px", () => {
     expect(viewport.width - (box.x + box.width), "a thumb's width off the right edge").toBeGreaterThan(8);
     expect(viewport.width - (box.x + box.width), "and on it").toBeLessThan(32);
 
-    const pill = (await page.getByRole("button", { name: "Daet AI assistant", exact: true }).boundingBox())!;
+    const pill = (await page.getByRole("button", { name: "Open the Daet AI assistant", exact: true }).boundingBox())!;
     expect(Math.abs(box.x + box.width - (pill.x + pill.width)), "the same right edge").toBeLessThanOrEqual(2);
     expect(box.y + box.height, "clear of the pill's top edge").toBeLessThanOrEqual(pill.y);
     expect(pill.y - (box.y + box.height), "and close to it").toBeLessThan(16);

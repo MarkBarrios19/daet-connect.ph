@@ -86,7 +86,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
           </label>
         </div>
         )}
-        {errors.dates ? <p id={`${id}-dates`} role="alert" className="text-sm font-semibold text-red-600 dark:text-red-300">{errors.dates}</p> : null}
+        {errors.dates ? <p id={`${id}-dates`} role="alert" className="text-sm font-semibold text-red-700 dark:text-red-300">{errors.dates}</p> : null}
       </fieldset>
 
       <fieldset className="space-y-2">
@@ -119,7 +119,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
             />
           </label>
         ))}
-        {errors.children ? <p role="alert" className="text-sm font-semibold text-red-600 dark:text-red-300">{errors.children}</p> : null}
+        {errors.children ? <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-300">{errors.children}</p> : null}
       </fieldset>
 
       <fieldset className="space-y-2">
@@ -135,7 +135,7 @@ export function QuestionsCard({ prefill, today, onSubmit, title = "Before I draf
           Somewhere else
           <input value={other} maxLength={60} onChange={(e) => setOther(e.target.value)} placeholder="Type a city" className={field} aria-invalid={Boolean(errors.origin)} />
         </label>
-        {errors.origin ? <p role="alert" className="text-sm font-semibold text-red-600 dark:text-red-300">{errors.origin}</p> : null}
+        {errors.origin ? <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-300">{errors.origin}</p> : null}
       </fieldset>
 
       <Button type="submit" className="w-full">
