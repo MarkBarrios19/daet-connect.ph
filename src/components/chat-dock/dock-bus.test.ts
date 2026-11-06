@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { DOCK_BUSY_EVENT, dockClose, dockMinimize, dockOpen, setDockBusy } from "@/components/chat-dock/dock-bus";
+import { DOCK_BUSY_EVENT, dockClose, dockMinimize, dockOpen, markRead, setDockBusy, unreadAfterReply } from "@/components/chat-dock/dock-bus";
 
 describe("chat dock", () => {
   it("keeps two chats open, newest first, and folds older ones into heads", () => {
@@ -29,5 +29,16 @@ describe("chat dock", () => {
     expect(s).toEqual({ open: ["b"], heads: ["a", "c"] });
     s = dockClose(s, "a");
     expect(s).toEqual({ open: ["b"], heads: ["c"] });
+  });
+});
+
+describe("assistant unread dot", () => {
+  it("marks the assistant unread only when its window is not open", () => {
+    expect(unreadAfterReply([], [])).toEqual(["ai"]);
+    expect(unreadAfterReply(["ai"], [])).toEqual([]);
+  });
+  it("does not duplicate and clears on read", () => {
+    expect(unreadAfterReply([], ["ai"])).toEqual(["ai"]);
+    expect(markRead(["ai", "x"], "ai")).toEqual(["x"]);
   });
 });

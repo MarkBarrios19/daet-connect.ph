@@ -1,14 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { dockThread, type DockThread } from "@/app/(subsystems)/tours/messages/actions";
 import { AssistantPane } from "@/components/assistant/assistant-pane";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { LineIcon } from "@/components/ui/icons";
 import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
-import { dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, setDockActive, setDockBusy } from "@/components/chat-dock/dock-bus";
+import { ASSISTANT_REPLY_EVENT, dockClose, dockMinimize, dockOpen, DOCK_OPEN_EVENT, markRead, setDockActive, setDockBusy, unreadAfterReply } from "@/components/chat-dock/dock-bus";
 
 const STORAGE_KEY = "daet-dock-v1";
 const WIDE = "(min-width: 1024px)";
@@ -35,6 +35,10 @@ export function ChatDock() {
   const onMessages = pathname.startsWith("/tours/messages");
   const [wide, setWide] = useState(false);
   const [state, setState] = useState<DockState>(EMPTY);
+  const [unread, setUnread] = useState<string[]>([]);
+  // Read through a ref so the reply listener sees which windows are open now.
+  const openRef = useRef<string[]>([]);
+  openRef.current = state.open;
 
   useEffect(() => {
     const media = window.matchMedia(WIDE);
@@ -68,6 +72,16 @@ export function ChatDock() {
       // Storage blocked: the dock still works for this page.
     }
   }, [state]);
+
+  useEffect(() => {
+    const onReply = () => setUnread((list) => unreadAfterReply(openRef.current, list));
+    window.addEventListener(ASSISTANT_REPLY_EVENT, onReply);
+    return () => window.removeEventListener(ASSISTANT_REPLY_EVENT, onReply);
+  }, []);
+  // A chat that is on screen is read.
+  useEffect(() => {
+    setUnread((list) => state.open.reduce((acc, id) => markRead(acc, id), list));
+  }, [state.open]);
 
   useEffect(() => {
     const onOpen = (event: Event) => {
@@ -108,11 +122,12 @@ export function ChatDock() {
               <button
                 type="button"
                 onClick={() => setState((s) => ({ ...s, ...dockOpen(s, id) }))}
-                aria-label={`Open chat: ${title(id)}`}
+                aria-label={`Open chat: ${title(id)}${unread.includes(id) ? " (new reply)" : ""}`}
                 title={title(id)}
                 className="grid h-12 w-12 place-items-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-lg font-bold text-blue-800 dark:text-blue-300 shadow-[var(--shadow-float)] transition hover:scale-105"
               >
                 {id === "ai" ? <AiAvatar /> : title(id).slice(0, 1).toUpperCase()}
+                {unread.includes(id) ? <span aria-hidden="true" className="absolute right-0 top-0 h-3.5 w-3.5 rounded-full border-2 border-surface bg-red-600" /> : null}
               </button>
               <button
                 type="button"

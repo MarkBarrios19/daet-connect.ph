@@ -14,6 +14,7 @@ import { ASSISTANT_NAME } from "@/lib/tours/assistant/name";
 import { pageSuggestions, tripDays, type MissingInput, type TripContext } from "@/lib/tours/assistant/context";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import type { ChatActions } from "@/components/assistant/chat-actions";
+import { announceAssistantReply } from "@/components/chat-dock/dock-bus";
 import { AiAvatar } from "@/components/chat/ai-avatar";
 import { bubbleRadius, bubbleShape } from "@/lib/tours/assistant/bubble-groups";
 import { QuestionsCard } from "@/components/assistant/questions-card";
@@ -296,6 +297,7 @@ export function AssistantChat({
       const final = [...history, reply];
       setTurns(final);
       remember(final);
+      announceAssistantReply();
     } catch {
       setTurns(history);
       remember(history);
