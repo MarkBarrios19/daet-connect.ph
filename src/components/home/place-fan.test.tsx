@@ -408,16 +408,16 @@ describe("PlaceFan opening a place", () => {
     }
 
     // Both photos really travel, and in opposite directions: next swipes in from
-    // the left, pushing the one it replaces out to the right.
-    const moving = frames.filter((frame) => frame.incoming < -1 && frame.outgoing > 1);
+    // the right, pushing the one it replaces out to the left.
+    const moving = frames.filter((frame) => frame.incoming > 1 && frame.outgoing < -1);
     // Two photos on the move, and in step with each other.
     expect(moving.length).toBeGreaterThan(0);
 
-    // Their edges meet at every frame — the incoming photo's right edge is the
-    // outgoing photo's left edge — so the pair covers the hero end to end, with no
+    // Their edges meet at every frame — the incoming photo's left edge is the
+    // outgoing photo's right edge — so the pair covers the hero end to end, with no
     // strip of the page's own ground between them at any moment.
     moving.forEach((frame) => {
-      expect(Math.abs(100 + frame.incoming - frame.outgoing)).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(frame.incoming - 100 - frame.outgoing)).toBeLessThanOrEqual(0.5);
     });
 
     // …and both keep the hero's own shape all the way. A wedge that fell back to

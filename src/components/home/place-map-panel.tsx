@@ -276,10 +276,10 @@ export function PlaceMapPanel({
             // its position over the pin is measured from its own box, and a card
             // built again would have to be measured and placed a second time —
             // on a map that may not have moved since.
-            data-open={cardOpen ? "true" : "false"}
+            data-open={cardOpen && !showAll ? "true" : "false"}
             aria-hidden="true"
             className={`pointer-events-none absolute z-[800] w-52 origin-bottom transition-[opacity,scale] duration-200 ease-out ${
-              cardOpen ? "" : "scale-90 opacity-0"
+              cardOpen && !showAll ? "" : "scale-90 opacity-0"
             }`}
             style={{ left: "0.75rem", top: "0.75rem" }}
           >
