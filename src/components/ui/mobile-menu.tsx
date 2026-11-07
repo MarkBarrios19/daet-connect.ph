@@ -62,6 +62,14 @@ export function MobileMenu({ groups, showTheme = true }: { groups: Array<{ label
           <LineIcon name="close" className="absolute inset-0 h-6 w-6 -rotate-90 scale-50 opacity-0 transition-[opacity,rotate,scale] duration-200 ease-out group-open:rotate-0 group-open:scale-100 group-open:opacity-100" />
         </span>
       </summary>
+      {/* Tapping the dimmed page behind the sheet closes it. */}
+      <div
+        aria-hidden="true"
+        onClick={() => {
+          if (ref.current) ref.current.open = false;
+        }}
+        className="fixed inset-0 z-40 hidden bg-black/30 group-open:block"
+      />
       <nav
         ref={sheetRef}
         aria-label="Menu"
