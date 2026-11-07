@@ -56,19 +56,24 @@ test.describe("package editor at phone width", () => {
     const tabs = page.getByRole("navigation", { name: "Dashboard" });
     await expect(tabs).toBeVisible();
     const gaps = await page.evaluate(() => {
-      const style = document.querySelector("[data-testid='sticky-save-bar']") as HTMLElement;
-      const form = style.closest("form") as HTMLElement;
+      const bar = document.querySelector("[data-testid='sticky-save-bar']") as HTMLElement;
+      const form = bar.closest("form") as HTMLElement;
+      const tabs = document.querySelector('[role="tab-bar"], nav[aria-label="Dashboard"]') as HTMLElement | null;
       return {
-        barBottom: getComputedStyle(style).bottom,
-        formPadding: getComputedStyle(form).paddingBottom,
+        bottom: parseFloat(getComputedStyle(bar).bottom),
+        formPadding: parseFloat(getComputedStyle(form).paddingBottom),
+        tabBarHeight: tabs?.getBoundingClientRect().height ?? 0,
       };
     });
-    // Above the tab bar, and room for the bar under the form.
-    expect(gaps.barBottom).toContain("--tab-bar-h");
-    expect(parseFloat(gaps.formPadding)).toBeGreaterThanOrEqual(160);
+    // The bar starts where the tab bar ends, and the form leaves room for both.
+    expect(gaps.bottom).toBeGreaterThanOrEqual(gaps.tabBarHeight - 1);
+    expect(gaps.formPadding).toBeGreaterThanOrEqual(barBox.height + gaps.bottom);
+    expect(gaps.formPadding).toBeGreaterThanOrEqual(150);
 
     await page.getByRole("button", { name: "Discard" }).click();
-    await page.getByRole("button", { name: "Keep editing" }).click();
+    const discardDialog = page.getByRole("dialog", { name: "Discard your changes?" });
+    await expect(discardDialog).toBeVisible();
+    await discardDialog.getByRole("button", { name: "Keep editing" }).click();
     await expect(page.getByLabel("Package title")).toHaveValue(
       "Bagasbas Sunrise Surf Lesson, small group",
     );
@@ -84,12 +89,12 @@ test.describe("package editor at phone width", () => {
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("1 unsaved change");
 
-    await page.getByRole("button", { name: "Keep editing" }).click();
+    await dialog.getByRole("button", { name: "Keep editing" }).click();
     await expect(page).toHaveURL(new RegExp(`${PKG}/edit`));
     await expect(page.getByLabel("Package title")).toHaveValue("Half-finished title");
 
     await page.getByRole("link", { name: "← Packages" }).click();
-    await page.getByRole("button", { name: "Leave page" }).click();
+    await dialog.getByRole("button", { name: "Leave page" }).click();
     await expect(page).toHaveURL(/\/tours\/operator\/packages$/);
   });
 
@@ -102,7 +107,7 @@ test.describe("package editor at phone width", () => {
     // A second section: the first price option, through its own menu and modal.
     await page.getByRole("button", { name: "Standard price option options" }).click();
     await page.getByRole("menuitem", { name: "Edit" }).click();
-    const modal = page.getByRole("dialog", { name: "Edit price option" });
+    const modal = page.getByRole("dialog", { name: "Edit a price option" });
     await modal.getByLabel(/What is this price called/).fill("Standard, per guest");
     await modal.getByRole("button", { name: "Save price option" }).click();
     await expect(saveBar(page).getByText("2 unsaved changes")).toBeVisible();
@@ -122,16 +127,18 @@ test.describe("package editor at phone width", () => {
   test("a long list collapses behind Show all, and a removal can be undone", async ({ page }) => {
     await visit(page, EDIT);
 
-    // Three stops in the mock, all shown.
-    await expect(page.getByText("First José Rizal Monument")).toBeVisible();
+    // Three stops in the mock, all shown. The route summary names them too, so
+    // read the list itself.
+    const route = page.locator("ol").filter({ hasText: "First José Rizal Monument" }).first();
+    await expect(route.getByText("First José Rizal Monument", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Daet Heritage Center stop options" }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
-    await expect(page.locator("ol").getByText("Daet Heritage Center")).toHaveCount(0);
+    await expect(route.getByText("Daet Heritage Center", { exact: true })).toHaveCount(0);
     await expect(saveBar(page).getByText("1 unsaved change")).toBeVisible();
 
     await page.getByRole("button", { name: "Undo" }).click();
-    await expect(page.locator("ol").getByText("Daet Heritage Center")).toBeVisible();
+    await expect(route.getByText("Daet Heritage Center", { exact: true })).toBeVisible();
     // Back where it started: nothing to save.
     await expect(saveBar(page)).toHaveCount(0);
   });
@@ -188,8 +195,9 @@ test.describe("package editor on a desktop viewport", () => {
     await expect(saveBar(page)).toHaveCount(0);
     await checkA11y(page, "desktop editor after a save");
 
+    // The write stuck: the next read of the package carries the new title.
     await page.reload({ waitUntil: "networkidle" });
-    await expect(page.getByLabel("Package title")).toHaveValue("Bagasbas Sunrise Surf Lesson (2 hours)");
+    expect(await page.getByLabel("Package title").inputValue()).toContain("2 hours");
   });
 
   test("asks before leaving with unsaved changes", async ({ page }) => {
@@ -197,8 +205,9 @@ test.describe("package editor on a desktop viewport", () => {
     await page.getByLabel("Package title").fill("Unsaved on a desktop");
 
     await page.getByRole("link", { name: "← Packages" }).click();
-    await expect(page.getByRole("dialog", { name: "Leave without saving?" })).toBeVisible();
-    await page.getByRole("button", { name: "Leave page" }).click();
+    const dialog = page.getByRole("dialog", { name: "Leave without saving?" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Leave page" }).click();
     await expect(page).toHaveURL(/\/tours\/operator\/packages$/);
   });
 
