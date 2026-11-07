@@ -1,4 +1,5 @@
 import "server-only";
+import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/tours/server-auth";
 import type { NotificationRow } from "@/lib/tours/notifications";
@@ -12,7 +13,11 @@ const SELECT = "id, type, title, body, link, read_at, created_at";
  * server so the header bell never depends on the browser holding a session.
  * Returns null when nobody is signed in or the lookup fails.
  */
-export async function loadNotifications(): Promise<LoadedNotifications | null> {
+export function loadNotifications(): Promise<LoadedNotifications | null> {
+  return timed("notifications", readNotifications);
+}
+
+async function readNotifications(): Promise<LoadedNotifications | null> {
   try {
     const user = await getAuthUser();
     if (!user) return null;

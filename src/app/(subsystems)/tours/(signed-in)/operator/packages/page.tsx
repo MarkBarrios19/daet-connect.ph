@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { LineIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PageFrame } from "@/components/ui/page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
 import { Notice } from "@/components/ui/notice";
 import { canAccessOperatorDashboard } from "@/lib/tours/operator-access";
 import {
@@ -9,87 +10,24 @@ import {
   OPERATOR_TABLE,
   OPERATOR_USER_ID_COLUMN,
 } from "@/lib/tours/operator-contract";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession, getAuthUser } from "@/lib/tours/server-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { listOperatorPackages } from "./actions";
+import { timed } from "@/lib/server-timing";
+import { listOperatorPackages } from "@/app/(subsystems)/tours/operator/packages/actions";
 
 
 type SearchParams = Promise<{ submitted?: string }>;
 
-export default async function OperatorPackagesPage({
+export default function OperatorPackagesPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  if (!isSupabaseConfigured()) {
-    return (
-      <PageFrame>
-        <Notice variant="warning" title="Supabase setup needed">
-          Configure Supabase before managing packages.
-        </Notice>
-      </PageFrame>
-    );
-  }
-
-  let session;
-  try {
-    session = await getAuthenticatedSession();
-  } catch {
-    session = { user: null, role: null, error: "Supabase could not be reached." };
-  }
-
-  if (!session.user)
-    redirect(`/login?next=${encodeURIComponent("/tours/operator/packages")}`);
-
-  if (session.error || !session.role) {
-    return (
-      <PageFrame>
-        <Notice variant="error" title="Account verification failed">
-          {session.error ?? "Your role could not be verified."}
-        </Notice>
-      </PageFrame>
-    );
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data: operator, error } = await supabase
-    .from("tours_operators")
-    .select("id, accreditation_status")
-    .eq("profile_id", session.user.id)
-    .maybeSingle();
-
-  if (error || !operator) {
-    return (
-      <PageFrame>
-        <Notice variant="error" title="Could not verify accreditation">
-          Your operator status could not be checked.
-        </Notice>
-      </PageFrame>
-    );
-  }
-
-  if (operator.accreditation_status !== "approved") redirect("/tours/operator/pending");
-  if (!canAccessOperatorDashboard(session.role, operator.accreditation_status)) {
-    return (
-      <PageFrame>
-        <Notice variant="error" title="Access denied">
-          Your accreditation and account role do not match.
-        </Notice>
-      </PageFrame>
-    );
-  }
-
-  const packagesResult = await listOperatorPackages();
-  const packages = packagesResult.success ? packagesResult.data : [];
-
-
-  const params = await searchParams;
-  const justSubmitted = params.submitted === "true";
-
+  // The heading and the Create button are the same for everyone, so they are in
+  // the prerendered shell; the list waits for the operator.
   return (
-    <PageFrame>
-      
+    <PageBody>
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
           <div className="flex-1">
@@ -107,7 +45,101 @@ export default async function OperatorPackagesPage({
             </Link>
           </div>
         </div>
+        <Suspense fallback={<PackagesSkeleton />}>
+          <PackagesContent searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </PageBody>
+  );
+}
 
+function PackagesSkeleton() {
+  return (
+    <div aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading your packages
+      </p>
+      <div aria-hidden="true" className="mt-8 grid animate-pulse gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="overflow-hidden rounded-2xl card-edge bg-surface">
+            <div className="aspect-video bg-daet-ink/10" />
+            <div className="space-y-3 p-5">
+              <div className="h-5 w-2/3 rounded-full bg-daet-ink/10" />
+              <div className="h-4 w-1/2 rounded-full bg-daet-ink/10" />
+              <div className="h-10 rounded-full bg-daet-ink/10" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function PackagesContent({ searchParams }: { searchParams: SearchParams }) {
+  if (!isSupabaseConfigured()) {
+    return (
+      <Notice variant="warning" title="Supabase setup needed">
+          Configure Supabase before managing packages.
+        </Notice>
+    );
+  }
+
+  let session;
+  let operatorRow;
+  try {
+    // The role and the operator row both need only the user, so they run together.
+    const user = await getAuthUser();
+    const supabase = await createSupabaseServerClient();
+    [session, operatorRow] = await Promise.all([
+      getAuthenticatedSession(),
+      user
+        ? supabase.from("tours_operators").select("id, accreditation_status").eq("profile_id", user.id).maybeSingle()
+        : Promise.resolve(null),
+    ]);
+  } catch {
+    session = { user: null, role: null, error: "Supabase could not be reached." };
+    operatorRow = null;
+  }
+
+  if (!session.user)
+    redirect(`/login?next=${encodeURIComponent("/tours/operator/packages")}`);
+
+  if (session.error || !session.role) {
+    return (
+      <Notice variant="error" title="Account verification failed">
+        {session.error ?? "Your role could not be verified."}
+      </Notice>
+    );
+  }
+
+  const { data: operator, error } = operatorRow ?? { data: null, error: null };
+
+  if (error || !operator) {
+    return (
+      <Notice variant="error" title="Could not verify accreditation">
+          Your operator status could not be checked.
+        </Notice>
+    );
+  }
+
+  if (operator.accreditation_status !== "approved") redirect("/tours/operator/pending");
+  if (!canAccessOperatorDashboard(session.role, operator.accreditation_status)) {
+    return (
+      <Notice variant="error" title="Access denied">
+          Your accreditation and account role do not match.
+        </Notice>
+    );
+  }
+
+  const packagesResult = await timed("page:packages", () => listOperatorPackages());
+  const packages = packagesResult.success ? packagesResult.data : [];
+
+
+  const params = await searchParams;
+  const justSubmitted = params.submitted === "true";
+
+  return (
+    <>
         {justSubmitted && (
           <Notice variant="success" className="mt-6">
             Package submitted for Tourism Office review! You'll be notified once it's approved.
@@ -192,7 +224,6 @@ export default async function OperatorPackagesPage({
             ))}
           </div>
         )}
-      </div>
-    </PageFrame>
+    </>
   );
 }
