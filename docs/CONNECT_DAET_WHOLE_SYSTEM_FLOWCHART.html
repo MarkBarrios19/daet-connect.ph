@@ -1,93 +1,83 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CONNECT-DAET — Complete System Flowchart</title>
 <style>
 :root{color-scheme:light;--ink:#16324f;--muted:#526579;--line:#d8e0e8;--bg:#f3f6fa}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:#1f2937;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}header{background:#16324f;color:#fff;padding:24px clamp(16px,4vw,56px);box-shadow:0 3px 12px #0f172a22}header h1{margin:0 0 4px;font-size:clamp(24px,3vw,36px)}header p{margin:0;color:#dbeafe}nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}nav a{color:#16324f;background:#fff;padding:7px 12px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:700}nav a:hover{background:#dbeafe}main{max-width:1800px;margin:24px auto;padding:0 18px 50px}.legend{display:flex;flex-wrap:wrap;gap:10px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:18px;color:var(--muted);font-size:14px}.legend span{white-space:nowrap}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 4px 18px #0f172a0c;scroll-margin-top:12px}.panel h2{color:var(--ink);margin:0 0 12px;font-size:22px}.diagram-frame{width:100%;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}.diagram-svg{display:block;width:100%;height:auto;min-width:900px}.page-title{font:700 24px Arial,sans-serif;fill:#16324f}.connector{fill:none;stroke:#526579;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.node-label{font-family:Arial,sans-serif;fill:#1f2937;text-anchor:middle}.edge-label{font:12px Arial,sans-serif;fill:#334155;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font-size:13px}.print-button{margin-left:auto;border:0;border-radius:999px;padding:7px 14px;background:#16324f;color:#fff;font-weight:700;cursor:pointer}@media print{body{background:#fff}header{color:#000;background:#fff;box-shadow:none;border-bottom:2px solid #16324f}header p{color:#334155}nav,.print-button{display:none}.panel{break-after:page;box-shadow:none;border:0;padding:0}.panel h2{margin-top:8px}.diagram-frame{overflow:visible;border:0}.diagram-svg{min-width:0;width:100%}footer{display:none}}
-</style></head><body><header><h1>CONNECT-DAET.ph — Complete System Flowchart</h1><p>Self-contained HTML/SVG diagrams. Open this file directly in a browser; no Draw.io import or internet connection is required.</p><nav><a href="#flow-1">01 System Overview</a><a href="#flow-2">02 Booking and Payment</a><a href="#flow-3">03 Operator and Packages</a><a href="#flow-4">04 Guide Workflow</a><a href="#flow-5">05 Admin Workflow</a><a href="#flow-6">06 Other Modules and Services</a></nav></header><main><div class="legend"><span>🟢 Oval — Start / End</span><span>🔵 Rectangle — Process</span><span>🟡 Diamond — Decision</span><span>🟩 Cylinder — Database</span><span>🟥 Parallelogram — External service</span><button class="print-button" onclick="window.print()">Print / Save as PDF</button></div><section class="panel" id="flow-1"><h2>01 System Overview</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="01 System Overview" viewBox="0 0 1500 1380" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+</style></head><body><header><h1>CONNECT-DAET.ph — Complete System Flowchart</h1><p>Self-contained HTML/SVG diagrams. Open this file directly in a browser; no Draw.io import or internet connection is required.</p><nav><a href="#flow-1">01 System Overview</a><a href="#flow-2">02 Booking and Payment</a><a href="#flow-3">03 Operator and Packages</a><a href="#flow-4">04 Guide Workflow</a><a href="#flow-5">05 Admin Workflow</a><a href="#flow-6">06 Other Modules and Services</a></nav></header><main><div class="legend"><span>🟢 Oval — Start / End</span><span>🔵 Rectangle — Process</span><span>🟡 Diamond — Decision</span><span>🟩 Cylinder — Database</span><span>🟥 Parallelogram — External service</span><button class="print-button" onclick="window.print()">Print / Save as PDF</button></div><section class="panel" id="flow-1"><h2>01 System Overview</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="01 System Overview" viewBox="0 0 1300 1420" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
 <text x="42" y="50" class="page-title">1. Overall System and Role Routing</text>
-<path d="M 805 145 L 805 175" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 805 245 L 810 280" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 715 330 L 540 330 L 540 467.5 L 365 467.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="536" y="398.75" class="edge-label">No</text>
-<path d="M 210 515 L 210 555" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 210 655 L 210 682.5 L 155 682.5 L 155 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 650 140 L 650 170" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 650 240 L 650 280" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 565 330 L 482.5 330 L 482.5 467.5 L 400 467.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="478.5" y="398.75" class="edge-label">No</text>
+<path d="M 220 515 L 220 555" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 220 655 L 220 682.5 L 145 682.5 L 145 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <text x="182.5" y="676.5" class="edge-label">No</text>
-<path d="M 305 605 L 465 605 L 465 457.5 L 625 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="461" y="531.25" class="edge-label">Yes</text>
-<path d="M 810 380 L 805 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="822" y="545" class="edge-label">Yes</text>
-<path d="M 805 495 L 805 550" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 900 600 L 1010 602.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="955" y="593" class="edge-label">No</text>
-<path d="M 1010 602.5 L 997.5 602.5 L 997.5 457.5 L 985 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 805 650 L 805 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="817" y="680" class="edge-label">Yes</text>
-<path d="M 805 790 L 810 835" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 720 885 L 537.5 885 L 537.5 1077.5 L 355 1077.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="533.5" y="981.25" class="edge-label">Tourist</text>
-<path d="M 720 885 L 715 885 L 715 1077.5 L 710 1077.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="711" y="981.25" class="edge-label">Operator</text>
-<path d="M 810 935 L 810 975 L 900 975 L 900 1015" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="855" y="969" class="edge-label">Guide</text>
-<path d="M 900 885 L 995 885 L 995 1077.5 L 1090 1077.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="991" y="981.25" class="edge-label">Admin</text>
-<path d="M 210 515 L 210 852.5 L 750 852.5 L 750 1190" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 355 1077.5 L 440 1077.5 L 440 1242.5 L 525 1242.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 545 1140 L 545 1165 L 750 1165 L 750 1190" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 900 1140 L 900 1165 L 750 1165 L 750 1190" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<path d="M 1090 1077.5 L 1032.5 1077.5 L 1032.5 1242.5 L 975 1242.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<ellipse cx="805" cy="115" rx="125" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="805" y="108.56" class="node-label" font-size="14">START</text>
-<text x="805" y="126.48" class="node-label" font-size="14">Open CONNECT-DAET</text>
-<rect x="635" y="175" width="340" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="805" y="204.02" class="node-label" font-size="13">Home page</text>
-<text x="805" y="220.66" class="node-label" font-size="13">Public tourism content</text>
-<rect x="715" y="280" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="810" y="324.02" class="node-label" font-size="13">Valid login</text>
-<text x="810" y="340.66" class="node-label" font-size="13">session?</text>
-<rect x="55" y="420" width="310" height="95" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="210" y="453.2" class="node-label" font-size="13">Browse public content</text>
-<text x="210" y="469.84" class="node-label" font-size="13">Tours • attractions • events</text>
-<text x="210" y="486.48" class="node-label" font-size="13">merchandise • FAQ</text>
-<rect x="115" y="555" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="210" y="599.02" class="node-label" font-size="13">Is the next action</text>
-<text x="210" y="615.66" class="node-label" font-size="13">restricted?</text>
-<ellipse cx="155" cy="740" rx="110" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="155" y="734.02" class="node-label" font-size="13">Continue browsing</text>
-<text x="155" y="750.66" class="node-label" font-size="13">or exit</text>
-<rect x="625" y="420" width="360" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="805" y="451.52" class="node-label" font-size="13">Sign up or log in</text>
-<text x="805" y="468.16" class="node-label" font-size="13">Email or Google</text>
-<rect x="710" y="550" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="805" y="594.02" class="node-label" font-size="13">Is the account</text>
-<text x="805" y="610.66" class="node-label" font-size="13">valid and verified?</text>
-<rect x="1010" y="565" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1150" y="596.52" class="node-label" font-size="13">Verify email,</text>
-<text x="1150" y="613.16" class="node-label" font-size="13">resend link or recover password</text>
-<rect x="625" y="710" width="360" height="80" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="805" y="744.02" class="node-label" font-size="13">Server verifies session,</text>
-<text x="805" y="760.66" class="node-label" font-size="13">profile role and accreditation</text>
-<rect x="720" y="835" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="810" y="887.34" class="node-label" font-size="13">Account role?</text>
-<rect x="25" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="190" y="1063.2" class="node-label" font-size="13">TOURIST</text>
-<text x="190" y="1079.84" class="node-label" font-size="13">Browse • bookings • trip planner</text>
-<text x="190" y="1096.48" class="node-label" font-size="13">messages • reviews • rewards • notifications</text>
-<rect x="380" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="545" y="1063.2" class="node-label" font-size="13">OPERATOR</text>
-<text x="545" y="1079.84" class="node-label" font-size="13">Application • package management</text>
-<text x="545" y="1096.48" class="node-label" font-size="13">availability • bookings • payments • guides</text>
-<rect x="735" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="900" y="1063.2" class="node-label" font-size="13">GUIDE</text>
-<text x="900" y="1079.84" class="node-label" font-size="13">Application • availability</text>
-<text x="900" y="1096.48" class="node-label" font-size="13">assigned tours • roster • QR check-in</text>
-<rect x="1090" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="1255" y="1063.2" class="node-label" font-size="13">ADMIN / Tourism Office</text>
-<text x="1255" y="1079.84" class="node-label" font-size="13">Approvals • public content • analytics</text>
-<text x="1255" y="1096.48" class="node-label" font-size="13">reviews • safety • feedback</text>
-<path d="M527,1200 C527,1190 973,1190 973,1200 L973,1285 C973,1295 527,1295 527,1285 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M527,1200 C527,1210 973,1210 973,1200" fill="none" stroke="#82b366" stroke-width="2"/>
-<text x="750" y="1228.2" class="node-label" font-size="13">SHARED DATA</text>
-<text x="750" y="1244.84" class="node-label" font-size="13">Supabase Auth • Postgres • RLS • RPCs</text>
-<text x="750" y="1261.48" class="node-label" font-size="13">Storage • Realtime</text>
+<path d="M 315 605 L 480 605 L 480 457.5 L 645 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="476" y="531.25" class="edge-label">Yes</text>
+<path d="M 650 380 L 650 700" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="662" y="540" class="edge-label">Yes</text>
+<path d="M 825 495 L 825 522.5 L 800 522.5 L 800 550" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 895 600 L 1000 602.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="947.5" y="593" class="edge-label">No</text>
+<path d="M 1000 602.5 L 1002.5 602.5 L 1002.5 457.5 L 1005 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 800 650 L 800 675 L 650 675 L 650 700" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="725" y="669" class="edge-label">Yes</text>
+<path d="M 650 780 L 650 830" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<path d="M 565 880 L 315 880 L 315 1040" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="440" y="872" class="edge-label">Tourist</text>
+<path d="M 735 880 L 985 880 L 985 1040" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="860" y="872" class="edge-label">Operator</text>
+<path d="M 565 880 L 15 880 L 15 1220 L 315 1220 L 315 1240" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="165" y="1212" class="edge-label">Guide</text>
+<path d="M 735 880 L 1285 880 L 1285 1220 L 985 1220 L 985 1240" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
+<text x="1135" y="1212" class="edge-label">Admin</text>
+<ellipse cx="650" cy="110" rx="125" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="650" y="103.56" class="node-label" font-size="14">START</text>
+<text x="650" y="121.48" class="node-label" font-size="14">Open CONNECT-DAET</text>
+<rect x="480" y="170" width="340" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="650" y="199.02" class="node-label" font-size="13">Home page</text>
+<text x="650" y="215.66" class="node-label" font-size="13">Public tourism content</text>
+<polygon points="650,280 735,330 650,380 565,330" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="650" y="324.02" class="node-label" font-size="13">Valid login</text>
+<text x="650" y="340.66" class="node-label" font-size="13">session?</text>
+<rect x="40" y="420" width="360" height="95" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+<text x="220" y="453.2" class="node-label" font-size="13">Browse public content</text>
+<text x="220" y="469.84" class="node-label" font-size="13">Tours • attractions • events</text>
+<text x="220" y="486.48" class="node-label" font-size="13">merchandise • FAQ</text>
+<polygon points="220,555 315,605 220,655 125,605" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="220" y="599.02" class="node-label" font-size="13">Is the next action</text>
+<text x="220" y="615.66" class="node-label" font-size="13">restricted?</text>
+<ellipse cx="145" cy="740" rx="110" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<text x="145" y="734.02" class="node-label" font-size="13">Continue browsing</text>
+<text x="145" y="750.66" class="node-label" font-size="13">or exit</text>
+<rect x="645" y="420" width="360" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="825" y="451.52" class="node-label" font-size="13">Sign up or log in</text>
+<text x="825" y="468.16" class="node-label" font-size="13">Email or Google</text>
+<polygon points="800,550 895,600 800,650 705,600" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="800" y="594.02" class="node-label" font-size="13">Is the account</text>
+<text x="800" y="610.66" class="node-label" font-size="13">valid and verified?</text>
+<rect x="1000" y="565" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="1130" y="596.52" class="node-label" font-size="13">Verify email,</text>
+<text x="1130" y="613.16" class="node-label" font-size="13">resend link or recover password</text>
+<rect x="470" y="700" width="360" height="80" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+<text x="650" y="734.02" class="node-label" font-size="13">Server verifies session,</text>
+<text x="650" y="750.66" class="node-label" font-size="13">profile role and accreditation</text>
+<polygon points="650,830 735,880 650,930 565,880" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<text x="650" y="882.34" class="node-label" font-size="13">Account role?</text>
+<rect x="40" y="1040" width="550" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+<text x="315" y="1088.2" class="node-label" font-size="13">TOURIST</text>
+<text x="315" y="1104.84" class="node-label" font-size="13">Browse • bookings • trip planner</text>
+<text x="315" y="1121.48" class="node-label" font-size="13">messages • reviews • rewards • notifications</text>
+<rect x="710" y="1040" width="550" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+<text x="985" y="1088.2" class="node-label" font-size="13">OPERATOR</text>
+<text x="985" y="1104.84" class="node-label" font-size="13">Application • package management</text>
+<text x="985" y="1121.48" class="node-label" font-size="13">availability • bookings • payments • guides</text>
+<rect x="40" y="1240" width="550" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+<text x="315" y="1288.2" class="node-label" font-size="13">GUIDE</text>
+<text x="315" y="1304.84" class="node-label" font-size="13">Application • availability</text>
+<text x="315" y="1321.48" class="node-label" font-size="13">assigned tours • roster • QR check-in</text>
+<rect x="710" y="1240" width="550" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+<text x="985" y="1288.2" class="node-label" font-size="13">ADMIN / Tourism Office</text>
+<text x="985" y="1304.84" class="node-label" font-size="13">Approvals • public content • analytics</text>
+<text x="985" y="1321.48" class="node-label" font-size="13">reviews • safety • feedback</text>
 </svg></div></section><section class="panel" id="flow-2"><h2>02 Booking and Payment</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="02 Booking and Payment" viewBox="0 0 1650 2460" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
 <text x="42" y="50" class="page-title">2. Tourist Booking, Payment, and Check-in</text>
 <path d="M 790 135 L 790 165" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
@@ -164,13 +154,13 @@
 <rect x="640" y="165" width="300" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="790" y="194.02" class="node-label" font-size="13">Browse and open</text>
 <text x="790" y="210.66" class="node-label" font-size="13">package details</text>
-<rect x="705" y="270" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,270 875,317.5 790,365 705,317.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="311.52" class="node-label" font-size="13">Is the package</text>
 <text x="790" y="328.16" class="node-label" font-size="13">published?</text>
 <rect x="1010" y="280" width="230" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="1125" y="306.52" class="node-label" font-size="13">Not available</text>
 <text x="1125" y="323.16" class="node-label" font-size="13">for booking</text>
-<rect x="705" y="400" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,400 875,447.5 790,495 705,447.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="441.52" class="node-label" font-size="13">Is the tourist</text>
 <text x="790" y="458.16" class="node-label" font-size="13">signed in?</text>
 <rect x="1010" y="415" width="240" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -184,7 +174,7 @@
 <text x="790" y="680.7" class="node-label" font-size="13">Server validates input</text>
 <text x="790" y="697.34" class="node-label" font-size="13">and reads the price</text>
 <text x="790" y="713.98" class="node-label" font-size="13">from the database</text>
-<rect x="705" y="780" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,780 875,827.5 790,875 705,827.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="829.84" class="node-label" font-size="13">Is the request valid?</text>
 <rect x="1010" y="795" width="240" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="1130" y="821.52" class="node-label" font-size="13">Show error;</text>
@@ -192,7 +182,7 @@
 <rect x="620" y="915" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="790" y="946.52" class="node-label" font-size="13">Database locks availability row</text>
 <text x="790" y="963.16" class="node-label" font-size="13">and checks remaining capacity</text>
-<rect x="705" y="1030" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,1030 875,1077.5 790,1125 705,1077.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="1071.52" class="node-label" font-size="13">Are enough</text>
 <text x="790" y="1088.16" class="node-label" font-size="13">seats available?</text>
 <rect x="1010" y="1045" width="240" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -201,7 +191,7 @@
 <rect x="620" y="1165" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="790" y="1196.52" class="node-label" font-size="13">Create pending booking;</text>
 <text x="790" y="1213.16" class="node-label" font-size="13">reserve capacity safely</text>
-<rect x="705" y="1280" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,1280 875,1330 790,1380 705,1330" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="1324.02" class="node-label" font-size="13">Operator reviews:</text>
 <text x="790" y="1340.66" class="node-label" font-size="13">confirm or decline</text>
 <rect x="1010" y="1295" width="240" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -213,7 +203,7 @@
 <rect x="230" y="1535" width="250" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="355" y="1564.02" class="node-label" font-size="13">Show signed</text>
 <text x="355" y="1580.66" class="node-label" font-size="13">booking QR ticket</text>
-<rect x="700" y="1530" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,1530 880,1580 790,1630 700,1580" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="1574.02" class="node-label" font-size="13">Choose a payment</text>
 <text x="790" y="1590.66" class="node-label" font-size="13">method</text>
 <rect x="1110" y="1545" width="280" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -232,7 +222,7 @@
 <rect x="310" y="1980" width="300" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="460" y="2011.52" class="node-label" font-size="13">Webhook verifies signature</text>
 <text x="460" y="2028.16" class="node-label" font-size="13">and re-fetches checkout status</text>
-<rect x="375" y="2100" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="460,2100 545,2147.5 460,2195 375,2147.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="460" y="2141.52" class="node-label" font-size="13">Verified and</text>
 <text x="460" y="2158.16" class="node-label" font-size="13">successful?</text>
 <rect x="70" y="2120" width="230" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -244,7 +234,7 @@
 <rect x="855" y="1880" width="270" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="990" y="1909.02" class="node-label" font-size="13">Operator reviews</text>
 <text x="990" y="1925.66" class="node-label" font-size="13">payment proof</text>
-<rect x="905" y="1990" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="990,1990 1075,2037.5 990,2085 905,2037.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="990" y="2031.52" class="node-label" font-size="13">Was the proof</text>
 <text x="990" y="2048.16" class="node-label" font-size="13">approved?</text>
 <rect x="1160" y="2005" width="220" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -259,7 +249,7 @@
 <rect x="1100" y="1785" width="300" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="1250" y="1814.02" class="node-label" font-size="13">Scan QR or</text>
 <text x="1250" y="1830.66" class="node-label" font-size="13">use guest roster</text>
-<rect x="1160" y="1890" width="180" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="1250,1890 1340,1942.5 1250,1995 1160,1942.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="1250" y="1936.52" class="node-label" font-size="13">Are ticket, booking,</text>
 <text x="1250" y="1953.16" class="node-label" font-size="13">date and guide valid?</text>
 <rect x="1390" y="1910" width="210" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -335,7 +325,7 @@
 <ellipse cx="210" cy="117.5" rx="135" ry="32.5" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="210" y="111.06" class="node-label" font-size="14">START</text>
 <text x="210" y="128.98" class="node-label" font-size="14">Operator applicant logs in</text>
-<rect x="110" y="205" width="200" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="210,205 310,257.5 210,310 110,257.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="210" y="251.52" class="node-label" font-size="13">Accreditation</text>
 <text x="210" y="268.16" class="node-label" font-size="13">status?</text>
 <rect x="80" y="365" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -344,7 +334,7 @@
 <rect x="80" y="480" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="210" y="511.52" class="node-label" font-size="13">Tourism Office</text>
 <text x="210" y="528.16" class="node-label" font-size="13">reviews application</text>
-<rect x="120" y="595" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="210,595 300,645 210,695 120,645" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="210" y="647.34" class="node-label" font-size="13">Approve?</text>
 <rect x="380" y="610" width="250" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="505" y="639.02" class="node-label" font-size="13">Record reason;</text>
@@ -357,7 +347,7 @@
 <rect x="700" y="350" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="845" y="379.02" class="node-label" font-size="13">Create package</text>
 <text x="845" y="395.66" class="node-label" font-size="13">as a draft</text>
-<rect x="760" y="465" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="845,465 930,515 845,565 760,515" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="845" y="509.02" class="node-label" font-size="13">Complete and</text>
 <text x="845" y="525.66" class="node-label" font-size="13">valid?</text>
 <rect x="1050" y="470" width="300" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -372,7 +362,7 @@
 <rect x="700" y="820" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="845" y="849.02" class="node-label" font-size="13">Admin reviews</text>
 <text x="845" y="865.66" class="node-label" font-size="13">package</text>
-<rect x="760" y="930" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="845,930 930,980 845,1030 760,980" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="845" y="982.34" class="node-label" font-size="13">Publish?</text>
 <rect x="1050" y="945" width="260" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="1180" y="974.02" class="node-label" font-size="13">rejected</text>
@@ -380,7 +370,7 @@
 <rect x="700" y="1070" width="290" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="845" y="1099.02" class="node-label" font-size="13">published</text>
 <text x="845" y="1115.66" class="node-label" font-size="13">Public and bookable</text>
-<rect x="760" y="1180" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="845,1180 930,1230 845,1280 760,1230" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="845" y="1224.02" class="node-label" font-size="13">Any package</text>
 <text x="845" y="1240.66" class="node-label" font-size="13">changes?</text>
 <rect x="1060" y="1190" width="300" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -391,7 +381,7 @@
 <text x="1210" y="1350.7" class="node-label" font-size="13">Server/database checks:</text>
 <text x="1210" y="1367.34" class="node-label" font-size="13">ownership • validation • version</text>
 <text x="1210" y="1383.98" class="node-label" font-size="13">booked-price safeguards</text>
-<rect x="1125" y="1450" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="1210,1450 1295,1500 1210,1550 1125,1500" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="1210" y="1494.02" class="node-label" font-size="13">Is the save valid</text>
 <text x="1210" y="1510.66" class="node-label" font-size="13">and safe?</text>
 <rect x="1370" y="1470" width="220" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -460,7 +450,7 @@
 <rect x="590" y="420" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="760" y="451.52" class="node-label" font-size="13">Tourism Office reviews</text>
 <text x="760" y="468.16" class="node-label" font-size="13">guide application</text>
-<rect x="665" y="535" width="190" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="760,535 855,587.5 760,640 665,587.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="760" y="589.84" class="node-label" font-size="13">Approve the guide?</text>
 <rect x="940" y="550" width="310" height="75" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="1095" y="581.52" class="node-label" font-size="13">Rejected: show reviewer notes;</text>
@@ -478,7 +468,7 @@
 <text x="760" y="1080.66" class="node-label" font-size="13">of the assignment</text>
 <rect x="590" y="1145" width="340" height="65" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="760" y="1179.84" class="node-label" font-size="13">Confirmed tour date</text>
-<rect x="675" y="1250" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="760,1250 845,1300 760,1350 675,1300" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="760" y="1302.34" class="node-label" font-size="13">Check-in method?</text>
 <rect x="370" y="1390" width="260" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="500" y="1424.84" class="node-label" font-size="13">Scan booking QR</text>
@@ -489,7 +479,7 @@
 <text x="760" y="1540.7" class="node-label" font-size="13">Verify signed token, expiry,</text>
 <text x="760" y="1557.34" class="node-label" font-size="13">booking status, tour date</text>
 <text x="760" y="1573.98" class="node-label" font-size="13">and guide assignment</text>
-<rect x="665" y="1640" width="190" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="760,1640 855,1692.5 760,1745 665,1692.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="760" y="1686.52" class="node-label" font-size="13">Do all checks</text>
 <text x="760" y="1703.16" class="node-label" font-size="13">pass?</text>
 <rect x="940" y="1660" width="300" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -548,7 +538,7 @@
 <ellipse cx="780" cy="100" rx="130" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="780" y="93.56" class="node-label" font-size="14">START</text>
 <text x="780" y="111.48" class="node-label" font-size="14">Admin logs in</text>
-<rect x="700" y="175" width="160" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="780,175 860,225 780,275 700,225" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="780" y="219.02" class="node-label" font-size="13">Admin role</text>
 <text x="780" y="235.66" class="node-label" font-size="13">verified?</text>
 <rect x="1000" y="190" width="220" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -556,7 +546,7 @@
 <rect x="620" y="325" width="320" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="780" y="356.52" class="node-label" font-size="13">Admin dashboard</text>
 <text x="780" y="373.16" class="node-label" font-size="13">Analytics and quick actions</text>
-<rect x="700" y="450" width="160" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="780,450 860,502.5 780,555 700,502.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="780" y="504.84" class="node-label" font-size="13">Which admin task?</text>
 <rect x="80" y="640" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="210" y="671.52" class="node-label" font-size="13">Review operator</text>
@@ -580,7 +570,7 @@
 <rect x="760" y="820" width="260" height="80" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="890" y="854.02" class="node-label" font-size="13">Hide abusive reviews</text>
 <text x="890" y="870.66" class="node-label" font-size="13">with a reason</text>
-<rect x="700" y="980" width="180" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="790,980 880,1032.5 790,1085 700,1032.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="790" y="1034.84" class="node-label" font-size="13">Approve or reject?</text>
 <rect x="420" y="1160" width="290" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="565" y="1191.52" class="node-label" font-size="13">Update status / publish;</text>
@@ -667,7 +657,7 @@
 <rect x="475" y="440" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="615" y="471.52" class="node-label" font-size="13">Validate budget, opening hours,</text>
 <text x="615" y="488.16" class="node-label" font-size="13">overlaps and travel</text>
-<rect x="535" y="555" width="160" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="615,555 695,602.5 615,650 535,602.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="615" y="604.84" class="node-label" font-size="13">Is the plan valid?</text>
 <rect x="770" y="570" width="220" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="880" y="604.84" class="node-label" font-size="13">Adjust or regenerate</text>
@@ -681,7 +671,7 @@
 <rect x="885" y="315" width="280" height="85" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="1025" y="351.52" class="node-label" font-size="13">Read-only access to public data</text>
 <text x="1025" y="368.16" class="node-label" font-size="13">and the user's permitted booking data</text>
-<rect x="940" y="445" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="1025,445 1110,492.5 1025,540 940,492.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="1025" y="486.52" class="node-label" font-size="13">AI provider</text>
 <text x="1025" y="503.16" class="node-label" font-size="13">configured?</text>
 <polygon points="824,590 1030,590 1006,655 800,655" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -716,7 +706,7 @@
 <rect x="180" y="1230" width="260" height="70" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="310" y="1259.02" class="node-label" font-size="13">In-app Realtime</text>
 <text x="310" y="1275.66" class="node-label" font-size="13">notification bell</text>
-<rect x="620" y="1220" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+<polygon points="705,1220 790,1267.5 705,1315 620,1267.5" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="705" y="1261.52" class="node-label" font-size="13">Opted in</text>
 <text x="705" y="1278.16" class="node-label" font-size="13">to push?</text>
 <polygon points="874,1235 1100,1235 1076,1300 850,1300" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>

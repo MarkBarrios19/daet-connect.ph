@@ -1,60 +1,57 @@
 <?xml version='1.0' encoding='utf-8'?>
 <mxfile host="app.diagrams.net" modified="2026-11-07T16:05:54Z" agent="Arena.ai" version="24.7.17" type="device">
   <diagram id="connect-daet-page-1" name="01 System Overview">
-    <mxGraphModel dx="1500" dy="1380" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1380" math="0" shadow="0">
+    <mxGraphModel dx="1300" dy="1420" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1420" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="p1_title" value="1. Overall System and Role Routing" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1420" height="48" as="geometry" />
+          <mxGeometry x="40" y="18" width="1220" height="48" as="geometry" />
         </mxCell>
         <mxCell id="p1_start" value="START&lt;br&gt;Open CONNECT-DAET" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="680" y="85" width="250" height="60" as="geometry" />
+          <mxGeometry x="525" y="80" width="250" height="60" as="geometry" />
         </mxCell>
         <mxCell id="p1_home" value="Home page&lt;br&gt;Public tourism content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="635" y="175" width="340" height="70" as="geometry" />
+          <mxGeometry x="480" y="170" width="340" height="70" as="geometry" />
         </mxCell>
         <mxCell id="p1_session" value="Valid login&lt;br&gt;session?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="715" y="280" width="190" height="100" as="geometry" />
+          <mxGeometry x="565" y="280" width="170" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p1_public" value="Browse public content&lt;br&gt;Tours • attractions • events&lt;br&gt;merchandise • FAQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="55" y="420" width="310" height="95" as="geometry" />
+          <mxGeometry x="40" y="420" width="360" height="95" as="geometry" />
         </mxCell>
         <mxCell id="p1_protected" value="Is the next action&lt;br&gt;restricted?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="115" y="555" width="190" height="100" as="geometry" />
+          <mxGeometry x="125" y="555" width="190" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p1_continue" value="Continue browsing&lt;br&gt;or exit" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="45" y="710" width="220" height="60" as="geometry" />
+          <mxGeometry x="35" y="710" width="220" height="60" as="geometry" />
         </mxCell>
         <mxCell id="p1_auth" value="Sign up or log in&lt;br&gt;Email or Google" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="625" y="420" width="360" height="75" as="geometry" />
+          <mxGeometry x="645" y="420" width="360" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p1_verified" value="Is the account&lt;br&gt;valid and verified?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="710" y="550" width="190" height="100" as="geometry" />
+          <mxGeometry x="705" y="550" width="190" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p1_recover" value="Verify email,&lt;br&gt;resend link or recover password" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="565" width="280" height="75" as="geometry" />
+          <mxGeometry x="1000" y="565" width="260" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p1_server" value="Server verifies session,&lt;br&gt;profile role and accreditation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="625" y="710" width="360" height="80" as="geometry" />
+          <mxGeometry x="470" y="700" width="360" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p1_role" value="Account role?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="720" y="835" width="180" height="100" as="geometry" />
+          <mxGeometry x="565" y="830" width="170" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p1_tourist" value="TOURIST&lt;br&gt;Browse • bookings • trip planner&lt;br&gt;messages • reviews • rewards • notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="25" y="1015" width="330" height="125" as="geometry" />
+          <mxGeometry x="40" y="1040" width="550" height="125" as="geometry" />
         </mxCell>
         <mxCell id="p1_operator" value="OPERATOR&lt;br&gt;Application • package management&lt;br&gt;availability • bookings • payments • guides" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="380" y="1015" width="330" height="125" as="geometry" />
+          <mxGeometry x="710" y="1040" width="550" height="125" as="geometry" />
         </mxCell>
         <mxCell id="p1_guide" value="GUIDE&lt;br&gt;Application • availability&lt;br&gt;assigned tours • roster • QR check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="735" y="1015" width="330" height="125" as="geometry" />
+          <mxGeometry x="40" y="1240" width="550" height="125" as="geometry" />
         </mxCell>
         <mxCell id="p1_admin" value="ADMIN / Tourism Office&lt;br&gt;Approvals • public content • analytics&lt;br&gt;reviews • safety • feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="1015" width="330" height="125" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_data" value="SHARED DATA&lt;br&gt;Supabase Auth • Postgres • RLS • RPCs&lt;br&gt;Storage • Realtime" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="525" y="1190" width="450" height="105" as="geometry" />
+          <mxGeometry x="710" y="1240" width="550" height="125" as="geometry" />
         </mxCell>
         <mxCell id="p1_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_start" target="p1_home">
           <mxGeometry relative="1" as="geometry" />
@@ -93,31 +90,36 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p1_e13" value="Tourist" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_role" target="p1_tourist">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="315" y="880" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="p1_e14" value="Operator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_role" target="p1_operator">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="985" y="880" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="p1_e15" value="Guide" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_role" target="p1_guide">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="15" y="880" />
+              <mxPoint x="15" y="1220" />
+              <mxPoint x="315" y="1220" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="p1_e16" value="Admin" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_role" target="p1_admin">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_e17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_public" target="p1_data">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_e18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_tourist" target="p1_data">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_e19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_operator" target="p1_data">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_e20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_guide" target="p1_data">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_admin" target="p1_data">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1285" y="880" />
+              <mxPoint x="1285" y="1220" />
+              <mxPoint x="985" y="1220" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
