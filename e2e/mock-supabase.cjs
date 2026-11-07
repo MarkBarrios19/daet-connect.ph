@@ -805,6 +805,15 @@ function build(role) {
         bookings: 7,
         pax: 18,
       },
+      // A title long enough to blow out the analytics bar list if the cards
+      // ever size to their content again (mobile-layout keeps them boxed in).
+      {
+        id: "p4",
+        title:
+          "Calaguas Island Hopping and Camping Overnight Experience Package",
+        bookings: 5,
+        pax: 12,
+      },
     ],
     top_attractions: [
       { id: "a1", name: "Bagasbas Beach", slug: "bagasbas-beach", planned: 17 },
