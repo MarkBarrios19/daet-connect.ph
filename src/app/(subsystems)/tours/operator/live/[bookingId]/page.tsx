@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 import { loadLiveTour } from "@/app/(subsystems)/tours/live/load-live-tour";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,7 @@ export default async function OperatorLiveTourPage({ params }: PageProps) {
   const { bookingId } = await params;
   if (!isUuid(bookingId)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/operator/live/${bookingId}`)}`);
 
   const tour = await loadLiveTour(bookingId, user.id);

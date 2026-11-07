@@ -10,6 +10,7 @@ import { OpenChatButton } from "./open-chat-button";
 import { inboxFilters, isConversationKind, type InboxRow } from "@/lib/tours/messaging";
 import { InboxList } from "./inbox-list";
 import { LiveInbox } from "./live-inbox";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,7 @@ export default async function MessagesInboxPage({ searchParams }: PageProps) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/messages")}`);
 
   const { kind: rawKind } = await searchParams;

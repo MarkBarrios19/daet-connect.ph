@@ -10,6 +10,7 @@ import { InboxList } from "../inbox-list";
 import { LiveInbox } from "../live-inbox";
 import { isUuid } from "@/lib/tours/operator-access";
 import { markConversationRead, readMarks, threadExtras } from "../actions";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +28,7 @@ export default async function ConversationPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/messages/${id}`)}`);
 
   // Members (and admins) get the header; everyone else gets null.

@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { checkInAllowed, getQrSecret, verifyQrToken } from "@/lib/tours/qr-token";
 import { TicketCheckInButton } from "./ticket-check-in-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Verify QR · CONNECT-Daet", robots: { index: false } };
@@ -101,9 +102,7 @@ export default async function VerifyQrPage({ params }: PageProps) {
   }
 
   // Booking ticket: details only for the people running the tour.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   const signInLink = (
     <Link href={`/login?next=${encodeURIComponent(`/tours/verify/${rawToken}`)}`} className="inline-flex min-h-11 items-center font-bold text-daet-forest dark:text-blue-300 underline">
       Sign in
