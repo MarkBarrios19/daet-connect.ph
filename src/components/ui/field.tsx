@@ -77,51 +77,6 @@ export function Textarea({ invalid, className, ...props }: ComponentProps<"texta
   return <textarea aria-invalid={invalid || undefined} className={cn(controlClasses, className)} {...props} />;
 }
 
-/**
- * A checkbox with its own label, wired to the control the same way a Field is.
- * Checkboxes keep the raw element here so the rest of the app can stay inside
- * the kit (form-controls.test.ts) and every one of them is 44px tall.
- */
-export function CheckboxField({
-  id,
-  label,
-  hint,
-  checked,
-  onChange,
-  disabled = false,
-  className,
-}: {
-  id: string;
-  label: ReactNode;
-  hint?: ReactNode;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="flex min-h-11 items-center gap-3 text-sm text-daet-ink">
-        <input
-          id={id}
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          aria-describedby={hint ? `${id}-hint` : undefined}
-          onChange={(event) => onChange(event.target.checked)}
-          className="h-5 w-5 shrink-0 rounded border-line accent-blue-600 disabled:opacity-60"
-        />
-        <span>{label}</span>
-      </label>
-      {hint ? (
-        <p id={`${id}-hint`} className="ml-8 text-sm text-daet-ink/75">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 export function Select({ invalid, className, ...props }: ComponentProps<"select"> & ControlProps) {
   return <select aria-invalid={invalid || undefined} className={cn(controlClasses, className)} {...props} />;
 }
