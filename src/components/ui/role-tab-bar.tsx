@@ -50,6 +50,10 @@ export function RoleTabBar({
             <li key={tab.href}>
               <Link
                 href={tab.href}
+                // Loaded in full in the background once the bar is on screen (the
+                // browser keeps it for a few minutes), so a tap opens from memory.
+                // Production only; a server action's revalidation still refreshes it.
+                prefetch
                 aria-current={tab.href === current ? "page" : undefined}
                 onClick={() => {
                   if (tab.href !== current) setPending(tab.href);

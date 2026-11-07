@@ -11,6 +11,7 @@ import { issueBookingTicket } from "@/lib/tours/qr-issue";
 import { SaveTicketOffline } from "@/components/tours/save-ticket-offline";
 import { MapPinIcon } from "@/components/ui/icons";
 import { PrintTicketButton } from "./print-ticket-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -30,9 +31,7 @@ export default async function BookingTicketPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/bookings/${id}/ticket`)}`);
 
   const { data: booking } = await supabase

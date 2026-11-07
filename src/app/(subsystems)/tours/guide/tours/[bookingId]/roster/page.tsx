@@ -10,6 +10,7 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { checkInAllowed } from "@/lib/tours/qr-token";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
 import { RosterCheckInButton } from "./roster-check-in-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ bookingId: string }> };
@@ -30,9 +31,7 @@ export default async function GuideRosterPage({ params }: PageProps) {
   const { bookingId } = await params;
   if (!isUuid(bookingId)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/guide/tours/${bookingId}/roster`)}`);
 
   // RLS: the tourist, the operator, the assigned guide and admins can read the booking.

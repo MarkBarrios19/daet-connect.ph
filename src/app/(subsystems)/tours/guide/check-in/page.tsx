@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QrScanner } from "./qr-scanner";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 export default async function GuideCheckInPage() {
@@ -19,9 +20,7 @@ export default async function GuideCheckInPage() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/guide/check-in")}`);
 
   const { data: guide } = await supabase.from("tours_guides").select("id, accreditation_status").eq("profile_id", user.id).maybeSingle();

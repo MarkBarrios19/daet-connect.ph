@@ -13,6 +13,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 import { RefreshUntilPaid } from "./refresh-until-paid";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -35,9 +36,7 @@ export default async function PaymentSuccessPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/bookings/${id}/paid`)}`);
 
   const { data: owned } = await supabase.from("tours_bookings").select("id").eq("id", id).eq("user_id", user.id).maybeSingle();

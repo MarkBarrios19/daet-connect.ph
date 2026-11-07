@@ -9,6 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { BookingForm } from "./booking-form";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = {
@@ -35,7 +36,7 @@ export default async function BookPackagePage({ params, searchParams }: PageProp
   const supabase = await createSupabaseServerClient();
 
   // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/tours/packages/${id}/book${back.size ? `?${back}` : ""}`)}`);

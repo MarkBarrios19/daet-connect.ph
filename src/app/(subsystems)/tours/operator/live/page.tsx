@@ -9,6 +9,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { formatClock } from "@/lib/tours/live-tracking";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 const shiftDay = (key: string, days: number) => {
@@ -27,9 +28,7 @@ export default async function OperatorLivePage() {
     );
   }
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/operator/live")}`);
 
   const { data: operator } = await supabase.from("tours_operators").select("id").eq("profile_id", user.id).maybeSingle();
