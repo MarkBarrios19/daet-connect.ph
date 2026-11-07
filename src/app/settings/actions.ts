@@ -23,7 +23,7 @@ import {
   checkAvatarUpload,
 } from "@/lib/profile/avatar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 
 /**
  * The account page's four actions: a new name, a new photo, a new password, and
@@ -74,7 +74,7 @@ export async function updateName(
     };
   }
 
-  const { user } = await getAuthenticatedSession();
+  const { user } = await getVerifiedSession();
   if (!user)
     return {
       status: "error",
@@ -132,7 +132,7 @@ export async function updateName(
  * replaces is removed.
  */
 export async function saveAvatar(formData: FormData): Promise<AuthActionState> {
-  const { user } = await getAuthenticatedSession();
+  const { user } = await getVerifiedSession();
   if (!user)
     return {
       status: "error",
@@ -231,7 +231,7 @@ export async function saveAvatar(formData: FormData): Promise<AuthActionState> {
 
 /** Take the photo away and let the initial letter stand in again. */
 export async function removeAvatar(): Promise<AuthActionState> {
-  const { user } = await getAuthenticatedSession();
+  const { user } = await getVerifiedSession();
   if (!user)
     return {
       status: "error",
@@ -301,7 +301,7 @@ export async function changePassword(
     };
   }
 
-  const { user } = await getAuthenticatedSession();
+  const { user } = await getVerifiedSession();
   if (!user)
     return {
       status: "error",
@@ -401,7 +401,7 @@ export async function sendPasswordReset(
   void formData;
   void previous;
 
-  const { user } = await getAuthenticatedSession();
+  const { user } = await getVerifiedSession();
   if (!user?.email)
     return {
       status: "error",

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { OPERATOR_TABLE } from "@/lib/tours/operator-contract";
 import { isUuid } from "@/lib/tours/operator-access";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   EDITABLE_PACKAGE_STATUSES,
@@ -37,7 +37,7 @@ const OPERATOR_PROFILE_ID_COLUMN = "profile_id";
 
 /** Resolves the caller's own approved operator row, or returns an error. */
 async function requireApprovedOperator(sessionClient: SessionClient) {
-  const session = await getAuthenticatedSession();
+  const session = await getVerifiedSession();
   if (session.error || !session.user) {
     return { error: "You must be signed in." as const };
   }

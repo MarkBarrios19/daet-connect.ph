@@ -3,11 +3,11 @@ import {
   submitOperatorRegistration,
 } from "@/app/(subsystems)/tours/operator/actions";
 import { INITIAL_OPERATOR_REVIEW_STATE, INITIAL_OPERATOR_SUBMISSION_STATE } from "@/lib/tours/operator-action-state";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 jest.mock("@/lib/tours/server-auth", () => ({
-  getAuthenticatedSession: jest.fn(),
+  getVerifiedSession: jest.fn(),
 }));
 jest.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: jest.fn(),
@@ -16,7 +16,7 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
-const mockGetSession = getAuthenticatedSession as jest.MockedFunction<typeof getAuthenticatedSession>;
+const mockGetSession = getVerifiedSession as jest.MockedFunction<typeof getVerifiedSession>;
 const mockCreateAdmin = createSupabaseAdminClient as jest.MockedFunction<typeof createSupabaseAdminClient>;
 
 function makeFormData(entries: Record<string, string> = {}): FormData {

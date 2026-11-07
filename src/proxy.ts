@@ -61,13 +61,19 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Do not run code between createServerClient and getUser(): getUser()
-  // validates the token with Supabase Auth and triggers the refresh.
+  // Do not run code between createServerClient and getClaims(): it loads the
+  // session, refreshes an expired or expiring access token (writing the new
+  // cookies through setAll above) and then verifies the token's signature
+  // against the project's cached public keys, with no request to Supabase Auth
+  // while the token is valid. A project that still signs with a shared secret
+  // (HS256) gets the same network check getUser() made, so nothing is weaker.
+  //
+  // The cost: a session revoked elsewhere is only noticed when its token
+  // expires (an hour by default), not on the next page view. Server actions
+  // and route handlers that write confirm the user with getUser() themselves.
   const started = performance.now();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
   const authMs = performance.now() - started;
 
   // No session, or Supabase Auth refused the token: send the visitor to sign

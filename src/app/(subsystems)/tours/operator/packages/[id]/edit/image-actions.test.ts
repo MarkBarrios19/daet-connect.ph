@@ -39,7 +39,7 @@ describe("Image Handling Server Actions", () => {
 
     /** An approved operator is signed in and their operator row is returned. */
     const signInAsApprovedOperator = (accreditationStatus = "approved") => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123" },
         role: "operator",
         error: null,
@@ -204,7 +204,7 @@ describe("Image Handling Server Actions", () => {
     });
 
     it("returns 401 error if not authenticated", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: null,
         role: null,
         error: "Auth error",
@@ -304,7 +304,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",
@@ -344,7 +344,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",
@@ -380,7 +380,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",
@@ -416,7 +416,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",
@@ -451,7 +451,7 @@ describe("Image Handling Server Actions", () => {
         const imageUrl =
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
-        jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
           user: null,
           role: null,
           error: "Auth error",
@@ -472,7 +472,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",
@@ -504,7 +504,7 @@ describe("Image Handling Server Actions", () => {
           "https://project.supabase.co/storage/v1/object/public/tours-package-media/op/pkg/img.jpg";
 
         jest
-          .spyOn(serverAuth, "getAuthenticatedSession")
+          .spyOn(serverAuth, "getVerifiedSession")
           .mockResolvedValueOnce({
             user: { id: "user-123" },
             role: "operator",

@@ -15,13 +15,13 @@ function request(path: string, method = "GET", cookie = "sb-project-auth-token=b
 
 describe("the session refresher", () => {
   const env = process.env;
-  let getUser: jest.Mock;
+  let getClaims: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...env, NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon" };
-    getUser = jest.fn(async () => ({ data: { user: null }, error: null }));
-    mockCreateClient.mockReturnValue({ auth: { getUser } });
+    getClaims = jest.fn(async () => ({ data: null, error: null }));
+    mockCreateClient.mockReturnValue({ auth: { getClaims } });
   });
   afterAll(() => {
     process.env = env;
@@ -29,7 +29,7 @@ describe("the session refresher", () => {
 
   it("refreshes an ordinary page", async () => {
     await proxy(request("/tours/me"));
-    expect(getUser).toHaveBeenCalled();
+    expect(getClaims).toHaveBeenCalled();
   });
 
   it("leaves the auth routes alone, so they can end or replace the session themselves", async () => {
@@ -38,7 +38,7 @@ describe("the session refresher", () => {
     }
     // A refresh in front of POST /auth/logout re-wrote the very cookie the route
     // was deleting, and the browser kept a session the visitor had ended.
-    expect(getUser).not.toHaveBeenCalled();
+    expect(getClaims).not.toHaveBeenCalled();
   });
 
   it("takes a sign-in code that landed on the root to the route that exchanges it", async () => {
@@ -53,14 +53,14 @@ describe("the session refresher", () => {
       "https://daet.test/auth/callback?code=8f14e45f-ceea-467f-a1ce-45d1b6a2e1f0",
     );
     // Nothing to refresh on the way: the callback ends or replaces the session.
-    expect(getUser).not.toHaveBeenCalled();
+    expect(getClaims).not.toHaveBeenCalled();
   });
 
   it("leaves a code on the root alone when this browser did not start the sign-in", async () => {
     const response = await proxy(request("/?code=8f14e45f-ceea-467f-a1ce-45d1b6a2e1f0"));
 
     expect(response?.headers.get("location")).toBeNull();
-    expect(getUser).toHaveBeenCalled();
+    expect(getClaims).toHaveBeenCalled();
   });
 
   it("does nothing at all when Supabase is not configured", async () => {
@@ -73,7 +73,7 @@ describe("the session refresher", () => {
   });
 
   it("sends a visitor without a session from a signed-in page to sign-in with a 307", async () => {
-    getUser.mockResolvedValue({ data: { user: null }, error: Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 }) });
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 }) });
 
     for (const path of ["/tours/my-bookings", "/tours/messages", "/tours/me", "/tours/operator/bookings", "/tours/operator/packages", "/tours/operator/payments"]) {
       const response = await proxy(request(path));
@@ -83,17 +83,17 @@ describe("the session refresher", () => {
   });
 
   it("lets a signed-in person through, and pages that work signed out", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    getClaims.mockResolvedValue({ data: { claims: { sub: "u1" } }, error: null });
     expect((await proxy(request("/tours/my-bookings")))?.headers.get("location")).toBeNull();
 
-    getUser.mockResolvedValue({ data: { user: null }, error: Object.assign(new Error("none"), { name: "AuthSessionMissingError", status: 400 }) });
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("none"), { name: "AuthSessionMissingError", status: 400 }) });
     for (const path of ["/tours/plan", "/tours/browse", "/tours/operator/payments/export", "/tours/messages/abc"]) {
       expect((await proxy(request(path)))?.headers.get("location")).toBeNull();
     }
   });
 
   it("does not call a failed lookup 'signed out' when Auth could not be reached", async () => {
-    getUser.mockResolvedValue({ data: { user: null }, error: Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError", status: 0 }) });
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError", status: 0 }) });
     expect((await proxy(request("/tours/my-bookings")))?.headers.get("location")).toBeNull();
   });
 

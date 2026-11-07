@@ -1,6 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type BrowserContext, type Page } from "@playwright/test";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { signAccessToken } = require("./test-jwt.cjs") as { signAccessToken: (role: string) => string };
+
 export type Role = "tourist" | "operator" | "guide" | "admin";
 
 /**
@@ -14,7 +17,7 @@ export type Role = "tourist" | "operator" | "guide" | "admin";
  */
 export async function signInAs(context: BrowserContext, role: Role) {
   const session = {
-    access_token: `e2e-${role}`,
+    access_token: signAccessToken(role),
     refresh_token: "e2e-refresh",
     token_type: "bearer",
     expires_in: 3600,

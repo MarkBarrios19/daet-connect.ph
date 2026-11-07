@@ -20,7 +20,7 @@ describe("requireAuthenticated", () => {
 
   describe("when user is not authenticated", () => {
     it("should return 401 error if session.error is set", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: null,
         role: null,
         error: "Auth error",
@@ -37,7 +37,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 401 error if session.user is null", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: null,
         role: null,
         error: null,
@@ -56,7 +56,7 @@ describe("requireAuthenticated", () => {
 
   describe("when user is authenticated but lacks operator role", () => {
     it("should return 403 error if user role is not 'operator'", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "tourist",
         error: null,
@@ -73,7 +73,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 403 error if user role is null", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: null,
         error: null,
@@ -90,7 +90,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 403 error if user role is 'admin'", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "admin",
         error: null,
@@ -109,7 +109,7 @@ describe("requireAuthenticated", () => {
 
   describe("when user is operator but operator profile not found", () => {
     it("should return 403 error if operator profile does not exist in database", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -131,7 +131,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 403 error if database query fails", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -155,7 +155,7 @@ describe("requireAuthenticated", () => {
 
   describe("when operator exists but is not approved", () => {
     it("should return 403 error if operator accreditation_status is 'pending'", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -181,7 +181,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 403 error if operator accreditation_status is 'rejected'", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -212,7 +212,7 @@ describe("requireAuthenticated", () => {
       const userId = "user-123";
       const operatorId = "operator-456";
 
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: userId, email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -239,7 +239,7 @@ describe("requireAuthenticated", () => {
     it("should query the OPERATOR_TABLE with correct parameters", async () => {
       const userId = "user-123";
 
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: userId, email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -264,9 +264,9 @@ describe("requireAuthenticated", () => {
   });
 
   describe("error handling", () => {
-    it("should return 401 error if getAuthenticatedSession throws exception", async () => {
+    it("should return 401 error if getVerifiedSession throws exception", async () => {
       jest
-        .spyOn(serverAuth, "getAuthenticatedSession")
+        .spyOn(serverAuth, "getVerifiedSession")
         .mockRejectedValueOnce(new Error("Session error"));
 
       const result = await requireAuthenticated(mockSessionClient);
@@ -280,7 +280,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("should return 401 error if operator query throws exception", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,
@@ -317,7 +317,7 @@ describe("requireAuthenticated", () => {
       ];
 
       for (const testCase of testCases) {
-        jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
           user: testCase.user,
           role: testCase.role,
           error: testCase.error,
@@ -334,7 +334,7 @@ describe("requireAuthenticated", () => {
       const roles = ["admin", "tourist", "null", ""];
 
       for (const role of roles) {
-        jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
           user: { id: "user-123", email: "user@example.com" } as any,
           role: role || null,
           error: null,
@@ -355,7 +355,7 @@ describe("requireAuthenticated", () => {
       const statuses = ["pending", "rejected"];
 
       for (const status of statuses) {
-        jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+        jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
           user: { id: "user-123", email: "user@example.com" } as any,
           role: "operator",
           error: null,
@@ -377,7 +377,7 @@ describe("requireAuthenticated", () => {
     });
 
     it("validates that approved operators always succeed", async () => {
-      jest.spyOn(serverAuth, "getAuthenticatedSession").mockResolvedValueOnce({
+      jest.spyOn(serverAuth, "getVerifiedSession").mockResolvedValueOnce({
         user: { id: "user-123", email: "user@example.com" } as any,
         role: "operator",
         error: null,

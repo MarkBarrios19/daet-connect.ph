@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { clearAttempts } from "@/lib/auth/rate-limit";
 import { rememberNextPath } from "@/lib/auth/next-cookie";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import {
   changePassword,
   removeAvatar,
@@ -20,7 +20,7 @@ jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(),
 }));
 jest.mock("@/lib/tours/server-auth", () => ({
-  getAuthenticatedSession: jest.fn(),
+  getVerifiedSession: jest.fn(),
 }));
 jest.mock("@/lib/auth/next-cookie", () => ({
   rememberNextPath: jest.fn(async () => {}),
@@ -44,8 +44,8 @@ jest.mock("next/headers", () => ({
 const mockClient = createSupabaseServerClient as jest.MockedFunction<
   typeof createSupabaseServerClient
 >;
-const mockSession = getAuthenticatedSession as jest.MockedFunction<
-  typeof getAuthenticatedSession
+const mockSession = getVerifiedSession as jest.MockedFunction<
+  typeof getVerifiedSession
 >;
 const mockRevalidate = revalidatePath as jest.MockedFunction<
   typeof revalidatePath
