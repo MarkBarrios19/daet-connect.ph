@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/tours/server-auth";
 import type { NotificationRow } from "@/lib/tours/notifications";
 
 export type LoadedNotifications = { userId: string; items: NotificationRow[]; unread: number };
@@ -13,11 +14,9 @@ const SELECT = "id, type, title, body, link, read_at, created_at";
  */
 export async function loadNotifications(): Promise<LoadedNotifications | null> {
   try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthUser();
     if (!user) return null;
+    const supabase = await createSupabaseServerClient();
     const [list, count] = await Promise.all([
       supabase.from("tours_notifications").select(SELECT).order("created_at", { ascending: false }).limit(15),
       supabase.from("tours_notifications").select("id", { count: "exact", head: true }).is("read_at", null),

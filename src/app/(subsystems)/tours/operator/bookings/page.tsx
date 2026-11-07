@@ -9,6 +9,7 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { manilaDayStartUtc, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
@@ -28,6 +29,37 @@ type SearchParams = Promise<{
   status?: string;
 }>;
 
+type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+/** Approved guides for assignment, with their full names from profiles. */
+async function loadAvailableGuides(supabase: Supabase) {
+  const { data: guidesData, error: guidesError } = await supabase
+    .from("tours_guides")
+    .select("id, profile_id, contact_phone")
+    .eq("accreditation_status", "approved")
+    .order("id", { ascending: true });
+  if (guidesError) {
+    console.error("Guides fetch error:", guidesError);
+    console.error("Guides error details:", JSON.stringify(guidesError, null, 2));
+  }
+
+  const profileIds = guidesData?.map((g) => g.profile_id).filter(Boolean) || [];
+  let profilesData: Array<{ id: string; full_name: string | null }> | null = null;
+  if (profileIds.length > 0) {
+    const { data, error: profilesError } = await supabase.from("profiles").select("id, full_name").in("id", profileIds);
+    profilesData = data;
+    if (profilesError) console.error("Profiles fetch error:", profilesError);
+  }
+
+  return (
+    guidesData?.map((guide) => ({
+      id: guide.id,
+      full_name: profilesData?.find((p) => p.id === guide.profile_id)?.full_name || "Unknown Guide",
+      contact_phone: guide.contact_phone,
+    })) || []
+  );
+}
+
 export default async function OperatorBookingsPage({
   searchParams,
 }: {
@@ -44,23 +76,19 @@ export default async function OperatorBookingsPage({
   }
 
   const params = await searchParams;
-  const supabase = await createSupabaseServerClient();
-
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect(`/login?next=${encodeURIComponent("/tours/operator/bookings")}`);
   }
+  const supabase = await createSupabaseServerClient();
 
-  // Get operator profile
-  const { data: operator } = await supabase
-    .from("tours_operators")
-    .select("id, business_name")
-    .eq("profile_id", user.id)
-    .maybeSingle();
+  // The operator row and the approved guides don't depend on each other, so they
+  // are asked for together.
+  const [{ data: operator }, availableGuides] = await Promise.all([
+    supabase.from("tours_operators").select("id, business_name").eq("profile_id", user.id).maybeSingle(),
+    loadAvailableGuides(supabase),
+  ]);
 
   if (!operator) {
     return (
@@ -94,127 +122,108 @@ export default async function OperatorBookingsPage({
     query = query.eq("status", params.status);
   }
 
-  const { data: bookings, error } = await query;
+  // The list and the chip counts are separate reads; neither waits for the other.
+  // Counts cover every booking, not just the selected filter, so the chips
+  // read the same whichever one is open.
+  const [{ data: bookings, error }, { data: statusRows }] = await Promise.all([
+    query,
+    supabase
+      .from("tours_bookings")
+      .select("status, tours_packages!inner(operator_id)")
+      .eq("tours_packages.operator_id", operator.id),
+  ]);
 
-  // Receipts waiting for verification on these bookings (RLS: operator's own bookings only)
+  // Everything below hangs off the bookings and the guides already in hand, and
+  // none of it depends on anything else here, so it is asked for all at once.
   const bookingIds = (bookings ?? []).map((b) => b.id);
-  const { data: pendingProofRows } = bookingIds.length
-    ? await supabase
-        .from("tours_payment_proofs")
-        .select("id, booking_id, amount, payment_method, reference_number, submitted_at")
-        .in("booking_id", bookingIds)
-        .eq("verification_status", "pending")
-        .order("submitted_at", { ascending: true })
-    : { data: [] as Array<ReviewableProof & { booking_id: string }> };
+  const today = toManilaDateKey(new Date());
+  const tourDates = [...new Set((bookings ?? []).map((b) => b.tour_date))];
+  const upcomingDates = tourDates.filter((d) => d >= today);
+  const refundCandidates = (bookings ?? []).filter(
+    (b) => (b.status === "cancelled" || b.status === "rejected") && Number(b.total_paid ?? 0) > 0,
+  );
+
+  const [
+    { data: pendingProofRows },
+    { data: requestRows },
+    { data: availabilityRows },
+    busyRows,
+    refundableRows,
+    { data: swapRows },
+  ] = await Promise.all([
+    // Receipts waiting for verification on these bookings (RLS: operator's own bookings only)
+    bookingIds.length
+      ? supabase
+          .from("tours_payment_proofs")
+          .select("id, booking_id, amount, payment_method, reference_number, submitted_at")
+          .in("booking_id", bookingIds)
+          .eq("verification_status", "pending")
+          .order("submitted_at", { ascending: true })
+      : { data: [] as Array<ReviewableProof & { booking_id: string }> },
+    // Open cancellation requests.
+    bookingIds.length
+      ? supabase
+          .from("tours_cancellations")
+          .select("id, booking_id, reason, requested_at, status")
+          .in("booking_id", bookingIds)
+          .eq("status", "requested")
+      : { data: [] as Array<CancellationRequest & { booking_id: string }> },
+    // Guides' own availability for the dates on this page (F9), shown in the picker.
+    tourDates.length && availableGuides.length
+      ? supabase
+          .from("tours_guide_availability")
+          .select("guide_id, available_date, is_available")
+          .in("available_date", tourDates)
+          .in("guide_id", availableGuides.map((g) => g.id))
+      : { data: [] as { guide_id: string; available_date: string; is_available: boolean }[] },
+    // R6: who can take each upcoming date (approved, marked available, not on another tour that day).
+    Promise.all(
+      upcomingDates.map(async (date) => {
+        const { data } = await supabase.rpc("tours_guides_free_on", { p_date: date });
+        return [date, (data ?? []) as Array<{ guide_id: string; full_name: string; reason: string | null }>] as const;
+      }),
+    ),
+    // Money still to return on cancelled/declined bookings.
+    Promise.all(
+      refundCandidates.map(async (b) => {
+        const { data } = await supabase.rpc("tours_refundable_amount", { p_booking_id: b.id });
+        return [b.id, Number(data ?? 0)] as const;
+      }),
+    ),
+    // R6: guides' pending swap requests on these bookings.
+    bookingIds.length
+      ? supabase
+          .from("tours_guide_swap_requests")
+          .select("id, booking_id, from_guide_id, to_guide_id, reason, created_at")
+          .in("booking_id", bookingIds)
+          .eq("status", "pending")
+      : { data: [] as Array<{ id: string; booking_id: string; from_guide_id: string; to_guide_id: string | null; reason: string; created_at: string }> },
+  ]);
+
   const proofsByBooking = new Map<string, ReviewableProof[]>();
   for (const proof of pendingProofRows ?? []) {
     const list = proofsByBooking.get(proof.booking_id) ?? [];
     list.push(proof);
     proofsByBooking.set(proof.booking_id, list);
   }
-
-  // Open cancellation requests, and money still to return on cancelled/declined bookings.
-  const { data: requestRows } = bookingIds.length
-    ? await supabase
-        .from("tours_cancellations")
-        .select("id, booking_id, reason, requested_at, status")
-        .in("booking_id", bookingIds)
-        .eq("status", "requested")
-    : { data: [] as Array<CancellationRequest & { booking_id: string }> };
   const requestByBooking = new Map<string, CancellationRequest>(
     (requestRows ?? []).map((row) => [row.booking_id, row]),
   );
-  const refundCandidates = (bookings ?? []).filter(
-    (b) => (b.status === "cancelled" || b.status === "rejected") && Number(b.total_paid ?? 0) > 0,
-  );
-  const refundableByBooking = new Map<string, number>();
-  await Promise.all(
-    refundCandidates.map(async (b) => {
-      const { data } = await supabase.rpc("tours_refundable_amount", { p_booking_id: b.id });
-      if (Number(data ?? 0) > 0) refundableByBooking.set(b.id, Number(data));
-    }),
-  );
-  const today = toManilaDateKey(new Date());
+  const refundableByBooking = new Map<string, number>(refundableRows.filter(([, amount]) => amount > 0));
 
   if (error) {
     console.error("Bookings fetch error:", error);
     console.error("Bookings error details:", JSON.stringify(error, null, 2));
   }
 
-  // Fetch approved guides for assignment (with full names from profiles)
-  const { data: guidesData, error: guidesError } = await supabase
-    .from("tours_guides")
-    .select("id, profile_id, contact_phone")
-    .eq("accreditation_status", "approved")
-    .order("id", { ascending: true });
-
-  if (guidesError) {
-    console.error("Guides fetch error:", guidesError);
-    console.error("Guides error details:", JSON.stringify(guidesError, null, 2));
-  }
-
-  // Get profile IDs
-  const profileIds = guidesData?.map((g) => g.profile_id).filter(Boolean) || [];
-
-  // Fetch profile names for guides (only if we have IDs)
-  let profilesData = null;
-  if (profileIds.length > 0) {
-    const { data, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", profileIds);
-    
-    profilesData = data;
-    if (profilesError) console.error("Profiles fetch error:", profilesError);
-  }
-
-  // Combine guides with their profile names
-  const availableGuides =
-    guidesData?.map((guide) => {
-      const profile = profilesData?.find((p) => p.id === guide.profile_id);
-      const result = {
-        id: guide.id,
-        full_name: profile?.full_name || "Unknown Guide",
-        contact_phone: guide.contact_phone,
-      };
-      return result;
-    }) || [];
-
-  // Guides' own availability for the dates on this page (F9), shown in the picker.
-  const tourDates = [...new Set((bookings ?? []).map((b) => b.tour_date))];
-  const { data: availabilityRows } =
-    tourDates.length && availableGuides.length
-      ? await supabase
-          .from("tours_guide_availability")
-          .select("guide_id, available_date, is_available")
-          .in("available_date", tourDates)
-          .in("guide_id", availableGuides.map((g) => g.id))
-      : { data: [] as { guide_id: string; available_date: string; is_available: boolean }[] };
   const availabilityFor = (date: string): Record<string, boolean> =>
     Object.fromEntries((availabilityRows ?? []).filter((r) => r.available_date === date).map((r) => [r.guide_id, r.is_available]));
-
-  // R6: who can take each upcoming date (approved, marked available, not on another tour that day).
-  const upcomingDates = tourDates.filter((d) => d >= today);
-  const busyRows = await Promise.all(
-    upcomingDates.map(async (date) => {
-      const { data } = await supabase.rpc("tours_guides_free_on", { p_date: date });
-      return [date, (data ?? []) as Array<{ guide_id: string; full_name: string; reason: string | null }>] as const;
-    }),
-  );
   const busyByDate = new Map(busyRows.map(([date, rows]) => [date, rows]));
   const busyFor = (date: string): Record<string, BusyReason | null> =>
     Object.fromEntries((busyByDate.get(date) ?? []).map((r) => [r.guide_id, isBusyReason(r.reason) ? r.reason : null]));
   const pickerFor = (date: string) =>
     (busyByDate.get(date) ?? []).map((r) => ({ id: r.guide_id, full_name: r.full_name, reason: isBusyReason(r.reason) ? r.reason : null }));
 
-  // R6: guides' pending swap requests on these bookings.
-  const { data: swapRows } = bookingIds.length
-    ? await supabase
-        .from("tours_guide_swap_requests")
-        .select("id, booking_id, from_guide_id, to_guide_id, reason, created_at")
-        .in("booking_id", bookingIds)
-        .eq("status", "pending")
-    : { data: [] as Array<{ id: string; booking_id: string; from_guide_id: string; to_guide_id: string | null; reason: string; created_at: string }> };
   const guideName = (id: string | null) => (id ? availableGuides.find((g) => g.id === id)?.full_name ?? "A guide" : null);
   const swapByBooking = new Map<string, PendingSwap>(
     (swapRows ?? []).map((row) => [
@@ -240,12 +249,6 @@ export default async function OperatorBookingsPage({
   };
 
   // Calculate stats
-  // Counts cover every booking, not just the selected filter, so the chips
-  // read the same whichever one is open.
-  const { data: statusRows } = await supabase
-    .from("tours_bookings")
-    .select("status, tours_packages!inner(operator_id)")
-    .eq("tours_packages.operator_id", operator.id);
   const allBookings = statusRows ?? [];
   const stats = {
     total: allBookings.length,

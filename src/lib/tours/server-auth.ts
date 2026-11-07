@@ -26,20 +26,33 @@ export function normalizeRole(value: unknown): string | null {
 }
 
 /**
+ * The signed-in user, checked with Supabase Auth once per request.
+ *
+ * Each call to `auth.getUser()` is a round trip to the auth service, and a page
+ * used to make three or four of them (the page, the header, the profile, the
+ * bell). Everything on the server asks here instead, so they share one.
+ */
+export const getAuthUser = cache(async function getAuthUser(): Promise<User | null> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  return error || !user ? null : user;
+});
+
+/**
  * Always obtains the user from Supabase Auth and reads the role server-side.
  * Cached per request so the page frame and the page share one lookup.
  */
 export const getAuthenticatedSession = cache(async function getAuthenticatedSession(): Promise<AuthenticatedSession> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
-  if (authError || !user) {
+  if (!user) {
     return { user: null, role: null, error: null };
   }
 
+  const supabase = await createSupabaseServerClient();
   const { data: roleData, error: roleError } = await supabase.rpc("get_my_role");
   if (roleError) {
     return {

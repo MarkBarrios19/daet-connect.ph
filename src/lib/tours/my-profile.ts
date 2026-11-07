@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 /**
  * The signed-in person's own name and photo, read once per request.
@@ -20,9 +20,9 @@ export type MyProfile = { fullName: string | null; avatarUrl: string | null };
 export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
   if (!isSupabaseConfigured()) return null;
   try {
-    // The session is already cached for this request; asking it again here
-    // would be a second round trip to the auth service on every page.
-    const { user } = await getAuthenticatedSession();
+    // The user is already cached for this request, and only the id is needed,
+    // so this does not wait for the role lookup: the two run side by side.
+    const user = await getAuthUser();
     if (!user) return null;
 
     const supabase = await createSupabaseServerClient();

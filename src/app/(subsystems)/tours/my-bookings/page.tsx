@@ -11,6 +11,7 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { formatPeso } from "@/lib/money";
 import { PHOTOS } from "@/lib/photo-credits";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { placePhoto } from "@/lib/tours/trip-board";
@@ -59,11 +60,9 @@ export default async function MyBookingsPage() {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/my-bookings")}`);
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("tours_bookings")
