@@ -1057,16 +1057,21 @@ function validateGalleryImages(images: unknown[]): {
   };
 }
 
+/** Conflict copy shared by the save and submit paths (Requirements 10.10, 14.7). */
+const CONCURRENCY_CONFLICT_MESSAGE =
+  "This package was modified by another session. Please refresh and try again.";
+
+/** Copy returned by a submit, so the client can tell it apart from a plain save. */
+const SUBMITTED_FOR_REVIEW_MESSAGE = "Package submitted for review successfully.";
+const SUBMIT_FAILED_MESSAGE = "Unable to submit package for review. Please try again.";
+
 /**
  * Update package core fields and all related tables.
- * 
- * Purpose:
- * - Call requireAuthenticated, requirePackageOwnership, requireEditablePackageStatus
- * - Validate form data (basic info, pricing, inclusions, stops, gallery)
- * - Check concurrency via updated_at timestamp
- * - Call update_package_and_relations RPC with normalized form data
- * - Handle errors: 409 conflict, 400 validation, 500 database
- * 
+ *
+ * Thin wrapper over savePackage that never submits: the package keeps whatever
+ * status it had (a structural gallery change on a published package still sends
+ * it back for review inside the RPC, which reports the new status back).
+ *
  * Flow:
  * 1. Create Supabase server client
  * 2. Verify authentication (401 if not)
@@ -1074,24 +1079,55 @@ function validateGalleryImages(images: unknown[]): {
  * 4. Verify editable status (403 if not editable)
  * 5. Validate form data using all validation functions
  * 6. If validation fails, return 400 with field-specific errors
- * 7. Check concurrency: call concurrency_check RPC, return 409 if mismatch
- * 8. Call update_package_and_relations RPC with normalized form data
- * 9. If RPC succeeds, return 200 with success flag and updatedAt
- * 10. If RPC fails with database error, return 500
- * 
+ * 7. Call update_package_and_relations RPC with the expected updated_at; the
+ *    version check runs inside that transaction, so a stale version is a 409
+ *    and writes nothing
+ * 8. If RPC succeeds, return 200 with success flag and updatedAt
+ * 9. If RPC fails with database error, return 500
+ *
  * Error Handling:
  * - 401: Not authenticated
  * - 403: Not approved, not owner, or status prevents editing
  * - 400: Validation errors (return field-specific errors)
  * - 409: Concurrency conflict (cachedUpdatedAt mismatch)
  * - 500: Unexpected database error
- * 
+ *
  * Validates: Requirements 3.9-3.10, 10.1-10.10, 14.1-14.8
  */
 export async function updatePackageCore(
   packageId: string,
   formData: EditPackageFormInput,
   cachedUpdatedAt: string,
+): Promise<UpdatePackageResponse> {
+  return savePackage(packageId, formData, cachedUpdatedAt, { submitForReview: false });
+}
+
+/**
+ * Persist the whole package and, optionally, submit it for review.
+ *
+ * The write is a single call to update_package_and_relations, so the core
+ * fields, price variants, inclusions, stops, gallery and the status transition
+ * all commit or roll back together inside one database transaction
+ * (Requirement 14.1). Everything that can reject the request — authentication,
+ * ownership, status, form validation and the version check — happens before
+ * that call, so a rejected submit never leaves edits committed behind a
+ * reported failure (Requirement 10.10).
+ *
+ * `cachedUpdatedAt` is compared once, inside the RPC, under a row lock
+ * (`SELECT ... FOR UPDATE`). A stale version raises PT409 before any write, so
+ * a conflicting request changes nothing and the operator can retry against the
+ * reloaded version.
+ *
+ * `submitForReview` is passed through to the RPC rather than applied with a
+ * second UPDATE afterwards: a second statement would be a second write outside
+ * the first transaction and could leave the edits committed while the status
+ * change failed.
+ */
+async function savePackage(
+  packageId: string,
+  formData: EditPackageFormInput,
+  cachedUpdatedAt: string,
+  { submitForReview }: { submitForReview: boolean },
 ): Promise<UpdatePackageResponse> {
   try {
     // Step 1: Create Supabase server client
@@ -1166,50 +1202,15 @@ export async function updatePackageCore(
       };
     }
 
-    // Step 7: Check concurrency - compare cachedUpdatedAt with database updated_at
-    try {
-      const { data: concurrencyCheckResult, error: concurrencyError } =
-        await sessionClient.rpc("concurrency_check", {
-          p_package_id: packageId,
-          p_cached_updated_at: cachedUpdatedAt,
-        });
-
-      if (concurrencyError) {
-        console.error("Concurrency check error:", concurrencyError);
-        return {
-          success: false,
-          message: "Unable to verify package state. Please refresh and try again.",
-          error: "Concurrency check failed",
-          errors: {},
-        };
-      }
-
-      // Check if concurrency conflict was detected
-      if (concurrencyCheckResult && concurrencyCheckResult.has_conflict) {
-        return {
-          success: false,
-          message: "This package was modified by another session. Please refresh and try again.",
-          status: 409,
-          error: "Concurrency conflict",
-          errors: {},
-        };
-      }
-    } catch (error) {
-      console.error("Concurrency check exception:", error);
-      // Treat concurrency check failure as a retriable error (500)
-      return {
-        success: false,
-        message: "Unable to verify package state. Please try again.",
-        error: "Concurrency check failed",
-        errors: {},
-      };
-    }
-
-    // Step 8: Call update_package_and_relations RPC with normalized form data
-    // Import the mapper function to normalize form data to RPC payload
+    // Step 7: Normalize form data to the RPC payload
     const { toRpcPayload } = await import("./edit-mappers");
     const rpcPayload = toRpcPayload(formData as any);
 
+    // Step 8: Write everything — core fields, relations and the optional status
+    // transition — in one transaction. The version check lives inside the RPC,
+    // under the row lock, so it is the only concurrency check on this path and
+    // it cannot be invalidated between the check and the write. A stale version
+    // raises PT409 before the first statement touches the database.
     const { data: rpcResult, error: rpcError } = await sessionClient.rpc(
       "update_package_and_relations",
       {
@@ -1220,6 +1221,7 @@ export async function updatePackageCore(
         p_stops: rpcPayload.p_stops,
         p_gallery: rpcPayload.p_gallery,
         p_expected_updated_at: cachedUpdatedAt,
+        p_submit_for_review: submitForReview,
       }
     );
 
@@ -1232,7 +1234,7 @@ export async function updatePackageCore(
       if (rpcError.code === "PT409") {
         return {
           success: false,
-          message: "This package was modified by another session. Please refresh and try again.",
+          message: CONCURRENCY_CONFLICT_MESSAGE,
           status: 409,
           error: "Concurrency conflict",
           errors: {},
@@ -1265,7 +1267,9 @@ export async function updatePackageCore(
 
       return {
         success: false,
-        message: "Unable to save package changes. Please try again.",
+        message: submitForReview
+          ? SUBMIT_FAILED_MESSAGE
+          : "Unable to save package changes. Please try again.",
         error: "Database error",
         errors: {},
       };
@@ -1279,8 +1283,9 @@ export async function updatePackageCore(
         const newStatus = result.new_status as EditPackageStatus | null;
         return {
           success: true,
-          message:
-            newStatus === "pending_review"
+          message: submitForReview
+            ? SUBMITTED_FOR_REVIEW_MESSAGE
+            : newStatus === "pending_review"
               ? "Photos saved. The package is back with the Tourism Office for review."
               : "Package updated successfully.",
           updatedAt: result.new_updated_at,
@@ -1293,7 +1298,9 @@ export async function updatePackageCore(
         // RPC returned success=false
         return {
           success: false,
-          message: "Unable to save package changes. Please try again.",
+          message: submitForReview
+            ? SUBMIT_FAILED_MESSAGE
+            : "Unable to save package changes. Please try again.",
           error: "Update failed",
           errors: {},
         };
@@ -1303,16 +1310,20 @@ export async function updatePackageCore(
     // Step 10: If RPC returns unexpected result, return 500
     return {
       success: false,
-      message: "Unexpected server response. Please try again.",
+      message: submitForReview
+        ? SUBMIT_FAILED_MESSAGE
+        : "Unexpected server response. Please try again.",
       error: "Unexpected response",
       errors: {},
     };
   } catch (error) {
     // Catch unexpected exceptions
-    console.error("Unexpected error in updatePackageCore:", error);
+    console.error("Unexpected error in savePackage:", error);
     return {
       success: false,
-      message: "An unexpected error occurred. Please try again.",
+      message: submitForReview
+        ? SUBMIT_FAILED_MESSAGE
+        : "An unexpected error occurred. Please try again.",
       error: "Unexpected error",
       errors: {},
     };
@@ -1321,124 +1332,32 @@ export async function updatePackageCore(
 
 /**
  * Submit package for review.
- * 
- * Purpose:
- * - Call updatePackageCore action first to persist changes
- * - On success, update package status to "pending_review"
- * - Clear rejection_reason field
- * - Return success response with redirect info
- * 
- * Flow:
- * 1. Call updatePackageCore(packageId, formData, cachedUpdatedAt)
- * 2. If updatePackageCore fails, return its error response as-is
- * 3. If updatePackageCore succeeds:
- *    a. Create Supabase server client
- *    b. Update package record: set status="pending_review", rejection_reason=null
- *    c. If update succeeds, return success with redirect info
- *    d. If update fails, return error
- * 4. Error handling: Propagate all errors from updatePackageCore
- * 
- * Validates: Requirements 9.4-9.5, 10.7-10.10
+ *
+ * Saves every edit and moves the package to pending_review in one atomic
+ * operation, with a single version check, so a submit is all-or-nothing
+ * (Requirement 10.9, 14.1) and a reported failure never leaves edits committed
+ * (Requirement 10.10):
+ *
+ * - the whole write, including `status = 'pending_review'` and clearing
+ *   `rejection_reason`, is one update_package_and_relations call, which runs in
+ *   a single database transaction;
+ * - `cachedUpdatedAt` is compared once, inside that call, under the row lock.
+ *   A stale version raises PT409 and nothing is written, so the operator can
+ *   reload and retry;
+ * - authentication, ownership, editable status and form validation all run
+ *   before the transaction, so their errors change nothing.
+ *
+ * Only draft and rejected packages can be submitted (enforced by the RPC), which
+ * mirrors the UI in permissions.ts.
+ *
+ * Validates: Requirements 9.4-9.5, 10.7-10.10, 14.1, 14.7-14.8
  */
 export async function submitPackageForReview(
   packageId: string,
   formData: EditPackageFormInput,
   cachedUpdatedAt: string,
 ): Promise<UpdatePackageResponse> {
-  try {
-    // Step 1: Call updatePackageCore action first to persist changes
-    const coreUpdateResult = await updatePackageCore(
-      packageId,
-      formData,
-      cachedUpdatedAt
-    );
-
-    // Step 2: If updatePackageCore fails, return its error response as-is
-    if (!coreUpdateResult.success) {
-      return coreUpdateResult;
-    }
-
-    // Step 3: If updatePackageCore succeeds, update package status to "pending_review"
-    try {
-      const sessionClient = await createSupabaseServerClient();
-
-      // Verify authentication again to ensure session is still valid
-      const authResult = await requireAuthenticated(sessionClient);
-      if ("error" in authResult) {
-        return {
-          success: false,
-          message: authResult.error.message,
-          error: authResult.error.message,
-          errors: {},
-        };
-      }
-
-      const { operatorId } = authResult.data;
-
-      // Verify ownership is still valid
-      const ownershipResult = await requirePackageOwnership(
-        sessionClient,
-        packageId,
-        operatorId
-      );
-      if ("error" in ownershipResult) {
-        return {
-          success: false,
-          message: ownershipResult.error.message,
-          error: ownershipResult.error.message,
-          errors: {},
-        };
-      }
-
-      // Step 3b: Update package record: set status="pending_review", rejection_reason=null
-      const { error: updateError } = await sessionClient
-        .from(PACKAGE_TABLE)
-        .update({
-          status: "pending_review",
-          rejection_reason: null,
-        })
-        .eq("id", packageId)
-        .eq("operator_id", operatorId);
-
-      // Step 3d: If update fails, return error
-      if (updateError) {
-        console.error("Error updating package status:", updateError);
-        return {
-          success: false,
-          message: "Unable to submit package for review. Please try again.",
-          error: "Status update failed",
-          errors: {},
-        };
-      }
-
-      // Step 3c: If update succeeds, return success with redirect info
-      return {
-        success: true,
-        message: "Package submitted for review successfully.",
-        data: {
-          packageId,
-          status: "pending_review" as PackageStatus,
-        },
-      };
-    } catch (error) {
-      console.error("Error in submitPackageForReview status update:", error);
-      return {
-        success: false,
-        message: "Unable to submit package for review. Please try again.",
-        error: "Status update failed",
-        errors: {},
-      };
-    }
-  } catch (error) {
-    // Catch unexpected exceptions
-    console.error("Unexpected error in submitPackageForReview:", error);
-    return {
-      success: false,
-      message: "An unexpected error occurred. Please try again.",
-      error: "Unexpected error",
-      errors: {},
-    };
-  }
+  return savePackage(packageId, formData, cachedUpdatedAt, { submitForReview: true });
 }
 
 /**

@@ -76,6 +76,32 @@ const packageData: EditPackageRecord = {
   },
 };
 
+describe("toast colors", () => {
+  it.each([
+    ["success", "bg-green-500", "text-slate-950"],
+    ["error", "bg-red-600", "text-white"],
+  ] as const)("uses the design-system colors for %s, including its icons", (type, background, foreground) => {
+    const onClose = jest.fn();
+    render(<Toast type={type} message="Notification" onClose={onClose} />);
+
+    const toast = screen.getByText("Notification").parentElement!;
+    expect(toast).toHaveClass(background, foreground);
+    expect(toast).not.toHaveClass(type === "success" ? "text-white" : "text-slate-950");
+    const dismiss = screen.getByRole("button", { name: "Dismiss notification" });
+    expect(dismiss).toHaveClass("text-inherit");
+    expect(dismiss).not.toHaveClass("text-white");
+    expect(dismiss).not.toHaveClass("text-slate-950");
+    const icons = toast.querySelectorAll('svg[fill="currentColor"]');
+    expect(icons).toHaveLength(2);
+    icons.forEach((icon) => {
+      expect(icon).not.toHaveClass("text-white");
+      expect(icon).not.toHaveClass("text-slate-950");
+    });
+    fireEvent.click(dismiss);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("EditPackageForm validation state", () => {
   beforeEach(() => {
     mockedUpdatePackageCore.mockReset();
@@ -166,9 +192,9 @@ describe("EditPackageForm toast contrast and accessibility", () => {
     expect(toast).toHaveClass("bg-green-500", "text-slate-950");
     expect(toast).not.toHaveClass("text-white");
 
-    const dismissButton = within(toast as HTMLElement).getByRole("button", { name: "Dismiss message" });
+    const dismissButton = within(toast as HTMLElement).getByRole("button", { name: "Dismiss notification" });
     expect(dismissButton).toHaveAttribute("type", "button");
-    expect(dismissButton).toHaveClass("min-h-11", "min-w-11", "text-current");
+    expect(dismissButton).toHaveClass("min-h-11", "min-w-11", "text-inherit");
     expect(dismissButton).not.toHaveClass("text-white");
 
     fireEvent.click(dismissButton);
@@ -185,9 +211,9 @@ describe("EditPackageForm toast contrast and accessibility", () => {
     expect(alert).not.toHaveClass("text-slate-950");
     expect(alert).not.toHaveClass("bg-red-500");
 
-    const dismissButton = within(alert).getByRole("button", { name: "Dismiss message" });
+    const dismissButton = within(alert).getByRole("button", { name: "Dismiss notification" });
     expect(dismissButton).toHaveAttribute("type", "button");
-    expect(dismissButton).toHaveClass("text-current");
+    expect(dismissButton).toHaveClass("text-inherit");
 
     fireEvent.click(dismissButton);
     expect(onClose).toHaveBeenCalledTimes(1);
