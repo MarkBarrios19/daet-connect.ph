@@ -1,56 +1,25 @@
-<!doctype html>
-<html lang="fil">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CONNECT-DAET — Whole System Flowchart</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CONNECT-DAET — Complete System Flowchart</title>
 <style>
-:root{color-scheme:light;--ink:#16324f;--muted:#526579;--line:#d8e0e8;--bg:#f3f6fa;--blue:#dae8fc;--green:#d5e8d4;--yellow:#fff2cc;--red:#f8cecc;--purple:#e1d5e7}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:#1f2937;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-header{background:#16324f;color:#fff;padding:24px clamp(16px,4vw,56px);box-shadow:0 3px 12px #0f172a22}
-header h1{margin:0 0 4px;font-size:clamp(24px,3vw,36px)}header p{margin:0;color:#dbeafe}
-nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}nav a{color:#16324f;background:#fff;padding:7px 12px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:700}nav a:hover{background:#dbeafe}
-main{max-width:1800px;margin:24px auto;padding:0 18px 50px}.legend{display:flex;flex-wrap:wrap;gap:10px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:18px;color:var(--muted);font-size:14px}
-.legend span{white-space:nowrap}.swatch{display:inline-block;width:16px;height:12px;border:1px solid #8493a4;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 4px 18px #0f172a0c;scroll-margin-top:12px}.panel h2{color:var(--ink);margin:0 0 12px;font-size:22px}.diagram-frame{width:100%;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;background:white}.diagram-svg{display:block;width:100%;height:auto;min-width:900px}.page-title{font:700 24px Arial,sans-serif;fill:#16324f}.connector{fill:none;stroke:#526579;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.node-label{font-family:Arial,sans-serif;fill:#1f2937;text-anchor:middle;dominant-baseline:alphabetic}.edge-label{font:12px Arial,sans-serif;fill:#334155;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}
-footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font-size:13px}
-@media print{body{background:white}header{color:#000;background:white;box-shadow:none;border-bottom:2px solid #16324f}header p{color:#334155}nav,.print-button{display:none}.panel{break-after:page;box-shadow:none;border:0;padding:0}.panel h2{margin-top:8px}.diagram-frame{overflow:visible;border:0}.diagram-svg{min-width:0;width:100%}footer{display:none}}
-</style>
-</head>
-<body>
-<header>
-  <h1>CONNECT-DAET.ph — Buong System Flowchart</h1>
-  <p>Self-contained HTML/SVG version: buksan lang sa browser; hindi kailangan ng Draw.io import o internet connection para makita ang diagrams.</p>
-  <nav><a href="#flow-1">01 System Overview</a><a href="#flow-2">02 Booking and Payment</a><a href="#flow-3">03 Operator and Packages</a><a href="#flow-4">04 Guide Workflow</a><a href="#flow-5">05 Admin Workflow</a><a href="#flow-6">06 Other Modules and Services</a></nav>
-</header>
-<main>
-  <div class="legend">
-    <span>🟢 Oval — simula / katapusan</span><span>🔵 Rectangle — proseso</span><span>🟡 Diamond — decision</span><span>🟩 Cylinder — database</span><span>🟥 Parallelogram — external service</span>
-    <button class="print-button" onclick="window.print()" style="margin-left:auto;border:0;border-radius:999px;padding:7px 14px;background:#16324f;color:white;font-weight:700;cursor:pointer">Print / Save as PDF</button>
-  </div>
-  <section class="panel" id="flow-1"><h2>01 System Overview</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="01 System Overview" viewBox="0 0 1500 1380" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1500" height="1380" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">1. Pangkalahatang system at role routing</text>
+:root{color-scheme:light;--ink:#16324f;--muted:#526579;--line:#d8e0e8;--bg:#f3f6fa}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:#1f2937;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}header{background:#16324f;color:#fff;padding:24px clamp(16px,4vw,56px);box-shadow:0 3px 12px #0f172a22}header h1{margin:0 0 4px;font-size:clamp(24px,3vw,36px)}header p{margin:0;color:#dbeafe}nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}nav a{color:#16324f;background:#fff;padding:7px 12px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:700}nav a:hover{background:#dbeafe}main{max-width:1800px;margin:24px auto;padding:0 18px 50px}.legend{display:flex;flex-wrap:wrap;gap:10px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:18px;color:var(--muted);font-size:14px}.legend span{white-space:nowrap}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 4px 18px #0f172a0c;scroll-margin-top:12px}.panel h2{color:var(--ink);margin:0 0 12px;font-size:22px}.diagram-frame{width:100%;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}.diagram-svg{display:block;width:100%;height:auto;min-width:900px}.page-title{font:700 24px Arial,sans-serif;fill:#16324f}.connector{fill:none;stroke:#526579;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.node-label{font-family:Arial,sans-serif;fill:#1f2937;text-anchor:middle}.edge-label{font:12px Arial,sans-serif;fill:#334155;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);font-size:13px}.print-button{margin-left:auto;border:0;border-radius:999px;padding:7px 14px;background:#16324f;color:#fff;font-weight:700;cursor:pointer}@media print{body{background:#fff}header{color:#000;background:#fff;box-shadow:none;border-bottom:2px solid #16324f}header p{color:#334155}nav,.print-button{display:none}.panel{break-after:page;box-shadow:none;border:0;padding:0}.panel h2{margin-top:8px}.diagram-frame{overflow:visible;border:0}.diagram-svg{min-width:0;width:100%}footer{display:none}}
+</style></head><body><header><h1>CONNECT-DAET.ph — Complete System Flowchart</h1><p>Self-contained HTML/SVG diagrams. Open this file directly in a browser; no Draw.io import or internet connection is required.</p><nav><a href="#flow-1">01 System Overview</a><a href="#flow-2">02 Booking and Payment</a><a href="#flow-3">03 Operator and Packages</a><a href="#flow-4">04 Guide Workflow</a><a href="#flow-5">05 Admin Workflow</a><a href="#flow-6">06 Other Modules and Services</a></nav></header><main><div class="legend"><span>🟢 Oval — Start / End</span><span>🔵 Rectangle — Process</span><span>🟡 Diamond — Decision</span><span>🟩 Cylinder — Database</span><span>🟥 Parallelogram — External service</span><button class="print-button" onclick="window.print()">Print / Save as PDF</button></div><section class="panel" id="flow-1"><h2>01 System Overview</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="01 System Overview" viewBox="0 0 1500 1380" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">1. Overall System and Role Routing</text>
 <path d="M 805 145 L 805 175" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 805 245 L 810 280" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 715 330 L 540 330 L 540 467.5 L 365 467.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="536" y="398.75" class="edge-label">Wala</text>
+<text x="536" y="398.75" class="edge-label">No</text>
 <path d="M 210 515 L 210 555" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 210 655 L 210 682.5 L 155 682.5 L 155 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="182.5" y="676.5" class="edge-label">Hindi</text>
+<text x="182.5" y="676.5" class="edge-label">No</text>
 <path d="M 305 605 L 465 605 L 465 457.5 L 625 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="461" y="531.25" class="edge-label">Oo</text>
+<text x="461" y="531.25" class="edge-label">Yes</text>
 <path d="M 810 380 L 805 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="822" y="545" class="edge-label">Meron</text>
+<text x="822" y="545" class="edge-label">Yes</text>
 <path d="M 805 495 L 805 550" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 900 600 L 1010 602.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="955" y="593" class="edge-label">Hindi</text>
+<text x="955" y="593" class="edge-label">No</text>
 <path d="M 1010 602.5 L 997.5 602.5 L 997.5 457.5 L 985 457.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 805 650 L 805 710" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
-<text x="817" y="680" class="edge-label">Oo</text>
+<text x="817" y="680" class="edge-label">Yes</text>
 <path d="M 805 790 L 810 835" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 720 885 L 537.5 885 L 537.5 1077.5 L 355 1077.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <text x="533.5" y="981.25" class="edge-label">Tourist</text>
@@ -66,41 +35,41 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 900 1140 L 900 1165 L 750 1165 L 750 1190" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <path d="M 1090 1077.5 L 1032.5 1077.5 L 1032.5 1242.5 L 975 1242.5" class="connector" marker-end="url(#arrow-connect-daet-page-1)"/>
 <ellipse cx="805" cy="115" rx="125" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="805" y="108.56" class="node-label" font-size="14">SIMULA</text>
-<text x="805" y="126.48" class="node-label" font-size="14">Buksan ang CONNECT-DAET</text>
+<text x="805" y="108.56" class="node-label" font-size="14">START</text>
+<text x="805" y="126.48" class="node-label" font-size="14">Open CONNECT-DAET</text>
 <rect x="635" y="175" width="340" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="805" y="204.02" class="node-label" font-size="13">Home page</text>
 <text x="805" y="220.66" class="node-label" font-size="13">Public tourism content</text>
 <rect x="715" y="280" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="810" y="324.02" class="node-label" font-size="13">May valid na</text>
-<text x="810" y="340.66" class="node-label" font-size="13">login session?</text>
+<text x="810" y="324.02" class="node-label" font-size="13">Valid login</text>
+<text x="810" y="340.66" class="node-label" font-size="13">session?</text>
 <rect x="55" y="420" width="310" height="95" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
-<text x="210" y="453.2" class="node-label" font-size="13">Public browse</text>
+<text x="210" y="453.2" class="node-label" font-size="13">Browse public content</text>
 <text x="210" y="469.84" class="node-label" font-size="13">Tours • attractions • events</text>
 <text x="210" y="486.48" class="node-label" font-size="13">merchandise • FAQ</text>
 <rect x="115" y="555" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="210" y="599.02" class="node-label" font-size="13">Protected action</text>
-<text x="210" y="615.66" class="node-label" font-size="13">ba ang susunod?</text>
+<text x="210" y="599.02" class="node-label" font-size="13">Is the next action</text>
+<text x="210" y="615.66" class="node-label" font-size="13">restricted?</text>
 <ellipse cx="155" cy="740" rx="110" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="155" y="734.02" class="node-label" font-size="13">Mag-browse pa</text>
-<text x="155" y="750.66" class="node-label" font-size="13">o umalis</text>
+<text x="155" y="734.02" class="node-label" font-size="13">Continue browsing</text>
+<text x="155" y="750.66" class="node-label" font-size="13">or exit</text>
 <rect x="625" y="420" width="360" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="805" y="451.52" class="node-label" font-size="13">Mag-sign up o mag-login</text>
-<text x="805" y="468.16" class="node-label" font-size="13">Email o Google</text>
+<text x="805" y="451.52" class="node-label" font-size="13">Sign up or log in</text>
+<text x="805" y="468.16" class="node-label" font-size="13">Email or Google</text>
 <rect x="710" y="550" width="190" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="805" y="594.02" class="node-label" font-size="13">Valid at verified</text>
-<text x="805" y="610.66" class="node-label" font-size="13">ang account?</text>
+<text x="805" y="594.02" class="node-label" font-size="13">Is the account</text>
+<text x="805" y="610.66" class="node-label" font-size="13">valid and verified?</text>
 <rect x="1010" y="565" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1150" y="596.52" class="node-label" font-size="13">Email verification,</text>
-<text x="1150" y="613.16" class="node-label" font-size="13">resend link o password recovery</text>
+<text x="1150" y="596.52" class="node-label" font-size="13">Verify email,</text>
+<text x="1150" y="613.16" class="node-label" font-size="13">resend link or recover password</text>
 <rect x="625" y="710" width="360" height="80" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="805" y="744.02" class="node-label" font-size="13">Server checks session,</text>
-<text x="805" y="760.66" class="node-label" font-size="13">profile role at accreditation</text>
+<text x="805" y="744.02" class="node-label" font-size="13">Server verifies session,</text>
+<text x="805" y="760.66" class="node-label" font-size="13">profile role and accreditation</text>
 <rect x="720" y="835" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="810" y="887.34" class="node-label" font-size="13">Account role?</text>
 <rect x="25" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="190" y="1063.2" class="node-label" font-size="13">TOURIST</text>
-<text x="190" y="1079.84" class="node-label" font-size="13">Browse • booking • itinerary planner</text>
+<text x="190" y="1079.84" class="node-label" font-size="13">Browse • bookings • trip planner</text>
 <text x="190" y="1096.48" class="node-label" font-size="13">messages • reviews • rewards • notifications</text>
 <rect x="380" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="545" y="1063.2" class="node-label" font-size="13">OPERATOR</text>
@@ -113,42 +82,38 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <rect x="1090" y="1015" width="330" height="125" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="1255" y="1063.2" class="node-label" font-size="13">ADMIN / Tourism Office</text>
 <text x="1255" y="1079.84" class="node-label" font-size="13">Approvals • public content • analytics</text>
-<text x="1255" y="1096.48" class="node-label" font-size="13">reviews • safety and feedback</text>
-<path d="M 527 1200 C 527 1190, 973 1190, 973 1200 L 973 1285 C 973 1295, 527 1295, 527 1285 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 527 1200 C 527 1210, 973 1210, 973 1200" fill="none" stroke="#82b366" stroke-width="2"/>
+<text x="1255" y="1096.48" class="node-label" font-size="13">reviews • safety • feedback</text>
+<path d="M527,1200 C527,1190 973,1190 973,1200 L973,1285 C973,1295 527,1295 527,1285 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M527,1200 C527,1210 973,1210 973,1200" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="750" y="1228.2" class="node-label" font-size="13">SHARED DATA</text>
 <text x="750" y="1244.84" class="node-label" font-size="13">Supabase Auth • Postgres • RLS • RPCs</text>
 <text x="750" y="1261.48" class="node-label" font-size="13">Storage • Realtime</text>
-</svg></div></section><section class="panel" id="flow-2"><h2>02 Booking and Payment</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="02 Booking and Payment" viewBox="0 0 1650 2460" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1650" height="2460" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">2. Tour booking, payment at check-in</text>
+</svg></div></section><section class="panel" id="flow-2"><h2>02 Booking and Payment</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="02 Booking and Payment" viewBox="0 0 1650 2460" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">2. Tourist Booking, Payment, and Check-in</text>
 <path d="M 790 135 L 790 165" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 790 235 L 790 270" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 875 317.5 L 1010 312.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="942.5" y="310.5" class="edge-label">Hindi</text>
+<text x="942.5" y="310.5" class="edge-label">No</text>
 <path d="M 790 365 L 790 400" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="802" y="382.5" class="edge-label">Oo</text>
+<text x="802" y="382.5" class="edge-label">Yes</text>
 <path d="M 875 447.5 L 1010 447.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="942.5" y="440.5" class="edge-label">Hindi</text>
+<text x="942.5" y="440.5" class="edge-label">No</text>
 <path d="M 1010 447.5 L 875 447.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 790 495 L 790 530" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="802" y="512.5" class="edge-label">Oo</text>
+<text x="802" y="512.5" class="edge-label">Yes</text>
 <path d="M 790 620 L 790 655" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 790 735 L 790 780" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 875 827.5 L 1010 827.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="942.5" y="820.5" class="edge-label">Hindi</text>
+<text x="942.5" y="820.5" class="edge-label">No</text>
 <path d="M 1010 827.5 L 977.5 827.5 L 977.5 575 L 945 575" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 790 875 L 790 915" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="802" y="895" class="edge-label">Oo</text>
+<text x="802" y="895" class="edge-label">Yes</text>
 <path d="M 790 990 L 790 1030" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 875 1077.5 L 1010 1077.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="942.5" y="1070.5" class="edge-label">Hindi</text>
+<text x="942.5" y="1070.5" class="edge-label">No</text>
 <path d="M 1130 1045 L 1130 832.5 L 790 832.5 L 790 620" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 790 1125 L 790 1165" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="802" y="1145" class="edge-label">Oo</text>
+<text x="802" y="1145" class="edge-label">Yes</text>
 <path d="M 790 1240 L 790 1280" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 875 1330 L 1010 1330" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <text x="942.5" y="1323" class="edge-label">Decline</text>
@@ -165,28 +130,28 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 460 1950 L 460 1980" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 460 2055 L 460 2100" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 375 2147.5 L 300 2152.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="337.5" y="2140.5" class="edge-label">Hindi</text>
+<text x="337.5" y="2140.5" class="edge-label">No</text>
 <path d="M 185 2120 L 185 1985 L 460 1985 L 460 1850" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 545 2147.5 L 577.5 2147.5 L 577.5 2275 L 610 2275" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="573.5" y="2211.25" class="edge-label">Oo</text>
+<text x="573.5" y="2211.25" class="edge-label">Yes</text>
 <path d="M 880 1580 L 890 1580 L 890 1710 L 900 1710" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <text x="886" y="1645" class="edge-label">Manual</text>
 <path d="M 985 1740 L 990 1780" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 990 1850 L 990 1880" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 990 1950 L 990 1990" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1075 2037.5 L 1160 2037.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="1117.5" y="2030.5" class="edge-label">Hindi</text>
+<text x="1117.5" y="2030.5" class="edge-label">No</text>
 <path d="M 1160 2037.5 L 1142.5 2037.5 L 1142.5 1815 L 1125 1815" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 990 2085 L 990 2162.5 L 790 2162.5 L 790 2240" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="890" y="2156.5" class="edge-label">Oo</text>
+<text x="890" y="2156.5" class="edge-label">Yes</text>
 <path d="M 1250 1615 L 1250 1680" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 480 1570 L 790 1570 L 790 1715 L 1100 1715" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1250 1750 L 1250 1785" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1250 1855 L 1250 1890" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1340 1942.5 L 1390 1942.5" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="1365" y="1935.5" class="edge-label">Hindi</text>
+<text x="1365" y="1935.5" class="edge-label">No</text>
 <path d="M 1250 1995 L 1250 2030" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
-<text x="1262" y="2012.5" class="edge-label">Oo</text>
+<text x="1262" y="2012.5" class="edge-label">Yes</text>
 <path d="M 1250 2100 L 1250 2135" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1250 2205 L 1250 2240" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1250 2310 L 1250 2350" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
@@ -194,176 +159,171 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 610 2275 L 525 2275 L 525 2335 L 440 2335" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <path d="M 1090 2065 L 765 2065 L 765 2335 L 440 2335" class="connector" marker-end="url(#arrow-connect-daet-page-2)"/>
 <ellipse cx="790" cy="105" rx="125" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="790" y="98.56" class="node-label" font-size="14">SIMULA</text>
-<text x="790" y="116.48" class="node-label" font-size="14">Pumili ng tour</text>
+<text x="790" y="98.56" class="node-label" font-size="14">START</text>
+<text x="790" y="116.48" class="node-label" font-size="14">Tourist selects a tour</text>
 <rect x="640" y="165" width="300" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="790" y="194.02" class="node-label" font-size="13">Browse at buksan ang</text>
+<text x="790" y="194.02" class="node-label" font-size="13">Browse and open</text>
 <text x="790" y="210.66" class="node-label" font-size="13">package details</text>
 <rect x="705" y="270" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="311.52" class="node-label" font-size="13">Published ba</text>
-<text x="790" y="328.16" class="node-label" font-size="13">ang package?</text>
+<text x="790" y="311.52" class="node-label" font-size="13">Is the package</text>
+<text x="790" y="328.16" class="node-label" font-size="13">published?</text>
 <rect x="1010" y="280" width="230" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1125" y="306.52" class="node-label" font-size="13">Hindi available</text>
-<text x="1125" y="323.16" class="node-label" font-size="13">sa booking</text>
+<text x="1125" y="306.52" class="node-label" font-size="13">Not available</text>
+<text x="1125" y="323.16" class="node-label" font-size="13">for booking</text>
 <rect x="705" y="400" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="441.52" class="node-label" font-size="13">Naka-login ba</text>
-<text x="790" y="458.16" class="node-label" font-size="13">ang tourist?</text>
+<text x="790" y="441.52" class="node-label" font-size="13">Is the tourist</text>
+<text x="790" y="458.16" class="node-label" font-size="13">signed in?</text>
 <rect x="1010" y="415" width="240" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1130" y="441.52" class="node-label" font-size="13">Mag-login / sign up;</text>
-<text x="1130" y="458.16" class="node-label" font-size="13">bumalik sa booking</text>
+<text x="1130" y="441.52" class="node-label" font-size="13">Log in / sign up;</text>
+<text x="1130" y="458.16" class="node-label" font-size="13">return to booking</text>
 <rect x="635" y="530" width="310" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="790" y="560.7" class="node-label" font-size="13">Pumili ng price variant,</text>
-<text x="790" y="577.34" class="node-label" font-size="13">petsa at bilang ng guests;</text>
-<text x="790" y="593.98" class="node-label" font-size="13">ilagay ang contact details</text>
+<text x="790" y="560.7" class="node-label" font-size="13">Choose price variant, date,</text>
+<text x="790" y="577.34" class="node-label" font-size="13">and number of guests;</text>
+<text x="790" y="593.98" class="node-label" font-size="13">enter contact details</text>
 <rect x="635" y="655" width="310" height="80" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="790" y="680.7" class="node-label" font-size="13">Server validates input</text>
-<text x="790" y="697.34" class="node-label" font-size="13">at kinukuha ang presyo</text>
-<text x="790" y="713.98" class="node-label" font-size="13">sa database</text>
+<text x="790" y="697.34" class="node-label" font-size="13">and reads the price</text>
+<text x="790" y="713.98" class="node-label" font-size="13">from the database</text>
 <rect x="705" y="780" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="821.52" class="node-label" font-size="13">Valid ba</text>
-<text x="790" y="838.16" class="node-label" font-size="13">ang request?</text>
+<text x="790" y="829.84" class="node-label" font-size="13">Is the request valid?</text>
 <rect x="1010" y="795" width="240" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1130" y="821.52" class="node-label" font-size="13">Ipakita ang error;</text>
-<text x="1130" y="838.16" class="node-label" font-size="13">ipaayos ang input</text>
+<text x="1130" y="821.52" class="node-label" font-size="13">Show error;</text>
+<text x="1130" y="838.16" class="node-label" font-size="13">correct the input</text>
 <rect x="620" y="915" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="790" y="946.52" class="node-label" font-size="13">Database locks availability row</text>
-<text x="790" y="963.16" class="node-label" font-size="13">at sinusuri ang natitirang seats</text>
+<text x="790" y="963.16" class="node-label" font-size="13">and checks remaining capacity</text>
 <rect x="705" y="1030" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="1071.52" class="node-label" font-size="13">May sapat</text>
-<text x="790" y="1088.16" class="node-label" font-size="13">na seats?</text>
+<text x="790" y="1071.52" class="node-label" font-size="13">Are enough</text>
+<text x="790" y="1088.16" class="node-label" font-size="13">seats available?</text>
 <rect x="1010" y="1045" width="240" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1130" y="1071.52" class="node-label" font-size="13">Sold out o kulang</text>
-<text x="1130" y="1088.16" class="node-label" font-size="13">ang capacity</text>
+<text x="1130" y="1071.52" class="node-label" font-size="13">Sold out or insufficient</text>
+<text x="1130" y="1088.16" class="node-label" font-size="13">capacity</text>
 <rect x="620" y="1165" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="790" y="1196.52" class="node-label" font-size="13">Gumawa ng booking na pending;</text>
-<text x="790" y="1213.16" class="node-label" font-size="13">ligtas na ireserba ang capacity</text>
+<text x="790" y="1196.52" class="node-label" font-size="13">Create pending booking;</text>
+<text x="790" y="1213.16" class="node-label" font-size="13">reserve capacity safely</text>
 <rect x="705" y="1280" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="1324.02" class="node-label" font-size="13">I-review ng operator:</text>
-<text x="790" y="1340.66" class="node-label" font-size="13">i-confirm o i-decline</text>
+<text x="790" y="1324.02" class="node-label" font-size="13">Operator reviews:</text>
+<text x="790" y="1340.66" class="node-label" font-size="13">confirm or decline</text>
 <rect x="1010" y="1295" width="240" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1130" y="1324.02" class="node-label" font-size="13">I-update ang status;</text>
-<text x="1130" y="1340.66" class="node-label" font-size="13">abisuhan ang tourist</text>
+<text x="1130" y="1324.02" class="node-label" font-size="13">Update booking status;</text>
+<text x="1130" y="1340.66" class="node-label" font-size="13">notify tourist</text>
 <rect x="620" y="1415" width="340" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="790" y="1444.02" class="node-label" font-size="13">Booking confirmed;</text>
-<text x="790" y="1460.66" class="node-label" font-size="13">magpadala ng confirmation</text>
+<text x="790" y="1460.66" class="node-label" font-size="13">send confirmation</text>
 <rect x="230" y="1535" width="250" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="355" y="1564.02" class="node-label" font-size="13">Ipakita ang signed</text>
+<text x="355" y="1564.02" class="node-label" font-size="13">Show signed</text>
 <text x="355" y="1580.66" class="node-label" font-size="13">booking QR ticket</text>
 <rect x="700" y="1530" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="790" y="1574.02" class="node-label" font-size="13">Pumili ng paraan</text>
-<text x="790" y="1590.66" class="node-label" font-size="13">ng pagbabayad</text>
+<text x="790" y="1574.02" class="node-label" font-size="13">Choose a payment</text>
+<text x="790" y="1590.66" class="node-label" font-size="13">method</text>
 <rect x="1110" y="1545" width="280" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1250" y="1574.02" class="node-label" font-size="13">Operator magtalaga ng</text>
-<text x="1250" y="1590.66" class="node-label" font-size="13">approved at available na guide</text>
+<text x="1250" y="1574.02" class="node-label" font-size="13">Operator assigns an</text>
+<text x="1250" y="1590.66" class="node-label" font-size="13">approved, available guide</text>
 <rect x="420" y="1680" width="170" height="60" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="505" y="1712.34" class="node-label" font-size="13">ONLINE</text>
 <rect x="900" y="1680" width="170" height="60" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="985" y="1712.34" class="node-label" font-size="13">MANUAL</text>
 <rect x="340" y="1780" width="240" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="460" y="1809.02" class="node-label" font-size="13">Gumawa ng PayMongo</text>
+<text x="460" y="1809.02" class="node-label" font-size="13">Create PayMongo</text>
 <text x="460" y="1825.66" class="node-label" font-size="13">Checkout session</text>
 <polygon points="364,1880 580,1880 556,1950 340,1950" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="460" y="1909.02" class="node-label" font-size="13">Tourist magbayad</text>
-<text x="460" y="1925.66" class="node-label" font-size="13">sa PayMongo</text>
+<text x="460" y="1909.02" class="node-label" font-size="13">Tourist pays</text>
+<text x="460" y="1925.66" class="node-label" font-size="13">through PayMongo</text>
 <rect x="310" y="1980" width="300" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="460" y="2011.52" class="node-label" font-size="13">Webhook verifies signature</text>
-<text x="460" y="2028.16" class="node-label" font-size="13">at kinukuha muli ang status</text>
+<text x="460" y="2028.16" class="node-label" font-size="13">and re-fetches checkout status</text>
 <rect x="375" y="2100" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="460" y="2141.52" class="node-label" font-size="13">Verified at</text>
+<text x="460" y="2141.52" class="node-label" font-size="13">Verified and</text>
 <text x="460" y="2158.16" class="node-label" font-size="13">successful?</text>
 <rect x="70" y="2120" width="230" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="185" y="2146.52" class="node-label" font-size="13">Unpaid / pending;</text>
-<text x="185" y="2163.16" class="node-label" font-size="13">subukang muli</text>
+<text x="185" y="2163.16" class="node-label" font-size="13">try again</text>
 <rect x="855" y="1780" width="270" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="990" y="1809.02" class="node-label" font-size="13">I-upload ang receipt</text>
-<text x="990" y="1825.66" class="node-label" font-size="13">sa private Storage</text>
+<text x="990" y="1809.02" class="node-label" font-size="13">Upload payment receipt</text>
+<text x="990" y="1825.66" class="node-label" font-size="13">to private Storage</text>
 <rect x="855" y="1880" width="270" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="990" y="1909.02" class="node-label" font-size="13">Operator nagre-review</text>
-<text x="990" y="1925.66" class="node-label" font-size="13">ng payment proof</text>
+<text x="990" y="1909.02" class="node-label" font-size="13">Operator reviews</text>
+<text x="990" y="1925.66" class="node-label" font-size="13">payment proof</text>
 <rect x="905" y="1990" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="990" y="2031.52" class="node-label" font-size="13">Inaprubahan</text>
-<text x="990" y="2048.16" class="node-label" font-size="13">ba ang proof?</text>
+<text x="990" y="2031.52" class="node-label" font-size="13">Was the proof</text>
+<text x="990" y="2048.16" class="node-label" font-size="13">approved?</text>
 <rect x="1160" y="2005" width="220" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1270" y="2031.52" class="node-label" font-size="13">Ipaalam sa tourist;</text>
-<text x="1270" y="2048.16" class="node-label" font-size="13">magsumite ulit</text>
+<text x="1270" y="2031.52" class="node-label" font-size="13">Notify tourist;</text>
+<text x="1270" y="2048.16" class="node-label" font-size="13">submit proof again</text>
 <rect x="610" y="2240" width="360" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="790" y="2269.02" class="node-label" font-size="13">Itala sa payment ledger;</text>
-<text x="790" y="2285.66" class="node-label" font-size="13">i-update ang balance/status</text>
+<text x="790" y="2269.02" class="node-label" font-size="13">Record in payment ledger;</text>
+<text x="790" y="2285.66" class="node-label" font-size="13">update balance/status</text>
 <rect x="1100" y="1680" width="300" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1250" y="1709.02" class="node-label" font-size="13">Araw na ng tour;</text>
-<text x="1250" y="1725.66" class="node-label" font-size="13">guide buksan ang check-in</text>
+<text x="1250" y="1709.02" class="node-label" font-size="13">Tour day arrives;</text>
+<text x="1250" y="1725.66" class="node-label" font-size="13">guide opens check-in</text>
 <rect x="1100" y="1785" width="300" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1250" y="1814.02" class="node-label" font-size="13">I-scan ang QR o</text>
-<text x="1250" y="1830.66" class="node-label" font-size="13">gamitin ang guest roster</text>
+<text x="1250" y="1814.02" class="node-label" font-size="13">Scan QR or</text>
+<text x="1250" y="1830.66" class="node-label" font-size="13">use guest roster</text>
 <rect x="1160" y="1890" width="180" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="1250" y="1936.52" class="node-label" font-size="13">Valid ang ticket,</text>
-<text x="1250" y="1953.16" class="node-label" font-size="13">booking, petsa at guide?</text>
+<text x="1250" y="1936.52" class="node-label" font-size="13">Are ticket, booking,</text>
+<text x="1250" y="1953.16" class="node-label" font-size="13">date and guide valid?</text>
 <rect x="1390" y="1910" width="210" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1495" y="1936.52" class="node-label" font-size="13">Tanggihan ang scan;</text>
-<text x="1495" y="1953.16" class="node-label" font-size="13">huwag mag-check-in</text>
+<text x="1495" y="1936.52" class="node-label" font-size="13">Reject the scan;</text>
+<text x="1495" y="1953.16" class="node-label" font-size="13">do not check in</text>
 <rect x="1090" y="2030" width="320" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="1250" y="2059.02" class="node-label" font-size="13">Itala ang guest check-in</text>
-<text x="1250" y="2075.66" class="node-label" font-size="13">(idempotent ang ulit na scan)</text>
+<text x="1250" y="2059.02" class="node-label" font-size="13">Record guest check-in</text>
+<text x="1250" y="2075.66" class="node-label" font-size="13">(repeat scans are idempotent)</text>
 <rect x="1090" y="2135" width="320" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1250" y="2164.02" class="node-label" font-size="13">Operator markahang</text>
-<text x="1250" y="2180.66" class="node-label" font-size="13">completed ang tour</text>
+<text x="1250" y="2164.02" class="node-label" font-size="13">Operator marks</text>
+<text x="1250" y="2180.66" class="node-label" font-size="13">tour completed</text>
 <rect x="1090" y="2240" width="320" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1250" y="2269.02" class="node-label" font-size="13">Tourist maaaring magsumite</text>
-<text x="1250" y="2285.66" class="node-label" font-size="13">ng review at makakuha ng rewards</text>
+<text x="1250" y="2269.02" class="node-label" font-size="13">Tourist may submit a review</text>
+<text x="1250" y="2285.66" class="node-label" font-size="13">and receive rewards</text>
 <ellipse cx="1250" cy="2380" rx="110" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="1250" y="2374.02" class="node-label" font-size="13">KATAPUSAN</text>
+<text x="1250" y="2374.02" class="node-label" font-size="13">END</text>
 <text x="1250" y="2390.66" class="node-label" font-size="13">Tour completed</text>
-<path d="M 42 2300 C 42 2290, 438 2290, 438 2300 L 438 2370 C 438 2380, 42 2380, 42 2370 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 42 2300 C 42 2310, 438 2310, 438 2300" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M42,2300 C42,2290 438,2290 438,2300 L438,2370 C438,2380 42,2380 42,2370 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M42,2300 C42,2310 438,2310 438,2300" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="240" y="2329.02" class="node-label" font-size="13">Supabase bookings • availability • payments</text>
 <text x="240" y="2345.66" class="node-label" font-size="13">participants • check-ins • notifications</text>
-</svg></div></section><section class="panel" id="flow-3"><h2>03 Operator and Packages</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="03 Operator and Packages" viewBox="0 0 1650 2100" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1650" height="2100" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">3. Operator accreditation at package lifecycle</text>
+</svg></div></section><section class="panel" id="flow-3"><h2>03 Operator and Packages</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="03 Operator and Packages" viewBox="0 0 1650 2100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">3. Operator Accreditation and Package Lifecycle</text>
 <path d="M 210 150 L 210 205" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 310 257.5 L 700 267.5" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <text x="505" y="250.5" class="edge-label">Approved</text>
 <path d="M 310 257.5 L 345 257.5 L 345 235 L 380 235" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <text x="341" y="246.25" class="edge-label">Pending</text>
 <path d="M 210 310 L 210 365" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="222" y="337.5" class="edge-label">Wala / rejected</text>
+<text x="222" y="337.5" class="edge-label">Not applied / rejected</text>
 <path d="M 210 440 L 210 480" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 210 555 L 210 595" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 300 645 L 380 645" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="340" y="638" class="edge-label">Hindi</text>
+<text x="340" y="638" class="edge-label">No</text>
 <path d="M 505 610 L 505 525 L 210 525 L 210 440" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 300 645 L 500 645 L 500 267.5 L 700 267.5" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="496" y="456.25" class="edge-label">Oo</text>
+<text x="496" y="456.25" class="edge-label">Yes</text>
 <path d="M 845 305 L 845 350" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 420 L 845 465" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 930 515 L 1050 515" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="990" y="508" class="edge-label">Hindi</text>
+<text x="990" y="508" class="edge-label">No</text>
 <path d="M 1050 515 L 930 515" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 565 L 845 600" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="857" y="582.5" class="edge-label">Oo</text>
+<text x="857" y="582.5" class="edge-label">Yes</text>
 <path d="M 845 670 L 845 710" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 780 L 845 820" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 890 L 845 930" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 930 980 L 1050 980" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="990" y="973" class="edge-label">Hindi</text>
+<text x="990" y="973" class="edge-label">No</text>
 <path d="M 1180 945 L 1180 752.5 L 1200 752.5 L 1200 560" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 1030 L 845 1070" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="857" y="1050" class="edge-label">Oo</text>
+<text x="857" y="1050" class="edge-label">Yes</text>
 <path d="M 845 1140 L 845 1180" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 845 1280 L 845 1530 L 520 1530 L 520 1780" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="682.5" y="1524" class="edge-label">Wala</text>
+<text x="682.5" y="1524" class="edge-label">No changes</text>
 <path d="M 930 1230 L 1060 1235" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="995" y="1223" class="edge-label">Oo</text>
+<text x="995" y="1223" class="edge-label">Yes</text>
 <path d="M 1210 1280 L 1210 1320" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 1210 1410 L 1210 1450" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 1295 1500 L 1370 1505" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="1332.5" y="1493" class="edge-label">Hindi</text>
+<text x="1332.5" y="1493" class="edge-label">No</text>
 <path d="M 1480 1470 L 1480 1375 L 1210 1375 L 1210 1280" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 1210 1550 L 1210 1600" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
-<text x="1222" y="1575" class="edge-label">Oo</text>
+<text x="1222" y="1575" class="edge-label">Yes</text>
 <path d="M 1210 1600 L 1210 1370 L 845 1370 L 845 1140" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 700 1105 L 525 1105 L 525 835 L 350 835" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <text x="521" y="970" class="edge-label">Admin archives</text>
@@ -373,81 +333,80 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 1050 1642.5 L 1010 1642.5 L 1010 1975 L 970 1975" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <path d="M 865 1870 L 865 1900 L 735 1900 L 735 1930" class="connector" marker-end="url(#arrow-connect-daet-page-3)"/>
 <ellipse cx="210" cy="117.5" rx="135" ry="32.5" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="210" y="111.06" class="node-label" font-size="14">SIMULA</text>
-<text x="210" y="128.98" class="node-label" font-size="14">Operator applicant mag-login</text>
+<text x="210" y="111.06" class="node-label" font-size="14">START</text>
+<text x="210" y="128.98" class="node-label" font-size="14">Operator applicant logs in</text>
 <rect x="110" y="205" width="200" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="210" y="251.52" class="node-label" font-size="13">Accreditation</text>
 <text x="210" y="268.16" class="node-label" font-size="13">status?</text>
 <rect x="80" y="365" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="210" y="396.52" class="node-label" font-size="13">Magsumite o mag-update</text>
-<text x="210" y="413.16" class="node-label" font-size="13">ng operator application</text>
+<text x="210" y="396.52" class="node-label" font-size="13">Submit or update</text>
+<text x="210" y="413.16" class="node-label" font-size="13">operator application</text>
 <rect x="80" y="480" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="210" y="511.52" class="node-label" font-size="13">Tourism Office</text>
-<text x="210" y="528.16" class="node-label" font-size="13">mag-review</text>
+<text x="210" y="528.16" class="node-label" font-size="13">reviews application</text>
 <rect x="120" y="595" width="180" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="210" y="647.34" class="node-label" font-size="13">Aprubahan?</text>
+<text x="210" y="647.34" class="node-label" font-size="13">Approve?</text>
 <rect x="380" y="610" width="250" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="505" y="639.02" class="node-label" font-size="13">I-record ang dahilan;</text>
-<text x="505" y="655.66" class="node-label" font-size="13">abisuhan ang applicant</text>
+<text x="505" y="639.02" class="node-label" font-size="13">Record reason;</text>
+<text x="505" y="655.66" class="node-label" font-size="13">notify applicant</text>
 <rect x="380" y="200" width="250" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="505" y="229.02" class="node-label" font-size="13">Pending:</text>
-<text x="505" y="245.66" class="node-label" font-size="13">hintayin ang review</text>
+<text x="505" y="245.66" class="node-label" font-size="13">wait for review</text>
 <rect x="700" y="230" width="290" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="845" y="269.84" class="node-label" font-size="13">Operator dashboard</text>
 <rect x="700" y="350" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="845" y="379.02" class="node-label" font-size="13">Gumawa ng package</text>
-<text x="845" y="395.66" class="node-label" font-size="13">bilang draft</text>
+<text x="845" y="379.02" class="node-label" font-size="13">Create package</text>
+<text x="845" y="395.66" class="node-label" font-size="13">as a draft</text>
 <rect x="760" y="465" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="845" y="509.02" class="node-label" font-size="13">Kumpleto at</text>
-<text x="845" y="525.66" class="node-label" font-size="13">valid ba?</text>
+<text x="845" y="509.02" class="node-label" font-size="13">Complete and</text>
+<text x="845" y="525.66" class="node-label" font-size="13">valid?</text>
 <rect x="1050" y="470" width="300" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1200" y="500.7" class="node-label" font-size="13">I-edit details, duration,</text>
+<text x="1200" y="500.7" class="node-label" font-size="13">Edit details, duration,</text>
 <text x="1200" y="517.34" class="node-label" font-size="13">prices, inclusions, stops</text>
-<text x="1200" y="533.98" class="node-label" font-size="13">at photos</text>
+<text x="1200" y="533.98" class="node-label" font-size="13">and photos</text>
 <rect x="700" y="600" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="845" y="629.02" class="node-label" font-size="13">I-submit para sa</text>
-<text x="845" y="645.66" class="node-label" font-size="13">Tourism Office review</text>
+<text x="845" y="637.34" class="node-label" font-size="13">Submit for Tourism Office review</text>
 <rect x="700" y="710" width="290" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="845" y="739.02" class="node-label" font-size="13">pending_review</text>
-<text x="845" y="755.66" class="node-label" font-size="13">Read-only habang sinusuri</text>
+<text x="845" y="755.66" class="node-label" font-size="13">Read-only while under review</text>
 <rect x="700" y="820" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="845" y="849.02" class="node-label" font-size="13">Admin mag-review</text>
-<text x="845" y="865.66" class="node-label" font-size="13">ng package</text>
+<text x="845" y="849.02" class="node-label" font-size="13">Admin reviews</text>
+<text x="845" y="865.66" class="node-label" font-size="13">package</text>
 <rect x="760" y="930" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="845" y="982.34" class="node-label" font-size="13">I-publish ba?</text>
+<text x="845" y="982.34" class="node-label" font-size="13">Publish?</text>
 <rect x="1050" y="945" width="260" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="1180" y="974.02" class="node-label" font-size="13">rejected</text>
-<text x="1180" y="990.66" class="node-label" font-size="13">May reviewer reason</text>
+<text x="1180" y="990.66" class="node-label" font-size="13">Reviewer reason provided</text>
 <rect x="700" y="1070" width="290" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="845" y="1099.02" class="node-label" font-size="13">published</text>
-<text x="845" y="1115.66" class="node-label" font-size="13">Public at bookable</text>
+<text x="845" y="1115.66" class="node-label" font-size="13">Public and bookable</text>
 <rect x="760" y="1180" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="845" y="1224.02" class="node-label" font-size="13">May pagbabago</text>
-<text x="845" y="1240.66" class="node-label" font-size="13">ba sa package?</text>
+<text x="845" y="1224.02" class="node-label" font-size="13">Any package</text>
+<text x="845" y="1240.66" class="node-label" font-size="13">changes?</text>
 <rect x="1060" y="1190" width="300" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1210" y="1220.7" class="node-label" font-size="13">I-edit ang lahat ng fields:</text>
+<text x="1210" y="1220.7" class="node-label" font-size="13">Edit all fields:</text>
 <text x="1210" y="1237.34" class="node-label" font-size="13">prices, stops, inclusions</text>
-<text x="1210" y="1253.98" class="node-label" font-size="13">at photos</text>
+<text x="1210" y="1253.98" class="node-label" font-size="13">and photos</text>
 <rect x="1060" y="1320" width="300" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1210" y="1350.7" class="node-label" font-size="13">Server / database checks:</text>
-<text x="1210" y="1367.34" class="node-label" font-size="13">owner • validation • version</text>
+<text x="1210" y="1350.7" class="node-label" font-size="13">Server/database checks:</text>
+<text x="1210" y="1367.34" class="node-label" font-size="13">ownership • validation • version</text>
 <text x="1210" y="1383.98" class="node-label" font-size="13">booked-price safeguards</text>
 <rect x="1125" y="1450" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="1210" y="1494.02" class="node-label" font-size="13">Ligtas at valid</text>
-<text x="1210" y="1510.66" class="node-label" font-size="13">ang save?</text>
+<text x="1210" y="1494.02" class="node-label" font-size="13">Is the save valid</text>
+<text x="1210" y="1510.66" class="node-label" font-size="13">and safe?</text>
 <rect x="1370" y="1470" width="220" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1480" y="1499.02" class="node-label" font-size="13">Error; walang partial save.</text>
-<text x="1480" y="1515.66" class="node-label" font-size="13">Refresh kung may conflict.</text>
+<text x="1480" y="1499.02" class="node-label" font-size="13">Error; no partial save.</text>
+<text x="1480" y="1515.66" class="node-label" font-size="13">Refresh if there is a conflict.</text>
 <rect x="1050" y="1600" width="320" height="85" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="1210" y="1628.2" class="node-label" font-size="13">Atomic save;</text>
 <text x="1210" y="1644.84" class="node-label" font-size="13">changes go live immediately</text>
-<text x="1210" y="1661.48" class="node-label" font-size="13">walang resubmission</text>
+<text x="1210" y="1661.48" class="node-label" font-size="13">no resubmission</text>
 <rect x="80" y="800" width="270" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="215" y="829.02" class="node-label" font-size="13">archived packages</text>
 <text x="215" y="845.66" class="node-label" font-size="13">Read-only</text>
 <rect x="370" y="1780" width="300" height="75" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
-<text x="520" y="1811.52" class="node-label" font-size="13">Pamahalaan ang open dates</text>
-<text x="520" y="1828.16" class="node-label" font-size="13">at tour capacity</text>
+<text x="520" y="1811.52" class="node-label" font-size="13">Manage open dates</text>
+<text x="520" y="1828.16" class="node-label" font-size="13">and tour capacity</text>
 <rect x="700" y="1780" width="330" height="90" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="865" y="1810.7" class="node-label" font-size="13">Manage bookings:</text>
 <text x="865" y="1827.34" class="node-label" font-size="13">confirm/decline, assign guide,</text>
@@ -455,25 +414,21 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <rect x="1080" y="1780" width="300" height="75" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="1230" y="1811.52" class="node-label" font-size="13">Payments ledger • CSV export</text>
 <text x="1230" y="1828.16" class="node-label" font-size="13">reviews • live tour tools</text>
-<path d="M 502 1940 C 502 1930, 968 1930, 968 1940 L 968 2010 C 968 2020, 502 2020, 502 2010 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 502 1940 C 502 1950, 968 1950, 968 1940" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M502,1940 C502,1930 968,1930 968,1940 L968,2010 C968,2020 502,2020 502,2010 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M502,1940 C502,1950 968,1950 968,1940" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="735" y="1969.02" class="node-label" font-size="13">Supabase packages, relations,</text>
-<text x="735" y="1985.66" class="node-label" font-size="13">availability, bookings at Storage</text>
-</svg></div></section><section class="panel" id="flow-4"><h2>04 Guide Workflow</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="04 Guide Workflow" viewBox="0 0 1450 2070" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1450" height="2070" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">4. Guide accreditation, assignment at check-in</text>
+<text x="735" y="1985.66" class="node-label" font-size="13">availability, bookings and Storage</text>
+</svg></div></section><section class="panel" id="flow-4"><h2>04 Guide Workflow</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="04 Guide Workflow" viewBox="0 0 1450 2070" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">4. Guide Accreditation, Assignment, and Check-in</text>
 <path d="M 760 140 L 760 180" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 265 L 760 305" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 375 L 760 420" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 495 L 760 535" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 855 587.5 L 940 587.5" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
-<text x="897.5" y="580.5" class="edge-label">Hindi</text>
+<text x="897.5" y="580.5" class="edge-label">No</text>
 <path d="M 1095 550 L 1095 407.5 L 760 407.5 L 760 265" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 640 L 760 700" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
-<text x="772" y="670" class="edge-label">Oo</text>
+<text x="772" y="670" class="edge-label">Yes</text>
 <path d="M 760 770 L 760 810" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 880 L 760 920" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 995 L 760 1035" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
@@ -487,80 +442,76 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 900 1422.5 L 915 1422.5 L 915 1555 L 930 1555" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 1600 L 760 1640" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 855 1692.5 L 940 1695" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
-<text x="897.5" y="1685.5" class="edge-label">Hindi</text>
+<text x="897.5" y="1685.5" class="edge-label">No</text>
 <path d="M 760 1745 L 760 1810" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
-<text x="772" y="1777.5" class="edge-label">Oo</text>
+<text x="772" y="1777.5" class="edge-label">Yes</text>
 <path d="M 760 1885 L 760 1930" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 590 1847.5 L 500 1855" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <path d="M 760 995 L 760 1402.5 L 305 1402.5 L 305 1810" class="connector" marker-end="url(#arrow-connect-daet-page-4)"/>
 <ellipse cx="760" cy="107.5" rx="150" ry="32.5" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="760" y="101.06" class="node-label" font-size="14">SIMULA</text>
-<text x="760" y="118.98" class="node-label" font-size="14">User mag-apply bilang guide</text>
+<text x="760" y="101.06" class="node-label" font-size="14">START</text>
+<text x="760" y="118.98" class="node-label" font-size="14">User applies to become a guide</text>
 <rect x="590" y="180" width="340" height="85" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="760" y="216.52" class="node-label" font-size="13">Isumite ang guide profile,</text>
-<text x="760" y="233.16" class="node-label" font-size="13">consent at private ID documents</text>
+<text x="760" y="216.52" class="node-label" font-size="13">Submit guide profile,</text>
+<text x="760" y="233.16" class="node-label" font-size="13">consent and private ID documents</text>
 <rect x="615" y="305" width="290" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="760" y="334.02" class="node-label" font-size="13">Application status:</text>
 <text x="760" y="350.66" class="node-label" font-size="13">pending</text>
 <rect x="590" y="420" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="760" y="451.52" class="node-label" font-size="13">Tourism Office mag-review</text>
-<text x="760" y="468.16" class="node-label" font-size="13">ng guide application</text>
+<text x="760" y="451.52" class="node-label" font-size="13">Tourism Office reviews</text>
+<text x="760" y="468.16" class="node-label" font-size="13">guide application</text>
 <rect x="665" y="535" width="190" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="760" y="589.84" class="node-label" font-size="13">Approved ba?</text>
+<text x="760" y="589.84" class="node-label" font-size="13">Approve the guide?</text>
 <rect x="940" y="550" width="310" height="75" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1095" y="581.52" class="node-label" font-size="13">Rejected: ipakita ang notes;</text>
-<text x="1095" y="598.16" class="node-label" font-size="13">i-update at isumite muli</text>
+<text x="1095" y="581.52" class="node-label" font-size="13">Rejected: show reviewer notes;</text>
+<text x="1095" y="598.16" class="node-label" font-size="13">update and resubmit</text>
 <rect x="590" y="700" width="340" height="70" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="760" y="737.34" class="node-label" font-size="13">Approved guide dashboard</text>
 <rect x="590" y="810" width="340" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="760" y="839.02" class="node-label" font-size="13">Itakda ang guide</text>
+<text x="760" y="839.02" class="node-label" font-size="13">Set guide</text>
 <text x="760" y="855.66" class="node-label" font-size="13">availability</text>
 <rect x="590" y="920" width="340" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="760" y="951.52" class="node-label" font-size="13">Operator magtalaga ng</text>
-<text x="760" y="968.16" class="node-label" font-size="13">approved at available guide</text>
+<text x="760" y="951.52" class="node-label" font-size="13">Operator assigns an</text>
+<text x="760" y="968.16" class="node-label" font-size="13">approved, available guide</text>
 <rect x="590" y="1035" width="340" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="760" y="1064.02" class="node-label" font-size="13">Guide makatanggap</text>
-<text x="760" y="1080.66" class="node-label" font-size="13">ng assignment notification</text>
+<text x="760" y="1064.02" class="node-label" font-size="13">Notify the guide</text>
+<text x="760" y="1080.66" class="node-label" font-size="13">of the assignment</text>
 <rect x="590" y="1145" width="340" height="65" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="760" y="1179.84" class="node-label" font-size="13">Araw na ng confirmed tour</text>
+<text x="760" y="1179.84" class="node-label" font-size="13">Confirmed tour date</text>
 <rect x="675" y="1250" width="170" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="760" y="1302.34" class="node-label" font-size="13">Paraan ng check-in?</text>
+<text x="760" y="1302.34" class="node-label" font-size="13">Check-in method?</text>
 <rect x="370" y="1390" width="260" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="500" y="1424.84" class="node-label" font-size="13">I-scan ang booking QR</text>
+<text x="500" y="1424.84" class="node-label" font-size="13">Scan booking QR</text>
 <rect x="900" y="1390" width="280" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1040" y="1416.52" class="node-label" font-size="13">Gamitin ang roster</text>
-<text x="1040" y="1433.16" class="node-label" font-size="13">para sa manual check-in</text>
+<text x="1040" y="1416.52" class="node-label" font-size="13">Use the roster</text>
+<text x="1040" y="1433.16" class="node-label" font-size="13">for manual check-in</text>
 <rect x="590" y="1510" width="340" height="90" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="760" y="1540.7" class="node-label" font-size="13">Verify signed token, expiry,</text>
 <text x="760" y="1557.34" class="node-label" font-size="13">booking status, tour date</text>
-<text x="760" y="1573.98" class="node-label" font-size="13">at guide assignment</text>
+<text x="760" y="1573.98" class="node-label" font-size="13">and guide assignment</text>
 <rect x="665" y="1640" width="190" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="760" y="1686.52" class="node-label" font-size="13">Lahat ba ng checks</text>
-<text x="760" y="1703.16" class="node-label" font-size="13">ay pasado?</text>
+<text x="760" y="1686.52" class="node-label" font-size="13">Do all checks</text>
+<text x="760" y="1703.16" class="node-label" font-size="13">pass?</text>
 <rect x="940" y="1660" width="300" height="70" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="1090" y="1689.02" class="node-label" font-size="13">Tanggihan ang request;</text>
-<text x="1090" y="1705.66" class="node-label" font-size="13">walang check-in record</text>
+<text x="1090" y="1689.02" class="node-label" font-size="13">Reject request;</text>
+<text x="1090" y="1705.66" class="node-label" font-size="13">do not record check-in</text>
 <rect x="590" y="1810" width="340" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="760" y="1841.52" class="node-label" font-size="13">Itala ang guest check-in;</text>
-<text x="760" y="1858.16" class="node-label" font-size="13">duplicate scan ay harmless</text>
+<text x="760" y="1841.52" class="node-label" font-size="13">Record guest check-in;</text>
+<text x="760" y="1858.16" class="node-label" font-size="13">duplicate scans are harmless</text>
 <ellipse cx="760" cy="1962.5" rx="115" ry="32.5" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="760" y="1956.52" class="node-label" font-size="13">KATAPUSAN</text>
+<text x="760" y="1956.52" class="node-label" font-size="13">END</text>
 <text x="760" y="1973.16" class="node-label" font-size="13">Guest checked in</text>
-<path d="M 112 1820 C 112 1810, 498 1810, 498 1820 L 498 1890 C 498 1900, 112 1900, 112 1890 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 112 1820 C 112 1830, 498 1830, 498 1820" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M112,1820 C112,1810 498,1810 498,1820 L498,1890 C498,1900 112,1900 112,1890 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M112,1820 C112,1830 498,1830 498,1820" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="305" y="1849.02" class="node-label" font-size="13">Supabase guides, availability,</text>
-<text x="305" y="1865.66" class="node-label" font-size="13">bookings, QR scans at notifications</text>
-</svg></div></section><section class="panel" id="flow-5"><h2>05 Admin Workflow</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="05 Admin Workflow" viewBox="0 0 1500 1500" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1500" height="1500" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">5. Tourism Office admin at content management</text>
+<text x="305" y="1865.66" class="node-label" font-size="13">bookings, QR scans and notifications</text>
+</svg></div></section><section class="panel" id="flow-5"><h2>05 Admin Workflow</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="05 Admin Workflow" viewBox="0 0 1500 1500" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">5. Tourism Office Admin and Content Management</text>
 <path d="M 780 130 L 780 175" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
 <path d="M 860 225 L 1000 222.5" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
-<text x="930" y="218" class="edge-label">Hindi</text>
+<text x="930" y="218" class="edge-label">No</text>
 <path d="M 780 275 L 780 325" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
-<text x="792" y="300" class="edge-label">Oo</text>
+<text x="792" y="300" class="edge-label">Yes</text>
 <path d="M 780 400 L 780 450" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
 <path d="M 700 502.5 L 520 502.5 L 520 677.5 L 340 677.5" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
 <text x="516" y="590" class="edge-label">Operator applications</text>
@@ -595,8 +546,8 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 905 1070 L 905 1200 L 755 1200 L 755 1330" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
 <path d="M 1260 900 L 1260 1115 L 755 1115 L 755 1330" class="connector" marker-end="url(#arrow-connect-daet-page-5)"/>
 <ellipse cx="780" cy="100" rx="130" ry="30" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="780" y="93.56" class="node-label" font-size="14">SIMULA</text>
-<text x="780" y="111.48" class="node-label" font-size="14">Admin mag-login</text>
+<text x="780" y="93.56" class="node-label" font-size="14">START</text>
+<text x="780" y="111.48" class="node-label" font-size="14">Admin logs in</text>
 <rect x="700" y="175" width="160" height="100" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="780" y="219.02" class="node-label" font-size="13">Admin role</text>
 <text x="780" y="235.66" class="node-label" font-size="13">verified?</text>
@@ -604,15 +555,15 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <text x="1110" y="224.84" class="node-label" font-size="13">Access denied</text>
 <rect x="620" y="325" width="320" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="780" y="356.52" class="node-label" font-size="13">Admin dashboard</text>
-<text x="780" y="373.16" class="node-label" font-size="13">Analytics at quick actions</text>
+<text x="780" y="373.16" class="node-label" font-size="13">Analytics and quick actions</text>
 <rect x="700" y="450" width="160" height="105" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="780" y="504.84" class="node-label" font-size="13">Anong admin task?</text>
+<text x="780" y="504.84" class="node-label" font-size="13">Which admin task?</text>
 <rect x="80" y="640" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="210" y="671.52" class="node-label" font-size="13">Review operator</text>
 <text x="210" y="688.16" class="node-label" font-size="13">applications</text>
 <rect x="390" y="640" width="290" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="535" y="671.52" class="node-label" font-size="13">Review guide applications</text>
-<text x="535" y="688.16" class="node-label" font-size="13">at private ID access</text>
+<text x="535" y="688.16" class="node-label" font-size="13">and private ID requests</text>
 <rect x="730" y="640" width="260" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="860" y="671.52" class="node-label" font-size="13">Review pending</text>
 <text x="860" y="688.16" class="node-label" font-size="13">tour packages</text>
@@ -622,7 +573,7 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <rect x="80" y="820" width="290" height="90" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="225" y="850.7" class="node-label" font-size="13">Manage public content:</text>
 <text x="225" y="867.34" class="node-label" font-size="13">attractions, events, fares,</text>
-<text x="225" y="883.98" class="node-label" font-size="13">guide places</text>
+<text x="225" y="883.98" class="node-label" font-size="13">guide locations</text>
 <rect x="420" y="820" width="290" height="80" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="565" y="854.02" class="node-label" font-size="13">Emergency contacts,</text>
 <text x="565" y="870.66" class="node-label" font-size="13">feedback and reports</text>
@@ -638,23 +589,19 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <text x="960" y="1191.52" class="node-label" font-size="13">Record reason;</text>
 <text x="960" y="1208.16" class="node-label" font-size="13">notify applicant</text>
 <rect x="80" y="1000" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="225" y="1037.34" class="node-label" font-size="13">Validate at save ang content</text>
+<text x="225" y="1037.34" class="node-label" font-size="13">Validate and save content</text>
 <rect x="760" y="1000" width="290" height="70" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="905" y="1029.02" class="node-label" font-size="13">Hide review;</text>
-<text x="905" y="1045.66" class="node-label" font-size="13">remove it from public average</text>
+<text x="905" y="1045.66" class="node-label" font-size="13">remove it from public averages</text>
 <rect x="1120" y="820" width="280" height="80" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
-<text x="1260" y="854.02" class="node-label" font-size="13">KPI and analytics</text>
+<text x="1260" y="854.02" class="node-label" font-size="13">KPIs and analytics</text>
 <text x="1260" y="870.66" class="node-label" font-size="13">for selected date range</text>
-<path d="M 542 1340 C 542 1330, 968 1330, 968 1340 L 968 1410 C 968 1420, 542 1420, 542 1410 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 542 1340 C 542 1350, 968 1350, 968 1340" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M542,1340 C542,1330 968,1330 968,1340 L968,1410 C968,1420 542,1420 542,1410 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M542,1340 C542,1350 968,1350 968,1340" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="755" y="1369.02" class="node-label" font-size="13">Supabase database, RLS,</text>
 <text x="755" y="1385.66" class="node-label" font-size="13">private Storage and admin RPCs</text>
-</svg></div></section><section class="panel" id="flow-6"><h2>06 Other Modules and Services</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="06 Other Modules and Services" viewBox="0 0 1650 1870" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<marker id="arrow-connect-daet-page-6" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker>
-</defs>
-<rect x="0" y="0" width="1650" height="1870" fill="#ffffff"/>
-<text x="42" y="50" class="page-title">6. Tourism content, planner, assistant at shared integrations</text>
+</svg></div></section><section class="panel" id="flow-6"><h2>06 Other Modules and Services</h2><div class="diagram-frame"><svg class="diagram-svg" role="img" aria-label="06 Other Modules and Services" viewBox="0 0 1650 1870" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow-connect-daet-page-6" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 z" fill="#526579"/></marker></defs><rect x="0" y="0" width="100%" height="100%" fill="#fff"/>
+<text x="42" y="50" class="page-title">6. Tourism Content, Planner, Assistant, and Shared Integrations</text>
 <path d="M 210 295 L 210 455" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 210 295 L 210 330" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 615 175 L 615 210" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
@@ -662,22 +609,22 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 615 400 L 615 440" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 615 515 L 615 555" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 695 602.5 L 770 602.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="732.5" y="595.5" class="edge-label">Hindi</text>
+<text x="732.5" y="595.5" class="edge-label">No</text>
 <path d="M 880 570 L 880 485 L 615 485 L 615 400" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 615 650 L 615 690" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="627" y="670" class="edge-label">Oo</text>
+<text x="627" y="670" class="edge-label">Yes</text>
 <path d="M 475 727.5 L 412.5 727.5 L 412.5 492.5 L 350 492.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1025 175 L 1025 210" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1025 275 L 1025 315" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1025 400 L 1025 445" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1025 540 L 1025 565 L 915 565 L 915 590" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="970" y="559" class="edge-label">Oo</text>
+<text x="970" y="559" class="edge-label">Yes</text>
 <path d="M 1110 492.5 L 1100 492.5 L 1100 622.5 L 1090 622.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="1096" y="557.5" class="edge-label">Hindi</text>
+<text x="1096" y="557.5" class="edge-label">No</text>
 <path d="M 915 655 L 915 680 L 1025 680 L 1025 705" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1090 622.5 L 1127.5 622.5 L 1127.5 747.5 L 1165 747.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 885 747.5 L 897.5 747.5 L 897.5 892.5 L 910 892.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="893.5" y="820" class="edge-label">Kapag nagbukas ng actual action</text>
+<text x="893.5" y="820" class="edge-label">When user opens a real action</text>
 <path d="M 1410 175 L 1410 210" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1410 275 L 1410 315" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1410 390 L 1410 430" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
@@ -686,13 +633,13 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <path d="M 520 1127.5 L 480 1127.5 L 480 1265 L 440 1265" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 715 1165 L 705 1220" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 790 1267.5 L 850 1267.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="820" y="1260.5" class="edge-label">Oo</text>
+<text x="820" y="1260.5" class="edge-label">Yes</text>
 <path d="M 790 1267.5 L 1170 1267.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <text x="980" y="1260.5" class="edge-label">Email events</text>
 <path d="M 380 1605 L 430 1605" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 790 1605 L 840 1605" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 1240 1605 L 1200 1605" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
-<text x="1220" y="1598" class="edge-label">Webhook / ledger</text>
+<text x="1220" y="1598" class="edge-label">Via signed webhook</text>
 <path d="M 1020 1555 L 1020 1360 L 715 1360 L 715 1165" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <path d="M 380 1605 L 405 1605 L 405 1757.5 L 430 1757.5" class="connector" marker-end="url(#arrow-connect-daet-page-6)"/>
 <text x="401" y="1681.25" class="edge-label">Optional maps</text>
@@ -703,58 +650,57 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <rect x="70" y="210" width="280" height="85" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
 <text x="210" y="246.52" class="node-label" font-size="13">Packages • attractions</text>
 <text x="210" y="263.16" class="node-label" font-size="13">events • merchandise</text>
-<polygon points="60,330 340,330 360,350 360,410 60,410" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<path d="M 340 330 L 340 350 L 360 350" fill="none" stroke="#d6b656" stroke-width="1.5"/>
-<text x="210" y="364.48" class="node-label" font-size="12">Merchandise page ay showcase</text>
-<text x="210" y="379.84" class="node-label" font-size="12">at seller contact; walang in-app checkout</text>
-<path d="M 72 465 C 72 455, 348 455, 348 465 L 348 520 C 348 530, 72 530, 72 520 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 72 465 C 72 475, 348 475, 348 465" fill="none" stroke="#82b366" stroke-width="2"/>
+<polygon points="60,330 340,330 360,350 360,410 60,410" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/><path d="M340,330 L340,350 L360,350" fill="none" stroke="#d6b656"/>
+<text x="210" y="364.48" class="node-label" font-size="12">Merchandise is a showcase</text>
+<text x="210" y="379.84" class="node-label" font-size="12">with seller contact; no in-app checkout</text>
+<path d="M72,465 C72,455 348,455 348,465 L348,520 C348,530 72,530 72,520 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M72,465 C72,475 348,475 348,465" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="210" y="494.84" class="node-label" font-size="13">Published tourism content</text>
 <rect x="465" y="105" width="300" height="70" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="615" y="142.34" class="node-label" font-size="13">TRIP PLANNER</text>
 <rect x="475" y="210" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="615" y="241.52" class="node-label" font-size="13">Interests, budget</text>
-<text x="615" y="258.16" class="node-label" font-size="13">at trip length</text>
+<text x="615" y="258.16" class="node-label" font-size="13">and trip length</text>
 <rect x="475" y="325" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="615" y="356.52" class="node-label" font-size="13">Itinerary engine builds</text>
 <text x="615" y="373.16" class="node-label" font-size="13">schedule, hours and travel</text>
 <rect x="475" y="440" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="615" y="471.52" class="node-label" font-size="13">Validate budget, opening hours,</text>
-<text x="615" y="488.16" class="node-label" font-size="13">overlap and travel</text>
+<text x="615" y="488.16" class="node-label" font-size="13">overlaps and travel</text>
 <rect x="535" y="555" width="160" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<text x="615" y="604.84" class="node-label" font-size="13">Valid ba?</text>
+<text x="615" y="604.84" class="node-label" font-size="13">Is the plan valid?</text>
 <rect x="770" y="570" width="220" height="65" rx="12" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
-<text x="880" y="604.84" class="node-label" font-size="13">Ayusin o regenerate</text>
+<text x="880" y="604.84" class="node-label" font-size="13">Adjust or regenerate</text>
 <rect x="475" y="690" width="280" height="75" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
 <text x="615" y="721.52" class="node-label" font-size="13">Save / share plan;</text>
-<text x="615" y="738.16" class="node-label" font-size="13">book matching tour</text>
+<text x="615" y="738.16" class="node-label" font-size="13">find matching tours</text>
 <rect x="875" y="105" width="300" height="70" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="1025" y="142.34" class="node-label" font-size="13">TRAVEL ASSISTANT</text>
 <rect x="885" y="210" width="280" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1025" y="244.84" class="node-label" font-size="13">Tanong ng tourist</text>
+<text x="1025" y="244.84" class="node-label" font-size="13">Tourist asks a question</text>
 <rect x="885" y="315" width="280" height="85" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1025" y="351.52" class="node-label" font-size="13">Basahin lamang ang public data</text>
-<text x="1025" y="368.16" class="node-label" font-size="13">at sariling allowed booking data</text>
+<text x="1025" y="351.52" class="node-label" font-size="13">Read-only access to public data</text>
+<text x="1025" y="368.16" class="node-label" font-size="13">and the user's permitted booking data</text>
 <rect x="940" y="445" width="170" height="95" rx="3" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
 <text x="1025" y="486.52" class="node-label" font-size="13">AI provider</text>
 <text x="1025" y="503.16" class="node-label" font-size="13">configured?</text>
 <polygon points="824,590 1030,590 1006,655 800,655" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="915" y="624.84" class="node-label" font-size="13">Gemini / configured model</text>
 <rect x="1090" y="590" width="210" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1195" y="616.52" class="node-label" font-size="13">Basic built-in</text>
+<text x="1195" y="616.52" class="node-label" font-size="13">Built-in basic</text>
 <text x="1195" y="633.16" class="node-label" font-size="13">fallback</text>
 <rect x="885" y="705" width="280" height="85" rx="12" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<text x="1025" y="741.52" class="node-label" font-size="13">Sagot + links sa actual pages;</text>
-<text x="1025" y="758.16" class="node-label" font-size="13">hindi assistant ang nagbo-book</text>
+<text x="1025" y="741.52" class="node-label" font-size="13">Answer + links to real pages;</text>
+<text x="1025" y="758.16" class="node-label" font-size="13">assistant does not book for user</text>
 <rect x="1280" y="105" width="260" height="70" rx="12" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
 <text x="1410" y="142.34" class="node-label" font-size="13">MESSAGING</text>
 <rect x="1270" y="210" width="280" height="65" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="1410" y="244.84" class="node-label" font-size="13">User sends a message</text>
 <rect x="1270" y="315" width="280" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-<text x="1410" y="346.52" class="node-label" font-size="13">Check login, role</text>
-<text x="1410" y="363.16" class="node-label" font-size="13">at conversation access</text>
-<path d="M 1272 440 C 1272 430, 1548 430, 1548 440 L 1548 495 C 1548 505, 1272 505, 1272 495 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 1272 440 C 1272 450, 1548 450, 1548 440" fill="none" stroke="#82b366" stroke-width="2"/>
+<text x="1410" y="346.52" class="node-label" font-size="13">Check sign-in, role</text>
+<text x="1410" y="363.16" class="node-label" font-size="13">and conversation access</text>
+<path d="M1272,440 C1272,430 1548,430 1548,440 L1548,495 C1548,505 1272,505 1272,495 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M1272,440 C1272,450 1548,450 1548,440" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="1410" y="461.52" class="node-label" font-size="13">Conversations</text>
 <text x="1410" y="478.16" class="node-label" font-size="13">and messages</text>
 <rect x="520" y="850" width="390" height="85" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
@@ -763,8 +709,8 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <rect x="520" y="975" width="390" height="75" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="715" y="1006.52" class="node-label" font-size="13">Database triggers and</text>
 <text x="715" y="1023.16" class="node-label" font-size="13">server notification actions</text>
-<path d="M 522 1100 C 522 1090, 908 1090, 908 1100 L 908 1155 C 908 1165, 522 1165, 522 1155 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 522 1100 C 522 1110, 908 1110, 908 1100" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M522,1100 C522,1090 908,1090 908,1100 L908,1155 C908,1165 522,1165 522,1155 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M522,1100 C522,1110 908,1110 908,1100" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="715" y="1121.52" class="node-label" font-size="13">Notifications and</text>
 <text x="715" y="1138.16" class="node-label" font-size="13">rewards ledger</text>
 <rect x="180" y="1230" width="260" height="70" rx="12" fill="#e1f5fe" stroke="#4d9bd6" stroke-width="2"/>
@@ -786,10 +732,10 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <text x="220" y="1623.98" class="node-label" font-size="13">and API routes</text>
 <rect x="430" y="1555" width="360" height="100" rx="12" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
 <text x="610" y="1590.7" class="node-label" font-size="13">Server checks session, role,</text>
-<text x="610" y="1607.34" class="node-label" font-size="13">ownership and validation;</text>
+<text x="610" y="1607.34" class="node-label" font-size="13">ownership and input;</text>
 <text x="610" y="1623.98" class="node-label" font-size="13">RLS/RPCs enforce database rules</text>
-<path d="M 842 1565 C 842 1555, 1198 1555, 1198 1565 L 1198 1645 C 1198 1655, 842 1655, 842 1645 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
-<path d="M 842 1565 C 842 1575, 1198 1575, 1198 1565" fill="none" stroke="#82b366" stroke-width="2"/>
+<path d="M842,1565 C842,1555 1198,1555 1198,1565 L1198,1645 C1198,1655 842,1655 842,1645 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+<path d="M842,1565 C842,1575 1198,1575 1198,1565" fill="none" stroke="#82b366" stroke-width="2"/>
 <text x="1020" y="1599.02" class="node-label" font-size="13">Supabase Auth + Postgres</text>
 <text x="1020" y="1615.66" class="node-label" font-size="13">RLS • RPCs • Storage • Realtime</text>
 <polygon points="1264,1555 1530,1555 1506,1655 1240,1655" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
@@ -801,12 +747,7 @@ footer{max-width:1800px;margin:0 auto;padding:0 18px 28px;color:var(--muted);fon
 <polygon points="814,1715 1090,1715 1066,1800 790,1800" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
 <text x="940" y="1751.52" class="node-label" font-size="13">Gemini / configured AI</text>
 <text x="940" y="1768.16" class="node-label" font-size="13">optional; basic fallback</text>
-<polygon points="1130,1715 1510,1715 1530,1735 1530,1800 1130,1800" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
-<path d="M 1510 1715 L 1510 1735 L 1530 1735" fill="none" stroke="#d6b656" stroke-width="1.5"/>
+<polygon points="1130,1715 1510,1715 1530,1735 1530,1800 1130,1800" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/><path d="M1510,1715 L1510,1735 L1530,1735" fill="none" stroke="#d6b656"/>
 <text x="1330" y="1751.98" class="node-label" font-size="12">Private documents/receipts stay server-protected;</text>
-<text x="1330" y="1767.34" class="node-label" font-size="12">service-role key is never used in browser code</text>
-</svg></div></section>
-</main>
-<footer>Batay sa current CONNECT-DAET routes, server actions, README at database integration. Ang flowcharts ay summary ng pangunahing user flows; database authorization, ownership checks, validation at RLS ay inilalarawan sa safeguards.</footer>
-</body>
-</html>
+<text x="1330" y="1767.34" class="node-label" font-size="12">service-role key never appears in browser code</text>
+</svg></div></section></main><footer>Based on the current CONNECT-DAET routes, server actions, README, and migrations. The diagrams summarize the complete major workflows; each protected operation also uses server-side authorization, ownership checks, validation, database constraints, and RLS.</footer></body></html>
