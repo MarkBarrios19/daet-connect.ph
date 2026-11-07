@@ -412,9 +412,8 @@ describe("update_package_and_relations RPC Function", () => {
     });
 
     it("should allow editing gallery captions for published packages", () => {
-      // For published packages:
-      // - Can edit captions only
-      // - Cannot add/delete/reorder images
+      // Caption-only edits stay live. Gallery add/delete/reorder is also allowed
+      // by the published-package RPC, and sends the package back for review.
 
       const publishedGallery = {
         image_url: "https://example.com/image.jpg", // Read-only

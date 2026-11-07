@@ -1565,8 +1565,8 @@ export async function submitPackageForReview(
 }
 
 /**
- * Which slot an upload is for. The two slots have different rules on a
- * published package: the cover may change, the gallery may not.
+ * Which slot an upload is for. On a published package, cover changes stay live;
+ * gallery structure changes are accepted and sent back for review when saved.
  */
 export type PackageImageKind = "cover" | "gallery";
 
@@ -1580,12 +1580,13 @@ const IMAGE_KINDS: PackageImageKind[] = ["cover", "gallery"];
  * - the package must belong to that operator ("Package not found." otherwise,
  *   so a stranger cannot probe for package ids);
  * - pending_review and archived packages accept no photos at all;
- * - on a published package a new cover is allowed, a new gallery image is not.
+ * - published packages accept both cover and gallery uploads; a structural
+ *   gallery change is sent back for review when update_package_and_relations
+ *   saves it.
  *
  * The caller passes `kind` ("cover" from CoverImageStep, "gallery" from
- * GalleryStep). Callers that omit it are treated as "cover": the older client
- * bundle only ever uploaded covers, and the gallery is blocked at save time by
- * the published-package guard in update_package_and_relations anyway.
+ * GalleryStep). Callers that omit it are treated as "cover" for compatibility
+ * with older clients.
  *
  * Storage failures are mapped to messages an operator can act on, and the raw
  * error is still logged for the Tourism Office.
