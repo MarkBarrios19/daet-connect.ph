@@ -3,6 +3,8 @@ import { LiveCount } from "@/components/live/live-count";
 import { badgeTone } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
+import { Field, Input } from "@/components/ui/field";
+import { bookingSearchFilter, bookingSearchPattern } from "@/lib/tours/booking-search";
 import { formatPeso } from "@/lib/money";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +30,7 @@ import { ProofReview, type ReviewableProof } from "@/app/(subsystems)/tours/oper
 
 type SearchParams = Promise<{
   status?: string;
+  q?: string;
 }>;
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -137,6 +140,29 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
     );
   }
 
+  const search = typeof params.q === "string" ? params.q.trim().slice(0, 200) : "";
+  const status = typeof params.status === "string" ? params.status : "all";
+  const bookingUrl = (selectedStatus: string, query = search) => {
+    const values = new URLSearchParams();
+    if (selectedStatus !== "all") values.set("status", selectedStatus);
+    if (query) values.set("q", query);
+    const suffix = values.toString();
+    return `/tours/operator/bookings${suffix ? `?${suffix}` : ""}`;
+  };
+
+  // Look up matching package IDs separately so the OR can also match booking fields.
+  // Both this lookup and the booking query are scoped to the signed-in operator.
+  let packageIds: string[] = [];
+  if (search) {
+    const { data, error: packageError } = await supabase.from("tours_packages")
+      .select("id").eq("operator_id", operator.id).ilike("title", bookingSearchPattern(search));
+    if (packageError) {
+      console.error("Booking package search error:", packageError);
+      return <Notice variant="error" title="Search unavailable">Please try again later.</Notice>;
+    }
+    packageIds = (data ?? []).map((pkg) => pkg.id);
+  }
+
   // Build query for bookings
   let query = supabase
     .from("tours_bookings")
@@ -158,6 +184,8 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
   if (params.status && params.status !== "all") {
     query = query.eq("status", params.status);
   }
+
+  if (search) query = query.or(bookingSearchFilter(search, packageIds));
 
   // The list and the chip counts are separate reads; neither waits for the other.
   // Counts cover every booking, not just the selected filter, so the chips
@@ -301,6 +329,15 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
     <>
         <p className="mb-6 mt-2 text-lg text-daet-ink">Every booking for {operator.business_name}, newest first.</p>
 
+        <form action="/tours/operator/bookings" method="get" role="search" className="mb-6 flex flex-wrap items-end gap-3">
+          {status !== "all" && <Input type="hidden" name="status" value={status} />}
+          <Field id="booking-search" label="Search bookings" className="w-full sm:max-w-md">
+            <Input id="booking-search" name="q" type="search" defaultValue={search} maxLength={200} placeholder="Reference, package, name or phone" />
+          </Field>
+          <button type="submit" className="min-h-12 rounded-2xl bg-blue-600 px-5 font-bold text-white hover:bg-blue-700">Search</button>
+          {search && <Link href={bookingUrl(status, "")} className="inline-flex min-h-12 items-center rounded-2xl px-4 font-bold text-daet-ink hover:bg-muted">Clear search</Link>}
+        </form>
+
         {/* Chips wrap on phones so none is cut off at the edge. */}
         <nav aria-label="Filter by status" className="mb-6">
           <ul className="flex flex-wrap gap-2">
@@ -313,11 +350,11 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
                 ["rejected", "Declined", stats.rejected],
               ] as const
             ).map(([value, label, count]) => {
-              const active = (params.status ?? "all") === value;
+              const active = status === value;
               return (
                 <li key={value}>
                   <Link
-                    href={`/tours/operator/bookings?status=${value}`}
+                    href={bookingUrl(value)}
                     aria-current={active ? "page" : undefined}
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-bold transition active:scale-[0.98] ${active ? "bg-blue-600 text-white" : "bg-surface text-daet-ink hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
                   >
@@ -331,11 +368,14 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
         </nav>
 
         {/* Bookings List */}
-        {!bookings || bookings.length === 0 ? (
+        {error ? (
+          <Notice variant="error" title="Bookings unavailable">Please try again later.</Notice>
+        ) : !bookings || bookings.length === 0 ? (
           <EmptyState
             icon={<LineIcon name="calendar" />}
-            title="No bookings here"
-            description={params.status && params.status !== "all" ? "Nothing with this status right now." : "Bookings appear here as soon as tourists request a date."}
+            title={search ? "No matching bookings" : "No bookings here"}
+            description={search ? "Try another search or clear it to see more bookings." : status !== "all" ? "Nothing with this status right now." : "Bookings appear here as soon as tourists request a date."}
+            action={search ? <Link href={bookingUrl(status, "")} className="font-bold text-blue-600 underline dark:text-blue-300">Clear search</Link> : undefined}
           />
         ) : (
           <div className="space-y-4">
