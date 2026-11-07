@@ -76,6 +76,11 @@ describe("operator Server Action authorization", () => {
       contactEmail: "maya@example.ph",
       contactPhone: "09171234567",
       businessAddress: "Brgy. Bagasbas, Daet, Camarines Norte",
+      // Crafted requests cannot override the server-controlled review state.
+      accreditation_status: "approved",
+      accreditation_notes: "self-approved",
+      reviewed_by: applicantId,
+      reviewed_at: new Date().toISOString(),
     });
     const pdf = new File([new TextEncoder().encode("%PDF-1.4 document")], "registration.pdf", { type: "application/pdf" });
     const qrPng = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])], "gcash.png", { type: "image/png" });
@@ -91,6 +96,8 @@ describe("operator Server Action authorization", () => {
       profile_id: applicantId,
       accreditation_status: "pending",
       accreditation_notes: null,
+      reviewed_by: null,
+      reviewed_at: null,
       business_name: "Bagasbas Coast Tours",
     }));
     // tours_operators has no rejection_reason column; sending it makes the insert fail.
