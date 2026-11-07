@@ -285,182 +285,51 @@ export async function requirePackageOwnership(
 }
 
 /**
- * Helper function to check if a package's status allows editing of specific fields.
- * 
- * Purpose:
- * - Verifies package status permits field edits
- * - For draft and rejected: all fields are editable (returns no error)
- * - For published: only specific fields allowed; check fieldsBeingEdited against allowed list
- * - For pending_review/archived: no fields editable (returns 403 forbidden)
- * - Returns status-specific error messages
- * 
- * Behavior:
- * - Status "draft": Always allows editing (all fields editable)
- * - Status "rejected": Always allows editing (all fields editable)
- * - Status "published": Allows editing only if fieldsBeingEdited is within allowed list
- *   - Allowed fields: title, locationName, description, durationType, inclusionItemText, 
- *     inclusionToggle, galleryCaption, stopLocationName, stopDescription, stopLatitude, stopLongitude
- *   - Restricted fields: adding/deleting/reordering variants, stops, or gallery; editing pricing
- * - Status "pending_review": Blocks all edits with message "Package is under review and cannot be edited"
- * - Status "archived": Blocks all edits with message "Archived packages cannot be edited"
- * 
- * Parameters:
- * - packageStatus: The current status of the package (from database)
- * - fieldsBeingEdited: (optional) Array of field names being modified. Used for published packages
- *   to verify only allowed fields are changed. If empty/undefined and status is published, 
- *   assumes no editable fields and returns error.
- * 
- * Returns:
- * - { error: { status: 403, message: string } } if package cannot be edited
- * - { data: { isEditable: true, allowedFields?: string[], restrictedFields?: string[] } } if editable
- * 
- * Validates: Requirements 2.1-2.5 (status-based field editing restrictions)
- * 
- * Example usage:
- *   // For draft package - always allows
- *   const result = requireEditablePackageStatus("draft", ["title", "description"]);
- *   // Returns: { data: { isEditable: true, status: "draft" } }
- * 
- *   // For published package - check against allowed fields
- *   const result = requireEditablePackageStatus("published", ["galleryCaption"]);
- *   // Returns: { data: { isEditable: true, status: "published", allowedFields: [...] } }
- * 
- *   // For published package with restricted field
- *   const result = requireEditablePackageStatus("published", ["pricePerPax"]);
- *   // Returns: { error: { status: 403, message: "Published packages cannot edit: pricePerPax" } }
- * 
- *   // For pending_review package - always blocks
- *   const result = requireEditablePackageStatus("pending_review", []);
- *   // Returns: { error: { status: 403, message: "Package is under review and cannot be edited" } }
+ * Checks whether a package status permits editing. Published packages may edit
+ * every field and save live; pending-review and archived packages remain locked.
+ * `fieldsBeingEdited` is retained for compatibility with existing callers, but
+ * status—not a per-field allowlist—now determines editability.
  */
 export async function requireEditablePackageStatus(
   packageStatus: PackageStatus,
-  fieldsBeingEdited?: string[],
+  _fieldsBeingEdited?: string[],
 ): Promise<
   | { error: { status: 403; message: string } }
   | { data: { isEditable: true; status: PackageStatus; allowedFields?: string[]; restrictedFields?: string[] } }
 > {
-  return Promise.resolve().then(() => {
-    // For draft and rejected statuses: all fields are editable without restriction
-    if (packageStatus === "draft" || packageStatus === "rejected") {
-      return {
-        data: {
-          isEditable: true,
-          status: packageStatus,
-        },
-      };
-    }
-
-    // For pending_review status: no fields can be edited
-    if (packageStatus === "pending_review") {
-      return {
-        error: {
-          status: 403,
-          message: "Package is under review and cannot be edited",
-        },
-      };
-    }
-
-    // For archived status: no fields can be edited
-    if (packageStatus === "archived") {
-      return {
-        error: {
-          status: 403,
-          message: "Archived packages cannot be edited",
-        },
-      };
-    }
-
-    // For published status: only specific fields are editable
-    if (packageStatus === "published") {
-      // Define allowed fields for published packages
-      const allowedFields = [
-        "title",
-        "locationName",
-        "description",
-        "durationType",
-        "inclusionItemText",
-        "inclusionToggle",
-        "galleryCaption",
-        "stopLocationName",
-        "stopDescription",
-        "stopLatitude",
-        "stopLongitude",
-      ];
-
-      // Define restricted operations for published packages
-      const restrictedOperations = [
-        "addPriceVariant",
-        "deletePriceVariant",
-        "editPricePerPax",
-        "editFlatPrice",
-        "editVariantName",
-        "editMinMaxPax",
-        "addStop",
-        "deleteStop",
-        "reorderStops",
-        "addGalleryImage",
-        "deleteGalleryImage",
-        "reorderGallery",
-        "addInclusion",
-        "deleteInclusion",
-        "reorderInclusions",
-      ];
-
-      // If fieldsBeingEdited is provided, validate against allowed fields
-      if (fieldsBeingEdited && fieldsBeingEdited.length > 0) {
-        const invalidFields = fieldsBeingEdited.filter(
-          (field) => !allowedFields.includes(field) && !restrictedOperations.includes(field)
-        );
-
-        // Check if any restricted operations are being attempted
-        const attemptedRestricted = fieldsBeingEdited.filter((field) =>
-          restrictedOperations.includes(field)
-        );
-
-        if (attemptedRestricted.length > 0) {
-          const fieldList = attemptedRestricted.slice(0, 2).join(", ");
-          return {
-            error: {
-              status: 403,
-              message: `Published packages cannot edit: ${fieldList}${
-                attemptedRestricted.length > 2 ? " and more" : ""
-              }`,
-            },
-          };
-        }
-
-        if (invalidFields.length > 0) {
-          const fieldList = invalidFields.slice(0, 2).join(", ");
-          return {
-            error: {
-              status: 403,
-              message: `Published packages cannot edit: ${fieldList}${
-                invalidFields.length > 2 ? " and more" : ""
-              }`,
-            },
-          };
-        }
-      }
-
-      return {
-        data: {
-          isEditable: true,
-          status: packageStatus,
-          allowedFields,
-          restrictedFields: restrictedOperations,
-        },
-      };
-    }
-
-    // Fallback for unknown status (should not reach here in normal flow)
+  if (packageStatus === "pending_review") {
     return {
       error: {
         status: 403,
-        message: "Invalid package status",
+        message: "Package is under review and cannot be edited",
       },
     };
-  });
+  }
+
+  if (packageStatus === "archived") {
+    return {
+      error: {
+        status: 403,
+        message: "Archived packages cannot be edited",
+      },
+    };
+  }
+
+  if (packageStatus === "draft" || packageStatus === "rejected" || packageStatus === "published") {
+    return {
+      data: {
+        isEditable: true,
+        status: packageStatus,
+      },
+    };
+  }
+
+  return {
+    error: {
+      status: 403,
+      message: "Invalid package status",
+    },
+  };
 }
 
 /**
@@ -1369,6 +1238,14 @@ export async function updatePackageCore(
           errors: {},
         };
       }
+      if (rpcError.code === "PT403" && errorMessage.includes("This change is not allowed on a published package")) {
+        return {
+          success: false,
+          message: "The database still has the old published-package edit restriction. Apply migration 20261127_live_published_package_edits.sql, then reload and retry.",
+          error: "Database migration required",
+          errors: {},
+        };
+      }
       if (rpcError.code === "PT403" || rpcError.code === "PT400") {
         return {
           success: false,
@@ -1565,8 +1442,8 @@ export async function submitPackageForReview(
 }
 
 /**
- * Which slot an upload is for. On a published package, cover changes stay live;
- * gallery structure changes are accepted and sent back for review when saved.
+ * Which slot an upload is for. Cover and gallery changes on a published package
+ * are saved live without a Tourism Office review step.
  */
 export type PackageImageKind = "cover" | "gallery";
 
@@ -1580,9 +1457,8 @@ const IMAGE_KINDS: PackageImageKind[] = ["cover", "gallery"];
  * - the package must belong to that operator ("Package not found." otherwise,
  *   so a stranger cannot probe for package ids);
  * - pending_review and archived packages accept no photos at all;
- * - published packages accept both cover and gallery uploads; a structural
- *   gallery change is sent back for review when update_package_and_relations
- *   saves it.
+ * - published packages accept both cover and gallery uploads; saving changes
+ *   them live without a review step.
  *
  * The caller passes `kind` ("cover" from CoverImageStep, "gallery" from
  * GalleryStep). Callers that omit it are treated as "cover" for compatibility

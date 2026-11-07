@@ -16,7 +16,7 @@ async function requireEditablePackageStatus(
  * Unit tests for requireEditablePackageStatus helper
  * 
  * **Property 2: Draft Packages Allow Unrestricted Editing**
- * **Property 3: Published Packages Restrict Certain Operations**
+ * **Property 3: Published Packages Allow Live Editing**
  * **Property 4: Pending Review Packages Block All Edits**
  * **Property 5: Archived Packages Block All Edits**
  * **Property 6: Rejected Packages Allow Resubmission**
@@ -152,9 +152,9 @@ describe("requireEditablePackageStatus", () => {
     });
   });
 
-  // Property 3: Published restricts certain operations
-  describe("Published status - restricts certain operations", () => {
-    test("should allow editing allowed fields in published status", async () => {
+  // Published packages remain live, but every field can be edited.
+  describe("Published status - allows all edits live", () => {
+    test("should allow text and image-caption edits", async () => {
       const result = await requireEditablePackageStatus("published", [
         "title",
         "description",
@@ -164,229 +164,49 @@ describe("requireEditablePackageStatus", () => {
       expect(result).toHaveProperty("data");
       expect(result.data?.isEditable).toBe(true);
       expect(result.data?.status).toBe("published");
-      expect(result.data?.allowedFields).toContain("title");
-      expect(result.data?.allowedFields).toContain("description");
-      expect(result.data?.allowedFields).toContain("galleryCaption");
     });
 
-    test("should return allowed and restricted field lists for published status", async () => {
-      const result = await requireEditablePackageStatus("published", []);
-
-      expect(result).toHaveProperty("data");
-      expect(result.data?.allowedFields).toEqual([
-        "title",
-        "locationName",
-        "description",
-        "durationType",
-        "inclusionItemText",
-        "inclusionToggle",
-        "galleryCaption",
-        "stopLocationName",
-        "stopDescription",
-        "stopLatitude",
-        "stopLongitude",
-      ]);
-      expect(result.data?.restrictedFields).toContain("addPriceVariant");
-      expect(result.data?.restrictedFields).toContain("deletePriceVariant");
-      expect(result.data?.restrictedFields).toContain("editPricePerPax");
-    });
-
-    test("should block addPriceVariant operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "addPriceVariant",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-      expect(result.error?.message).toContain("Published packages cannot edit");
-      expect(result.error?.message).toContain("addPriceVariant");
-    });
-
-    test("should block deletePriceVariant operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "deletePriceVariant",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-      expect(result.error?.message).toContain("Published packages cannot edit");
-    });
-
-    test("should block editPricePerPax operation in published status", async () => {
+    test("should allow pricing and structural operations", async () => {
       const result = await requireEditablePackageStatus("published", [
         "editPricePerPax",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block editFlatPrice operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "editFlatPrice",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block addStop operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
+        "addPriceVariant",
+        "deletePriceVariant",
         "addStop",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block deleteStop operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "deleteStop",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block reorderStops operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "reorderStops",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block addGalleryImage operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "addGalleryImage",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block deleteGalleryImage operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "deleteGalleryImage",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block reorderGallery operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "reorderGallery",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block addInclusion operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "addInclusion",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block deleteInclusion operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "deleteInclusion",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block reorderInclusions operation in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
         "reorderInclusions",
       ]);
 
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should allow editing stopLocationName and stopDescription in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "stopLocationName",
-        "stopDescription",
-        "stopLatitude",
-        "stopLongitude",
-      ]);
-
-      expect(result).toHaveProperty("data");
-      expect(result.data?.isEditable).toBe(true);
-    });
-
-    test("should allow editing inclusionItemText and inclusionToggle in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "inclusionItemText",
-        "inclusionToggle",
-      ]);
-
-      expect(result).toHaveProperty("data");
-      expect(result.data?.isEditable).toBe(true);
-    });
-
-    test("should return detailed error message for multiple restricted fields", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "addPriceVariant",
-        "deleteStop",
-        "reorderGallery",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-      expect(result.error?.message).toContain("Published packages cannot edit");
-      // Should list first two and indicate more
-      const msg = result.error?.message || "";
-      expect(msg).toMatch(/addPriceVariant|deleteStop/);
-    });
-
-    test("should allow with empty fields array in published status", async () => {
-      const result = await requireEditablePackageStatus("published", []);
-
       expect(result).toHaveProperty("data");
       expect(result.data?.isEditable).toBe(true);
       expect(result.data?.status).toBe("published");
     });
 
-    test("should block editVariantName in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "editVariantName",
-      ]);
+    test("does not expose an obsolete per-field allowlist", async () => {
+      const result = await requireEditablePackageStatus("published", []);
 
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
-    });
-
-    test("should block editMinMaxPax in published status", async () => {
-      const result = await requireEditablePackageStatus("published", [
-        "editMinMaxPax",
-      ]);
-
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
+      expect(result).toHaveProperty("data");
+      expect(result.data?.allowedFields).toBeUndefined();
+      expect(result.data?.restrictedFields).toBeUndefined();
     });
   });
 
   // Additional edge cases
   describe("Edge cases", () => {
-    test("should handle mixed allowed and restricted fields correctly", async () => {
-      // When both allowed and restricted fields are provided, should only fail if restricted found
+    test("should allow mixed descriptive and structural edits on a published package", async () => {
       const result = await requireEditablePackageStatus("published", [
-        "title", // allowed
-        "description", // allowed
-        "addPriceVariant", // restricted
+        "title",
+        "description",
+        "addPriceVariant",
       ]);
 
-      expect(result).toHaveProperty("error");
-      expect(result.error?.status).toBe(403);
+      expect(result).toHaveProperty("data");
+      expect(result.data?.isEditable).toBe(true);
     });
 
     test("should return consistent error type structure", async () => {

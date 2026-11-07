@@ -41,13 +41,10 @@ function renderStep({
 }
 
 describe("InclusionsStep", () => {
-  it("lets a published legacy package add its first required included item", () => {
+  it("lets a published package add an included item", () => {
     const { onUpdate } = renderStep({ packageStatus: "published", data: [], originalData: [] });
 
-    fireEvent.click(screen.getByRole("button", { name: "+ Add Included Item" }));
-    expect(screen.getByText("This first item must be marked Included so the package can be saved.")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Excluded")).not.toBeInTheDocument();
-
+    fireEvent.click(screen.getByRole("button", { name: "+ Add Item" }));
     fireEvent.change(screen.getByPlaceholderText("e.g., Hotel accommodation"), {
       target: { value: "Licensed local guide" },
     });
@@ -58,21 +55,25 @@ describe("InclusionsStep", () => {
     ]);
   });
 
-  it("hides the repair button after the first included item has been added", () => {
-    renderStep({
+  it("lets a published package add exclusions and more items", () => {
+    const included = item("included-1", true);
+    const { onUpdate } = renderStep({
       packageStatus: "published",
-      originalData: [],
-      data: [item("new-first-inclusion", true)],
+      data: [included],
+      originalData: [included],
     });
 
-    expect(screen.queryByRole("button", { name: "+ Add Included Item" })).not.toBeInTheDocument();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "+ Add Item" }));
+    fireEvent.click(screen.getByLabelText("Excluded"));
+    fireEvent.change(screen.getByPlaceholderText("e.g., Hotel accommodation"), {
+      target: { value: "Meals not included" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
 
-  it("keeps published packages with existing inclusions from adding structural items", () => {
-    const included = item("included-1", true);
-    renderStep({ packageStatus: "published", data: [included], originalData: [included] });
-
-    expect(screen.queryByRole("button", { name: /Add Item/ })).not.toBeInTheDocument();
+    expect(onUpdate).toHaveBeenCalledWith([
+      included,
+      expect.objectContaining({ text: "Meals not included", isIncluded: false, displayOrder: 2 }),
+    ]);
   });
 
   it("keeps the normal add controls for draft packages", () => {

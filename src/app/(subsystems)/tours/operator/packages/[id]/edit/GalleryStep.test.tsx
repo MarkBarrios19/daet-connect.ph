@@ -300,11 +300,21 @@ describe("GalleryStep", () => {
   });
 
   describe("published packages", () => {
+    it("keeps a removed photo's file intact until the live package is saved", async () => {
+      const { onUpdate } = renderGallery({ packageStatus: "published" });
+
+      fireEvent.click(screen.getByLabelText("Photo 2 options"));
+      fireEvent.click(screen.getByRole("menuitem", { name: "Delete photo" }));
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+      expect(mockedDelete).not.toHaveBeenCalled();
+    });
+
     it("warns before any change is made", () => {
       renderGallery({ packageStatus: "published" });
 
       expect(
-        screen.getByText(/Adding, removing or reordering photos sends this package back/),
+        screen.getByText(/Photo captions on this published package go live immediately when saved/),
       ).toBeInTheDocument();
     });
 
@@ -315,7 +325,7 @@ describe("GalleryStep", () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "Move earlier" }));
 
       await waitFor(() =>
-        expect(screen.getByText(/Unsaved changes: saving sends this package back/)).toBeInTheDocument(),
+        expect(screen.getByText(/Unsaved photo changes will be visible to tourists immediately when you save/)).toBeInTheDocument(),
       );
     });
   });

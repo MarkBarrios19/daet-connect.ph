@@ -73,6 +73,33 @@ test.describe("mobile layout at 360px", () => {
     for (const bar of metrics.bars) expect(bar.right, "a bar past its card").toBeLessThanOrEqual(bar.cardRight + 1);
   });
 
+  test("admin package cards keep long titles, badges and actions inside the card", async ({ context, page }) => {
+    await signInAs(context, "admin");
+    await page.goto("/tours/admin/packages", { waitUntil: "networkidle" });
+
+    const card = page.locator("article").filter({ has: page.getByRole("link", { name: "Review" }) }).first();
+    const title = card.getByRole("heading", { level: 3 });
+    // A title from the owner's queue, plus an unbroken name long enough to
+    // expose a flex child that refuses to wrap.
+    await title.evaluate((el) => {
+      el.textContent = "First Jose Rizal Monument Historical Visit CalaguasCampingThreeDaysAndTwoNights";
+    });
+
+    const cardBox = (await card.boundingBox())!;
+    const titleBox = (await title.boundingBox())!;
+    const badgeBox = (await card.getByText("published", { exact: true }).boundingBox())!;
+    const reviewBox = (await card.getByRole("link", { name: "Review" }).boundingBox())!;
+    for (const [label, box] of [["title", titleBox], ["badge", badgeBox], ["action", reviewBox]] as const) {
+      expect(box.x, `${label} left edge`).toBeGreaterThanOrEqual(cardBox.x - 1);
+      expect(box.x + box.width, `${label} right edge`).toBeLessThanOrEqual(cardBox.x + cardBox.width + 1);
+    }
+    // The badge follows the title instead of sitting inside its wrapped lines.
+    expect(titleBox.y + titleBox.height, "badge starts below the title").toBeLessThanOrEqual(badgeBox.y + 1);
+    expect(await title.evaluate((el) => el.scrollWidth - el.clientWidth), "title does not overflow its own box").toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    expect(await offScreen(page)).toEqual([]);
+  });
+
   test("the notifications panel opens inside the screen", async ({ context, page }) => {
     await signInAs(context, "tourist");
     await page.goto("/tours/messages", { waitUntil: "networkidle" });
