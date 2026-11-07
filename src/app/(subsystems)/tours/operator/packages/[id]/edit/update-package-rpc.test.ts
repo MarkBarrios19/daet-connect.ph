@@ -350,10 +350,10 @@ describe("update_package_and_relations RPC Function", () => {
   });
 
   /**
-   * **Property 3: Published Packages Restrict Certain Operations**
-   * Published packages should restrict operations on pricing, stops, and gallery reordering.
+   * **Property 3: Published Packages Allow Live Editing**
+   * Published package fields can be edited and saved without a review step.
    */
-  describe("Published Package Restrictions", () => {
+  describe("Published Package Live Edits", () => {
     it("should allow editing basic info (title, location, description) for published packages", () => {
       const mockPackageData = {
         title: "Updated Title",
@@ -370,58 +370,50 @@ describe("update_package_and_relations RPC Function", () => {
       expect(mockPackageData.description).toBeDefined();
     });
 
-    it("should restrict pricing variant operations for published packages", () => {
-      // For published packages:
-      // - Cannot add new variants
-      // - Cannot delete variants
-      // - Cannot edit variant_name, price_per_pax, flat_price, is_default
-      // - Can only edit min_pax and max_pax
-
+    it("should allow all price variant changes for published packages", () => {
       const publishedVariant = {
-        variant_name: "Standard", // Read-only for published
-        min_pax: 1, // Editable
-        max_pax: 10, // Editable
-        price_per_pax: 100, // Read-only for published
-        flat_price: null, // Read-only for published
-        is_default: true, // Read-only for published
+        variant_name: "Family",
+        min_pax: 2,
+        max_pax: 10,
+        price_per_pax: 125,
+        flat_price: null,
+        is_default: true,
       };
 
-      // Expected: only min_pax and max_pax are editable
+      expect(publishedVariant.variant_name).toBeDefined();
       expect(publishedVariant.min_pax).toBeDefined();
       expect(publishedVariant.max_pax).toBeDefined();
+      expect(publishedVariant.price_per_pax).toBeDefined();
+      expect(publishedVariant.flat_price).toBeDefined();
+      expect(publishedVariant.is_default).toBe(true);
     });
 
-    it("should allow editing stop location, description, and coordinates for published packages", () => {
-      // For published packages:
-      // - Can edit location_name, description, latitude, longitude
-      // - Cannot add/delete/reorder stops
-
+    it("should allow editing all stop details and structure for published packages", () => {
+      // Published tour-stop details, order, additions, and removals are live edits.
       const publishedStop = {
-        stop_name: "Updated Location", // Editable
-        stop_description: "Updated Description", // Editable
-        latitude: 10.8, // Editable
-        longitude: 106.7, // Editable
-        display_order: 1, // Not editable (no reorder)
+        stop_name: "Updated Location",
+        stop_description: "Updated Description",
+        latitude: 10.8,
+        longitude: 106.7,
+        display_order: 2,
       };
 
-      // Expected: location, description, and coordinates are editable
+      // Expected: details and display order are editable
       expect(publishedStop.stop_name).toBeDefined();
       expect(publishedStop.stop_description).toBeDefined();
       expect(publishedStop.latitude).toBeDefined();
       expect(publishedStop.longitude).toBeDefined();
     });
 
-    it("should allow editing gallery captions for published packages", () => {
-      // Caption-only edits stay live. Gallery add/delete/reorder is also allowed
-      // by the published-package RPC, and sends the package back for review.
-
+    it("should allow published packages to change gallery photos and captions", () => {
+      // Photo additions, removals, reordering, and captions save live without review.
       const publishedGallery = {
-        image_url: "https://example.com/image.jpg", // Read-only
-        caption: "Updated Caption", // Editable
-        display_order: 1, // Not editable (no reorder)
+        image_url: "https://example.com/image.jpg",
+        caption: "Updated Caption",
+        display_order: 2,
       };
 
-      // Expected: only caption is editable
+      // Expected: image, caption, and display order are editable
       expect(publishedGallery.caption).toBeDefined();
     });
   });

@@ -5,9 +5,8 @@ import type { EditPackageFormData, EditPackageStatus } from "./edit-types";
  * Status-based edit rules. Shared by the UI (field disabling) and the server
  * (enforcement), so both sides always agree.
  *
- * - draft / rejected: everything editable
- * - published: limited edits (text details, pax ranges, captions, cover); structural edits are locked
- *   except restoring the first required inclusion or stop on legacy packages that have none
+ * - draft / rejected / published: all package fields are editable
+ * - published changes go live immediately; the database still enforces data integrity
  * - pending_review / archived: read-only
  */
 export interface EditPermissions {
@@ -45,24 +44,10 @@ export function getEditPermissions(status: EditPackageStatus): EditPermissions {
     case "draft":
     case "rejected":
       return { ...allowAll(true), canSubmitForReview: true, readOnlyReason: null };
-    case "published": {
-      const locked = allowAll(false);
-      return {
-        ...locked,
-        canEdit: true,
-        canSubmitForReview: false,
-        readOnlyReason: null,
-        basic: { title: true, locationName: true, description: true, durationValue: false, durationType: true },
-        coverImage: true,
-        pricing: { ...locked.pricing, editPax: true },
-        inclusions: { ...locked.inclusions, editText: true },
-        stops: { ...locked.stops, editDetails: true },
-        // Photos go live only after review: a structural gallery change on a
-        // published package is allowed here, and update_package_and_relations
-        // sends the package back to pending_review when one happens.
-        gallery: { add: true, remove: true, editCaption: true, reorder: true },
-      };
-    }
+    case "published":
+      // Published edits are saved live, including structural changes. The
+      // server/RPC still validates the package and prevents stale overwrites.
+      return { ...allowAll(true), canSubmitForReview: false, readOnlyReason: null };
     case "pending_review":
       return { ...allowAll(false), canSubmitForReview: false, readOnlyReason: EDIT_MESSAGES.pendingReview };
     case "archived":
@@ -72,95 +57,23 @@ export function getEditPermissions(status: EditPackageStatus): EditPermissions {
 }
 
 /**
- * Lists edits that the package status does not allow. Empty array = allowed.
- * Only published packages have partial restrictions; read-only statuses are
+ * Compatibility helper for callers that used to check published field-level
+ * restrictions. Published edits are all allowed; read-only statuses are
  * rejected outright by requireEditablePackageStatus.
  */
 export function findRestrictedChanges(
-  original: EditPackageFormData,
-  next: EditPackageFormData,
-  status: EditPackageStatus,
+  _original: EditPackageFormData,
+  _next: EditPackageFormData,
+  _status: EditPackageStatus,
 ): string[] {
-  if (status !== "published") return [];
-  const violations: string[] = [];
-
-  if (original.durationValue !== next.durationValue || original.durationType !== next.durationType) {
-    violations.push("Duration length cannot change on a published package.");
-  }
-
-  if (original.priceVariants.length !== next.priceVariants.length) {
-    violations.push("Price variants cannot be added or removed on a published package.");
-  } else {
-    original.priceVariants.forEach((before, index) => {
-      const after = next.priceVariants[index];
-      if (
-        before.id !== after.id ||
-        before.variantName.trim() !== after.variantName.trim() ||
-        before.pricePerPax !== after.pricePerPax ||
-        before.flatPrice !== after.flatPrice ||
-        before.isDefault !== after.isDefault
-      ) {
-        violations.push("Only pax ranges can change on a published package's price variants.");
-      }
-    });
-  }
-
-  const originalHasIncludedItem = original.inclusions.some((item) => item.isIncluded);
-  const preservesExistingInclusionStructure = original.inclusions.every((before, index) => {
-    const after = next.inclusions[index];
-    return (
-      after !== undefined &&
-      before.id === after.id &&
-      before.isIncluded === after.isIncluded &&
-      before.displayOrder === after.displayOrder
-    );
-  });
-  const addsFirstRequiredInclusion =
-    !originalHasIncludedItem &&
-    next.inclusions.length === original.inclusions.length + 1 &&
-    next.inclusions[original.inclusions.length]?.isIncluded === true &&
-    preservesExistingInclusionStructure;
-
-  if (original.inclusions.length !== next.inclusions.length && !addsFirstRequiredInclusion) {
-    violations.push("Inclusions cannot be added or removed on a published package.");
-  } else {
-    original.inclusions.forEach((before, index) => {
-      const after = next.inclusions[index];
-      if (
-        before.id !== after.id ||
-        before.isIncluded !== after.isIncluded ||
-        before.displayOrder !== after.displayOrder
-      ) {
-        violations.push("Only inclusion text can change on a published package.");
-      }
-    });
-  }
-
-  // A published package with no stops is stuck otherwise (a stop is required),
-  // so the first stops may be added; later add/remove stays locked.
-  if (original.stops.length === 0 && next.stops.length > 0) {
-    // allowed
-  } else if (original.stops.length !== next.stops.length) {
-    violations.push("Stops cannot be added or removed on a published package.");
-  } else {
-    original.stops.forEach((before, index) => {
-      const after = next.stops[index];
-      if (
-        before.id !== after.id ||
-        before.stopOrder !== after.stopOrder ||
-        before.estimatedDurationMinutes !== after.estimatedDurationMinutes
-      ) {
-        violations.push("Stops cannot be reordered on a published package.");
-      }
-    });
-  }
-
-  return Array.from(new Set(violations));
+  // Published packages are edited live. Package-level validation and database
+  // constraints (including booked price-variant references) remain in force.
+  return [];
 }
 
 /**
- * Checks status-based edit permission. When `changes` is provided for a
- * published package, also verifies only allowed fields are being edited.
+ * Checks status-based edit permission. The optional `changes` input remains
+ * for compatibility; published fields are all editable.
  */
 export function requireEditablePackageStatus(
   status: EditPackageStatus,

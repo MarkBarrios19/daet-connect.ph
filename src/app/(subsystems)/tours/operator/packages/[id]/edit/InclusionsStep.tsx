@@ -45,14 +45,7 @@ export function InclusionsStep({
 
   const inclusions = data.filter((i) => i.isIncluded);
   const exclusions = data.filter((i) => !i.isIncluded);
-  // Legacy published packages with no included item are otherwise impossible
-  // to save: validation requires one, but normal published permissions hide
-  // the add control. Allow the operator to add the first required item only.
-  const repairingMissingPublishedInclusion =
-    packageStatus === "published" && !originalData.some((item) => item.isIncluded);
-  const canAddItems =
-    permissions.inclusions.add ||
-    (repairingMissingPublishedInclusion && inclusions.length === 0);
+  const canAddItems = permissions.inclusions.add;
 
   const getInclusionErrors = useCallback(() => {
     const stepErrors: Record<string, string> = {};
@@ -68,12 +61,7 @@ export function InclusionsStep({
     if (!formData.text.trim()) {
       return;
     }
-    if (!editingId && !canAddItems) {
-      return;
-    }
-    if (!editingId && repairingMissingPublishedInclusion && !formData.isIncluded) {
-      return;
-    }
+    if (!editingId && !canAddItems) return;
 
     const newItem: EditInclusion = {
       id: editingId || `new-${Date.now()}`,
@@ -95,7 +83,7 @@ export function InclusionsStep({
     setShowAddForm(false);
     setEditingId(undefined);
     setFormData({ text: "", isIncluded: true });
-  }, [formData, editingId, data, onUpdate, canAddItems, repairingMissingPublishedInclusion]);
+  }, [formData, editingId, data, onUpdate, canAddItems]);
 
   const handleEdit = useCallback((item: EditInclusion) => {
     setFormData({ text: item.text, isIncluded: item.isIncluded });
@@ -162,7 +150,7 @@ export function InclusionsStep({
             disabled={loading}
             className="px-4 py-2 bg-daet-forest text-white rounded-2xl text-sm font-medium hover:bg-daet-leaf transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {repairingMissingPublishedInclusion ? "+ Add Included Item" : "+ Add Item"}
+            + Add Item
           </button>
         )}
       </div>
@@ -349,23 +337,16 @@ export function InclusionsStep({
                     />
                     <span className="text-sm text-daet-ink/80">Included</span>
                   </label>
-                  {!repairingMissingPublishedInclusion && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={!formData.isIncluded}
-                        onChange={() => setFormData({ ...formData, isIncluded: false })}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm text-daet-ink/80">Excluded</span>
-                    </label>
-                  )}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={!formData.isIncluded}
+                      onChange={() => setFormData({ ...formData, isIncluded: false })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-daet-ink/80">Excluded</span>
+                  </label>
                 </div>
-                {repairingMissingPublishedInclusion && (
-                  <p className="mt-2 text-sm text-daet-ink/70">
-                    This first item must be marked Included so the package can be saved.
-                  </p>
-                )}
               </fieldset>
 
               {/* Buttons */}
@@ -397,9 +378,7 @@ export function InclusionsStep({
       {inclusions.length === 0 && (
         <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-2xl text-sm text-yellow-800 dark:text-yellow-200">
           <LineIcon name="warning" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" />{" "}
-          {repairingMissingPublishedInclusion
-            ? "Add an included item to repair this published package before saving."
-            : "At least one inclusion is required before submitting for review."}
+          At least one item marked Included is required before saving.
         </div>
       )}
     </div>

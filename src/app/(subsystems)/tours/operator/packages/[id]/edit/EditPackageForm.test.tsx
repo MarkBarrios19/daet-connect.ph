@@ -78,6 +78,7 @@ const packageData: EditPackageRecord = {
 
 describe("EditPackageForm validation state", () => {
   beforeEach(() => {
+    mockedUpdatePackageCore.mockReset();
     mockedUpdatePackageCore.mockResolvedValue({
       success: false,
       message: "Please add at least one inclusion.",
@@ -100,5 +101,44 @@ describe("EditPackageForm validation state", () => {
 
     await waitFor(() => expect(saveButton).toBeEnabled());
     expect(screen.queryByText("Please add at least one inclusion.")).not.toBeInTheDocument();
+  });
+
+  it("warns that published changes go live and may affect existing bookings", () => {
+    render(<EditPackageForm packageData={packageData} />);
+
+    expect(
+      screen.getByText(/Saving updates the public listing immediately without a review step and may affect existing bookings/),
+    ).toBeInTheDocument();
+  });
+
+  it("uses the server's new version timestamp for the next save", async () => {
+    mockedUpdatePackageCore
+      .mockResolvedValueOnce({
+        success: true,
+        message: "Package updated successfully.",
+        updatedAt: "2026-11-06T12:05:00.000Z",
+        data: { packageId: "package-1", status: "published" },
+      } satisfies UpdatePackageResponse)
+      .mockResolvedValueOnce({
+        success: true,
+        message: "Package updated successfully.",
+        updatedAt: "2026-11-06T12:10:00.000Z",
+        data: { packageId: "package-1", status: "published" },
+      } satisfies UpdatePackageResponse);
+
+    render(<EditPackageForm packageData={packageData} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add first inclusion" }));
+
+    const saveButton = screen.getByRole("button", { name: "Save changes" });
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(mockedUpdatePackageCore).toHaveBeenCalledTimes(1));
+    expect(mockedUpdatePackageCore.mock.calls[0][2]).toBe(packageData.updatedAt);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit first inclusion" }));
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    fireEvent.click(saveButton);
+
+    await waitFor(() => expect(mockedUpdatePackageCore).toHaveBeenCalledTimes(2));
+    expect(mockedUpdatePackageCore.mock.calls[1][2]).toBe("2026-11-06T12:05:00.000Z");
   });
 });

@@ -42,11 +42,7 @@ export function StopsStep({
     estimatedDurationMinutes: null,
   });
 
-  // Published packages normally can't add stops, but one with none would be
-  // stuck on "at least one stop is required", so allow adding in that case.
-  const canAddStops =
-    permissions.stops.add ||
-    (packageStatus === "published" && originalData.length === 0);
+  const canAddStops = permissions.stops.add;
   const canEditStops = permissions.stops.editDetails;
   const canRemoveStops = permissions.stops.remove;
 
