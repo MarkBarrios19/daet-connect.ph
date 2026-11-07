@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { PageFrame } from '@/components/ui/page-frame';
 import { Notice } from '@/components/ui/notice';
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export default async function AdminDashboardPage() {
   const supabase = await createSupabaseServerClient();
   
   // Check if user is admin
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) {
     return (
       <PageFrame>

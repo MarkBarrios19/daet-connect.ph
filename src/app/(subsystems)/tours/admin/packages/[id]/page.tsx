@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { PageFrame } from '@/components/ui/page-frame';
 import { PackageReviewForm } from './package-review-form';
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export default async function AdminPackageReviewPage({
   params,
@@ -14,7 +15,7 @@ export default async function AdminPackageReviewPage({
   const supabase = await createSupabaseServerClient();
   
   // Check if user is admin
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect('/');
   
   const { data: profile } = await supabase

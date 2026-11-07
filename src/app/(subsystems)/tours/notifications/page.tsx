@@ -11,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LineIcon } from "@/components/ui/icons";
 import { notificationIcon, safeNotificationLink, timeAgo, type NotificationRow } from "@/lib/tours/notifications";
 import { MarkAllReadButton } from "./mark-all-read-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +25,7 @@ export default async function NotificationsPage() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/notifications")}`);
 
   const { data, error } = await supabase

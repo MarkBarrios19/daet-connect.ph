@@ -2,7 +2,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CalendarMonth } from "@/lib/tours/events-calendar";
 import { monthRangeUtc, type LedgerRow } from "@/lib/tours/ledger";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession, getAuthUser } from "@/lib/tours/server-auth";
 
 export type LedgerLoadResult =
   | { ok: true; rows: LedgerRow[]; businessName: string }
@@ -27,16 +27,21 @@ type PaymentQueryRow = {
 
 /** Payments for the signed-in approved operator's bookings in one Manila month. */
 export async function loadOperatorLedger(month: CalendarMonth): Promise<LedgerLoadResult> {
-  const session = await getAuthenticatedSession();
-  if (!session.user) return { ok: false, reason: "signed_out" };
-  if (session.role !== "operator") return { ok: false, reason: "not_operator" };
+  const user = await getAuthUser();
+  if (!user) return { ok: false, reason: "signed_out" };
 
+  // The role check and the operator row both need only the user, so they run
+  // together (the role is cached, so the page's header reuses it too).
   const supabase = await createSupabaseServerClient();
-  const { data: operator } = await supabase
-    .from("tours_operators")
-    .select("id, business_name, accreditation_status")
-    .eq("profile_id", session.user.id)
-    .maybeSingle();
+  const [session, { data: operator }] = await Promise.all([
+    getAuthenticatedSession(),
+    supabase
+      .from("tours_operators")
+      .select("id, business_name, accreditation_status")
+      .eq("profile_id", user.id)
+      .maybeSingle(),
+  ]);
+  if (session.role !== "operator") return { ok: false, reason: "not_operator" };
   if (!operator || operator.accreditation_status !== "approved") return { ok: false, reason: "not_operator" };
 
   const range = monthRangeUtc(month);

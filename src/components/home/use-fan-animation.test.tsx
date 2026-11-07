@@ -399,7 +399,7 @@ describe("useFanAnimation", () => {
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
 
-  it("swipes the next photo in from the left, and the one it replaces out to the right", () => {
+  it("swipes the next photo in from the right, and the one it replaces out to the left", () => {
     const { api, wedges, photos } = mount();
 
     act(() => api.current?.openAt(0));
@@ -413,19 +413,19 @@ describe("useFanAnimation", () => {
     // through the gap where its photo used to be.
     expect(wedges[0].style.clipPath).toBe(OPEN);
 
-    // The incoming photo starts a hero to the left of its frame, and is set there
+    // The incoming photo starts a hero to the right of its frame, and is set there
     // rather than tweened: nothing of the page shows behind a slide that starts
     // where the eye can see it.
     const before = tweensOn(records.set, photos[3]).map((call) => call.vars);
-    expect(before).toContainEqual(expect.objectContaining({ xPercent: -100 }));
+    expect(before).toContainEqual(expect.objectContaining({ xPercent: 100 }));
 
-    // The two photos travel together — one to 0, the other to +100 — so their
+    // The two photos travel together — one to 0, the other to -100 — so their
     // edges meet at every frame and the hero is covered end to end the whole way.
     const swipes = records.to.filter((call) => call.kind === "to" && "xPercent" in call.vars);
     expect(swipes).toHaveLength(2);
     const [incoming, outgoing] = [tweensOn(swipes, photos[3])[0], tweensOn(swipes, photos[0])[0]];
     expect(incoming.vars.xPercent).toBe(0);
-    expect(outgoing.vars.xPercent).toBe(100);
+    expect(outgoing.vars.xPercent).toBe(-100);
     expect(incoming.vars.duration).toBe(outgoing.vars.duration);
     expect(incoming.vars.ease).toBe(outgoing.vars.ease);
 
@@ -437,7 +437,7 @@ describe("useFanAnimation", () => {
     );
   });
 
-  it("swipes the previous photo in from the right, the other way round", () => {
+  it("swipes the previous photo in from the left, the other way round", () => {
     const { api, photos } = mount();
 
     act(() => api.current?.openAt(3));
@@ -446,11 +446,11 @@ describe("useFanAnimation", () => {
     act(() => api.current?.swapTo(2, { from: 3, direction: -1 }));
 
     const before = tweensOn(records.set, photos[2]).map((call) => call.vars);
-    expect(before).toContainEqual(expect.objectContaining({ xPercent: 100 }));
+    expect(before).toContainEqual(expect.objectContaining({ xPercent: -100 }));
 
     const swipes = records.to.filter((call) => "xPercent" in call.vars);
     expect(tweensOn(swipes, photos[2])[0].vars.xPercent).toBe(0);
-    expect(tweensOn(swipes, photos[3])[0].vars.xPercent).toBe(-100);
+    expect(tweensOn(swipes, photos[3])[0].vars.xPercent).toBe(100);
   });
 
   it("opens a place a link names instantly, with no morph", () => {

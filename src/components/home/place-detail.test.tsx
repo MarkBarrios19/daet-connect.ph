@@ -442,6 +442,8 @@ describe("PlaceDetail", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(screen.getByRole("region", { name: /Map showing/ })).toHaveAttribute("data-focus", "");
     expect(screen.getByRole("region", { name: /Map showing/ })).toHaveAttribute("data-fit", "all");
+    // The place's card steps aside so every pin shows.
+    expect(document.querySelector("[data-map-place]")).toHaveAttribute("data-open", "false");
 
     rerender(
       <PlaceDetail

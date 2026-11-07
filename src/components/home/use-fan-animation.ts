@@ -491,7 +491,7 @@ export function useFanAnimation({
    * Next or previous while open: the two photos travel as one strip, no folding
    * back first.
    *
-   * The incoming photo swipes in from the left for the next place and from the
+   * The incoming photo swipes in from the right for the next place and from the
    * right for the previous one, and the photo it replaces leaves the other way.
    * Both are a hero wide and their edges meet exactly at every frame, so the hero
    * is covered end to end the whole way — no fade, no flash, nothing of the page's
@@ -536,8 +536,8 @@ export function useFanAnimation({
       setNudge(element, i === index ? 0 : rest.x, i === index ? 0 : rest.y);
     });
 
-    /** Next swipes in from the left; previous from the right. */
-    const enter = direction >= 0 ? -100 : 100;
+    /** Next slides in from the right (the way a finger swiping left pulls it); previous from the left. */
+    const enter = direction >= 0 ? 100 : -100;
     const leave = -enter;
 
     const settle = () => {

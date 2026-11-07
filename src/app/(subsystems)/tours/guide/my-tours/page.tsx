@@ -11,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isBusyReason } from "@/lib/tours/guide-swap";
 import { SwapRequest, type MySwap } from "./swap-request";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +29,7 @@ export default async function GuideMyToursPage() {
   const supabase = await createSupabaseServerClient();
 
   // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect(`/login?next=${encodeURIComponent("/tours/guide/my-tours")}`);

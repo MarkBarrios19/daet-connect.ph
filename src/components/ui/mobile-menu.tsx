@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { LineIcon } from "@/components/ui/icons";
 import { ThemeChoices } from "@/components/ui/theme-toggle";
 import { useDragDismiss } from "@/components/ui/use-drag-dismiss";
@@ -30,6 +31,7 @@ export type MenuLink = { href: string; label: string };
  */
 export function MobileMenu({ groups, showTheme = true }: { groups: Array<{ label: string; links: MenuLink[] }>; showTheme?: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   useEffect(() => {
     if (ref.current) ref.current.open = false;
@@ -47,9 +49,10 @@ export function MobileMenu({ groups, showTheme = true }: { groups: Array<{ label
       ref={ref}
       className="group md:hidden"
       onToggle={(event) => {
-        const open = event.currentTarget.open;
-        announceOverlay("menu", open);
-        if (open) playOpen(sheetRef.current);
+        const isOpen = event.currentTarget.open;
+        setOpen(isOpen);
+        announceOverlay("menu", isOpen);
+        if (isOpen) playOpen(sheetRef.current);
       }}
     >
       <summary
@@ -93,6 +96,19 @@ export function MobileMenu({ groups, showTheme = true }: { groups: Array<{ label
           <span className="h-1.5 w-10 rounded-full bg-muted-strong" />
         </div>
       </nav>
+      {/* Portaled to <body>: the header's backdrop filter would otherwise clip a fixed scrim to the bar. */}
+      {open
+        ? createPortal(
+            <div
+              aria-hidden="true"
+              onClick={() => {
+                if (ref.current) ref.current.open = false;
+              }}
+              className="fixed inset-0 z-30 bg-black/30 md:hidden"
+            />,
+            document.body,
+          )
+        : null}
     </details>
   );
 }

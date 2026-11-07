@@ -29,6 +29,7 @@ import { BookingPaymentPanel, PaymentNextStep, owesBalance, type PanelPayment, t
 import { ReviewForm } from "./review-form";
 import { ReviewList } from "@/components/tours/review-list";
 import type { Review } from "@/lib/tours/reviews";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Booking" };
@@ -57,9 +58,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   const supabase = await createSupabaseServerClient();
 
   // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/tours/bookings/${id}`)}`);

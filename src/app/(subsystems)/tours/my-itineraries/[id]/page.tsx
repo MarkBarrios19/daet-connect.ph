@@ -28,6 +28,7 @@ const outline = "inline-flex min-h-11 items-center gap-2 rounded-full border bor
 const shortDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 import { BookSummary } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 /** Who the saved trip is for: the planner's travellers, else the form's group size. */
 function groupFromPreferences(value: unknown): number | null {
@@ -45,9 +46,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   if (!isSupabaseConfigured() || !isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/my-itineraries/${id}`)}`);
 
   const { data: itinerary } = await supabase
