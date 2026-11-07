@@ -39,8 +39,11 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
   } catch (error) {
     // "This route used cookies" is Next telling the build the page is dynamic,
     // not a failure: it says so itself, once per route.
+    // Same for the prerender's own abort (Cache Components), which rejects
+    // `cookies()` once the static shell is done.
     const dynamicUsage =
-      error instanceof Error && error.message.includes("Dynamic server usage");
+      (error instanceof Error && error.message.includes("Dynamic server usage")) ||
+      (error as { digest?: unknown } | null)?.digest === "HANGING_PROMISE_REJECTION";
     if (!dynamicUsage) console.error("could not read the profile", error);
     return null;
   }

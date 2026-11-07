@@ -22,7 +22,7 @@ type Viewer = {
   avatarUrl: string | null;
 };
 
-async function signedInViewer(): Promise<Viewer | undefined> {
+export async function signedInViewer(): Promise<Viewer | undefined> {
   if (!isSupabaseConfigured()) return undefined;
   try {
     // The profile row is the record (name and photo); the sign-up metadata and
@@ -56,11 +56,11 @@ async function signedInViewer(): Promise<Viewer | undefined> {
 }
 
 /** The shared poller, only for signed-in visitors. */
-function Live({ initial, children }: { initial: Parameters<typeof LiveProvider>[0]["initial"]; children: ReactNode }) {
+export function Live({ initial, children }: { initial: Parameters<typeof LiveProvider>[0]["initial"]; children: ReactNode }) {
   return initial ? <LiveProvider initial={initial}>{children}</LiveProvider> : <>{children}</>;
 }
 
-const isStaffRole = (
+export const isStaffRole = (
   role: string | null | undefined,
 ): role is "operator" | "guide" | "admin" =>
   role === "operator" || role === "guide" || role === "admin";
