@@ -252,7 +252,7 @@ export function InclusionsStep({
       <Modal
         open={open}
         onClose={close}
-        title={editingId ? "Edit item" : "Add an item"}
+        title={editingId ? "Edit an item" : "Add an item"}
         description="You'll save everything with the Save button at the foot of the page."
         footer={
           <>

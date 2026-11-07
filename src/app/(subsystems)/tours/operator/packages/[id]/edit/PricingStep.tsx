@@ -250,7 +250,7 @@ export function PricingStep({
       <Modal
         open={open}
         onClose={close}
-        title={editingId ? "Edit price option" : "Add a price option"}
+        title={editingId ? "Edit a price option" : "Add a price option"}
         description="You'll save everything with the Save button at the foot of the page."
         footer={
           <>

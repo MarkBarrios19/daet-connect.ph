@@ -129,7 +129,7 @@ describe("PricingStep", () => {
     fireEvent.click(screen.getByRole("button", { name: "Standard price option options" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     fireEvent.change(screen.getByLabelText(/What is this price called/), { target: { value: "Standard fare" } });
-    fireEvent.click(within(dialog("Edit price option")).getByRole("button", { name: "Save price option" }));
+    fireEvent.click(within(dialog("Edit a price option")).getByRole("button", { name: "Save price option" }));
 
     expect(lastUpdate()[0]).toMatchObject({ id: "v1", variantName: "Standard fare" });
   });
@@ -140,7 +140,7 @@ describe("PricingStep", () => {
     fireEvent.click(screen.getByRole("button", { name: "Standard price option options" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     fireEvent.change(screen.getByLabelText(/What is this price called/), { target: { value: "Never mind" } });
-    fireEvent.click(within(dialog("Edit price option")).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(within(dialog("Edit a price option")).getByRole("button", { name: "Cancel" }));
 
     expect(onUpdate).not.toHaveBeenCalled();
   });

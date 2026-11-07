@@ -47,6 +47,62 @@ const freshAccount = () => ({
 });
 let account = freshAccount();
 
+/**
+ * The operator's package, as the editor saves it.
+ *
+ * A save is a round trip in production: the RPC writes the row and the next
+ * request reads it back. Here the write lands in this object, so a reload after
+ * a save shows what was saved, and the status can be switched for the
+ * published/unpublished cases. /__reset_package puts it back.
+ */
+const freshPackage = () => ({
+  title: null,
+  status: null,
+  updatedAt: "2026-11-01T08:00:00.000Z",
+  priceVariants: [
+    {
+      id: "v1",
+      variant_name: "Standard",
+      price_per_pax: 466,
+      flat_price: null,
+      min_pax: 1,
+      max_pax: 8,
+      is_default: true,
+    },
+  ],
+  inclusions: [],
+  stops: [
+    {
+      id: "s1",
+      location_name: "First José Rizal Monument",
+      description: "Meet at Rizal Park.",
+      latitude: "14.113100",
+      longitude: "122.954500",
+      stop_order: 0,
+    },
+    {
+      id: "s2",
+      location_name: "Daet Heritage Center",
+      description: null,
+      latitude: "14.113187",
+      longitude: "122.954828",
+      stop_order: 1,
+    },
+    {
+      id: "s3",
+      location_name: "Bagasbas Beach",
+      description: "Surf lesson.",
+      latitude: "14.131583",
+      longitude: "122.985083",
+      stop_order: 2,
+    },
+  ],
+});
+let savedPackage = freshPackage();
+
+// A save the editor is meant to see fail, so the error path can be driven.
+let failNextSave = false;
+
 // A 1x1 PNG, so the header's photo is a real image the browser can decode.
 const AVATAR_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
@@ -583,33 +639,12 @@ function build(role) {
       "Trip.com Daet itinerary",
     ),
   ];
-  pkg.tours_package_stops = [
-    {
-      id: "s1",
-      location_name: "First José Rizal Monument",
-      description: "Meet at Rizal Park.",
-      latitude: "14.113100",
-      longitude: "122.954500",
-      stop_order: 0,
-    },
-    {
-      id: "s2",
-      location_name: "Daet Heritage Center",
-      description: null,
-      latitude: "14.113187",
-      longitude: "122.954828",
-      stop_order: 1,
-    },
-    {
-      id: "s3",
-      location_name: "Bagasbas Beach",
-      description: "Surf lesson.",
-      latitude: "14.131583",
-      longitude: "122.985083",
-      stop_order: 2,
-    },
-  ];
-  pkg.tours_package_inclusions = [];
+  pkg.tours_package_stops = savedPackage.stops.map((stop) => ({ ...stop }));
+  pkg.tours_package_price_variants = savedPackage.priceVariants.map((variant) => ({ ...variant }));
+  if (savedPackage.title) pkg.title = savedPackage.title;
+  if (savedPackage.status) pkg.status = savedPackage.status;
+  pkg.updated_at = savedPackage.updatedAt;
+  pkg.tours_package_inclusions = savedPackage.inclusions.map((item) => ({ ...item }));
   // Three photos, so the editor's gallery has something to reorder.
   pkg.tours_package_gallery = [
     {
@@ -1488,6 +1523,64 @@ http
           ],
         });
       }
+      // The editor's one write: core fields and relations, with the version
+      // check the real function does under its row lock.
+      if (url.pathname === "/rest/v1/rpc/update_package_and_relations") {
+        let args = {};
+        try {
+          args = JSON.parse(body || "{}");
+        } catch {
+          args = {};
+        }
+        if (failNextSave) {
+          failNextSave = false;
+          // What the server action turns into a field error and a 400.
+          return send(400, { code: "PT400", message: "validation failed: add an inclusion" });
+        }
+        const expected = args.p_expected_updated_at;
+        if (expected && new Date(expected).getTime() !== new Date(savedPackage.updatedAt).getTime()) {
+          return send(409, {
+            code: "PT409",
+            message: "Package was modified by another session",
+          });
+        }
+        const data = args.p_package_data || {};
+        const now = new Date().toISOString();
+        savedPackage = {
+          ...savedPackage,
+          title: data.title ?? savedPackage.title,
+          updatedAt: now,
+          priceVariants: (args.p_price_variants || []).map((variant, index) => ({
+            id: variant.id || `v${index + 1}`,
+            variant_name: variant.variant_name,
+            price_per_pax: variant.price_per_pax,
+            flat_price: variant.flat_price,
+            min_pax: variant.min_pax,
+            max_pax: variant.max_pax,
+            is_default: variant.is_default,
+          })),
+          inclusions: (args.p_inclusions || []).map((item, index) => ({
+            id: `i${index + 1}`,
+            item_text: item.item_text,
+            is_included: item.is_included,
+            display_order: index + 1,
+          })),
+          stops: (args.p_stops || []).map((stop, index) => ({
+            id: `s${index + 1}`,
+            location_name: stop.location_name,
+            description: stop.description,
+            latitude: String(stop.latitude),
+            longitude: String(stop.longitude),
+            stop_order: index,
+          })),
+        };
+        // What the real function returns: the new status when one was asked for.
+        const newStatus = args.p_submit_for_review ? "pending_review" : savedPackage.status;
+        if (args.p_submit_for_review) savedPackage.status = "pending_review";
+        return send(200, [
+          { success: true, new_updated_at: now, new_status: newStatus || "draft" },
+        ]);
+      }
       if (url.pathname === "/rest/v1/rpc/get_my_role")
         return send(200, role === "anon" ? null : role);
       if (url.pathname === "/rest/v1/rpc/tours_refundable_amount")
@@ -1582,6 +1675,20 @@ http
         ]);
       if (url.pathname === "/__reset_live") {
         live = freshLive();
+        return send(200, { ok: true });
+      }
+      if (url.pathname === "/__reset_package") {
+        savedPackage = freshPackage();
+        failNextSave = false;
+        return send(200, { ok: true });
+      }
+      // Put the package in a given status, for the read-only and refused cases.
+      if (url.pathname === "/__set_status") {
+        savedPackage = { ...savedPackage, status: url.searchParams.get("status") || "draft" };
+        return send(200, { ok: true, status: savedPackage.status });
+      }
+      if (url.pathname === "/__fail_next_save") {
+        failNextSave = true;
         return send(200, { ok: true });
       }
       if (url.pathname === "/__reset_account") {

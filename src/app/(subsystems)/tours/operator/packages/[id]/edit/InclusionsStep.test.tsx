@@ -177,7 +177,7 @@ describe("InclusionsStep", () => {
     fireEvent.click(screen.getByRole("button", { name: "Guide item options" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     fireEvent.change(screen.getByLabelText(/What is it\?/), { target: { value: "Licensed guide" } });
-    fireEvent.click(within(dialog("Edit item")).getByRole("button", { name: "Save item" }));
+    fireEvent.click(within(dialog("Edit an item")).getByRole("button", { name: "Save item" }));
 
     expect(onUpdate).toHaveBeenCalledWith([expect.objectContaining({ id: "i1", text: "Licensed guide" })]);
   });
