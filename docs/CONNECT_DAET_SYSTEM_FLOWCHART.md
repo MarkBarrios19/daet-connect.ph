@@ -2,7 +2,9 @@
 
 Ipinapakita ng mga diagram ang pangunahing proseso ng kasalukuyang CONNECT-DAET system: pag-login at role routing, tour booking, package management, guide check-in, Tourism Office administration, at mga supporting feature. Naka-base ito sa routes, server actions, README at migrations ng repository.
 
-**Editable Draw.io version:** [CONNECT_DAET_SYSTEM_FLOWCHART.drawio](./CONNECT_DAET_SYSTEM_FLOWCHART.drawio). Buksan sa [app.diagrams.net](https://app.diagrams.net) gamit ang **File → Open From → Device**. May anim itong pages para madaling i-navigate ang buong system.
+**Recommended browser version:** [CONNECT_DAET_WHOLE_SYSTEM_FLOWCHART.html](./CONNECT_DAET_WHOLE_SYSTEM_FLOWCHART.html). I-download at buksan sa browser; hindi kailangan ng Draw.io import o internet connection para makita ang diagrams. May print / Save as PDF button din ito.
+
+**Editable Draw.io source:** [CONNECT_DAET_SYSTEM_FLOWCHART.drawio](./CONNECT_DAET_SYSTEM_FLOWCHART.drawio). Buksan sa [app.diagrams.net](https://app.diagrams.net) gamit ang **File → Open From → Device**.
 
 ## Legend
 
