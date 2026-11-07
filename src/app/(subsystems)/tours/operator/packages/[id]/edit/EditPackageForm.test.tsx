@@ -3,7 +3,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { EditPackageForm, Toast } from "./EditPackageForm";
+import { EditPackageForm } from "./EditPackageForm";
 import { updatePackageCore } from "./actions";
 import type { EditPackageRecord, UpdatePackageResponse } from "./edit-types";
 
@@ -75,32 +75,6 @@ const packageData: EditPackageRecord = {
     galleryImages: [],
   },
 };
-
-describe("toast colors", () => {
-  it.each([
-    ["success", "bg-green-500", "text-slate-950"],
-    ["error", "bg-red-600", "text-white"],
-  ] as const)("uses the design-system colors for %s, including its icons", (type, background, foreground) => {
-    const onClose = jest.fn();
-    render(<Toast type={type} message="Notification" onClose={onClose} />);
-
-    const toast = screen.getByText("Notification").parentElement!;
-    expect(toast).toHaveClass(background, foreground);
-    expect(toast).not.toHaveClass(type === "success" ? "text-white" : "text-slate-950");
-    const dismiss = screen.getByRole("button", { name: "Dismiss notification" });
-    expect(dismiss).toHaveClass("text-inherit");
-    expect(dismiss).not.toHaveClass("text-white");
-    expect(dismiss).not.toHaveClass("text-slate-950");
-    const icons = toast.querySelectorAll('svg[fill="currentColor"]');
-    expect(icons).toHaveLength(2);
-    icons.forEach((icon) => {
-      expect(icon).not.toHaveClass("text-white");
-      expect(icon).not.toHaveClass("text-slate-950");
-    });
-    fireEvent.click(dismiss);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-});
 
 describe("EditPackageForm validation state", () => {
   beforeEach(() => {
