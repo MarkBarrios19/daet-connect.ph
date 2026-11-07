@@ -7,7 +7,9 @@ export function BarList({ items, empty = "No data in this range." }: { items: Ba
   if (items.length === 0) return <p className="text-sm text-daet-ink/70">{empty}</p>;
   const max = Math.max(1, ...items.map((i) => i.value));
   return (
-    <ul className="space-y-3">
+    // min-w-0: even embedded straight into a grid/flex row, the list sizes to
+    // its widest single-line label instead of stretching its container.
+    <ul className="min-w-0 space-y-3">
       {items.map((item) => (
         <li key={item.key}>
           <div className="flex items-baseline justify-between gap-2 text-sm">
