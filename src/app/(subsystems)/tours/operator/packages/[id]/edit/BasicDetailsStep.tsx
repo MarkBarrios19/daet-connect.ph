@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { SectionCard } from "@/components/ui/section-card";
+import { useId, useState } from "react";
 import type { BasicDetailsData, EditPackageStatus, ValidationErrors } from "./edit-types";
 import { EDIT_LIMITS } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
+import { validateBasicInfo } from "./validation";
 
 interface BasicDetailsStepProps {
   data: BasicDetailsData;
@@ -12,19 +15,28 @@ interface BasicDetailsStepProps {
   onUpdate: (data: BasicDetailsData) => void;
   errors: ValidationErrors;
   loading: boolean;
+  /** The section's DOM id, so the section navigation can link to it. */
+  id?: string;
+  /** This section has unsaved changes. */
+  dirty?: boolean;
+}
+
+/** "3 days" / "1.5 hours" — what the operator set, said back to them. */
+export function describeDuration(value: number, type: "hours" | "days"): string {
+  const unit = type === "days" ? (value === 1 ? "day" : "days") : value === 1 ? "hour" : "hours";
+  return `${value} ${unit}`;
 }
 
 /**
- * BasicDetailsStep Component
+ * BasicDetailsStep — the "Basics" section.
  *
- * Renders form fields for:
- * - title (3-150 chars)
- * - location_name (2-100 chars)
- * - description (10-3000 chars, optional)
- * - duration_value (0.5-365)
- * - duration_type (hours/days)
+ * Text edits in place in the summary card: the title, where the tour is, how
+ * long it takes and the description, with labels, hints, counters and errors
+ * wired through the shared Field kit. A field is checked when it loses focus,
+ * not on every keystroke, so a half-typed title is not shouted at.
  *
- * Applies status-based field disabling per design.
+ * Read-only statuses (in review, archived) show the values as text with one
+ * line saying why, instead of a greyed-out input that looks broken.
  */
 export function BasicDetailsStep({
   data,
@@ -33,231 +45,138 @@ export function BasicDetailsStep({
   onUpdate,
   errors,
   loading,
+  id = "basics-section",
+  dirty = false,
 }: BasicDetailsStepProps) {
   const permissions = getEditPermissions(packageStatus);
+  const fieldId = useId();
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const isReadOnly = !permissions.canEdit;
 
-  const handleTitleChange = useCallback(
-    (value: string) => {
-      onUpdate({
-        ...data,
-        title: value,
-      });
-    },
-    [data, onUpdate]
-  );
+  // Client-side checks join the server's: whichever has something to say wins,
+  // and only for fields the person has left or a save has already tried.
+  const local = validateBasicInfo(data).errors;
+  const errorFor = (field: keyof ValidationErrors) =>
+    errors[field] ?? (touched[field] ? local[field] : null);
 
-  const handleLocationChange = useCallback(
-    (value: string) => {
-      onUpdate({
-        ...data,
-        locationName: value,
-      });
-    },
-    [data, onUpdate]
-  );
-
-  const handleDescriptionChange = useCallback(
-    (value: string) => {
-      onUpdate({
-        ...data,
-        description: value || null,
-      });
-    },
-    [data, onUpdate]
-  );
-
-  const handleDurationValueChange = useCallback(
-    (value: number) => {
-      onUpdate({
-        ...data,
-        durationValue: value,
-      });
-    },
-    [data, onUpdate]
-  );
-
-  const handleDurationTypeChange = useCallback(
-    (value: "hours" | "days") => {
-      onUpdate({
-        ...data,
-        durationType: value,
-      });
-    },
-    [data, onUpdate]
-  );
-
-  const getTitleError = () => {
-    const titleError = errors["title"];
-    if (!titleError) return null;
-
-    if (titleError.includes("required")) return "Title is required";
-    if (titleError.includes("least")) return `Title must be at least ${EDIT_LIMITS.title.min} characters`;
-    if (titleError.includes("most")) return `Title must be at most ${EDIT_LIMITS.title.max} characters`;
-    return titleError;
+  const set = <K extends keyof BasicDetailsData>(field: K, value: BasicDetailsData[K]) => {
+    onUpdate({ ...data, [field]: value });
   };
 
-  const getLocationError = () => {
-    const locationError = errors["locationName"];
-    if (!locationError) return null;
+  const summary = `${describeDuration(data.durationValue, data.durationType)} · ${data.locationName || "No place yet"}`;
 
-    if (locationError.includes("required")) return "Location is required";
-    if (locationError.includes("least")) return `Location must be at least ${EDIT_LIMITS.locationName.min} characters`;
-    if (locationError.includes("most")) return `Location must be at most ${EDIT_LIMITS.locationName.max} characters`;
-    return locationError;
-  };
-
-  const getDescriptionError = () => {
-    const descriptionError = errors["description"];
-    if (!descriptionError) return null;
-
-    if (descriptionError.includes("least")) return `Description must be at least ${EDIT_LIMITS.description.min} characters`;
-    if (descriptionError.includes("most")) return `Description must be at most ${EDIT_LIMITS.description.max} characters`;
-    return descriptionError;
-  };
-
-  const getDurationError = () => {
-    const durationError = errors["durationValue"];
-    if (!durationError) return null;
-
-    if (durationError.includes("required")) return "Duration is required";
-    if (durationError.includes("least")) return `Duration must be at least ${EDIT_LIMITS.duration.min} ${data.durationType}`;
-    if (durationError.includes("most")) return `Duration must be at most ${EDIT_LIMITS.duration.max} ${data.durationType}`;
-    return durationError;
-  };
-
-  const titleError = getTitleError();
-  const locationError = getLocationError();
-  const descriptionError = getDescriptionError();
-  const durationError = getDurationError();
+  if (isReadOnly) {
+    return (
+      <SectionCard id={id} title="Basics" summary={summary} dirty={dirty}>
+        <div className="space-y-3 text-sm">
+          <p className="text-daet-ink">
+            <span className="block font-bold">Title</span>
+            {data.title}
+          </p>
+          <p className="text-daet-ink">
+            <span className="block font-bold">Where</span>
+            {data.locationName}
+          </p>
+          <p className="text-daet-ink">
+            <span className="block font-bold">How long</span>
+            {describeDuration(data.durationValue, data.durationType)}
+          </p>
+          {data.description ? <p className="text-daet-ink">{data.description}</p> : null}
+          <p className="rounded-2xl bg-blue-50 p-3 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+            {permissions.readOnlyReason ?? "This package cannot be edited right now."}
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
 
   return (
-    <div className="border rounded-2xl p-6 bg-surface">
-      <h2 className="text-xl font-bold text-daet-ink mb-6">Basic Details</h2>
+    <SectionCard id={id} title="Basics" summary={summary} dirty={dirty}>
+      <div className="space-y-4">
+        <Field
+          id={`${fieldId}-title`}
+          label="Package title"
+          required
+          hint={`${data.title.length}/${EDIT_LIMITS.title.max}`}
+          error={errorFor("title")}
+        >
+          <Input
+            value={data.title}
+            onChange={(event) => set("title", event.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, title: true }))}
+            disabled={!permissions.basic.title || loading}
+            maxLength={EDIT_LIMITS.title.max}
+            autoComplete="off"
+          />
+        </Field>
 
-      <div className="space-y-6">
-        {/* Title Field */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-daet-ink/80 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <input
-              id="title"
-              type="text"
-              value={data.title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              disabled={isReadOnly || !permissions.basic.title || loading}
-              maxLength={EDIT_LIMITS.title.max}
-              className={`w-full px-4 py-2 border rounded-2xl focus:ring-2 focus:ring-daet-forest/30 focus:border-transparent outline-none transition ${
-                titleError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40" : "border-daet-ink/20"
-              } disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed`}
-              placeholder="Enter package title"
-            />
-            <div className="absolute right-3 top-2.5 text-sm text-slate-600 dark:text-slate-400">
-              {data.title.length}/{EDIT_LIMITS.title.max}
-            </div>
-          </div>
-          {titleError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{titleError}</p>}
-        </div>
+        <Field
+          id={`${fieldId}-location`}
+          label="Where is it?"
+          required
+          error={errorFor("locationName")}
+        >
+          <Input
+            value={data.locationName}
+            onChange={(event) => set("locationName", event.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, locationName: true }))}
+            disabled={!permissions.basic.locationName || loading}
+            maxLength={EDIT_LIMITS.locationName.max}
+            placeholder="Bagasbas Beach, Daet"
+            autoComplete="off"
+          />
+        </Field>
 
-        {/* Location Field */}
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium text-daet-ink/80 mb-1">
-            Location <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <input
-              id="location"
-              type="text"
-              value={data.locationName}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              disabled={isReadOnly || !permissions.basic.locationName || loading}
-              maxLength={EDIT_LIMITS.locationName.max}
-              className={`w-full px-4 py-2 border rounded-2xl focus:ring-2 focus:ring-daet-forest/30 focus:border-transparent outline-none transition ${
-                locationError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40" : "border-daet-ink/20"
-              } disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed`}
-              placeholder="Enter location"
-            />
-            <div className="absolute right-3 top-2.5 text-sm text-slate-600 dark:text-slate-400">
-              {data.locationName.length}/{EDIT_LIMITS.locationName.max}
-            </div>
-          </div>
-          {locationError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{locationError}</p>}
-        </div>
+        <Field
+          id={`${fieldId}-description`}
+          label="Description"
+          hint={`${(data.description ?? "").length}/${EDIT_LIMITS.description.max}`}
+          error={errorFor("description")}
+        >
+          <Textarea
+            value={data.description ?? ""}
+            onChange={(event) => set("description", event.target.value || null)}
+            onBlur={() => setTouched((current) => ({ ...current, description: true }))}
+            disabled={!permissions.basic.description || loading}
+            maxLength={EDIT_LIMITS.description.max}
+            rows={3}
+            className="resize-y"
+            placeholder="What the morning looks like, who it is for, what to bring."
+          />
+        </Field>
 
-        {/* Description Field */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-daet-ink/80 mb-1">
-            Description
-          </label>
-          <div className="relative">
-            <textarea
-              id="description"
-              value={data.description ?? ""}
-              onChange={(e) => handleDescriptionChange(e.target.value)}
-              disabled={isReadOnly || !permissions.basic.description || loading}
-              maxLength={EDIT_LIMITS.description.max}
-              rows={5}
-              className={`w-full px-4 py-2 border rounded-2xl focus:ring-2 focus:ring-daet-forest/30 focus:border-transparent outline-none transition resize-none ${
-                descriptionError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40" : "border-daet-ink/20"
-              } disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed`}
-              placeholder="Enter package description (optional)"
-            />
-            <div className="absolute right-3 bottom-2.5 text-sm text-slate-600 dark:text-slate-400">
-              {(data.description ?? "").length}/{EDIT_LIMITS.description.max}
-            </div>
-          </div>
-          {descriptionError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{descriptionError}</p>}
-        </div>
-
-        {/* Duration Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="duration-value" className="block text-sm font-medium text-daet-ink/80 mb-1">
-              Duration <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="duration-value"
+        <div className="grid grid-cols-2 gap-3">
+          <Field
+            id={`${fieldId}-duration-value`}
+            label="How long"
+            required
+            error={errorFor("durationValue")}
+          >
+            <Input
               type="number"
+              inputMode="decimal"
               step="0.5"
               min={EDIT_LIMITS.duration.min}
               max={EDIT_LIMITS.duration.max}
               value={data.durationValue}
-              onChange={(e) => handleDurationValueChange(parseFloat(e.target.value) || 0)}
-              disabled={isReadOnly || !permissions.basic.durationValue || loading}
-              className={`w-full px-4 py-2 border rounded-2xl focus:ring-2 focus:ring-daet-forest/30 focus:border-transparent outline-none transition ${
-                durationError ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40" : "border-daet-ink/20"
-              } disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed`}
-              placeholder="e.g., 2.5"
+              onChange={(event) => set("durationValue", parseFloat(event.target.value) || 0)}
+              onBlur={() => setTouched((current) => ({ ...current, durationValue: true }))}
+              disabled={!permissions.basic.durationValue || loading}
             />
-            {durationError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{durationError}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="duration-type" className="block text-sm font-medium text-daet-ink/80 mb-1">
-              Unit <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="duration-type"
+          </Field>
+          <Field id={`${fieldId}-duration-type`} label="Unit" error={errorFor("durationType")}>
+            <Select
               value={data.durationType}
-              onChange={(e) => handleDurationTypeChange(e.target.value as "hours" | "days")}
-              disabled={isReadOnly || !permissions.basic.durationType || loading}
-              className="w-full px-4 py-2 border border-daet-ink/20 rounded-2xl focus:ring-2 focus:ring-daet-forest/30 focus:border-transparent outline-none transition disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed"
+              onChange={(event) => set("durationType", event.target.value as "hours" | "days")}
+              disabled={!permissions.basic.durationType || loading}
             >
               <option value="hours">Hours</option>
               <option value="days">Days</option>
-            </select>
-          </div>
+            </Select>
+          </Field>
         </div>
-
-        {/* Read-only indicator */}
-        {!permissions.canEdit && (
-          <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-sm text-blue-900 dark:text-blue-300">
-            ℹ️ This package is {packageStatus} and cannot be edited.
-          </div>
-        )}
+        <p className="text-sm text-daet-ink/70">{describeDuration(data.durationValue, data.durationType)}</p>
       </div>
-    </div>
+    </SectionCard>
   );
 }

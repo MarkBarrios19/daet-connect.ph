@@ -35,18 +35,38 @@ async function showGrid(page: Page) {
  */
 const announcer = (page: Page) => page.locator('[id^="DndLiveRegion"]');
 
-/** Drags one card onto another with a real pointer, in small steps. */
+/**
+ * Drags one card onto another with a real pointer, in small steps.
+ *
+ * dnd-kit decides what is under the pointer from geometry measured when the
+ * drag starts, so the pointer has to settle on the source and then on the
+ * target — moving straight through in one go can read as a pass-by. The
+ * overlay also covers the grid mid-drag, so the last move happens after it
+ * has had a frame to follow.
+ */
 async function dragOnto(page: Page, from: number, to: number) {
   await showGrid(page);
   const source = await card(page, from).boundingBox();
   const target = await card(page, to).boundingBox();
   if (!source || !target) throw new Error("cards are not laid out");
 
-  await page.mouse.move(source.x + source.width / 2, source.y + source.height / 2);
+  const at = (box: { x: number; y: number; width: number; height: number }) => ({
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+  });
+  const start = at(source);
+  const end = at(target);
+
+  await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   // dnd-kit's PointerSensor needs a few pixels of travel to activate.
-  await page.mouse.move(source.x + source.width / 2 + 12, source.y + source.height / 2 + 12, { steps: 3 });
-  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+  await page.mouse.move(start.x + 12, start.y + 12, { steps: 3 });
+  await page.waitForTimeout(50);
+  await page.mouse.move(end.x, end.y, { steps: 20 });
+  await page.waitForTimeout(100);
+  // Nudge inside the target: the over-target is recomputed on every move.
+  await page.mouse.move(end.x + 2, end.y + 2, { steps: 4 });
+  await page.waitForTimeout(100);
   await page.mouse.up();
 }
 

@@ -1,26 +1,36 @@
 "use client";
 
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { RowMenu } from "@/components/ui/row-menu";
+import { SectionCard } from "@/components/ui/section-card";
 import { LocationPicker } from "@/components/maps/location-picker";
-import { LineIcon } from "@/components/ui/icons";
-import React, { useCallback, useState } from "react";
-import { useFeedback } from "@/components/ui/feedback";
+import { useId, useState } from "react";
 import type { EditStop, EditPackageStatus, ValidationErrors, StepProps } from "./edit-types";
 import { EDIT_LIMITS, DEFAULT_COORDINATES } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
 import { withStopOrder } from "./edit-order";
+import { validateStop } from "./validation";
 
 type StopsStepProps = StepProps<EditStop[]>;
 
+const blankStop = (): Partial<EditStop> => ({
+  locationName: "",
+  description: "",
+  latitude: DEFAULT_COORDINATES.latitude,
+  longitude: DEFAULT_COORDINATES.longitude,
+  estimatedDurationMinutes: null,
+});
+
 /**
- * StopsStep Component
+ * StopsStep — "Route & stops".
  *
- * Manages tour stops with:
- * - Table display of existing stops sorted by stop_order
- * - Add stop form/modal
- * - Edit stop functionality
- * - Delete stop with confirmation
- * - Reorder functionality
+ * A route is an ordered list, so the rows are numbered and each carries one "⋯"
+ * menu (Edit, Move up, Move down, Delete) instead of three buttons. Adding or
+ * editing a stop opens the shared Modal: a place name, an optional description
+ * and a point picked on the map. The latitude and longitude stay available
+ * under "Advanced" for an admin, but nobody has to type a coordinate.
  */
 export function StopsStep({
   data,
@@ -29,356 +39,268 @@ export function StopsStep({
   onUpdate,
   errors,
   loading,
+  id = "stops-section",
+  dirty = false,
 }: StopsStepProps) {
   const permissions = getEditPermissions(packageStatus);
-  const { toast, confirm } = useFeedback();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const fieldId = useId();
+  const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [formData, setFormData] = useState<Partial<EditStop>>({
-    locationName: "",
-    description: "",
-    latitude: DEFAULT_COORDINATES.latitude,
-    longitude: DEFAULT_COORDINATES.longitude,
-    estimatedDurationMinutes: null,
-  });
+  const [formData, setFormData] = useState<Partial<EditStop>>(blankStop());
+  const [formError, setFormError] = useState<string | null>(null);
 
   const canAddStops = permissions.stops.add;
   const canEditStops = permissions.stops.editDetails;
   const canRemoveStops = permissions.stops.remove;
 
-  // Get stops errors
-  const getStopsErrors = useCallback(() => {
-    const stepErrors: Record<string, string> = {};
-    Object.entries(errors).forEach(([key, value]) => {
-      if (key.startsWith("stops")) {
-        stepErrors[key] = value;
-      }
-    });
-    return stepErrors;
-  }, [errors]);
+  const stopErrors = Object.entries(errors).filter(([key]) => key.startsWith("stops"));
+  const sectionError = stopErrors.length ? stopErrors.map(([, message]) => message).join(" ") : null;
 
-  const sortedStops = [...data].sort((a, b) => a.stopOrder - b.stopOrder);
+  const sorted = [...data].sort((a, b) => a.stopOrder - b.stopOrder);
 
-  const handleAddStop = useCallback(() => {
-    if (
-      !formData.locationName?.trim() ||
-      formData.latitude === undefined ||
-      formData.longitude === undefined
-    ) {
-      return;
-    }
-
-    const newStop: EditStop = {
-      id: editingId || `new-${Date.now()}`,
-      locationName: formData.locationName,
-      description: formData.description || null,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      estimatedDurationMinutes: formData.estimatedDurationMinutes ?? null,
-      stopOrder: editingId
-        ? data.find((s) => s.id === editingId)?.stopOrder ?? data.length + 1
-        : data.length + 1,
-    };
-
-    let updated: EditStop[];
-    if (editingId) {
-      updated = data.map((s) => (s.id === editingId ? newStop : s));
-    } else {
-      updated = [...data, newStop];
-    }
-
-    onUpdate(withStopOrder(updated));
-    setShowAddForm(false);
+  const startAdd = () => {
+    setFormData(blankStop());
     setEditingId(undefined);
-    setFormData({
-      locationName: "",
-      description: "",
-      latitude: DEFAULT_COORDINATES.latitude,
-      longitude: DEFAULT_COORDINATES.longitude,
-      estimatedDurationMinutes: null,
-    });
-  }, [formData, editingId, data, onUpdate]);
+    setFormError(null);
+    setOpen(true);
+  };
 
-  const handleEdit = useCallback((stop: EditStop) => {
+  const startEdit = (stop: EditStop) => {
     setFormData(stop);
     setEditingId(stop.id);
-    setShowAddForm(true);
-  }, []);
+    setFormError(null);
+    setOpen(true);
+  };
 
-  const handleDelete = useCallback(
-    (id: string | undefined) => {
-      if (!id) return;
-      if (data.length <= 1) {
-        toast("At least one stop is required.", "error");
-        return;
-      }
-      onUpdate(withStopOrder(data.filter((s) => s.id !== id)));
-    },
-    [data, onUpdate]
-  );
+  const close = () => {
+    setOpen(false);
+    setEditingId(undefined);
+    setFormError(null);
+  };
 
-  const handleReorder = useCallback(
-    (direction: "up" | "down", index: number) => {
-      if (direction === "up" && index === 0) return;
-      if (direction === "down" && index === sortedStops.length - 1) return;
+  const apply = () => {
+    const draft: EditStop = {
+      id: editingId ?? `new-${Date.now()}`,
+      locationName: (formData.locationName ?? "").trim(),
+      description: formData.description?.trim() ? formData.description.trim() : null,
+      latitude: formData.latitude ?? DEFAULT_COORDINATES.latitude,
+      longitude: formData.longitude ?? DEFAULT_COORDINATES.longitude,
+      estimatedDurationMinutes: formData.estimatedDurationMinutes ?? null,
+      stopOrder: editingId ? (data.find((stop) => stop.id === editingId)?.stopOrder ?? data.length + 1) : data.length + 1,
+    };
+    const found = validateStop(draft);
+    const first = Object.values(found)[0];
+    if (first) {
+      setFormError(first);
+      return;
+    }
+    onUpdate(
+      withStopOrder(editingId ? sorted.map((stop) => (stop.id === editingId ? draft : stop)) : [...sorted, draft]),
+    );
+    close();
+  };
 
-      const newOrder = [...sortedStops];
-      const [removed] = newOrder.splice(index, 1);
-      newOrder.splice(direction === "up" ? index - 1 : index + 1, 0, removed);
+  const remove = (stop: EditStop) => {
+    if (sorted.length <= 1) {
+      setFormError(null);
+      return;
+    }
+    onUpdate(withStopOrder(sorted.filter((entry) => entry.id !== stop.id)));
+  };
 
-      onUpdate(withStopOrder(newOrder));
-    },
-    [sortedStops, onUpdate]
-  );
-
-  const stopsErrors = getStopsErrors();
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= sorted.length) return;
+    const next = [...sorted];
+    [next[index], next[target]] = [next[target], next[index]];
+    onUpdate(withStopOrder(next));
+  };
 
   return (
-    <div className="border rounded-2xl p-6 bg-surface">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-daet-ink">Tour Stops</h2>
-        {canAddStops && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddForm(true);
-              setFormData({
-                locationName: "",
-                description: "",
-                latitude: DEFAULT_COORDINATES.latitude,
-                longitude: DEFAULT_COORDINATES.longitude,
-                estimatedDurationMinutes: null,
-              });
-            }}
-            disabled={loading}
-            className="px-4 py-2 bg-daet-forest text-white rounded-2xl text-sm font-medium hover:bg-daet-leaf transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            + Add Stop
-          </button>
-        )}
-      </div>
-
-      {/* Stops Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-daet-ink/20 bg-canvas">
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">#</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Location</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Description</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Coordinates</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-daet-ink/10">
-            {sortedStops.map((stop, index) => (
-              <tr key={stop.id} className="hover:bg-canvas">
-                <td className="px-4 py-3 text-daet-ink font-medium">{index + 1}</td>
-                <td className="px-4 py-3 text-daet-ink">{stop.locationName}</td>
-                <td className="px-4 py-3 text-daet-ink/80">
-                  {stop.description ? stop.description.substring(0, 50) + (stop.description.length > 50 ? "..." : "") : "-"}
-                </td>
-                <td className="px-4 py-3 text-daet-ink/80 text-xs font-mono">
-                  {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
-                </td>
-                <td className="px-4 py-3 space-x-2">
-                  {permissions.stops.reorder && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleReorder("up", index)}
-                        disabled={index === 0 || loading}
-                        className="text-daet-ink/80 hover:text-daet-ink disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Move up"
-                      >
-                        <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleReorder("down", index)}
-                        disabled={index === sortedStops.length - 1 || loading}
-                        className="text-daet-ink/80 hover:text-daet-ink disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Move down"
-                      >
-                        <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                  {canEditStops && (
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(stop)}
-                      disabled={loading}
-                      className="text-daet-leaf dark:text-blue-300 hover:text-daet-leaf dark:hover:text-blue-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {canRemoveStops && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirm({ title: "Delete this stop? This action cannot be undone.", confirmLabel: "Delete" })) {
-                          handleDelete(stop.id);
-                        }
-                      }}
-                      disabled={loading}
-                      className="text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {data.length === 0 && (
-          <div className="text-center py-8 text-daet-ink/70">
-            <p>No stops yet. Add one to get started.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Validation Errors */}
-      {Object.keys(stopsErrors).length > 0 && (
-        <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/40 rounded-2xl text-sm text-red-800 dark:text-red-300">
-          <p className="font-medium">Stop errors:</p>
-          <ul className="mt-1 space-y-1">
-            {Object.entries(stopsErrors).map(([key, message]) => (
-              <li key={key}>• {message}</li>
-            ))}
-          </ul>
-        </div>
+    <SectionCard
+      id={id}
+      title="Route & stops"
+      dirty={dirty}
+      summary={
+        sorted.length === 0
+          ? "No stops yet."
+          : sorted
+              .slice(0, 3)
+              .map((stop) => stop.locationName)
+              .join(" → ") + (sorted.length > 3 ? ` → +${sorted.length - 3} more` : "")
+      }
+      error={sectionError}
+      action={
+        canAddStops ? (
+          <Button variant="secondary" onClick={startAdd} disabled={loading}>
+            Add a stop
+          </Button>
+        ) : null
+      }
+    >
+      {sorted.length === 0 ? (
+        <p className="text-sm text-daet-ink/75">Add the places the tour visits, in order.</p>
+      ) : (
+        <ol className="divide-y divide-line">
+          {sorted.map((stop, index) => (
+            <li key={stop.id ?? stop.locationName} className="flex items-center gap-3 py-2">
+              <span
+                aria-hidden="true"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted-strong text-sm font-bold text-daet-ink"
+              >
+                {index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold text-daet-ink">{stop.locationName}</p>
+                <p className="text-sm text-daet-ink/75">
+                  {stop.estimatedDurationMinutes ? `${stop.estimatedDurationMinutes} minutes` : "Time at this stop not set"}
+                </p>
+              </div>
+              {canEditStops || canRemoveStops ? (
+                <RowMenu
+                  label={`${stop.locationName} stop`}
+                  items={[
+                    ...(canEditStops ? [{ label: "Edit", onSelect: () => startEdit(stop) }] : []),
+                    ...(permissions.stops.reorder
+                      ? [
+                          { label: "Move up", onSelect: () => move(index, -1), disabled: index === 0 },
+                          {
+                            label: "Move down",
+                            onSelect: () => move(index, 1),
+                            disabled: index === sorted.length - 1,
+                          },
+                        ]
+                      : []),
+                    ...(canRemoveStops
+                      ? [
+                          {
+                            label: "Delete",
+                            onSelect: () => remove(stop),
+                            disabled: sorted.length <= 1,
+                            danger: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              ) : null}
+            </li>
+          ))}
+        </ol>
       )}
 
-      {/* Add/Edit Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card-edge bg-surface rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-daet-ink mb-4">
-              {editingId ? "Edit Stop" : "Add Stop"}
-            </h3>
+      <Modal
+        open={open}
+        onClose={close}
+        title={editingId ? "Edit stop" : "Add a stop"}
+        description="You'll save everything with the Save button at the foot of the page."
+        footer={
+          <>
+            <Button variant="ghost" onClick={close}>
+              Cancel
+            </Button>
+            <Button onClick={apply}>{editingId ? "Save stop" : "Add stop"}</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field id={`${fieldId}-name`} label="Where does the tour stop?" required>
+            <Input
+              value={formData.locationName ?? ""}
+              onChange={(event) => setFormData({ ...formData, locationName: event.target.value })}
+              maxLength={EDIT_LIMITS.stopLocation.max}
+              placeholder="Bagasbas Beach"
+            />
+          </Field>
 
-            <div className="space-y-4">
-              <Field id="edit-stop-location" label="Location" required>
-                <Input
-                  type="text"
-                  value={formData.locationName || ""}
-                  onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-                  maxLength={EDIT_LIMITS.stopLocation.max}
-                  placeholder="e.g., Taal Volcano"
-                />
-              </Field>
+          <Field id={`${fieldId}-description`} label="What happens here?" hint="Optional">
+            <Textarea
+              value={formData.description ?? ""}
+              onChange={(event) => setFormData({ ...formData, description: event.target.value || null })}
+              maxLength={EDIT_LIMITS.stopDescription.max}
+              rows={2}
+              className="resize-none"
+              placeholder="A 20-minute swim, then merienda on the sand."
+            />
+          </Field>
 
-              <Field id="edit-stop-description" label="Description">
-                <Textarea
-                  value={formData.description || ""}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-                  maxLength={EDIT_LIMITS.stopDescription.max}
-                  rows={3}
-                  className="resize-none"
-                  placeholder="Optional description of the stop"
-                />
-              </Field>
+          <div>
+            <p className="mb-1 block text-sm font-bold text-daet-ink">Find it on the map</p>
+            <LocationPicker
+              latitude={formData.latitude ?? null}
+              longitude={formData.longitude ?? null}
+              onChange={(latitude, longitude, placeName) =>
+                setFormData((current) => ({
+                  ...current,
+                  latitude,
+                  longitude,
+                  locationName:
+                    placeName && !current.locationName?.trim()
+                      ? placeName.slice(0, EDIT_LIMITS.stopLocation.max)
+                      : current.locationName,
+                }))
+              }
+            />
+          </div>
 
-              {/* Pick the spot on a map; the numbers stay available underneath. */}
-              <div>
-                <p className="block text-sm font-bold text-daet-ink mb-1">
-                  Where is it? <span className="text-red-500">*</span>
-                </p>
-                <LocationPicker
-                  latitude={formData.latitude ?? null}
-                  longitude={formData.longitude ?? null}
-                  onChange={(latitude, longitude, placeName) =>
-                    setFormData((current) => ({
-                      ...current,
-                      latitude,
-                      longitude,
-                      locationName: placeName && !current.locationName?.trim() ? placeName.slice(0, EDIT_LIMITS.stopLocation.max) : current.locationName,
-                    }))
-                  }
-                />
-              </div>
+          <Field id={`${fieldId}-minutes`} label="How long is the stop? (minutes)">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max="1440"
+              value={formData.estimatedDurationMinutes ?? ""}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  estimatedDurationMinutes: event.target.value ? parseInt(event.target.value, 10) : null,
+                })
+              }
+              placeholder="60"
+            />
+          </Field>
 
-              <details className="rounded-2xl border border-daet-ink/15 px-3 py-2">
-                <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-daet-ink/80">Enter coordinates yourself</summary>
-                <div className="space-y-4 pb-2">
-                  <Field id="edit-stop-lat" label="Latitude" required>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.0001"
-                      min={-90}
-                      max={90}
-                      value={formData.latitude ?? ""}
-                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
-                      placeholder="e.g., 14.1122"
-                    />
-                  </Field>
-                  <Field id="edit-stop-lng" label="Longitude" required>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.0001"
-                      min={-180}
-                      max={180}
-                      value={formData.longitude ?? ""}
-                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
-                      placeholder="e.g., 122.9553"
-                    />
-                  </Field>
-                </div>
-              </details>
-
-              <Field id="edit-stop-minutes" label="Estimated duration (minutes)">
+          <details className="rounded-2xl border border-line px-3 py-2">
+            <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold text-daet-ink">
+              Advanced: coordinates
+            </summary>
+            <div className="grid gap-3 pb-2 sm:grid-cols-2">
+              <Field id={`${fieldId}-lat`} label="Latitude">
                 <Input
                   type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="1440"
-                  value={formData.estimatedDurationMinutes ?? ""}
-                  onChange={(e) => setFormData({ ...formData, estimatedDurationMinutes: e.target.value ? parseInt(e.target.value) : null })}
-                  placeholder="e.g., 60"
+                  inputMode="decimal"
+                  step="0.0001"
+                  min={-90}
+                  max={90}
+                  value={formData.latitude ?? ""}
+                  onChange={(event) =>
+                    setFormData({ ...formData, latitude: event.target.value ? parseFloat(event.target.value) : 0 })
+                  }
                 />
               </Field>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingId(undefined);
-                  }}
-                  className="flex-1 px-4 py-2 border border-daet-ink/20 text-daet-ink/80 rounded-2xl hover:bg-canvas transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddStop}
-                  className="min-h-11 flex-1 px-4 py-2 bg-daet-forest text-white rounded-2xl hover:bg-daet-leaf transition"
-                >
-                  {editingId ? "Update" : "Add"}
-                </button>
-              </div>
+              <Field id={`${fieldId}-lng`} label="Longitude">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.0001"
+                  min={-180}
+                  max={180}
+                  value={formData.longitude ?? ""}
+                  onChange={(event) =>
+                    setFormData({ ...formData, longitude: event.target.value ? parseFloat(event.target.value) : 0 })
+                  }
+                />
+              </Field>
             </div>
-          </div>
-        </div>
-      )}
+          </details>
 
-      {/* Help text */}
-      {data.length === 0 && (
-        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-2xl text-sm text-yellow-800 dark:text-yellow-200">
-          <LineIcon name="warning" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /> At least one stop is required before submitting for review.
+          {formError ? (
+            <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-300">
+              {formError}
+            </p>
+          ) : null}
         </div>
-      )}
-    </div>
+      </Modal>
+    </SectionCard>
   );
 }

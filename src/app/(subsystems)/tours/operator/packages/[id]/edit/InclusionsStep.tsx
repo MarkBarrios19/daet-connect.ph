@@ -1,26 +1,37 @@
 "use client";
 
-import { Field, Textarea } from "@/components/ui/field";
-import { LineIcon } from "@/components/ui/icons";
-import React, { useCallback, useState } from "react";
-import { useFeedback } from "@/components/ui/feedback";
+import { Field, Select, Textarea } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { RowMenu } from "@/components/ui/row-menu";
+import { SectionCard } from "@/components/ui/section-card";
+import { useId, useState } from "react";
 import type { EditInclusion, EditPackageStatus, ValidationErrors, StepProps } from "./edit-types";
 import { EDIT_LIMITS } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
 import { withDisplayOrder } from "./edit-order";
+import { validateInclusionText } from "./validation";
 
 type InclusionsStepProps = StepProps<EditInclusion[]>;
 
+const COLLAPSED = 5;
+
+/** The operator's words on a row: one line, with the count of the other list. */
+function summarize(items: EditInclusion[]): string {
+  const included = items.filter((item) => item.isIncluded).length;
+  const excluded = items.length - included;
+  if (items.length === 0) return "Nothing listed yet.";
+  return `${included} included${excluded ? `, ${excluded} not included` : ""}.`;
+}
+
 /**
- * InclusionsStep Component
+ * InclusionsStep — "What's included".
  *
- * Manages inclusions/exclusions with:
- * - Separate sections for inclusions and exclusions
- * - Add item form/modal
- * - Edit item functionality
- * - Delete item with confirmation
- * - Toggle between included/excluded
- * - Reorder functionality
+ * The whole list is one card of compact rows with a "⋯" menu each, rather than
+ * a row of ↑ ↓ Edit Delete buttons on every item. More than five items collapse
+ * behind "Show all". Adding or editing one item opens the shared Modal, which
+ * can stay open for the next item ("Add another") and docks to the bottom of a
+ * phone's screen.
  */
 export function InclusionsStep({
   data,
@@ -29,358 +40,270 @@ export function InclusionsStep({
   onUpdate,
   errors,
   loading,
+  id = "included-section",
+  dirty = false,
 }: InclusionsStepProps) {
   const permissions = getEditPermissions(packageStatus);
-  const { toast, confirm } = useFeedback();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const fieldId = useId();
+  const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [showAll, setShowAll] = useState(false);
   const [formData, setFormData] = useState<{ text: string; isIncluded: boolean }>({
     text: "",
     isIncluded: true,
   });
+  const [formError, setFormError] = useState<string | null>(null);
+  // "Removed · Undo" — a plain delete with a way back, rather than a dialog.
+  const [removed, setRemoved] = useState<{ item: EditInclusion; index: number } | null>(null);
 
+  const canAddItems = permissions.inclusions.add;
   const canEditItems = permissions.inclusions.editText;
   const canRemoveItems = permissions.inclusions.remove;
   const canToggleIncluded = permissions.inclusions.toggleIncluded;
 
-  const inclusions = data.filter((i) => i.isIncluded);
-  const exclusions = data.filter((i) => !i.isIncluded);
-  const canAddItems = permissions.inclusions.add;
+  const inclusionErrors = Object.entries(errors).filter(([key]) => key.startsWith("inclusions"));
+  const sectionError = inclusionErrors.length
+    ? inclusionErrors.map(([, message]) => message).join(" ")
+    : null;
 
-  const getInclusionErrors = useCallback(() => {
-    const stepErrors: Record<string, string> = {};
-    Object.entries(errors).forEach(([key, value]) => {
-      if (key.startsWith("inclusions")) {
-        stepErrors[key] = value;
-      }
-    });
-    return stepErrors;
-  }, [errors]);
+  const ordered = [...data].sort((a, b) => a.displayOrder - b.displayOrder);
 
-  const handleAddItem = useCallback(() => {
-    if (!formData.text.trim()) {
-      return;
-    }
-    if (!editingId && !canAddItems) return;
-
-    const newItem: EditInclusion = {
-      id: editingId || `new-${Date.now()}`,
-      text: formData.text,
-      isIncluded: formData.isIncluded,
-      displayOrder: editingId
-        ? data.find((i) => i.id === editingId)?.displayOrder ?? data.length + 1
-        : data.length + 1,
-    };
-
-    let updated: EditInclusion[];
-    if (editingId) {
-      updated = data.map((i) => (i.id === editingId ? newItem : i));
-    } else {
-      updated = [...data, newItem];
-    }
-
-    onUpdate(withDisplayOrder(updated));
-    setShowAddForm(false);
-    setEditingId(undefined);
+  const startAdd = () => {
     setFormData({ text: "", isIncluded: true });
-  }, [formData, editingId, data, onUpdate, canAddItems]);
+    setEditingId(undefined);
+    setFormError(null);
+    setOpen(true);
+  };
 
-  const handleEdit = useCallback((item: EditInclusion) => {
+  const startEdit = (item: EditInclusion) => {
     setFormData({ text: item.text, isIncluded: item.isIncluded });
     setEditingId(item.id);
-    setShowAddForm(true);
-  }, []);
+    setFormError(null);
+    setOpen(true);
+  };
 
-  const handleDelete = useCallback(
-    (id: string | undefined) => {
-      if (!id || data.filter((i) => i.isIncluded).length <= 1) {
-        toast("At least one inclusion is required.", "error");
-        return;
-      }
-      onUpdate(withDisplayOrder(data.filter((i) => i.id !== id)));
-    },
-    [data, onUpdate]
-  );
+  const close = () => {
+    setOpen(false);
+    setEditingId(undefined);
+    setFormError(null);
+  };
 
-  const handleToggle = useCallback(
-    (id: string | undefined) => {
-      if (!id || !canToggleIncluded) return;
-      onUpdate(
-        data.map((i) =>
-          i.id === id ? { ...i, isIncluded: !i.isIncluded } : i
-        )
-      );
-    },
-    [data, onUpdate, canToggleIncluded]
-  );
+  const apply = (keepOpen: boolean) => {
+    const text = formData.text.trim();
+    const message = validateInclusionText(text);
+    if (message) {
+      setFormError(message);
+      return;
+    }
 
-  const handleReorder = useCallback(
-    (items: EditInclusion[], direction: "up" | "down", index: number) => {
-      if (direction === "up" && index === 0) return;
-      if (direction === "down" && index === items.length - 1) return;
+    if (editingId) {
+      onUpdate(withDisplayOrder(data.map((item) => (item.id === editingId ? { ...item, text, isIncluded: formData.isIncluded } : item))));
+      close();
+      return;
+    }
 
-      const newItems = [...items];
-      const [removed] = newItems.splice(index, 1);
-      newItems.splice(direction === "up" ? index - 1 : index + 1, 0, removed);
+    const added: EditInclusion = {
+      id: `new-${Date.now()}-${data.length}`,
+      text,
+      isIncluded: formData.isIncluded,
+      displayOrder: data.length + 1,
+    };
+    onUpdate(withDisplayOrder([...data, added]));
 
-      // Merge back with the other group, then number the whole list 1..n
-      const merged = [
-        ...newItems.map((item) => ({ ...item, isIncluded: items[0]?.isIncluded })),
-        ...data.filter((i) => i.isIncluded !== items[0]?.isIncluded),
-      ];
+    if (keepOpen) {
+      // Clear the text and stay put: several items go in one after another.
+      setFormData({ text: "", isIncluded: formData.isIncluded });
+      setFormError(null);
+    } else {
+      close();
+    }
+  };
 
-      onUpdate(withDisplayOrder(merged));
-    },
-    [data, onUpdate]
-  );
+  const remove = (item: EditInclusion) => {
+    const index = ordered.findIndex((entry) => entry.id === item.id);
+    onUpdate(withDisplayOrder(ordered.filter((entry) => entry.id !== item.id)));
+    setRemoved({ item, index });
+  };
 
-  const inclusionErrors = getInclusionErrors();
+  const undo = () => {
+    if (!removed) return;
+    const next = [...ordered];
+    next.splice(Math.max(0, Math.min(removed.index, next.length)), 0, removed.item);
+    onUpdate(withDisplayOrder(next));
+    setRemoved(null);
+  };
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= ordered.length) return;
+    const next = [...ordered];
+    [next[index], next[target]] = [next[target], next[index]];
+    onUpdate(withDisplayOrder(next));
+  };
+
+  const toggle = (item: EditInclusion) => {
+    onUpdate(withDisplayOrder(ordered.map((entry) => (entry.id === item.id ? { ...entry, isIncluded: !entry.isIncluded } : entry))));
+  };
+
+  const shown = showAll ? ordered : ordered.slice(0, COLLAPSED);
 
   return (
-    <div className="border rounded-2xl p-6 bg-surface">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-daet-ink">Inclusions & Exclusions</h2>
-        {canAddItems && (
+    <SectionCard
+      id={id}
+      title="What's included"
+      dirty={dirty}
+      summary={summarize(ordered)}
+      error={sectionError}
+      action={
+        canAddItems ? (
+          <Button variant="secondary" onClick={startAdd} disabled={loading}>
+            Add an item
+          </Button>
+        ) : null
+      }
+    >
+      {ordered.length === 0 ? (
+        <p className="text-sm text-daet-ink/75">
+          List what the price covers, and what it does not — a life vest, a meal, an environmental fee.
+        </p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {shown.map((item, index) => (
+            <li key={item.id ?? item.text} className="flex items-center gap-3 py-2">
+              <span
+                aria-hidden="true"
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                  item.isIncluded
+                    ? "bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                    : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+                }`}
+              >
+                {item.isIncluded ? "✓" : "✕"}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-daet-ink ${item.isIncluded ? "" : "line-through decoration-1"}`}>{item.text}</p>
+                <p className="text-xs text-daet-ink/70">{item.isIncluded ? "Included" : "Not included"}</p>
+              </div>
+              {canEditItems || canRemoveItems || canToggleIncluded ? (
+                <RowMenu
+                  label={`${item.text} item`}
+                  items={[
+                    ...(canEditItems ? [{ label: "Edit", onSelect: () => startEdit(item) }] : []),
+                    ...(canToggleIncluded
+                      ? [
+                          {
+                            label: item.isIncluded ? "Mark as not included" : "Mark as included",
+                            onSelect: () => toggle(item),
+                          },
+                        ]
+                      : []),
+                    ...(canEditItems
+                      ? [
+                          { label: "Move up", onSelect: () => move(index, -1), disabled: index === 0 },
+                          {
+                            label: "Move down",
+                            onSelect: () => move(index, 1),
+                            disabled: index === ordered.length - 1,
+                          },
+                        ]
+                      : []),
+                    ...(canRemoveItems
+                      ? [{ label: "Remove", onSelect: () => remove(item), danger: true }]
+                      : []),
+                  ]}
+                />
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {ordered.length > COLLAPSED ? (
+        <button
+          type="button"
+          onClick={() => setShowAll((current) => !current)}
+          aria-expanded={showAll}
+          className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-blue-700 hover:underline dark:text-blue-300"
+        >
+          {showAll ? "Show fewer" : `Show all ${ordered.length}`}
+        </button>
+      ) : null}
+
+      {removed ? (
+        <div
+          role="status"
+          className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-muted px-3 py-2 text-sm text-daet-ink"
+        >
+          <span className="min-w-0 flex-1 truncate">Removed “{removed.item.text}”</span>
+          <button type="button" onClick={undo} className="min-h-11 font-bold text-blue-700 hover:underline dark:text-blue-300">
+            Undo
+          </button>
           <button
             type="button"
-            onClick={() => {
-              setShowAddForm(true);
-              setFormData({ text: "", isIncluded: true });
-            }}
-            disabled={loading}
-            className="px-4 py-2 bg-daet-forest text-white rounded-2xl text-sm font-medium hover:bg-daet-leaf transition disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setRemoved(null)}
+            aria-label="Dismiss"
+            className="grid h-11 w-11 place-items-center rounded-full text-daet-ink/70 hover:bg-muted-strong"
           >
-            + Add Item
+            <span aria-hidden="true">×</span>
           </button>
-        )}
-      </div>
-
-      {/* Inclusions Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-bold text-daet-ink/80 mb-3 flex items-center gap-2">
-          <span className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/40 border-2 border-green-500 flex items-center justify-center text-xs text-green-600 dark:text-green-300 font-bold">✓</span>
-          Included ({inclusions.length})
-        </h3>
-
-        {inclusions.length > 0 ? (
-          <div className="space-y-2">
-            {inclusions.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/40 rounded-2xl hover:bg-green-100 dark:hover:bg-green-900/40 transition"
-              >
-                <span className="text-sm font-medium text-green-700 dark:text-green-300 min-w-4">{index + 1}.</span>
-                {canEditItems && editingId !== item.id ? (
-                  <span className="flex-1 text-daet-ink">{item.text}</span>
-                ) : (
-                  <input
-                    type="text"
-                    value={item.text}
-                    onChange={() => {}}
-                    aria-label={`Item ${index + 1}`}
-                    className="flex-1 px-2 py-1 border border-daet-ink/20 rounded-2xl bg-surface"
-                    disabled
-                  />
-                )}
-                <div className="flex items-center gap-1">
-                  {permissions.inclusions.reorder && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleReorder(inclusions, "up", index)}
-                        disabled={index === 0 || loading}
-                        className="p-1 hover:bg-green-200 dark:hover:bg-green-800/60 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Move up"
-                      >
-                        <svg className="w-4 h-4 text-daet-ink/80" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleReorder(inclusions, "down", index)}
-                        disabled={index === inclusions.length - 1 || loading}
-                        className="p-1 hover:bg-green-200 dark:hover:bg-green-800/60 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Move down"
-                      >
-                        <svg className="w-4 h-4 text-daet-ink/80" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                  {canEditItems && (
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(item)}
-                      disabled={loading}
-                      className="text-daet-leaf dark:text-blue-300 hover:text-daet-leaf dark:hover:text-blue-300 text-xs font-medium disabled:opacity-50"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {canRemoveItems && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirm({ title: "Delete this item?", confirmLabel: "Delete" })) {
-                          handleDelete(item.id);
-                        }
-                      }}
-                      disabled={loading}
-                      className="text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-daet-ink/70 text-sm p-3 bg-canvas rounded-2xl">No inclusions yet.</p>
-        )}
-      </div>
-
-      {/* Exclusions Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-bold text-daet-ink/80 mb-3 flex items-center gap-2">
-          <span className="w-4 h-4 rounded-full bg-red-100 dark:bg-red-900/40 border-2 border-red-500 flex items-center justify-center text-xs text-red-700 dark:text-red-300 font-bold">✕</span>
-          Excluded ({exclusions.length})
-        </h3>
-
-        {exclusions.length > 0 ? (
-          <div className="space-y-2">
-            {exclusions.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/40 rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/40 transition"
-              >
-                <span className="text-sm font-medium text-red-700 dark:text-red-300 min-w-4">{index + 1}.</span>
-                <span className="flex-1 text-daet-ink line-through">{item.text}</span>
-                <div className="flex items-center gap-1">
-                  {canToggleIncluded && (
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(item.id)}
-                      disabled={loading}
-                      className="text-green-600 dark:text-green-300 hover:text-green-800 dark:hover:text-green-300 text-xs font-medium disabled:opacity-50"
-                    >
-                      Include
-                    </button>
-                  )}
-                  {canRemoveItems && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirm({ title: "Delete this item?", confirmLabel: "Delete" })) {
-                          handleDelete(item.id);
-                        }
-                      }}
-                      disabled={loading}
-                      className="text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-daet-ink/70 text-sm p-3 bg-canvas rounded-2xl">No exclusions yet.</p>
-        )}
-      </div>
-
-      {/* Validation Errors */}
-      {Object.keys(inclusionErrors).length > 0 && (
-        <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-2xl text-sm text-red-800 dark:text-red-300">
-          <p className="font-medium">Inclusion errors:</p>
-          <ul className="mt-1 space-y-1">
-            {Object.entries(inclusionErrors).map(([key, message]) => (
-              <li key={key}>• {message}</li>
-            ))}
-          </ul>
         </div>
-      )}
+      ) : null}
 
-      {/* Add/Edit Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card-edge bg-surface rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-daet-ink mb-4">
-              {editingId ? "Edit Item" : "Add Item"}
-            </h3>
-
-            <div className="space-y-4">
-              <Field id="inc-description" label="Description" required hint={`${formData.text.length}/${EDIT_LIMITS.inclusionText.max}`}>
-                <Textarea
-                  value={formData.text}
-                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                  maxLength={EDIT_LIMITS.inclusionText.max}
-                  rows={3}
-                  className="resize-none"
-                  placeholder="e.g., Hotel accommodation"
-                />
-              </Field>
-
-              {/* Is Included Toggle */}
-              <fieldset>
-                <legend className="mb-2 block text-sm font-bold text-daet-ink">Status</legend>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={formData.isIncluded}
-                      onChange={() => setFormData({ ...formData, isIncluded: true })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm text-daet-ink/80">Included</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={!formData.isIncluded}
-                      onChange={() => setFormData({ ...formData, isIncluded: false })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm text-daet-ink/80">Excluded</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingId(undefined);
-                  }}
-                  className="flex-1 px-4 py-2 border border-daet-ink/20 text-daet-ink/80 rounded-2xl hover:bg-canvas transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddItem}
-                  className="min-h-11 flex-1 px-4 py-2 bg-daet-forest text-white rounded-2xl hover:bg-daet-leaf transition"
-                >
-                  {editingId ? "Update" : "Add"}
-                </button>
-              </div>
-            </div>
-          </div>
+      <Modal
+        open={open}
+        onClose={close}
+        title={editingId ? "Edit an item" : "Add an item"}
+        description="You'll save everything with the Save button at the foot of the page."
+        footer={
+          <>
+            <Button variant="ghost" onClick={close}>
+              Cancel
+            </Button>
+            {!editingId ? (
+              <Button variant="secondary" onClick={() => apply(true)}>
+                Add another
+              </Button>
+            ) : null}
+            <Button onClick={() => apply(false)}>{editingId ? "Save item" : "Add item"}</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field
+            id={`${fieldId}-text`}
+            label="What is it?"
+            required
+            hint={`${formData.text.length}/${EDIT_LIMITS.inclusionText.max}`}
+            error={formError}
+          >
+            <Textarea
+              value={formData.text}
+              onChange={(event) => {
+                setFormData({ ...formData, text: event.target.value });
+                setFormError(null);
+              }}
+              maxLength={EDIT_LIMITS.inclusionText.max}
+              rows={2}
+              placeholder="Boat transfer, life vest, lunch"
+            />
+          </Field>
+          <Field id={`${fieldId}-kind`} label="Is it included in the price?">
+            <Select
+              value={formData.isIncluded ? "yes" : "no"}
+              onChange={(event) => setFormData({ ...formData, isIncluded: event.target.value === "yes" })}
+            >
+              <option value="yes">Included</option>
+              <option value="no">Not included</option>
+            </Select>
+          </Field>
+          {!editingId ? (
+            <p className="text-sm text-daet-ink/70">
+              Common items: boat transfer, life vest, meals, environmental fee. Type your own words — nothing is
+              added until you add it.
+            </p>
+          ) : null}
         </div>
-      )}
-
-      {/* Help text */}
-      {inclusions.length === 0 && (
-        <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-2xl text-sm text-yellow-800 dark:text-yellow-200">
-          <LineIcon name="warning" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" />{" "}
-          At least one item marked Included is required before saving.
-        </div>
-      )}
-    </div>
+      </Modal>
+    </SectionCard>
   );
 }

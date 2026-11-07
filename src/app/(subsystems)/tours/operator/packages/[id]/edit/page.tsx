@@ -131,20 +131,17 @@ async function EditPackageContent({ packageId }: { packageId: string }) {
   const { data: packageRecord } = result;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Link href="/tours/operator/packages" className="inline-flex min-h-11 items-center font-bold text-blue-700 dark:text-blue-300 hover:underline">
-            Packages
-          </Link>
-          <span className="text-daet-ink/70">/</span>
-          <span className="text-daet-ink/80">{packageRecord.formData.title}</span>
-        </div>
-        <h1 className="display-2 text-daet-ink">Edit Package</h1>
-        <p className="text-daet-ink/80 mt-2">
-          Status: <span className="font-bold capitalize">{packageRecord.status}</span>
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
+      {/* The breadcrumb is the way back to the list; the editor's own header
+          carries the title, its status and what that status allows. */}
+      <nav aria-label="Breadcrumb" className="mb-4">
+        <Link
+          href="/tours/operator/packages"
+          className="inline-flex min-h-11 items-center font-bold text-blue-700 hover:underline dark:text-blue-300"
+        >
+          ← Packages
+        </Link>
+      </nav>
 
       <EditPackageForm packageData={packageRecord} />
     </div>
