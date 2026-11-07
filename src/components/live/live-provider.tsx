@@ -41,8 +41,9 @@ export type LiveInitial = { userId: string; items: NotificationRow[]; unread: nu
 export function LiveProvider({ initial: initialProp = null, children }: { initial?: LiveInitial; children: ReactNode }) {
   // A shared layout mounts the provider before it knows who is signed in (that
   // is read at request time, behind <Suspense>). <LiveSeed> hands the person's
-  // notifications over once they arrive; until then the poller still runs and
-  // the first poll fills everything in.
+  // notifications over once they arrive. Nothing polls before that, so a
+  // signed-out visitor on a page inside the shared layout (the trip planner)
+  // never hits the summary route.
   const [seed, setSeed] = useState<LiveInitial>(null);
   const initial = initialProp ?? seed;
   const [summary, setSummary] = useState<LiveSummary>(() => (initial ? { ...EMPTY_SUMMARY, notifications: { unread: initial.unread, items: initial.items } } : EMPTY_SUMMARY));
@@ -94,7 +95,7 @@ export function LiveProvider({ initial: initialProp = null, children }: { initia
     baseline.current = true;
   }, [announce]);
 
-  const { trigger } = usePolling(poll, pollInterval(realtime), isSupabaseConfigured());
+  const { trigger } = usePolling(poll, pollInterval(realtime), isSupabaseConfigured() && Boolean(initial));
 
   // Realtime: only an accelerator. Any new notification or message asks for a poll now.
   useEffect(() => {
