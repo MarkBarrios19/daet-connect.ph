@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAuthUser } from "@/lib/tours/server-auth";
@@ -27,11 +28,9 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
 
     const supabase = await createSupabaseServerClient();
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data } = await timed("profile", async () =>
+      supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).maybeSingle(),
+    );
     return {
       fullName: typeof data?.full_name === "string" ? data.full_name : null,
       avatarUrl: typeof data?.avatar_url === "string" ? data.avatar_url : null,

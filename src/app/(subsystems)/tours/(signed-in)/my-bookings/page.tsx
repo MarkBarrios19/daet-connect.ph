@@ -8,8 +8,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
 import { Notice } from "@/components/ui/notice";
-import { PageFrame } from "@/components/ui/page-frame";
-import { StreamingPageFrame } from "@/components/ui/streaming-page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
+import { timed } from "@/lib/server-timing";
 import { formatPeso } from "@/lib/money";
 import { PHOTOS } from "@/lib/photo-credits";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -60,11 +60,13 @@ const loadBookings = cache(async () => {
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/my-bookings")}`);
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("tours_bookings")
-    .select("id, booking_reference, tour_date, status, number_of_pax, total_amount, payment_status, tours_packages ( id, title, location_name, cover_image_url )")
-    .eq("user_id", user.id)
-    .order("tour_date", { ascending: true });
+  const { data, error } = await timed("page:my-bookings", async () =>
+    supabase
+      .from("tours_bookings")
+      .select("id, booking_reference, tour_date, status, number_of_pax, total_amount, payment_status, tours_packages ( id, title, location_name, cover_image_url )")
+      .eq("user_id", user.id)
+      .order("tour_date", { ascending: true }),
+  );
   if (error) console.error("Bookings fetch error:", error.message);
 
   const rows = (data ?? []) as Row[];
@@ -76,18 +78,18 @@ const loadBookings = cache(async () => {
 export default function MyBookingsPage() {
   if (!isSupabaseConfigured()) {
     return (
-      <PageFrame>
+      <PageBody>
         <Notice variant="warning" title="Supabase setup needed">
           Configure Supabase to view bookings.
         </Notice>
-      </PageFrame>
+      </PageBody>
     );
   }
 
   // The title and buttons are the same for everyone, so they are in the
   // prerendered shell; only the counts and the list wait for the person.
   return (
-    <StreamingPageFrame>
+    <PageBody>
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -107,7 +109,7 @@ export default function MyBookingsPage() {
           <BookingsList />
         </Suspense>
       </div>
-    </StreamingPageFrame>
+    </PageBody>
   );
 }
 

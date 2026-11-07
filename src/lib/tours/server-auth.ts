@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
+import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthenticatedSession = {
@@ -37,7 +38,7 @@ export const getAuthUser = cache(async function getAuthUser(): Promise<User | nu
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await timed("auth", () => supabase.auth.getUser());
   return error || !user ? null : user;
 });
 
@@ -53,7 +54,7 @@ export const getAuthenticatedSession = cache(async function getAuthenticatedSess
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: roleData, error: roleError } = await supabase.rpc("get_my_role");
+  const { data: roleData, error: roleError } = await timed("role", async () => supabase.rpc("get_my_role"));
   if (roleError) {
     return {
       user,
