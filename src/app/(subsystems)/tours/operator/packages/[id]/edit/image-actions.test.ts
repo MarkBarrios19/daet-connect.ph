@@ -118,15 +118,15 @@ describe("Image Handling Server Actions", () => {
       expect(result.imageUrl).toBeDefined();
     });
 
-    it("accepts a new gallery image on a published package; review happens at save", async () => {
+    it("accepts a new gallery image on a published package for live saving", async () => {
       signInAsApprovedOperator();
       mockPackageLookup("published");
       mockUploadSuccess();
 
       const result = await uploadPackageImage(PACKAGE_ID, imageForm(), "gallery");
 
-      // The file may be uploaded; update_package_and_relations is what sends the
-      // package back to pending_review when the gallery actually changes.
+      // The file may be uploaded before save; the editor's RPC applies the
+      // gallery change live after validation.
       expect(result.success).toBe(true);
       expect(result.imageUrl).toBeDefined();
     });

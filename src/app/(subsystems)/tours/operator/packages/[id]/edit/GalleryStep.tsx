@@ -261,8 +261,10 @@ export function GalleryStep({
       });
       if (!confirmed) return;
 
-      // Remove from storage too when it lives in the package's bucket.
-      if (image.imageUrl.includes("http")) {
+      // Draft rows can clean up their file now. For published/rejected rows,
+      // keep storage intact until the form is saved so an unsaved removal does
+      // not break the image currently shown on the public package page.
+      if (packageStatus === "draft" && image.imageUrl.includes("http")) {
         try {
           await deletePackageImage(packageId, image.imageUrl);
         } catch {
@@ -273,7 +275,7 @@ export function GalleryStep({
 
       commit(imagesRef.current.filter((entry) => entry.imageUrl !== image.imageUrl));
     },
-    [confirm, packageId, commit],
+    [confirm, packageId, packageStatus, commit],
   );
 
   /* ---------------------------------------------------------------- notice */
@@ -306,8 +308,8 @@ export function GalleryStep({
       {packageStatus === "published" && (
         <div className="mb-4 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           {structuralChange
-            ? "Unsaved changes: saving sends this package back to the Tourism Office for review, and it stays hidden from tourists until they approve it."
-            : "Adding, removing or reordering photos sends this package back to the Tourism Office for review. Caption edits stay live."}
+            ? "Unsaved photo changes will be visible to tourists immediately when you save. No Tourism Office review is required."
+            : "Photo captions on this published package go live immediately when saved."}
         </div>
       )}
 

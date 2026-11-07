@@ -24,6 +24,7 @@ import { GalleryStep } from "./GalleryStep";
 interface FormState {
   originalData: EditPackageFormData;
   formData: EditPackageFormData;
+  updatedAt: string;
   hasChanges: boolean;
   isSubmitting: boolean;
   submissionError: string | null;
@@ -172,6 +173,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
   const [state, setState] = useState<FormState>({
     originalData: packageData.formData,
     formData: { ...packageData.formData },
+    updatedAt: packageData.updatedAt,
     hasChanges: false,
     isSubmitting: false,
     submissionError: null,
@@ -216,12 +218,13 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
     }));
 
     try {
-      const response: UpdatePackageResponse = await updatePackageCore(packageData.id, state.formData, packageData.updatedAt);
+      const response: UpdatePackageResponse = await updatePackageCore(packageData.id, state.formData, state.updatedAt);
 
       if (response.success) {
         setState((prev) => ({
           ...prev,
           originalData: state.formData,
+          updatedAt: response.updatedAt ?? prev.updatedAt,
           hasChanges: false,
           isSubmitting: false,
           successMessage:
@@ -230,9 +233,9 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           concurrencyError: null,
         }));
 
-        // Reload the page data: the status (a save can send a published package
-        // back to review) and the version stamp are the server's, and a second
-        // save on the old ones would be refused.
+        // Refresh server-rendered data while retaining the version returned by
+        // the save, so the next edit uses the new timestamp instead of sending
+        // a stale version and triggering a false concurrency conflict.
         router.refresh();
 
         // Auto-dismiss success message
@@ -266,7 +269,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
         submissionError: EDIT_MESSAGES.unexpected,
       }));
     }
-  }, [state, packageData.id, packageData.updatedAt, router]);
+  }, [state, packageData.id, router]);
 
   // Handle Submit for Review
   const handleSubmitForReview = useCallback(async () => {
@@ -280,7 +283,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
     }));
 
     try {
-      const response: UpdatePackageResponse = await submitPackageForReview(packageData.id, state.formData, packageData.updatedAt);
+      const response: UpdatePackageResponse = await submitPackageForReview(packageData.id, state.formData, state.updatedAt);
 
       if (response.success) {
         setState((prev) => ({
@@ -317,7 +320,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
         submissionError: EDIT_MESSAGES.unexpected,
       }));
     }
-  }, [state, packageData.id, packageData.updatedAt, router]);
+  }, [state, packageData.id, router]);
 
   // Determine button states
   const isButtonDisabled =
@@ -360,6 +363,15 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
       {/* Rejection Notice */}
       {packageData.status === "rejected" && packageData.rejectionReason && (
         <RejectionNotice reason={packageData.rejectionReason} />
+      )}
+
+      {packageData.status === "published" && (
+        <div
+          role="status"
+          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          This package is live. Saving updates the public listing immediately without a review step and may affect existing bookings. If another session saves first, refresh and reapply your changes.
+        </div>
       )}
 
       {/* Concurrency Conflict Banner */}
