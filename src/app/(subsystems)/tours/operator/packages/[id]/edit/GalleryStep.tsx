@@ -49,8 +49,6 @@ export function GalleryStep({
   onUpdate,
   errors,
   loading,
-  id = "gallery-section",
-  dirty = false,
 }: GalleryStepProps) {
   const permissions = getEditPermissions(packageStatus);
   const { toast, confirm } = useFeedback();
@@ -301,13 +299,10 @@ export function GalleryStep({
     : "Add photos";
 
   return (
-    <section
-      id={id}
-      tabIndex={-1}
-      aria-labelledby={`${id}-heading`}
+    <div
       {...fileDrop.dropProps}
-      className={`scroll-mt-[calc(var(--header-h)+4.5rem)] rounded-2xl card-edge bg-surface p-5 outline-none transition sm:p-6 ${
-        fileDrop.isDragging ? "ring-2 ring-daet-forest/40" : ""
+      className={`rounded-2xl border bg-surface p-6 transition ${
+        fileDrop.isDragging ? "border-daet-forest ring-2 ring-daet-forest/40" : ""
       }`}
     >
       {packageStatus === "published" && (
@@ -320,16 +315,7 @@ export function GalleryStep({
 
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 id={`${id}-heading`} className="text-xl font-bold text-daet-ink">
-              More photos
-            </h2>
-            {dirty ? (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-800 dark:bg-blue-950/50 dark:text-blue-200">
-                Unsaved
-              </span>
-            ) : null}
-          </div>
+          <h2 className="text-xl font-bold text-daet-ink">Gallery</h2>
           <p className="mt-1 text-sm text-daet-ink/80">
             {photoCount} of {EDIT_LIMITS.maxGalleryImages} photos
           </p>
@@ -507,6 +493,6 @@ export function GalleryStep({
           </p>
         </>
       )}
-    </section>
+    </div>
   );
 }

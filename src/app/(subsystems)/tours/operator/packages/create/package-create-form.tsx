@@ -5,21 +5,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPackage } from "./actions";
 import { ImageUploader } from "@/components/tours/image-uploader";
-import { CreateStopsPicker } from "./stops-picker";
-import type { Attraction, CreateStop } from "./stops";
 import { ImagePreview } from "@/components/tours/image-preview";
 
 type Props = {
   operatorId: string;
-  attractions: Attraction[];
 };
 
-export function PackageCreateForm({ operatorId, attractions }: Props) {
+export function PackageCreateForm({ operatorId }: Props) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stops, setStops] = useState<CreateStop[]>([]);
-  const [savedDraft, setSavedDraft] = useState<{ id: string; notice: string } | null>(null);
   
   // Image upload state
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -43,16 +38,11 @@ export function PackageCreateForm({ operatorId, attractions }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (stops.length === 0) {
-      setError("Add at least one stop by selecting an attraction or picking a point on the map.");
-      return;
-    }
     setIsSubmitting(true);
     setError(null);
 
     const formData = new FormData(e.currentTarget);
     formData.append("operator_id", operatorId);
-    formData.set("stops", JSON.stringify(stops));
     
     // Append images to formData
     if (coverImage) {
@@ -73,21 +63,13 @@ export function PackageCreateForm({ operatorId, attractions }: Props) {
 
     // Saved, but not complete enough for review: finish it in the editor.
     if (result.notice && result.packageId) {
-      setSavedDraft({ id: result.packageId, notice: result.notice });
-      setIsSubmitting(false);
+      router.push(`/tours/operator/packages/${result.packageId}/edit`);
       return;
     }
 
     // Success - redirect to packages list
     router.push("/tours/operator/packages?submitted=true");
   }
-
-  if (savedDraft) return (
-    <div role="status" className="rounded-2xl card-edge bg-surface p-6">
-      <p>{savedDraft.notice}</p>
-      <a className="mt-4 inline-flex min-h-11 items-center font-bold text-blue-700 dark:text-blue-300" href={`/tours/operator/packages/${savedDraft.id}/edit`}>Continue editing the draft</a>
-    </div>
-  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -264,7 +246,30 @@ export function PackageCreateForm({ operatorId, attractions }: Props) {
         </div>
       </section>
 
-      <CreateStopsPicker attractions={attractions} stops={stops} onChange={setStops} />
+      {/* Itinerary */}
+      <section className="rounded-2xl card-edge bg-surface p-6">
+        <h2 className="text-xl font-bold text-daet-ink">Itinerary</h2>
+        <p className="mt-1 text-sm text-daet-ink/70">
+          List the stops/locations in your tour (one per line).
+        </p>
+
+        <div className="mt-6">
+          <label htmlFor="stops" className="block text-sm font-bold text-daet-ink">
+            Tour Stops *
+          </label>
+          <textarea
+            id="stops"
+            name="stops"
+            required
+            rows={5}
+            className="mt-1 w-full rounded-2xl border border-daet-ink/20 min-h-11 px-4 py-2 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
+            placeholder={"Bagasbas Beach - Starting point\nApuao Grande Island - White sand beach and snorkeling\nCanimog Island - Lunch break and swimming\nBagasbas Beach - Return to starting point"}
+          />
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            One stop per line. Format: Location Name - Description
+          </p>
+        </div>
+      </section>
 
       {/* Image Upload */}
       <section className="rounded-2xl card-edge bg-surface p-6">

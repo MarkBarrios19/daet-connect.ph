@@ -111,8 +111,4 @@ export interface StepProps<T> {
   onUpdate: (value: T) => void;
   errors: ValidationErrors;
   loading: boolean;
-  /** The section's DOM id, so the section navigation can link to it. */
-  id?: string;
-  /** This section has unsaved changes. */
-  dirty?: boolean;
 }

@@ -5,7 +5,8 @@ import { formatPeso } from "@/lib/money";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
-import { parseProofDecision, PROOF_BUCKET } from "@/lib/tours/payment-proof";
+import { isProofMethod, parseProofDecision, PROOF_BUCKET, proofLedgerMethod } from "@/lib/tours/payment-proof";
+import { remainingBalance } from "@/lib/paymongo/checkout";
 
 interface RecordPaymentInput {
   bookingId: string;
@@ -29,47 +30,88 @@ export async function recordPayment(input: RecordPaymentInput) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const { data: operatorProfile, error: operatorError } = await supabase
-      .from("tours_operators")
-      .select("id, accreditation_status")
-      .eq("profile_id", user.id)
-      .maybeSingle();
-    if (operatorError || !operatorProfile || operatorProfile.accreditation_status !== "approved") {
-      return { success: false, error: "Only approved operators can record payments." };
+    // Verify user is an operator and owns this booking's package
+    const { data: booking, error: bookingError } = await supabase
+      .from("tours_bookings")
+      .select(
+        `
+        id,
+        total_amount,
+        total_paid,
+        payment_status,
+        tours_packages!inner (
+          id,
+          tours_operators!inner (
+            id,
+            profile_id
+          )
+        )
+      `
+      )
+      .eq("id", input.bookingId)
+      .single();
+
+    if (bookingError || !booking) {
+      return { success: false, error: "Booking not found" };
     }
-    const { data: booking } = await supabase.from("tours_bookings")
-      .select("id, tours_packages!inner ( operator_id )")
-      .eq("id", input.bookingId).single();
-    const pkg = booking && (Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages);
-    if (!booking || pkg?.operator_id !== operatorProfile.id) {
+
+    // Type guard for tours_packages
+    const pkg = Array.isArray(booking.tours_packages)
+      ? booking.tours_packages[0]
+      : booking.tours_packages;
+
+    if (!pkg) {
+      return { success: false, error: "Package not found" };
+    }
+
+    const operator = Array.isArray(pkg.tours_operators)
+      ? pkg.tours_operators[0]
+      : pkg.tours_operators;
+
+    if (!operator || operator.profile_id !== user.id) {
       return { success: false, error: "Not authorized to record payments for this booking" };
     }
 
-    if (!Number.isFinite(input.amount) || input.amount <= 0 || Math.abs(Math.round(input.amount * 100) - input.amount * 100) > 1e-7) {
-      return { success: false, error: "Enter an amount greater than zero with at most two decimal places" };
+    // Validate amount
+    if (input.amount <= 0) {
+      return { success: false, error: "Amount must be greater than zero" };
     }
 
-    const { data: result, error } = await supabase.rpc("tours_record_operator_payment", {
-      p_booking_id: input.bookingId, p_amount: input.amount, p_method: input.paymentMethod,
-      p_reference: input.referenceNumber, p_payment_date: input.paymentDate, p_notes: input.notes,
-      p_proof_id: null,
-    });
-    if (error || !result) {
-      console.error("Payment insert error:", error);
-      return { success: false, error: "Failed to record payment" };
+    const remaining = booking.total_amount - (booking.total_paid || 0);
+    if (input.amount > remaining) {
+      return {
+        success: false,
+        error: `Amount exceeds remaining balance of ${formatPeso(remaining)}`,
+      };
     }
-    if (result.status === "exceeds_balance") {
-      return { success: false, error: `Amount exceeds remaining balance of ${formatPeso(Number(result.remaining))}` };
+
+    // Insert payment record
+    const { error: insertError } = await supabase.from("tours_payments").insert({
+      booking_id: input.bookingId,
+      amount: input.amount,
+      payment_method: input.paymentMethod,
+      payment_status: "completed",
+      reference_number: input.referenceNumber,
+      payment_date: input.paymentDate,
+      notes: input.notes,
+      recorded_by: user.id,
+    });
+
+    if (insertError) {
+      console.error("Payment insert error:", insertError);
+      return { success: false, error: "Failed to record payment" };
     }
 
     // The trigger will automatically update booking payment status
     emailPaymentReceived(input.bookingId, input.amount);
     revalidatePath("/tours/operator/bookings");
 
-    const remaining = Number(result.remaining);
-    const statusMessage = remaining <= 0
-      ? "Booking is now fully paid!"
-      : `Remaining balance: ${formatPeso(remaining)}`;
+    // Calculate new status for message
+    const newTotalPaid = (booking.total_paid || 0) + input.amount;
+    const statusMessage =
+      newTotalPaid >= booking.total_amount
+        ? "Booking is now fully paid!"
+        : `Remaining balance: ${formatPeso((booking.total_amount - newTotalPaid))}`;
 
     return {
       success: true,
@@ -83,7 +125,8 @@ export async function recordPayment(input: RecordPaymentInput) {
 
 /**
  * Operator approves or rejects a tourist's uploaded receipt. Approval first
- * records the proof and ledger entry atomically under the booking lock.
+ * claims the proof (pending -> verified, so a double click cannot record it
+ * twice), then writes the manual ledger row; if that fails the claim is undone.
  */
 export async function reviewPaymentProof(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
   const proofId = formData.get("proofId");
@@ -110,13 +153,10 @@ export async function reviewPaymentProof(formData: FormData): Promise<{ success:
   // RLS limits this to proofs on the operator's own bookings.
   const { data: proof } = await supabase
     .from("tours_payment_proofs")
-    .select("id, booking_id, verification_status, tours_bookings!inner ( tours_packages!inner ( operator_id ) )")
+    .select("id, booking_id, amount, payment_method, reference_number, submitted_at, verification_status, tours_bookings ( total_amount, total_paid )")
     .eq("id", proofId)
     .maybeSingle();
   if (!proof) return { success: false, error: "Receipt not found." };
-  const proofBooking = Array.isArray(proof.tours_bookings) ? proof.tours_bookings[0] : proof.tours_bookings;
-  const proofPackage = proofBooking && (Array.isArray(proofBooking.tours_packages) ? proofBooking.tours_packages[0] : proofBooking.tours_packages);
-  if (proofPackage?.operator_id !== operator.id) return { success: false, error: "Receipt not found." };
   if (proof.verification_status !== "pending") return { success: false, error: "This receipt was already reviewed." };
 
   const reviewedAt = new Date().toISOString();
@@ -135,19 +175,47 @@ export async function reviewPaymentProof(formData: FormData): Promise<{ success:
     return { success: true, message: "Receipt rejected. The tourist will see your reason." };
   }
 
-  const { data: result, error: paymentError } = await supabase.rpc("tours_record_operator_payment", {
-    p_booking_id: proof.booking_id, p_amount: null, p_method: null, p_reference: null,
-    p_payment_date: null, p_notes: null, p_proof_id: proofId,
-  });
-  if (paymentError || !result) {
+  const booking = Array.isArray(proof.tours_bookings) ? proof.tours_bookings[0] : proof.tours_bookings;
+  const remaining = remainingBalance(booking ?? { total_amount: 0, total_paid: 0 });
+  const amount = Number(proof.amount);
+  if (amount > remaining + 0.001) {
+    return { success: false, error: `This receipt (${formatPeso(amount)}) is more than the remaining balance (${formatPeso(remaining)}). Reject it or record the correct amount manually.` };
+  }
+
+  const { data: claimed, error: claimError } = await supabase
+    .from("tours_payment_proofs")
+    .update({ verification_status: "verified", verified_by: user.id, verified_at: reviewedAt, rejection_reason: null })
+    .eq("id", proofId)
+    .eq("verification_status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (claimError || !claimed) return { success: false, error: "This receipt was already reviewed." };
+
+  const { data: payment, error: paymentError } = await supabase
+    .from("tours_payments")
+    .insert({
+      booking_id: proof.booking_id,
+      amount,
+      payment_method: proofLedgerMethod(isProofMethod(proof.payment_method) ? proof.payment_method : "other"),
+      payment_status: "completed",
+      reference_number: proof.reference_number,
+      payment_date: proof.submitted_at,
+      notes: "Verified from uploaded receipt",
+      recorded_by: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (paymentError || !payment) {
     console.error("Verified proof ledger insert error:", paymentError);
-    return { success: false, error: paymentError?.code === "P0002"
-      ? "This receipt was already reviewed." : "The payment could not be recorded. Please try again." };
+    await supabase
+      .from("tours_payment_proofs")
+      .update({ verification_status: "pending", verified_by: null, verified_at: null })
+      .eq("id", proofId);
+    return { success: false, error: "The payment could not be recorded. Please try again." };
   }
-  if (result.status === "exceeds_balance") {
-    return { success: false, error: `This receipt (${formatPeso(Number(result.amount))}) is more than the remaining balance (${formatPeso(Number(result.remaining))}). Reject it or record the correct amount manually.` };
-  }
-  const amount = Number(result.amount);
+
+  await supabase.from("tours_payment_proofs").update({ payment_id: payment.id }).eq("id", proofId);
   emailPaymentReceived(proof.booking_id, amount);
 
   revalidatePath("/tours/operator/bookings");
@@ -160,22 +228,12 @@ export async function reviewPaymentProof(formData: FormData): Promise<{ success:
 export async function getProofViewUrl(proofId: string): Promise<{ url?: string; error?: string }> {
   if (!isUuid(proofId)) return { error: "Receipt not found." };
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
-  const { data: operator, error: operatorError } = await supabase
-    .from("tours_operators").select("id, accreditation_status").eq("profile_id", user.id).maybeSingle();
-  if (operatorError || !operator || operator.accreditation_status !== "approved") {
-    return { error: "Only approved operators can view receipts." };
-  }
   const { data: proof } = await supabase
     .from("tours_payment_proofs")
-    .select("proof_image_url, tours_bookings!inner ( tours_packages!inner ( operator_id ) )")
+    .select("proof_image_url")
     .eq("id", proofId)
     .maybeSingle();
   if (!proof) return { error: "Receipt not found." };
-  const booking = Array.isArray(proof.tours_bookings) ? proof.tours_bookings[0] : proof.tours_bookings;
-  const pkg = booking && (Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages);
-  if (pkg?.operator_id !== operator.id) return { error: "Receipt not found." };
   const { data, error } = await supabase.storage.from(PROOF_BUCKET).createSignedUrl(proof.proof_image_url, 180);
   if (error || !data) return { error: "The receipt could not be opened." };
   return { url: data.signedUrl };
