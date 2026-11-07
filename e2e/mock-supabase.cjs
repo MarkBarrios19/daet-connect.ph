@@ -18,6 +18,15 @@ const CONV_ID = "cc110000-0000-4000-8000-000000000001";
 const SAVED_TRIP_ID = "5a7e0000-0000-4000-8000-0000000000a1";
 const daysFromToday = (n) => { const d = new Date(TODAY + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
+// The saved trip visits the Heritage Center, which is open Monday to Friday, so it
+// has to start (and end) on a weekday: a fixed "two weeks out" lands on a Saturday
+// one day in seven, and the planner then refuses to reopen the trip.
+const SAVED_TRIP_START = (() => {
+  let n = 14;
+  while ([5, 6, 0].includes(new Date(daysFromToday(n) + "T00:00:00Z").getUTCDay())) n += 1; // a Fri, Sat or Sun start reaches the weekend
+  return n;
+})();
+
 // Live tour tracking keeps state across requests (POST /__reset_live clears it).
 const LIVE_BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
 const freshLive = () => ({
@@ -1793,13 +1802,13 @@ http
             id: SAVED_TRIP_ID,
             tourist_id: "9b7e5a5e-0000-4000-8000-000000000001",
             title: "Daet weekend, slowly",
-            start_date: daysFromToday(14),
-            end_date: daysFromToday(15),
+            start_date: daysFromToday(SAVED_TRIP_START),
+            end_date: daysFromToday(SAVED_TRIP_START + 1),
             summary: null,
             share_token: null,
             plan_source: "rules",
             created_at: new Date().toISOString(),
-            preferences: { startDate: daysFromToday(14), days: 2, budgetPerDay: 1500, interests: ["heritage", "beach"], pace: "relaxed", groupSize: 2, dayStart: 480, dayEnd: 1080, travelers: { adults: 2, children: [] }, origin: "Manila" },
+            preferences: { startDate: daysFromToday(SAVED_TRIP_START), days: 2, budgetPerDay: 1500, interests: ["heritage", "beach"], pace: "relaxed", groupSize: 2, dayStart: 480, dayEnd: 1080, travelers: { adults: 2, children: [] }, origin: "Manila" },
             tours_itinerary_items: [item(1, 1, 1, "08:00", "08:25", 0), item(1, 2, 2, "08:40", "10:00", 10), item(1, 3, 0, "12:00", "13:00", 0, "lunch"), item(1, 4, 3, "14:00", "17:00", 12), item(2, 1, 5, "08:00", "11:00", 30)],
           },
         ];
