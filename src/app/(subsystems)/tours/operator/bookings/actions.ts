@@ -36,16 +36,12 @@ export async function assignGuideToBooking(
     // Get operator profile
     const { data: operator, error: operatorError } = await supabase
       .from("tours_operators")
-      .select("id, accreditation_status")
+      .select("id")
       .eq("profile_id", user.id)
       .maybeSingle();
 
     if (operatorError || !operator) {
       return { success: false, error: "Operator profile not found" };
-    }
-
-    if (operator.accreditation_status !== "approved") {
-      return { success: false, error: "Your operator account must be approved to manage bookings." };
     }
 
     // Verify the booking belongs to this operator's package
@@ -93,12 +89,10 @@ export async function assignGuideToBooking(
     }
 
     // Assign or unassign guide
-    const { data: updated, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("tours_bookings")
       .update({ assigned_guide_id: guideId })
-      .eq("id", bookingId)
-      .select("id")
-      .maybeSingle();
+      .eq("id", bookingId);
 
     if (updateError) {
       // R6: the schedule rule (available that day, not double-booked) is enforced in the database.
@@ -107,8 +101,6 @@ export async function assignGuideToBooking(
       console.error("Guide assignment error:", updateError);
       return { success: false, error: "Failed to assign guide" };
     }
-
-    if (!updated) return { success: false, error: "Failed to assign guide" };
 
     if (guideId) emailGuideAssigned(bookingId, guideId);
 
@@ -193,19 +185,16 @@ export async function updateBookingStatus(
       update.cancellation_reason = parsed.reason;
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("tours_bookings")
       .update(update)
-      .eq("id", bookingId)
-      .select("id")
-      .maybeSingle();
+      .eq("id", bookingId);
 
     if (updateError) {
       console.error("Booking update error:", updateError);
       return { success: false, error: userFacingDbError(updateError, "Failed to update booking") };
     }
 
-    if (!updated) return { success: false, error: "Failed to update booking" };
     revalidatePath("/tours/operator/bookings");
     revalidatePath(`/tours/bookings/${bookingId}`);
     // "Confirmed, please pay": once, on the pending → confirmed change.
