@@ -85,4 +85,31 @@ describe("design rules", () => {
   it("has no eyebrow labels and no rounded-3xl cards", () => {
     expect(offenders((line) => /\beyebrow\b|rounded-3xl/.test(line) && !line.trim().startsWith("*"))).toEqual([]);
   });
+
+  it("pairs green and yellow fills with dark text, never white", () => {
+    // docs/DESIGN_SYSTEM.md: green-500 and yellow-500 fills carry dark text
+    // (text-slate-950); white on them fails contrast.
+    const FILL = /(?<![\w:-])bg-(?:green|yellow)-500(?![\w/-])/;
+    const DARK_INK = /\btext-slate-9[05]0\b/;
+    const bad = files.flatMap((file) => {
+      const lines = readFileSync(file, "utf8").split("\n");
+      return lines
+        .map((line, i) => ({ line, i }))
+        .filter(({ line, i }) => {
+          if (!FILL.test(line) || line.trim().startsWith("*")) return false;
+          // Indicator dots and progress bars carry no text.
+          const spanWindow = [lines[i - 1] ?? "", line, lines[i + 1] ?? ""].join(" ");
+          if (/\bdot:\s*["`]/.test(line) || /<span\b[^>]*bg-(?:green|yellow)-500[^>]*\/>/.test(spanWindow)) return false;
+          const quoted = line.match(/"[^"]*"|'[^']*'/g);
+          if (quoted) {
+            const fillLiterals = quoted.filter((lit) => FILL.test(lit));
+            const outer = ((lines[i - 1]?.includes("${") ? lines[i - 1] : "") + " " + line).replace(/"[^"]*"|'[^']*'/g, "");
+            return fillLiterals.length === 0 || fillLiterals.some((lit) => !DARK_INK.test(lit) || /\btext-white\b/.test(lit)) || /\btext-white\b/.test(outer);
+          }
+          return !DARK_INK.test(line) || /\btext-white\b/.test(line);
+        })
+        .map(({ i }) => `${file.replace(process.cwd() + "/", "")}:${i + 1}`);
+    });
+    expect(bad).toEqual([]);
+  });
 });

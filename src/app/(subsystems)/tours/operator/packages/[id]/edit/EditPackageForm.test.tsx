@@ -3,7 +3,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { EditPackageForm } from "./EditPackageForm";
+import { EditPackageForm, Toast } from "./EditPackageForm";
 import { submitPackageForReview, updatePackageCore } from "./actions";
 import type { EditPackageRecord, UpdatePackageResponse } from "./edit-types";
 
@@ -189,8 +189,9 @@ describe("unsaved changes", () => {
     await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(within(bar).getByText("All changes saved.")).toBeInTheDocument());
     expect(within(nav).queryByRole("link", { name: /unsaved changes/ })).not.toBeInTheDocument();
-    // Announced in the live region and shown on the page.
-    expect(screen.getAllByText("Changes saved.")).toHaveLength(2);
+    // The bar keeps its own line, and the page shows the toast.
+    expect(within(bar).getByText("All changes saved.")).toBeInTheDocument();
+    expect(screen.getAllByText("Changes saved.")).toHaveLength(1);
     // The next save sends the version the server just returned.
     expect(mockedUpdate.mock.calls[0][2]).toBe("2026-11-06T12:00:00.000Z");
   });
@@ -444,5 +445,56 @@ describe("leaving with unsaved changes", () => {
     const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
     window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(false);
+  });
+});
+
+describe("EditPackageForm toast contrast and accessibility", () => {
+  beforeEach(() => {
+    mockedUpdate.mockReset();
+  });
+
+  it("renders the success toast with dark text on bg-green-500 and an accessible dismiss button", async () => {
+    mockedUpdate.mockResolvedValueOnce({
+      success: true,
+      message: "Package updated successfully.",
+      updatedAt: "2026-11-06T12:05:00.000Z",
+      data: { packageId: "package-1", status: "published" },
+    } satisfies UpdatePackageResponse);
+
+    render(<EditPackageForm packageData={record({ status: "published" })} />);
+    fireEvent.change(titleField(), { target: { value: "Daet Heritage Walk" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const message = await screen.findByText("Changes saved.");
+    const toast = message.closest('[role="status"]');
+    expect(toast).not.toBeNull();
+    expect(toast).toHaveClass("bg-green-500", "text-slate-950");
+    expect(toast).not.toHaveClass("text-white");
+
+    const dismissButton = within(toast as HTMLElement).getByRole("button", { name: "Dismiss notification" });
+    expect(dismissButton).toHaveAttribute("type", "button");
+    expect(dismissButton).toHaveClass("min-h-11", "min-w-11", "text-inherit");
+    expect(dismissButton).not.toHaveClass("text-white");
+
+    fireEvent.click(dismissButton);
+    expect(screen.queryByText("Changes saved.")).not.toBeInTheDocument();
+  });
+
+  it("retains high-contrast white text on bg-red-600 for the error toast state", () => {
+    const onClose = jest.fn();
+    render(<Toast message="Unable to save package." type="error" onClose={onClose} />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Unable to save package.");
+    expect(alert).toHaveClass("bg-red-600", "text-white");
+    expect(alert).not.toHaveClass("text-slate-950");
+    expect(alert).not.toHaveClass("bg-red-500");
+
+    const dismissButton = within(alert).getByRole("button", { name: "Dismiss notification" });
+    expect(dismissButton).toHaveAttribute("type", "button");
+    expect(dismissButton).toHaveClass("text-inherit");
+
+    fireEvent.click(dismissButton);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

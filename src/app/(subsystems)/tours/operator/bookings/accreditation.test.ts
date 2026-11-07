@@ -29,9 +29,10 @@ function client(status: string, owner = "operator-1", updateVisible = true) {
     return q;
   });
   const createSignedUrl = jest.fn().mockResolvedValue({ data: { signedUrl: "url" }, error: null });
-  const supabase = { auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }) }, from, storage: { from: jest.fn(() => ({ createSignedUrl })) } };
+  const rpc = jest.fn().mockResolvedValue({ data: { status: "recorded", remaining: 90, amount: 10 }, error: null });
+  const supabase = { rpc, auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }) }, from, storage: { from: jest.fn(() => ({ createSignedUrl })) } };
   (createSupabaseServerClient as jest.Mock).mockResolvedValue(supabase);
-  return { from, queries, createSignedUrl };
+  return { from, queries, createSignedUrl, rpc };
 }
 
 function proofForm() { const f = new FormData(); f.set("proofId", id); f.set("decision", "approve"); return f; }
@@ -52,7 +53,7 @@ describe("operator booking action accreditation", () => {
     const c = client("approved");
     expect((await assignGuideToBooking(id, id)).success).toBe(true);
     expect((await recordPayment(payment)).success).toBe(true);
-    expect(c.queries.tours_payments[0].insert).toHaveBeenCalled();
+    expect(c.rpc).toHaveBeenCalledWith("tours_record_operator_payment", expect.objectContaining({ p_booking_id: id, p_amount: 10 }));
     expect(emailGuideAssigned).toHaveBeenCalled();
     expect(emailPaymentReceived).toHaveBeenCalled();
   });
@@ -63,7 +64,7 @@ describe("operator booking action accreditation", () => {
     expect((await recordPayment(payment)).success).toBe(false);
     expect((await reviewPaymentProof(proofForm())).success).toBe(false);
     expect((await getProofViewUrl(id)).error).toBeTruthy();
-    expect(c.queries.tours_payments).toBeUndefined();
+    expect(c.rpc).not.toHaveBeenCalled();
     expect(c.createSignedUrl).not.toHaveBeenCalled();
   });
 

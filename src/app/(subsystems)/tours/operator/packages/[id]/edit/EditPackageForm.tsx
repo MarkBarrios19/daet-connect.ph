@@ -50,6 +50,49 @@ const STATUS_TONES: Record<EditPackageRecord["status"], BadgeTone> = {
 };
 
 /**
+ * Toast notification component
+ */
+export function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role={type === "error" ? "alert" : "status"}
+      className={`fixed bottom-4 right-4 px-6 py-4 rounded-2xl shadow-[var(--shadow-float)] z-50 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+        type === "success" ? "bg-green-500 text-slate-950" : "bg-red-600 text-white"
+      }`}
+    >
+      {type === "success" ? (
+        <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+      ) : (
+        <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        </svg>
+      )}
+      <span className="text-sm font-medium">{message}</span>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Dismiss notification"
+        className="-my-2 -mr-2 ml-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-inherit hover:opacity-75"
+      >
+        <svg aria-hidden="true" className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/**
  * The operator's package editor.
  *
  * One page, six sections, one place to save. A wide screen gets a sticky
@@ -71,7 +114,9 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
   const [status, setStatus] = useState(packageData.status);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // A page-level toast; the save bar keeps its own line, so the two do not
+  // announce the same thing twice. It is dismissed when the next edit starts.
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [concurrencyError, setConcurrencyError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -135,7 +180,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           setUpdatedAt(response.updatedAt ?? updatedAt);
           setValidationErrors({});
           if (response.data?.status) setStatus(response.data.status);
-          setSuccessMessage(
+          setToastMessage(
             forReview
               ? EDIT_MESSAGES.submitted
               : response.data?.status === "pending_review"
@@ -150,7 +195,7 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
             router.push(`/tours/operator/packages/${packageData.id}`);
             return;
           }
-          window.setTimeout(() => setSuccessMessage(null), SUCCESS_TOAST_MS);
+          window.setTimeout(() => setToastMessage(null), SUCCESS_TOAST_MS);
           return;
         }
 
@@ -244,15 +289,13 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
         </Notice>
       ) : null}
 
-      {/* Saving status, announced rather than only shown. */}
+      {/* Progress is announced as it happens; the result is the toast below,
+          which is a status region of its own. */}
       <div role="status" aria-live="polite" className="sr-only">
-        {isSubmitting ? "Saving changes" : successMessage ?? ""}
-        {submissionError ? `. ${submissionError}` : ""}
+        {isSubmitting ? "Saving changes" : ""}
       </div>
-      {successMessage ? (
-        <div className="mb-6 rounded-2xl bg-green-50 p-3 text-sm font-medium text-green-900 dark:bg-green-950/40 dark:text-green-200">
-          {successMessage}
-        </div>
+      {toastMessage ? (
+        <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />
       ) : null}
 
       {/* The phone's section picker, then the page's two columns. */}
