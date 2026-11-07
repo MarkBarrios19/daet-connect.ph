@@ -5,8 +5,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isUuid } from "@/lib/tours/operator-access";
 import { deliverNotification, type PushStore } from "@/lib/tours/push-delivery";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 /**
  * Called by the database (pg_net, trigger tours_notifications_dispatch_push)

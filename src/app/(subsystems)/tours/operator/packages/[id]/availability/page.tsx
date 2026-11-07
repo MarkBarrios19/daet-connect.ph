@@ -11,7 +11,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { AvailabilityList, OpenDatesForm } from "./availability-manager";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

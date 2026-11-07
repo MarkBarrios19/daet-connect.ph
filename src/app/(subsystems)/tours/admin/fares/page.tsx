@@ -12,7 +12,6 @@ import { FARE_COLUMNS, FARE_MODES, fareLabel, minutesLabel, toFare } from "@/lib
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { deleteFare, importFaresCsv } from "./actions";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Fares and travel times" };
 
 const TEMPLATE = `${FARE_CSV_COLUMNS.join(",")}\ntricycle,Daet town center,Bagasbas,30,30,person,10,15,"Agree on the fare first",Daet MTO 2026,\n`;

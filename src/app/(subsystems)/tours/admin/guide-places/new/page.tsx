@@ -3,7 +3,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { GuidePlaceForm } from "../guide-place-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "New local guide place" };
 
 export default async function NewGuidePlacePage() {

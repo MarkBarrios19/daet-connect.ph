@@ -7,7 +7,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GuideReviewCard } from "@/app/(subsystems)/tours/admin/guides/guide-review-card";
 
-export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 type SearchParams = Promise<{ page?: string }>;

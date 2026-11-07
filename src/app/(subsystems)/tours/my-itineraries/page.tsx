@@ -9,7 +9,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "My itineraries" };
 
 const shortDate = (date: string | null) =>

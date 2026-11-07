@@ -6,7 +6,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { AttractionForm } from "../../attraction-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit attraction" };
 
 export default async function EditAttractionPage({ params }: { params: Promise<{ id: string }> }) {

@@ -3,7 +3,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { FareForm } from "../fare-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "New fare" };
 
 export default async function NewFarePage() {

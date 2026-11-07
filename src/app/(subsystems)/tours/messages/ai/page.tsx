@@ -10,7 +10,6 @@ import { InboxList } from "../inbox-list";
 import { LiveInbox } from "../live-inbox";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Daet AI assistant" };
 
 /** The assistant as a pinned chat in Messages, like any other conversation. */

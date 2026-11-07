@@ -12,7 +12,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { markConversationRead, readMarks, threadExtras } from "../actions";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
 import Link from "next/link";
@@ -7,36 +8,84 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
-import { PageFrame } from "@/components/ui/page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
 import { currentManilaMonth, formatMonthLabel, monthKey, parseMonthParam, shiftMonth } from "@/lib/tours/events-calendar";
 import { ledgerMethodLabel, summarizeLedger } from "@/lib/tours/ledger";
-import { loadOperatorLedger } from "./load-ledger";
+import { timed } from "@/lib/server-timing";
+import { loadOperatorLedger } from "@/app/(subsystems)/tours/operator/payments/load-ledger";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Payments ledger" };
 
 const peso = formatPeso;
 const dateTime = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" });
 
-export default async function OperatorPaymentsPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default function OperatorPaymentsPage({ searchParams }: { searchParams: SearchParams }) {
+  // The heading and back link are the same for everyone, so they are in the
+  // prerendered shell; the month, the totals and the ledger wait for the request.
+  return (
+    <PageBody>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <Link href="/tours/operator/dashboard" className="inline-flex min-h-11 items-center text-sm font-bold text-daet-forest dark:text-blue-300 hover:underline">
+            ← Dashboard
+          </Link>
+          <h1 className="display-2 text-daet-ink">Revenue &amp; payments</h1>
+        </div>
+        <Suspense fallback={<div aria-hidden="true" className="h-12 w-36 animate-pulse rounded-full bg-daet-ink/10" />}>
+          <ExportLink searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <Suspense fallback={<LedgerSkeleton />}>
+        <Ledger searchParams={searchParams} />
+      </Suspense>
+    </PageBody>
+  );
+}
+
+/** The CSV link follows the month in the address; it needs no data, so it does not wait for the ledger. */
+async function ExportLink({ searchParams }: { searchParams: SearchParams }) {
+  const key = monthKey(parseMonthParam((await searchParams).month));
+  return (
+    <ButtonLink href={`/tours/operator/payments/export?month=${key}`} variant="secondary" prefetch={false}>
+      Download CSV
+    </ButtonLink>
+  );
+}
+
+function LedgerSkeleton() {
+  return (
+    <div aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading the ledger
+      </p>
+      <div aria-hidden="true" className="animate-pulse space-y-6">
+        <div className="h-16 rounded-2xl bg-daet-ink/10" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-24 rounded-2xl bg-daet-ink/10" />
+          ))}
+        </div>
+        <div className="h-64 rounded-2xl bg-daet-ink/10" />
+      </div>
+    </div>
+  );
+}
+
+async function Ledger({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const month = parseMonthParam(params.month);
-  const result = await loadOperatorLedger(month);
+  const result = await timed("page:payments", () => loadOperatorLedger(month));
 
   if (!result.ok && result.reason === "signed_out") redirect(`/login?next=${encodeURIComponent("/tours/operator/payments")}`);
   if (!result.ok) {
     return (
-      <PageFrame>
-        <Notice variant="error" title={result.reason === "not_operator" ? "Operator access required" : "Payments could not be loaded"}>
-          {result.reason === "not_operator"
-            ? "Only approved tour operators can view a payments ledger."
-            : "Please try again in a moment."}
-        </Notice>
-      </PageFrame>
+      <Notice variant="error" title={result.reason === "not_operator" ? "Operator access required" : "Payments could not be loaded"}>
+        {result.reason === "not_operator"
+          ? "Only approved tour operators can view a payments ledger."
+          : "Please try again in a moment."}
+      </Notice>
     );
   }
 
@@ -45,19 +94,7 @@ export default async function OperatorPaymentsPage({
   const isCurrentMonth = key === monthKey(currentManilaMonth());
 
   return (
-    <PageFrame>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Link href="/tours/operator/dashboard" className="inline-flex min-h-11 items-center text-sm font-bold text-daet-forest dark:text-blue-300 hover:underline">
-            ← Dashboard
-          </Link>
-          <h1 className="display-2 text-daet-ink">Revenue &amp; payments</h1>
-        </div>
-        <ButtonLink href={`/tours/operator/payments/export?month=${key}`} variant="secondary" prefetch={false}>
-          Download CSV
-        </ButtonLink>
-      </div>
-
+    <>
       <nav aria-label="Month" className="mb-6 flex items-center justify-between gap-3 rounded-2xl card-edge bg-surface p-2">
         <ButtonLink href={`/tours/operator/payments?month=${monthKey(shiftMonth(month, -1))}`} variant="ghost" size="icon" aria-label="Previous month">
           ‹
@@ -154,6 +191,6 @@ export default async function OperatorPaymentsPage({
           </ul>
         </Card>
       )}
-    </PageFrame>
+    </>
   );
 }

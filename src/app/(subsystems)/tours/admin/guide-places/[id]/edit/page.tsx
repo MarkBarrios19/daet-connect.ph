@@ -6,7 +6,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { GuidePlaceForm } from "../../guide-place-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit local guide place" };
 
 export default async function EditGuidePlacePage({ params }: { params: Promise<{ id: string }> }) {

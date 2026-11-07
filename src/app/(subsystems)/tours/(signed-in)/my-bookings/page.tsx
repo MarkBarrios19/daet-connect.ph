@@ -1,13 +1,15 @@
 import { hasTicket } from "@/lib/tours/ticket";
 import Image from "next/image";
 import Link from "next/link";
+import { cache, Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
 import { Notice } from "@/components/ui/notice";
-import { PageFrame } from "@/components/ui/page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
+import { timed } from "@/lib/server-timing";
 import { formatPeso } from "@/lib/money";
 import { PHOTOS } from "@/lib/photo-credits";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -16,7 +18,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { placePhoto } from "@/lib/tours/trip-board";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "My bookings" };
 
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
@@ -49,43 +50,53 @@ type Row = {
 const longDate = (key: string) =>
   new Date(`${key}T00:00:00+08:00`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" });
 
-export default async function MyBookingsPage() {
-  if (!isSupabaseConfigured()) {
-    return (
-      <PageFrame>
-        <Notice variant="warning" title="Supabase setup needed">
-          Configure Supabase to view bookings.
-        </Notice>
-      </PageFrame>
-    );
-  }
-
+/**
+ * The signed-in person's bookings, read once per request (the heading and the
+ * list both ask). Per-user, so it is never cached across requests; it runs
+ * inside <Suspense>, after the static shell has been sent.
+ */
+const loadBookings = cache(async () => {
   const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/my-bookings")}`);
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("tours_bookings")
-    .select("id, booking_reference, tour_date, status, number_of_pax, total_amount, payment_status, tours_packages ( id, title, location_name, cover_image_url )")
-    .eq("user_id", user.id)
-    .order("tour_date", { ascending: true });
+  const { data, error } = await timed("page:my-bookings", async () =>
+    supabase
+      .from("tours_bookings")
+      .select("id, booking_reference, tour_date, status, number_of_pax, total_amount, payment_status, tours_packages ( id, title, location_name, cover_image_url )")
+      .eq("user_id", user.id)
+      .order("tour_date", { ascending: true }),
+  );
   if (error) console.error("Bookings fetch error:", error.message);
 
   const rows = (data ?? []) as Row[];
   const today = toManilaDateKey(new Date());
   const isActive = (b: Row) => (b.status === "pending" || b.status === "confirmed") && b.tour_date >= today;
-  const upcoming = rows.filter(isActive);
-  const past = rows.filter((b) => !isActive(b)).reverse();
+  return { rows, today, failed: Boolean(error), upcoming: rows.filter(isActive), past: rows.filter((b) => !isActive(b)).reverse() };
+});
 
+export default function MyBookingsPage() {
+  if (!isSupabaseConfigured()) {
+    return (
+      <PageBody>
+        <Notice variant="warning" title="Supabase setup needed">
+          Configure Supabase to view bookings.
+        </Notice>
+      </PageBody>
+    );
+  }
+
+  // The title and buttons are the same for everyone, so they are in the
+  // prerendered shell; only the counts and the list wait for the person.
   return (
-    <PageFrame>
+    <PageBody>
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="display-2 text-daet-ink">My bookings</h1>
-            <p className="mt-2 text-lg text-daet-ink">
-              {rows.length === 0 ? "Nothing booked yet." : `${upcoming.length} coming up, ${past.length} past or cancelled.`}
-            </p>
+            <Suspense fallback={<div aria-hidden="true" className="mt-2 h-7 w-56 animate-pulse rounded-full bg-daet-ink/10" />}>
+              <Summary />
+            </Suspense>
           </div>
           <div className="flex flex-wrap gap-2">
             <ButtonLink href="/tours/messages" variant="secondary">
@@ -94,45 +105,84 @@ export default async function MyBookingsPage() {
             <ButtonLink href="/tours/browse">Find a trip</ButtonLink>
           </div>
         </header>
-
-        {error ? <Notice variant="error" className="mb-6">Your bookings could not be loaded right now. Please try again.</Notice> : null}
-
-        {rows.length === 0 && !error ? (
-          <EmptyState
-            icon={<LineIcon name="calendar" />}
-            title="No bookings yet"
-            description="Choose a trip, pick a date, and it will show up here with your ticket and payment."
-            action={<ButtonLink href="/tours/browse">Find a trip</ButtonLink>}
-          />
-        ) : null}
-
-        {upcoming.length > 0 ? (
-          <section aria-labelledby="upcoming" className="mb-10">
-            <h2 id="upcoming" className="mb-4 text-2xl font-bold text-daet-ink">
-              Coming up
-            </h2>
-            <ul className="space-y-3">
-              {upcoming.map((b) => (
-                <BookingRow key={b.id} booking={b} today={today} />
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {past.length > 0 ? (
-          <section aria-labelledby="past">
-            <h2 id="past" className="mb-4 text-2xl font-bold text-daet-ink">
-              Past and cancelled
-            </h2>
-            <ul className="space-y-3">
-              {past.map((b) => (
-                <BookingRow key={b.id} booking={b} today={today} quiet />
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        <Suspense fallback={<BookingsSkeleton />}>
+          <BookingsList />
+        </Suspense>
       </div>
-    </PageFrame>
+    </PageBody>
+  );
+}
+
+async function Summary() {
+  const { rows, upcoming, past } = await loadBookings();
+  return (
+    <p className="mt-2 text-lg text-daet-ink">
+      {rows.length === 0 ? "Nothing booked yet." : `${upcoming.length} coming up, ${past.length} past or cancelled.`}
+    </p>
+  );
+}
+
+function BookingsSkeleton() {
+  return (
+    <div aria-busy="true" className="space-y-3">
+      <p role="status" className="sr-only">
+        Loading your bookings
+      </p>
+      {[0, 1, 2].map((i) => (
+        <div key={i} aria-hidden="true" className="grid animate-pulse grid-cols-[88px_1fr] gap-4 rounded-2xl card-edge bg-surface p-3 sm:grid-cols-[160px_1fr] sm:p-4">
+          <div className="aspect-square rounded-2xl bg-daet-ink/10 sm:aspect-[4/3]" />
+          <div className="space-y-3 py-1">
+            <div className="h-5 w-24 rounded-full bg-daet-ink/10" />
+            <div className="h-6 w-2/3 rounded-full bg-daet-ink/10" />
+            <div className="h-4 w-1/2 rounded-full bg-daet-ink/10" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function BookingsList() {
+  const { rows, today, failed: error, upcoming, past } = await loadBookings();
+  return (
+    <>
+      {error ? <Notice variant="error" className="mb-6">Your bookings could not be loaded right now. Please try again.</Notice> : null}
+
+      {rows.length === 0 && !error ? (
+        <EmptyState
+          icon={<LineIcon name="calendar" />}
+          title="No bookings yet"
+          description="Choose a trip, pick a date, and it will show up here with your ticket and payment."
+          action={<ButtonLink href="/tours/browse">Find a trip</ButtonLink>}
+        />
+      ) : null}
+
+      {upcoming.length > 0 ? (
+        <section aria-labelledby="upcoming" className="mb-10">
+          <h2 id="upcoming" className="mb-4 text-2xl font-bold text-daet-ink">
+            Coming up
+          </h2>
+          <ul className="space-y-3">
+            {upcoming.map((b) => (
+              <BookingRow key={b.id} booking={b} today={today} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {past.length > 0 ? (
+        <section aria-labelledby="past">
+          <h2 id="past" className="mb-4 text-2xl font-bold text-daet-ink">
+            Past and cancelled
+          </h2>
+          <ul className="space-y-3">
+            {past.map((b) => (
+              <BookingRow key={b.id} booking={b} today={today} quiet />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </>
   );
 }
 

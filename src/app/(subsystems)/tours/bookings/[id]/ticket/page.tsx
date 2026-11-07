@@ -13,7 +13,6 @@ import { MapPinIcon } from "@/components/ui/icons";
 import { PrintTicketButton } from "./print-ticket-button";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

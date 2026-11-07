@@ -16,7 +16,6 @@ import {
   OPERATOR_OWN_STATUS_SELECT,
 } from "@/lib/tours/operator-contract";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;

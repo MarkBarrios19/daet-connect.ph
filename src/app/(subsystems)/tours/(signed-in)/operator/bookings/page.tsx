@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LiveCount } from "@/components/live/live-count";
 import { badgeTone } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -5,25 +6,25 @@ import { LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { PageFrame } from "@/components/ui/page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/tours/server-auth";
 import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { manilaDayStartUtc, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
-import { BookingActionButtons } from "./booking-action-buttons";
-import { CallOffButton } from "./call-off-button";
+import { BookingActionButtons } from "@/app/(subsystems)/tours/operator/bookings/booking-action-buttons";
+import { CallOffButton } from "@/app/(subsystems)/tours/operator/bookings/call-off-button";
 import { callOffState, canCallOff } from "@/lib/tours/call-off";
-import { CancellationReview, RefundPanel, type CancellationRequest } from "./cancellation-review";
+import { CancellationReview, RefundPanel, type CancellationRequest } from "@/app/(subsystems)/tours/operator/bookings/cancellation-review";
 import { isBusyReason, type BusyReason } from "@/lib/tours/guide-swap";
-import { SwapReview, type PendingSwap } from "./swap-review";
-import { GuideAssignment } from "./guide-assignment";
-import { PaymentRecorder } from "./payment-recorder";
-import { ProofReview, type ReviewableProof } from "./proof-review";
+import { SwapReview, type PendingSwap } from "@/app/(subsystems)/tours/operator/bookings/swap-review";
+import { GuideAssignment } from "@/app/(subsystems)/tours/operator/bookings/guide-assignment";
+import { PaymentRecorder } from "@/app/(subsystems)/tours/operator/bookings/payment-recorder";
+import { ProofReview, type ReviewableProof } from "@/app/(subsystems)/tours/operator/bookings/proof-review";
 
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{
   status?: string;
@@ -60,18 +61,54 @@ async function loadAvailableGuides(supabase: Supabase) {
   );
 }
 
-export default async function OperatorBookingsPage({
+export default function OperatorBookingsPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
+  // The heading is the same for everyone, so it is in the prerendered shell;
+  // the filters and the list wait for the operator.
+  return (
+    <PageBody>
+      <div className="mx-auto max-w-7xl">
+        <h1 className="display-2 text-daet-ink">Bookings</h1>
+        <Suspense fallback={<BookingsSkeleton />}>
+          <BookingsContent searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </PageBody>
+  );
+}
+
+function BookingsSkeleton() {
+  return (
+    <div aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading bookings
+      </p>
+      <div aria-hidden="true" className="animate-pulse">
+        <div className="mt-2 h-6 w-1/2 max-w-sm rounded-full bg-daet-ink/10" />
+        <div className="mb-6 mt-6 flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-11 w-28 rounded-full bg-daet-ink/10" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-40 rounded-2xl card-edge bg-surface" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function BookingsContent({ searchParams }: { searchParams: SearchParams }) {
   if (!isSupabaseConfigured()) {
     return (
-      <PageFrame>
-        <Notice variant="warning" title="Supabase setup needed">
-          Configure Supabase to view bookings.
-        </Notice>
-      </PageFrame>
+      <Notice variant="warning" title="Supabase setup needed">
+        Configure Supabase to view bookings.
+      </Notice>
     );
   }
 
@@ -85,18 +122,18 @@ export default async function OperatorBookingsPage({
 
   // The operator row and the approved guides don't depend on each other, so they
   // are asked for together.
-  const [{ data: operator }, availableGuides] = await Promise.all([
-    supabase.from("tours_operators").select("id, business_name").eq("profile_id", user.id).maybeSingle(),
-    loadAvailableGuides(supabase),
-  ]);
+  const [{ data: operator }, availableGuides] = await timed("page:bookings-operator", () =>
+    Promise.all([
+      supabase.from("tours_operators").select("id, business_name").eq("profile_id", user.id).maybeSingle(),
+      loadAvailableGuides(supabase),
+    ]),
+  );
 
   if (!operator) {
     return (
-      <PageFrame>
-        <Notice variant="error" title="Operator profile not found">
-          You need an approved operator account to view bookings.
-        </Notice>
-      </PageFrame>
+      <Notice variant="error" title="Operator profile not found">
+        You need an approved operator account to view bookings.
+      </Notice>
     );
   }
 
@@ -125,13 +162,15 @@ export default async function OperatorBookingsPage({
   // The list and the chip counts are separate reads; neither waits for the other.
   // Counts cover every booking, not just the selected filter, so the chips
   // read the same whichever one is open.
-  const [{ data: bookings, error }, { data: statusRows }] = await Promise.all([
-    query,
-    supabase
-      .from("tours_bookings")
-      .select("status, tours_packages!inner(operator_id)")
-      .eq("tours_packages.operator_id", operator.id),
-  ]);
+  const [{ data: bookings, error }, { data: statusRows }] = await timed("page:bookings-list", () =>
+    Promise.all([
+      query,
+      supabase
+        .from("tours_bookings")
+        .select("status, tours_packages!inner(operator_id)")
+        .eq("tours_packages.operator_id", operator.id),
+    ]),
+  );
 
   // Everything below hangs off the bookings and the guides already in hand, and
   // none of it depends on anything else here, so it is asked for all at once.
@@ -150,7 +189,7 @@ export default async function OperatorBookingsPage({
     busyRows,
     refundableRows,
     { data: swapRows },
-  ] = await Promise.all([
+  ] = await timed("page:bookings-details", () => Promise.all([
     // Receipts waiting for verification on these bookings (RLS: operator's own bookings only)
     bookingIds.length
       ? supabase
@@ -198,7 +237,7 @@ export default async function OperatorBookingsPage({
           .in("booking_id", bookingIds)
           .eq("status", "pending")
       : { data: [] as Array<{ id: string; booking_id: string; from_guide_id: string; to_guide_id: string | null; reason: string; created_at: string }> },
-  ]);
+  ]));
 
   const proofsByBooking = new Map<string, ReviewableProof[]>();
   for (const proof of pendingProofRows ?? []) {
@@ -259,13 +298,8 @@ export default async function OperatorBookingsPage({
   };
 
   return (
-    <PageFrame>
-
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6">
-          <h1 className="display-2 text-daet-ink">Bookings</h1>
-          <p className="mt-2 text-lg text-daet-ink">Every booking for {operator.business_name}, newest first.</p>
-        </header>
+    <>
+        <p className="mb-6 mt-2 text-lg text-daet-ink">Every booking for {operator.business_name}, newest first.</p>
 
         {/* Chips wrap on phones so none is cut off at the edge. */}
         <nav aria-label="Filter by status" className="mb-6">
@@ -507,7 +541,6 @@ export default async function OperatorBookingsPage({
             })}
           </div>
         )}
-      </div>
-    </PageFrame>
+    </>
   );
 }

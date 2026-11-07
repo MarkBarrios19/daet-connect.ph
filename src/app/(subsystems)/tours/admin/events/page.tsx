@@ -9,7 +9,6 @@ import { formatEventRange } from "@/lib/tours/events-calendar";
 import { EVENT_CATEGORIES, EVENT_COLUMNS, type TourEvent } from "@/lib/tours/promo-validation";
 import { deleteEvent } from "./actions";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Manage events" };
 
 export default async function AdminEventsPage({

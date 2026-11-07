@@ -7,7 +7,6 @@ import { PageFrame } from '@/components/ui/page-frame';
 import { Notice } from '@/components/ui/notice';
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
   const supabase = await createSupabaseServerClient();

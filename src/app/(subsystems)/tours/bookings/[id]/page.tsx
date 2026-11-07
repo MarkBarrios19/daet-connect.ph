@@ -31,7 +31,6 @@ import { ReviewList } from "@/components/tours/review-list";
 import type { Review } from "@/lib/tours/reviews";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Booking" };
 
 type PageProps = {

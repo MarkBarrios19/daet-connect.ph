@@ -2,7 +2,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildEventIcs } from "@/lib/tours/events-calendar";
 import { EVENT_COLUMNS, type TourEvent } from "@/lib/tours/promo-validation";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

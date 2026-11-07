@@ -3,8 +3,6 @@ import { loadLiveSummary } from "@/lib/live/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 const HEADERS = { "Cache-Control": "no-store" };
 

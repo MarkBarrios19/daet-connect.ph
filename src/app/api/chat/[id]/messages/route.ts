@@ -5,8 +5,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 const HEADERS = { "Cache-Control": "no-store" };
 

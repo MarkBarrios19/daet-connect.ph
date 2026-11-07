@@ -12,7 +12,6 @@ import { cancellationRate, fillDays, parseAnalytics, parseAnalyticsRange, queueB
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Tourism analytics" };
 
 const peso = formatPeso;

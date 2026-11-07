@@ -24,7 +24,6 @@ import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 import { buildStopDetails, type AttractionRef } from "@/lib/tours/stop-details";
 import { ApproxPrice } from "@/components/ui/approx-price";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;

@@ -3,7 +3,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { AttractionForm } from "../attraction-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "New attraction" };
 
 export default async function NewAttractionPage() {

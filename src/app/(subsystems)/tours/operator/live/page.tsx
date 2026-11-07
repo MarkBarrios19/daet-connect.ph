@@ -11,7 +11,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { formatClock } from "@/lib/tours/live-tracking";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 const shiftDay = (key: string, days: number) => {
   const d = new Date(`${key}T00:00:00Z`);

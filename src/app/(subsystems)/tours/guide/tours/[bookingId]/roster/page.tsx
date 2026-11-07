@@ -12,7 +12,6 @@ import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-butt
 import { RosterCheckInButton } from "./roster-check-in-button";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ bookingId: string }> };
 

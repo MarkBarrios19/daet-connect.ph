@@ -5,7 +5,6 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Help", description: "Ask the Daet AI assistant, your 24/7 local guide: food, places to stay, directions, trip costs, tours and your bookings." };
 
 export default async function HelpPage() {

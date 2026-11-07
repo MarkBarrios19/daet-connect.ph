@@ -13,7 +13,6 @@ import { toSummary, type RatingSummary } from "@/lib/tours/reviews";
 import { PackageFilters } from "./package-filters";
 import { placePhoto } from "@/lib/tours/trip-board";
 
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{
   q?: string;

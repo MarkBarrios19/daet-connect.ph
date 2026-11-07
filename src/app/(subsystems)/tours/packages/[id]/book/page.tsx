@@ -11,7 +11,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { BookingForm } from "./booking-form";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;

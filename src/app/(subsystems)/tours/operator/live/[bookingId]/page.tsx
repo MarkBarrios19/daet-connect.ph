@@ -9,7 +9,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { loadLiveTour } from "@/app/(subsystems)/tours/live/load-live-tour";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ bookingId: string }> };
 

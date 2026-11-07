@@ -12,7 +12,6 @@ import { toSummary } from "@/lib/tours/reviews";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { ReplyForm } from "./reply-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Reviews" };
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("en-PH", { dateStyle: "medium", timeZone: "Asia/Manila" });

@@ -9,7 +9,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QrScanner } from "./qr-scanner";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 export default async function GuideCheckInPage() {
   if (!isSupabaseConfigured()) {

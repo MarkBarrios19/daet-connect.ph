@@ -8,7 +8,6 @@ import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { MerchForm } from "../../../../admin/merch/merch-form";
 import { saveMyMerch } from "../../actions";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit product" };
 
 export default async function EditOperatorMerchPage({ params }: { params: Promise<{ id: string }> }) {

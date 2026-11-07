@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { hasTicket } from "@/lib/tours/ticket";
 import { LineIcon } from "@/components/ui/icons";
 import { formatPeso } from "@/lib/money";
@@ -11,16 +12,16 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
-import { PageFrame } from "@/components/ui/page-frame";
+import { PageBody } from "@/components/ui/signed-in-frame";
 import { PushOptIn } from "@/components/tours/push-opt-in";
 import { checkPayable, remainingBalance } from "@/lib/paymongo/checkout";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { timed } from "@/lib/server-timing";
 import { balanceOf, sourceLabel, TOURS_REWARD_RULES, type LedgerEntry } from "@/lib/rewards";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "My trips" };
 
 const PAYMENT: Record<string, { label: string; tone: BadgeTone }> = {
@@ -44,12 +45,43 @@ type BookingRow = {
   tours_packages: { title: string; location_name: string } | { title: string; location_name: string }[] | null;
 };
 
-export default async function TouristDashboardPage() {
+export default function TouristDashboardPage() {
+  // The frame (header, tab bar, footer) comes from the layout. The greeting and
+  // everything under it depend on the person, so they stream in behind the skeleton.
+  return (
+    <PageBody>
+      <Suspense fallback={<TripsSkeleton />}>
+        <TripsContent />
+      </Suspense>
+    </PageBody>
+  );
+}
+
+function TripsSkeleton() {
+  return (
+    <div aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading your trips
+      </p>
+      <div aria-hidden="true" className="animate-pulse space-y-6">
+        <div className="space-y-3">
+          <div className="h-10 w-2/3 max-w-md rounded-2xl bg-daet-ink/10" />
+          <div className="h-6 w-1/2 max-w-sm rounded-full bg-daet-ink/10" />
+        </div>
+        <div className="h-64 rounded-2xl bg-daet-ink/10" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="h-56 rounded-2xl bg-daet-ink/10 lg:col-span-2" />
+          <div className="h-56 rounded-2xl bg-daet-ink/10" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function TripsContent() {
   if (!isSupabaseConfigured()) {
     return (
-      <PageFrame>
-        <Notice variant="warning" title="Supabase setup needed">Configure Supabase to see your trips.</Notice>
-      </PageFrame>
+      <Notice variant="warning" title="Supabase setup needed">Configure Supabase to see your trips.</Notice>
     );
   }
   const session = await getAuthenticatedSession();
@@ -57,31 +89,32 @@ export default async function TouristDashboardPage() {
   // Staff have their own dashboards.
   if (session.role && session.role !== "tourist") redirect(session.role === "admin" ? "/tours/admin" : "/dashboard");
 
+  const userId = session.user.id;
   const supabase = await createSupabaseServerClient();
   const today = toManilaDateKey(new Date());
-  const [{ data: bookingRows }, { data: itineraries }, { data: inbox }, { data: profile }, { data: balanceRow }, { data: ledgerRows }] = await Promise.all([
+  const [{ data: bookingRows }, { data: itineraries }, { data: inbox }, { data: profile }, { data: balanceRow }, { data: ledgerRows }] = await timed("page:me", () => Promise.all([
     supabase
       .from("tours_bookings")
       .select("id, booking_reference, tour_date, status, number_of_pax, total_amount, total_paid, payment_status, tours_packages ( title, location_name )")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .order("tour_date", { ascending: true })
       .limit(200),
     supabase
       .from("tours_itineraries")
       .select("id, title, start_date, end_date, tours_itinerary_items ( id )")
-      .eq("tourist_id", session.user.id)
+      .eq("tourist_id", userId)
       .order("created_at", { ascending: false })
       .limit(3),
     supabase.rpc("tours_inbox"),
-    supabase.from("profiles").select("full_name").eq("id", session.user.id).maybeSingle(),
-    supabase.from("rewards_balances").select("balance, earned").eq("profile_id", session.user.id).maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+    supabase.from("rewards_balances").select("balance, earned").eq("profile_id", userId).maybeSingle(),
     supabase
       .from("rewards_ledger")
       .select("id, points, source, description, created_at")
-      .eq("profile_id", session.user.id)
+      .eq("profile_id", userId)
       .order("created_at", { ascending: false })
       .limit(5),
-  ]);
+  ]));
   const recentPoints = (ledgerRows ?? []) as LedgerEntry[];
   const points = balanceRow?.balance ?? balanceOf(recentPoints);
 
@@ -100,7 +133,7 @@ export default async function TouristDashboardPage() {
   const [next, ...rest] = upcoming;
 
   return (
-    <PageFrame credits={next ? [placePhoto(pkgOf(next)?.title, pkgOf(next)?.location_name)] : []}>
+    <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="display-2 text-daet-ink">{firstName ? `Mabuhay, ${firstName}!` : "Mabuhay!"}</h1>
@@ -306,6 +339,6 @@ export default async function TouristDashboardPage() {
           <PushOptIn variant="prompt" />
         </div>
       </div>
-    </PageFrame>
+    </>
   );
 }

@@ -13,7 +13,6 @@ import { isBusyReason } from "@/lib/tours/guide-swap";
 import { SwapRequest, type MySwap } from "./swap-request";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 export default async function GuideMyToursPage() {
   if (!isSupabaseConfigured()) {

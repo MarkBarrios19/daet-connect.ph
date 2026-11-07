@@ -12,7 +12,6 @@ import { isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase/
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { OperatorReviewCard, type OperatorDocumentLinks } from "@/app/(subsystems)/tours/admin/operators/review-card";
 
-export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 const SIGNED_URL_TTL_SECONDS = 10 * 60;

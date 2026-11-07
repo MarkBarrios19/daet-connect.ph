@@ -13,7 +13,6 @@ import { notificationIcon, safeNotificationLink, timeAgo, type NotificationRow }
 import { MarkAllReadButton } from "./mark-all-read-button";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
   if (!isSupabaseConfigured()) {

@@ -6,7 +6,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { FareForm } from "../../fare-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit fare" };
 
 export default async function EditFarePage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getAuthUser } from "@/lib/tours/server-auth";
@@ -27,11 +28,9 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
 
     const supabase = await createSupabaseServerClient();
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data } = await timed("profile", async () =>
+      supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).maybeSingle(),
+    );
     return {
       fullName: typeof data?.full_name === "string" ? data.full_name : null,
       avatarUrl: typeof data?.avatar_url === "string" ? data.avatar_url : null,
@@ -39,8 +38,11 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
   } catch (error) {
     // "This route used cookies" is Next telling the build the page is dynamic,
     // not a failure: it says so itself, once per route.
+    // Same for the prerender's own abort (Cache Components), which rejects
+    // `cookies()` once the static shell is done.
     const dynamicUsage =
-      error instanceof Error && error.message.includes("Dynamic server usage");
+      (error instanceof Error && error.message.includes("Dynamic server usage")) ||
+      (error as { digest?: unknown } | null)?.digest === "HANGING_PROMISE_REJECTION";
     if (!dynamicUsage) console.error("could not read the profile", error);
     return null;
   }

@@ -9,7 +9,6 @@ import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 export default async function MyGuideQrPage() {
   if (!isSupabaseConfigured()) return <PageFrame><Notice variant="warning" title="Supabase setup is needed">Configure Supabase to access your approved guide QR.</Notice></PageFrame>;
