@@ -104,7 +104,7 @@ export function MobileMenu({ groups, showTheme = true }: { groups: Array<{ label
               onClick={() => {
                 if (ref.current) ref.current.open = false;
               }}
-              className="fixed inset-0 z-40 bg-black/30 md:hidden"
+              className="fixed inset-0 z-30 bg-black/30 md:hidden"
             />,
             document.body,
           )
