@@ -14,6 +14,13 @@
 --   * drops the loose INSERT/UPDATE policies and two duplicate SELECTs.
 -- Operators keep: create/update/delete own drafts (strict policies),
 -- submit_package_for_review, tours_set_meeting_point, and this function.
+--
+-- DRIFT REPAIR: this historical file contains only the policy DROPs.
+-- Its replacement policies were created outside the repository. Do not
+-- stop here on a clean install: 20261128_reconcile_package_policies.sql
+-- explicitly defines the complete operator/public/admin policy set and
+-- reconciles the differently named live policies. See
+-- docs/PACKAGE_POLICIES.md. The historical SQL below is kept intact.
 -- ================================================================
 
 -- 1. Columns the editor expects ---------------------------------------
@@ -283,3 +290,7 @@ DROP POLICY IF EXISTS "Operators can update their own packages" ON tours_package
 DROP POLICY IF EXISTS "Operators can insert their own packages" ON tours_packages;
 DROP POLICY IF EXISTS "Operators can view their own packages" ON tours_packages;
 DROP POLICY IF EXISTS "Public can view published packages" ON tours_packages;
+
+-- Required follow-up (also repairs databases where this file already ran):
+-- 20261128_reconcile_package_policies.sql creates the strict replacements
+-- for the loose policies dropped here. It is idempotent and transaction-wrapped.
