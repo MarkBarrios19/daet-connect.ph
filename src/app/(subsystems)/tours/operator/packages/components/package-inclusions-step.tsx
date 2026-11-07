@@ -59,20 +59,21 @@ export function PackageInclusionsStep({
 
       {/* Inclusions */}
       <div>
-        <label className="block text-sm font-bold text-daet-ink">Inclusions</label>
+        <label htmlFor="new-inclusion" className="block text-sm font-bold text-daet-ink">Inclusions</label>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           What's provided in this tour package?
         </p>
 
         <div className="mt-3 flex gap-2">
           <input
+            id="new-inclusion"
             type="text"
             value={newInclusion}
             onChange={(e) => setNewInclusion(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addInclusion())}
             placeholder="e.g., Transportation, Lunch, Tour guide"
             maxLength={200}
-            className="flex-1 rounded-full border border-daet-ink/15 bg-surface px-4 py-2.5 text-sm outline-none transition placeholder:text-daet-ink/35 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
+            className="flex-1 rounded-full border border-daet-ink/15 bg-surface min-h-11 px-4 py-2.5 text-base outline-none transition placeholder:text-slate-500 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
           />
           <button
             type="button"
@@ -100,7 +101,7 @@ export function PackageInclusionsStep({
                   type="button"
                   onClick={() => removeInclusion(index)}
                   className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-300"
-                  aria-label="Remove inclusion"
+                  aria-label={`Remove inclusion: ${item}`}
                 >
                   ✕
                 </button>
@@ -112,20 +113,21 @@ export function PackageInclusionsStep({
 
       {/* Exclusions */}
       <div>
-        <label className="block text-sm font-bold text-daet-ink">Exclusions</label>
+        <label htmlFor="new-exclusion" className="block text-sm font-bold text-daet-ink">Exclusions</label>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           What should tourists prepare or pay for separately?
         </p>
 
         <div className="mt-3 flex gap-2">
           <input
+            id="new-exclusion"
             type="text"
             value={newExclusion}
             onChange={(e) => setNewExclusion(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addExclusion())}
             placeholder="e.g., Personal expenses, Travel insurance"
             maxLength={200}
-            className="flex-1 rounded-full border border-daet-ink/15 bg-surface px-4 py-2.5 text-sm outline-none transition placeholder:text-daet-ink/35 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
+            className="flex-1 rounded-full border border-daet-ink/15 bg-surface min-h-11 px-4 py-2.5 text-base outline-none transition placeholder:text-slate-500 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
           />
           <button
             type="button"
@@ -153,7 +155,7 @@ export function PackageInclusionsStep({
                   type="button"
                   onClick={() => removeExclusion(index)}
                   className="text-daet-ink/70 hover:text-daet-ink"
-                  aria-label="Remove exclusion"
+                  aria-label={`Remove exclusion: ${item}`}
                 >
                   ✕
                 </button>

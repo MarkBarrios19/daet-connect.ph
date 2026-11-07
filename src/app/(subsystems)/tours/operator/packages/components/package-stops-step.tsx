@@ -2,6 +2,7 @@
 
 import { LineIcon } from "@/components/ui/icons";
 import { useState } from "react";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import type { PackageDraft, StopDraft } from "../package-types";
 
 interface PackageStopsStepProps {
@@ -96,54 +97,32 @@ export function PackageStopsStep({
         </p>
 
         <div className="mt-4 space-y-3">
-          <input
-            type="text"
-            value={formData.locationName || ""}
-            onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-            placeholder="Location name (e.g., Bagasbas Beach)"
-            className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2.5 text-sm"
-          />
+          <Field id="stop-name" label="Location name">
+            <Input type="text" value={formData.locationName || ""} onChange={(e) => setFormData({ ...formData, locationName: e.target.value })} placeholder="e.g., Bagasbas Beach" />
+          </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <input
-              type="number"
-              value={formData.latitude || ""}
-              onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })}
-              placeholder="Latitude"
-              step="any"
-              className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2.5 text-sm"
-            />
-            <input
-              type="number"
-              value={formData.longitude || ""}
-              onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })}
-              placeholder="Longitude"
-              step="any"
-              className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2.5 text-sm"
-            />
+            <Field id="stop-lat" label="Latitude">
+              <Input type="number" inputMode="decimal" step="any" value={formData.latitude || ""} onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })} />
+            </Field>
+            <Field id="stop-lng" label="Longitude">
+              <Input type="number" inputMode="decimal" step="any" value={formData.longitude || ""} onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })} />
+            </Field>
           </div>
 
-          <textarea
-            value={formData.description || ""}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-            placeholder="Brief description of this stop (optional)"
-            rows={2}
-            className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2.5 text-sm"
-          />
+          <Field id="stop-description" label="Description (optional)">
+            <Textarea rows={2} value={formData.description || ""} onChange={(e) => setFormData({ ...formData, description: e.target.value || null })} placeholder="Brief description of this stop" />
+          </Field>
 
-          <input
-            type="number"
-            value={formData.estimatedDurationMinutes || ""}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                estimatedDurationMinutes: e.target.value ? Number(e.target.value) : null,
-              })
-            }
-            placeholder="Estimated duration (minutes, optional)"
-            min={0}
-            className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2.5 text-sm"
-          />
+          <Field id="stop-minutes" label="Estimated duration in minutes (optional)">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={formData.estimatedDurationMinutes || ""}
+              onChange={(e) => setFormData({ ...formData, estimatedDurationMinutes: e.target.value ? Number(e.target.value) : null })}
+            />
+          </Field>
 
           <div className="flex gap-2">
             <button

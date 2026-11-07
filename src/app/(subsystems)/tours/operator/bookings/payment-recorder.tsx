@@ -3,7 +3,8 @@
 import { badgeTone } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { formatPeso } from "@/lib/money";
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { useFeedback } from "@/components/ui/feedback";
 import { recordPayment } from "./payment-actions";
 
@@ -23,6 +24,7 @@ export function PaymentRecorder({
   paymentStatus,
 }: PaymentRecorderProps) {
   const { toast, confirm } = useFeedback();
+  const uid = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amount, setAmount] = useState("");
@@ -120,33 +122,22 @@ export function PaymentRecorder({
 
       {isOpen && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-t border-daet-ink/10 pt-4">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Payment Amount (₱) *
-            </label>
-            <input
+          <Field id={`${uid}-amount`} label="Payment amount (₱)" required>
+            <Input
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               max={remaining}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
               placeholder={`Max: ${formatPeso(remaining)}`}
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Payment Method *
-            </label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              required
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-            >
+          <Field id={`${uid}-method`} label="Payment method" required>
+            <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} required>
               <option value="cash">Cash</option>
               <option value="gcash">GCash</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -154,46 +145,20 @@ export function PaymentRecorder({
               <option value="debit_card">Debit Card</option>
               <option value="paypal">PayPal</option>
               <option value="other">Other</option>
-            </select>
-          </div>
+            </Select>
+          </Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Payment Date *
-            </label>
-            <input
-              type="date"
-              value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
-              required
-              max={new Date().toISOString().split("T")[0]}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-            />
-          </div>
+          <Field id={`${uid}-date`} label="Payment date" required>
+            <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} required max={new Date().toISOString().split("T")[0]} />
+          </Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Reference Number
-            </label>
-            <input
-              type="text"
-              value={referenceNumber}
-              onChange={(e) => setReferenceNumber(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="Transaction ID, receipt no, etc."
-            />
-          </div>
+          <Field id={`${uid}-ref`} label="Reference number">
+            <Input type="text" autoComplete="off" value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} placeholder="Transaction ID, receipt no, etc." />
+          </Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="Additional notes about this payment..."
-            />
-          </div>
+          <Field id={`${uid}-notes`} label="Notes">
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Additional notes about this payment..." />
+          </Field>
 
           <button
             type="submit"

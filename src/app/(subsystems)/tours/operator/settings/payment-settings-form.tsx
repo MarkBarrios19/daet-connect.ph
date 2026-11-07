@@ -2,6 +2,7 @@
 
 import { LineIcon } from "@/components/ui/icons";
 import { useState } from "react";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { useFeedback } from "@/components/ui/feedback";
 import { updatePaymentSettings } from "./actions";
 
@@ -60,105 +61,49 @@ export function PaymentSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* GCash Details */}
-      <div className="rounded-2xl bg-canvas p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-daet-ink">
-          <span className="text-xl"><LineIcon name="phone" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /></span>
-          GCash Payment Details
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              GCash Mobile Number
-            </label>
-            <input
-              type="tel"
-              value={gcashNumber}
-              onChange={(e) => setGcashNumber(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="09171234567"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              GCash Account Name
-            </label>
-            <input
-              type="text"
-              value={gcashName}
-              onChange={(e) => setGcashName(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="Juan Dela Cruz"
-            />
-          </div>
+      <fieldset className="rounded-2xl bg-canvas p-4">
+        <legend className="flex items-center gap-2 px-1 text-sm font-bold text-daet-ink">
+          <LineIcon name="phone" className="inline-block h-[1.1em] w-[1.1em]" aria-hidden="true" />
+          GCash payment details
+        </legend>
+        <div className="mt-3 space-y-3">
+          <Field id="gcashNumber" label="GCash mobile number">
+            <Input type="tel" inputMode="tel" autoComplete="off" value={gcashNumber} onChange={(e) => setGcashNumber(e.target.value)} placeholder="09171234567" />
+          </Field>
+          <Field id="gcashName" label="GCash account name">
+            <Input type="text" autoComplete="off" value={gcashName} onChange={(e) => setGcashName(e.target.value)} placeholder="Juan Dela Cruz" />
+          </Field>
         </div>
-      </div>
+      </fieldset>
 
-      {/* Bank Details */}
-      <div className="rounded-2xl bg-canvas p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-daet-ink">
-          <span className="text-xl"><LineIcon name="bank" className="inline-block h-[1.1em] w-[1.1em] align-[-0.15em]" /></span>
-          Bank Transfer Details
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">Bank Name</label>
-            <input
-              type="text"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="BPI, BDO, Metrobank, etc."
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Account Number
-            </label>
-            <input
-              type="text"
-              value={bankAccountNumber}
-              onChange={(e) => setBankAccountNumber(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="1234567890"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-bold text-daet-ink">
-              Account Name
-            </label>
-            <input
-              type="text"
-              value={bankAccountName}
-              onChange={(e) => setBankAccountName(e.target.value)}
-              className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-              placeholder="Juan Dela Cruz"
-            />
-          </div>
+      <fieldset className="rounded-2xl bg-canvas p-4">
+        <legend className="flex items-center gap-2 px-1 text-sm font-bold text-daet-ink">
+          <LineIcon name="bank" className="inline-block h-[1.1em] w-[1.1em]" aria-hidden="true" />
+          Bank transfer details
+        </legend>
+        <div className="mt-3 space-y-3">
+          <Field id="bankName" label="Bank name">
+            <Input type="text" autoComplete="off" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="BPI, BDO, Metrobank, etc." />
+          </Field>
+          <Field id="bankAccountNumber" label="Account number">
+            <Input type="text" inputMode="numeric" autoComplete="off" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} placeholder="1234567890" />
+          </Field>
+          <Field id="bankAccountName" label="Account name">
+            <Input type="text" autoComplete="off" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} placeholder="Juan Dela Cruz" />
+          </Field>
         </div>
-      </div>
+      </fieldset>
 
-      {/* Additional Instructions */}
-      <div>
-        <label className="mb-1 block text-sm font-bold text-daet-ink">
-          Additional Payment Instructions (Optional)
-        </label>
-        <textarea
-          value={paymentInstructions}
-          onChange={(e) => setPaymentInstructions(e.target.value)}
-          rows={4}
-          className="w-full rounded-2xl border border-daet-ink/20 min-h-11 px-3 py-2 text-base focus:border-daet-forest focus:outline-none"
-          placeholder="Example: Please include booking reference in payment message..."
-        />
-      </div>
+      <Field id="paymentInstructions" label="Additional payment instructions (optional)">
+        <Textarea rows={4} value={paymentInstructions} onChange={(e) => setPaymentInstructions(e.target.value)} placeholder="Example: Please include booking reference in payment message..." />
+      </Field>
 
-      {/* Submit Button */}
       <button
         type="submit"
         disabled={isSubmitting}
         className="w-full rounded-full bg-daet-forest px-6 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
       >
-        {isSubmitting ? "Saving..." : "Save Payment Settings"}
+        {isSubmitting ? "Saving..." : "Save payment settings"}
       </button>
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">

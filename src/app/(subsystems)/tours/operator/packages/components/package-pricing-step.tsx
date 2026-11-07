@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Field, Input } from "@/components/ui/field";
 import type { PackageDraft, PriceVariantDraft } from "../package-types";
 
 interface PackagePricingStepProps {
@@ -124,95 +125,50 @@ export function PackagePricingStep({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 space-y-4">
-                {/* Variant Name */}
-                <div>
-                  <input
-                    type="text"
-                    value={variant.variantName}
-                    onChange={(e) => updateVariant(index, { variantName: e.target.value })}
-                    placeholder="Variant name (e.g., Solo, Group)"
-                    className="w-full rounded-2xl border border-daet-ink/15 bg-surface px-3 py-2 text-sm font-bold outline-none transition focus:border-daet-forest focus:ring-2 focus:ring-daet-forest/20"
-                  />
-                  {errors[index]?.variantName && (
-                    <p className="mt-1 text-xs text-red-700 dark:text-red-300">{errors[index].variantName}</p>
-                  )}
-                </div>
+                <Field id={`variant-${index}-name`} label="Variant name" error={errors[index]?.variantName}>
+                  <Input type="text" value={variant.variantName} onChange={(e) => updateVariant(index, { variantName: e.target.value })} placeholder="e.g., Solo, Group" />
+                </Field>
 
-                {/* Pax Range */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-daet-ink">Min pax</label>
-                    <input
+                  <Field id={`variant-${index}-min`} label="Min pax" error={errors[index]?.minPax}>
+                    <Input type="number" inputMode="numeric" min={1} value={variant.minPax} onChange={(e) => updateVariant(index, { minPax: Number(e.target.value) })} />
+                  </Field>
+                  <Field id={`variant-${index}-max`} label="Max pax (optional)" error={errors[index]?.maxPax}>
+                    <Input
                       type="number"
-                      value={variant.minPax}
-                      onChange={(e) => updateVariant(index, { minPax: Number(e.target.value) })}
-                      min={1}
-                      className="mt-1 w-full rounded-2xl border border-daet-ink/15 px-3 py-2 text-sm"
-                    />
-                    {errors[index]?.minPax && (
-                      <p className="mt-1 text-xs text-red-700 dark:text-red-300">{errors[index].minPax}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-daet-ink">Max pax (optional)</label>
-                    <input
-                      type="number"
-                      value={variant.maxPax ?? ""}
-                      onChange={(e) =>
-                        updateVariant(index, {
-                          maxPax: e.target.value ? Number(e.target.value) : null,
-                        })
-                      }
+                      inputMode="numeric"
                       min={variant.minPax}
+                      value={variant.maxPax ?? ""}
+                      onChange={(e) => updateVariant(index, { maxPax: e.target.value ? Number(e.target.value) : null })}
                       placeholder="Unlimited"
-                      className="mt-1 w-full rounded-2xl border border-daet-ink/15 px-3 py-2 text-sm"
                     />
-                    {errors[index]?.maxPax && (
-                      <p className="mt-1 text-xs text-red-700 dark:text-red-300">{errors[index].maxPax}</p>
-                    )}
-                  </div>
+                  </Field>
                 </div>
 
-                {/* Pricing */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-daet-ink">Price per pax (₱)</label>
-                    <input
+                  <Field id={`variant-${index}-price`} label="Price per pax (₱)" error={errors[index]?.pricing}>
+                    <Input
                       type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.01}
                       value={variant.pricePerPax ?? ""}
-                      onChange={(e) =>
-                        updateVariant(index, {
-                          pricePerPax: e.target.value ? Number(e.target.value) : null,
-                          flatPrice: null,
-                        })
-                      }
-                      min={0}
-                      step={0.01}
+                      onChange={(e) => updateVariant(index, { pricePerPax: e.target.value ? Number(e.target.value) : null, flatPrice: null })}
                       placeholder="0.00"
-                      className="mt-1 w-full rounded-2xl border border-daet-ink/15 px-3 py-2 text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-daet-ink">OR Flat price (₱)</label>
-                    <input
+                  </Field>
+                  <Field id={`variant-${index}-flat`} label="Or flat price (₱)">
+                    <Input
                       type="number"
-                      value={variant.flatPrice ?? ""}
-                      onChange={(e) =>
-                        updateVariant(index, {
-                          flatPrice: e.target.value ? Number(e.target.value) : null,
-                          pricePerPax: null,
-                        })
-                      }
+                      inputMode="decimal"
                       min={0}
                       step={0.01}
+                      value={variant.flatPrice ?? ""}
+                      onChange={(e) => updateVariant(index, { flatPrice: e.target.value ? Number(e.target.value) : null, pricePerPax: null })}
                       placeholder="0.00"
-                      className="mt-1 w-full rounded-2xl border border-daet-ink/15 px-3 py-2 text-sm"
                     />
-                  </div>
+                  </Field>
                 </div>
-                {errors[index]?.pricing && (
-                  <p className="text-xs text-red-700 dark:text-red-300">{errors[index].pricing}</p>
-                )}
 
                 {/* Default Checkbox */}
                 <label className="flex items-center gap-2 text-sm">

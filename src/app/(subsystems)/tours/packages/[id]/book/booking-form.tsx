@@ -161,7 +161,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
 
         <div className="mt-4">
           <label htmlFor="tourDate" className="block text-sm font-bold text-daet-ink">
-            Tour date *
+            Tour date <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
           </label>
           {dateOptions === null ? (
             <>
@@ -214,7 +214,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
           {priceVariants.length > 1 && (
             <div>
               <label htmlFor="variant" className="block text-sm font-bold text-daet-ink">
-                Price Option *
+                Price Option <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
               </label>
               <select
                 id="variant"
@@ -239,7 +239,7 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
           {/* Pax Selection */}
           <div>
             <label htmlFor="pax" className="block text-sm font-bold text-daet-ink">
-              Number of guests *
+              Number of guests <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
             </label>
             <div className="mt-1 flex items-center gap-3">
               <button
@@ -308,11 +308,12 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
         <div className="mt-4 space-y-4">
           <div>
             <label htmlFor="contactName" className="block text-sm font-bold text-daet-ink">
-              Full Name *
+              Full Name <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
             </label>
             <input
               type="text"
               id="contactName"
+              autoComplete="name"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               required
@@ -325,11 +326,12 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="contactEmail" className="block text-sm font-bold text-daet-ink">
-                Email Address *
+                Email Address <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
               </label>
               <input
                 type="email"
                 id="contactEmail"
+                autoComplete="email"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 required
@@ -340,11 +342,13 @@ export function BookingForm({ packageId, priceVariants, dateOptions, userProfile
 
             <div>
               <label htmlFor="contactPhone" className="block text-sm font-bold text-daet-ink">
-                Phone Number *
+                Phone Number <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
               </label>
               <input
                 type="tel"
                 id="contactPhone"
+                autoComplete="tel"
+                inputMode="tel"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 required

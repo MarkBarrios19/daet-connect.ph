@@ -158,7 +158,7 @@ export function BasicDetailsStep({
               {data.title.length}/{EDIT_LIMITS.title.max}
             </div>
           </div>
-          {titleError && <p className="text-red-700 dark:text-red-300 text-sm mt-1">{titleError}</p>}
+          {titleError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{titleError}</p>}
         </div>
 
         {/* Location Field */}
@@ -183,7 +183,7 @@ export function BasicDetailsStep({
               {data.locationName.length}/{EDIT_LIMITS.locationName.max}
             </div>
           </div>
-          {locationError && <p className="text-red-700 dark:text-red-300 text-sm mt-1">{locationError}</p>}
+          {locationError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{locationError}</p>}
         </div>
 
         {/* Description Field */}
@@ -208,7 +208,7 @@ export function BasicDetailsStep({
               {(data.description ?? "").length}/{EDIT_LIMITS.description.max}
             </div>
           </div>
-          {descriptionError && <p className="text-red-700 dark:text-red-300 text-sm mt-1">{descriptionError}</p>}
+          {descriptionError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{descriptionError}</p>}
         </div>
 
         {/* Duration Fields */}
@@ -231,7 +231,7 @@ export function BasicDetailsStep({
               } disabled:bg-muted disabled:text-daet-ink/70 disabled:cursor-not-allowed`}
               placeholder="e.g., 2.5"
             />
-            {durationError && <p className="text-red-700 dark:text-red-300 text-sm mt-1">{durationError}</p>}
+            {durationError && <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-1">{durationError}</p>}
           </div>
 
           <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import type { PackageDraft } from "../package-types";
 
 interface PackageBasicDetailsStepProps {
@@ -65,93 +66,47 @@ export function PackageBasicDetailsStep({
         </p>
       </div>
 
-      {/* Package Title */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-bold text-daet-ink">
-          Package title <span className="text-red-600 dark:text-red-300">*</span>
-        </label>
-        <input
-          type="text"
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g., Bagasbas Beach Sunset Tour"
-          maxLength={160}
-          aria-invalid={Boolean(errors.title)}
-          className="mt-2 w-full rounded-2xl border border-daet-ink/15 bg-surface px-4 py-3 text-sm outline-none transition placeholder:text-daet-ink/35 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10 aria-[invalid=true]:border-red-400 dark:aria-[invalid=true]:border-red-700"
-        />
-        {errors.title && (
-          <p className="mt-1 text-sm font-bold text-red-700 dark:text-red-300">{errors.title}</p>
-        )}
-      </div>
+      <Field id="title" label="Package title" required error={errors.title}>
+        <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Bagasbas Beach Sunset Tour" maxLength={160} />
+      </Field>
 
-      {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-bold text-daet-ink">
-          Description
-        </label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe what tourists will experience on this tour..."
-          rows={5}
-          maxLength={2000}
-          className="mt-2 w-full rounded-2xl bg-surface px-4 py-3 text-sm outline-none transition placeholder:text-daet-ink/35 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
-        />
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          {description.length}/2000 characters
-        </p>
-      </div>
+      <Field id="description" label="Description" hint={`${description.length}/2000 characters`}>
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe what tourists will experience on this tour..." rows={5} maxLength={2000} />
+      </Field>
 
-      {/* Location */}
-      <div>
-        <label htmlFor="locationName" className="block text-sm font-bold text-daet-ink">
-          Location <span className="text-red-600 dark:text-red-300">*</span>
-        </label>
-        <input
-          type="text"
-          id="locationName"
-          value={locationName}
-          onChange={(e) => setLocationName(e.target.value)}
-          placeholder="e.g., Bagasbas Beach, Daet"
-          maxLength={200}
-          aria-invalid={Boolean(errors.locationName)}
-          className="mt-2 w-full rounded-2xl border border-daet-ink/15 bg-surface px-4 py-3 text-sm outline-none transition placeholder:text-daet-ink/35 focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10 aria-[invalid=true]:border-red-400 dark:aria-[invalid=true]:border-red-700"
-        />
-        {errors.locationName && (
-          <p className="mt-1 text-sm font-bold text-red-700 dark:text-red-300">{errors.locationName}</p>
-        )}
-      </div>
+      <Field id="locationName" label="Location" required error={errors.locationName}>
+        <Input type="text" value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="e.g., Bagasbas Beach, Daet" maxLength={200} />
+      </Field>
 
-      {/* Duration */}
-      <div>
-        <label className="block text-sm font-bold text-daet-ink">
-          Duration <span className="text-red-600 dark:text-red-300">*</span>
-        </label>
-        <div className="mt-2 flex gap-3">
-          <input
+      <fieldset>
+        <legend className="block text-sm font-bold text-daet-ink">
+          Duration <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
+        </legend>
+        <div className="mt-1 flex gap-3">
+          <Input
             type="number"
+            inputMode="numeric"
+            aria-label="Duration length"
+            aria-required="true"
+            aria-describedby={errors.durationValue ? "durationValue-error" : undefined}
             value={durationValue}
             onChange={(e) => setDurationValue(Number(e.target.value))}
             min={1}
             max={365}
-            aria-invalid={Boolean(errors.durationValue)}
-            className="w-24 rounded-2xl border border-daet-ink/15 bg-surface px-4 py-3 text-sm outline-none transition focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10 aria-[invalid=true]:border-red-400 dark:aria-[invalid=true]:border-red-700"
+            invalid={Boolean(errors.durationValue)}
+            className="mt-0 w-24"
           />
-          <select
-            value={durationType}
-            onChange={(e) => setDurationType(e.target.value as "hours" | "days")}
-            className="flex-1 rounded-2xl bg-surface px-4 py-3 text-sm outline-none transition focus:border-daet-forest focus:ring-4 focus:ring-daet-forest/10"
-          >
+          <Select aria-label="Duration unit" value={durationType} onChange={(e) => setDurationType(e.target.value as "hours" | "days")} className="mt-0 flex-1">
             <option value="hours">Hours</option>
             <option value="days">Days</option>
-          </select>
+          </Select>
         </div>
         {errors.durationValue && (
-          <p className="mt-1 text-sm font-bold text-red-700 dark:text-red-300">{errors.durationValue}</p>
+          <p id="durationValue-error" role="alert" className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">
+            {errors.durationValue}
+          </p>
         )}
-      </div>
+      </fieldset>
 
       {/* Actions */}
       <div className="flex justify-end gap-3 border-t border-daet-ink/10 pt-6">
