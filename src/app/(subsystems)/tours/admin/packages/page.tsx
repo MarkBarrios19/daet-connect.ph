@@ -104,7 +104,8 @@ export default async function AdminPackagesPage() {
   return (
     <PageFrame adminNav>
     <div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* PageFrame already supplies the page's max width and responsive gutters. */}
+      <div className="mx-auto max-w-7xl">
         {/* Back Button */}
         <div className="mb-4">
           <Link
@@ -190,28 +191,35 @@ export default async function AdminPackagesPage() {
 }
 
 function PackageCard({ package: pkg }: { package: any }) {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     pending: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200',
+    pending_review: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200',
     published: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
     archived: 'bg-muted text-daet-ink',
+    rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
   };
+  const statusColor = statusColors[pkg.status] ?? 'bg-muted text-daet-ink';
 
   const operator = pkg.tours_operators;
   const operatorName = operator?.business_name || 'Unknown';
   const contactName = operator?.profiles?.full_name || 'Unknown';
 
   return (
-    <div className="bg-surface rounded-2xl border border-daet-ink/20 p-6">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-bold text-daet-ink">{pkg.title}</h3>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[pkg.status as keyof typeof statusColors]}`}>
+    // On phones the action gets its own row. Keeping it beside the title left
+    // long names only a word or two wide and pushed the badge into the title.
+    <article className="min-w-0 rounded-2xl border border-daet-ink/20 bg-surface p-4 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <h3 className="min-w-0 max-w-full break-words text-lg font-bold text-daet-ink [overflow-wrap:anywhere]">
+              {pkg.title}
+            </h3>
+            <span className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}>
               {pkg.status}
             </span>
           </div>
-          
-          <div className="space-y-1 text-sm text-daet-ink/80">
+
+          <div className="mt-4 min-w-0 space-y-1 break-words text-sm text-daet-ink/80 [overflow-wrap:anywhere]">
             <p><span className="font-medium">Operator:</span> {operatorName}</p>
             <p><span className="font-medium">Contact:</span> {contactName}</p>
             <p><span className="font-medium">Base Price:</span> {pkg.base_price == null ? 'N/A' : formatPeso(pkg.base_price)}</p>
@@ -219,15 +227,15 @@ function PackageCard({ package: pkg }: { package: any }) {
           </div>
         </div>
 
-        <div className="ml-4">
+        <div className="w-full shrink-0 sm:ml-4 sm:w-auto">
           <Link
             href={`/tours/admin/packages/${pkg.id}`}
-            className="min-h-11 inline-flex items-center px-4 py-2 border border-daet-ink/20 rounded-2xl text-sm font-medium text-daet-ink/80 bg-surface hover:bg-canvas"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-daet-ink/20 bg-surface px-4 py-2 text-sm font-medium text-daet-ink/80 hover:bg-canvas sm:w-auto"
           >
             Review
           </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
