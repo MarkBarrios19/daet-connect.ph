@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { notFound, redirect } from "next/navigation";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
@@ -11,6 +10,7 @@ import { InboxList } from "../inbox-list";
 import { LiveInbox } from "../live-inbox";
 import { isUuid } from "@/lib/tours/operator-access";
 import { markConversationRead, readMarks, threadExtras } from "../actions";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };

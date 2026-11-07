@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import type { AvailabilityRow } from "@/lib/tours/availability";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isUuid } from "@/lib/tours/operator-access";
 import { AvailabilityList, OpenDatesForm } from "./availability-manager";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };

@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { LiveTourBoard } from "@/components/tours/live/live-tour-board";
@@ -8,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 import { loadLiveTour } from "@/app/(subsystems)/tours/live/load-live-tour";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ bookingId: string }> };

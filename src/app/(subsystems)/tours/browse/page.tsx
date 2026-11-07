@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { LineIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -8,6 +7,7 @@ import { searchTerm } from "@/components/ui/search-term";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { PackageCard } from "@/components/tours/package-card";
 import { toSummary, type RatingSummary } from "@/lib/tours/reviews";
 import { PackageFilters } from "./package-filters";
@@ -40,6 +40,9 @@ export default async function BrowsePackagesPage({
 
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
+  // Who is looking is needed only at the end, so ask now and let it run beside
+  // the trips query (the shared, cached lookup: the header reuses the answer).
+  const userPromise = getAuthUser();
 
   // Build query - get packages with their price variants (using nested query for better performance)
   let query = supabase
@@ -112,7 +115,7 @@ export default async function BrowsePackagesPage({
   }
 
   // Check if user is logged in
-  const user = await getAuthUser();
+  const user = await userPromise;
 
   // Filter by price range
   let filteredPackages = packagesWithPricing;

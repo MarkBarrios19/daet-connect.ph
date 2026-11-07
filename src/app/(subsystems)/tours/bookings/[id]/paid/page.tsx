@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { hasTicket } from "@/lib/tours/ticket";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -14,6 +13,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 import { RefreshUntilPaid } from "./refresh-until-paid";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };

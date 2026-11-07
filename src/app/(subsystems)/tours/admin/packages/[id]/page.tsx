@@ -1,10 +1,10 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { formatPeso } from "@/lib/money";
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { PageFrame } from '@/components/ui/page-frame';
 import { PackageReviewForm } from './package-review-form';
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export default async function AdminPackageReviewPage({
   params,

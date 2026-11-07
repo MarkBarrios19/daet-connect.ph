@@ -1,6 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { serverTimingEnabled, serverTimingHeader } from "@/lib/server-timing";
 import { getSupabasePublicConfig, isSupabaseConfigured } from "@/lib/supabase/env";
+
+/**
+ * Pages only a signed-in person can use. A visitor without a session is sent to
+ * the sign-in page here, with a real 307, instead of the page streaming a shell
+ * and then redirecting from inside the stream (a 200 and a client-side jump).
+ * The pages still check for themselves: this only saves the round trip and the
+ * flash. `/tours/plan` is not listed: it works signed out.
+ */
+const SIGNED_IN_ONLY = /^\/tours\/(?:my-bookings|messages|me|operator\/(?:bookings|packages|payments))\/?$/;
 
 /**
  * Refreshes the Supabase auth session on every page request.
@@ -61,7 +71,29 @@ export async function proxy(request: NextRequest) {
   // The cost: a session revoked elsewhere is only noticed when its token
   // expires (an hour by default), not on the next page view. Server actions
   // and route handlers that write confirm the user with getUser() themselves.
-  await supabase.auth.getClaims();
+  const started = performance.now();
+  const { data, error } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
+  const authMs = performance.now() - started;
+
+  // No session, or Supabase Auth refused the token: send the visitor to sign
+  // in. A failure to reach Auth (network, 5xx) is not "signed out": let the
+  // page try and say what went wrong.
+  const refused = typeof error?.status === "number" && error.status >= 400 && error.status < 500;
+  const signedOut = !user && (!error || error.name === "AuthSessionMissingError" || refused);
+  const { pathname } = request.nextUrl;
+  if (signedOut && SIGNED_IN_ONLY.test(pathname) && (request.method === "GET" || request.method === "HEAD")) {
+    const login = new URL("/login", request.nextUrl.origin);
+    login.searchParams.set("next", pathname.replace(/\/$/, ""));
+    const redirect = NextResponse.redirect(login);
+    // Carry any cookie the refresh just cleared.
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  }
+
+  // Only the duration, never anything about the person. The rest of the
+  // request's timings are in the function log; see lib/server-timing.ts.
+  if (serverTimingEnabled()) response.headers.set("Server-Timing", serverTimingHeader([{ name: "proxy-auth", ms: authMs }]));
 
   return response;
 }

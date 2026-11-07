@@ -22,6 +22,7 @@ type LiveValue = {
 };
 
 const LiveContext = createContext<LiveValue | null>(null);
+const SeedContext = createContext<((initial: LiveInitial) => void) | null>(null);
 
 /** The shared live state. Outside a provider (tests, signed-out pages) it is empty and inert. */
 export function useLive(): LiveValue | null {
@@ -37,7 +38,14 @@ export type LiveInitial = { userId: string; items: NotificationRow[]; unread: nu
  * dashboards' counts, the tab title, the toast and the sound all read from it.
  * Realtime only makes the next poll happen sooner; polling is the safety net.
  */
-export function LiveProvider({ initial, children }: { initial: LiveInitial; children: ReactNode }) {
+export function LiveProvider({ initial: initialProp = null, children }: { initial?: LiveInitial; children: ReactNode }) {
+  // A shared layout mounts the provider before it knows who is signed in (that
+  // is read at request time, behind <Suspense>). <LiveSeed> hands the person's
+  // notifications over once they arrive. Nothing polls before that, so a
+  // signed-out visitor on a page inside the shared layout (the trip planner)
+  // never hits the summary route.
+  const [seed, setSeed] = useState<LiveInitial>(null);
+  const initial = initialProp ?? seed;
   const [summary, setSummary] = useState<LiveSummary>(() => (initial ? { ...EMPTY_SUMMARY, notifications: { unread: initial.unread, items: initial.items } } : EMPTY_SUMMARY));
   const [ready, setReady] = useState(Boolean(initial));
   const [realtime, setRealtime] = useState(false);
@@ -87,7 +95,7 @@ export function LiveProvider({ initial, children }: { initial: LiveInitial; chil
     baseline.current = true;
   }, [announce]);
 
-  const { trigger } = usePolling(poll, pollInterval(realtime), isSupabaseConfigured());
+  const { trigger } = usePolling(poll, pollInterval(realtime), isSupabaseConfigured() && Boolean(initial));
 
   // Realtime: only an accelerator. Any new notification or message asks for a poll now.
   useEffect(() => {
@@ -141,6 +149,7 @@ export function LiveProvider({ initial, children }: { initial: LiveInitial; chil
   const value = useMemo<LiveValue>(() => ({ summary, ready, markRead, refresh: trigger }), [summary, ready, markRead, trigger]);
 
   return (
+    <SeedContext.Provider value={setSeed}>
     <LiveContext.Provider value={value}>
       {children}
       {/* The live region holds the link: a link given role="status" loses its name from its content. */}
@@ -160,5 +169,15 @@ export function LiveProvider({ initial, children }: { initial: LiveInitial; chil
         ) : null}
       </div>
     </LiveContext.Provider>
+    </SeedContext.Provider>
   );
+}
+
+/** Renders nothing: gives the nearest <LiveProvider> the server-loaded notifications. */
+export function LiveSeed({ initial }: { initial: LiveInitial }) {
+  const setSeed = useContext(SeedContext);
+  useEffect(() => {
+    setSeed?.(initial);
+  }, [initial, setSeed]);
+  return null;
 }

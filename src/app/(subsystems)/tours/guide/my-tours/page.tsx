@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import type React from "react";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isBusyReason } from "@/lib/tours/guide-swap";
 import { SwapRequest, type MySwap } from "./swap-request";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 export default async function GuideMyToursPage() {

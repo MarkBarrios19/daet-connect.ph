@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
 import { redirect } from "next/navigation";
@@ -8,6 +7,7 @@ import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const metadata = { title: "My itineraries" };
 

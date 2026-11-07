@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AssistantPane } from "@/components/assistant/assistant-pane";
@@ -9,6 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { InboxRow } from "@/lib/tours/messaging";
 import { InboxList } from "../inbox-list";
 import { LiveInbox } from "../live-inbox";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const metadata = { title: "Daet AI assistant" };
 

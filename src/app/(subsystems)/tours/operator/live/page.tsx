@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { formatClock } from "@/lib/tours/live-tracking";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 const shiftDay = (key: string, days: number) => {

@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { ShowOnMap, StopFocus, TripFocusProvider, TripMap } from "@/components/planner/trip-focus";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -29,6 +28,7 @@ const outline = "inline-flex min-h-11 items-center gap-2 rounded-full border bor
 const shortDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 import { BookSummary } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 /** Who the saved trip is for: the planner's travellers, else the form's group size. */
 function groupFromPreferences(value: unknown): number | null {

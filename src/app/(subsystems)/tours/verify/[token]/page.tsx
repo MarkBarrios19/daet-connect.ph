@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Notice } from "@/components/ui/notice";
@@ -8,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { checkInAllowed, getQrSecret, verifyQrToken } from "@/lib/tours/qr-token";
 import { TicketCheckInButton } from "./ticket-check-in-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 export const metadata: Metadata = { title: "Verify QR · CONNECT-Daet", robots: { index: false } };
 

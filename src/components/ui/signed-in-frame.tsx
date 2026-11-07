@@ -2,7 +2,8 @@ import { Suspense, type ReactNode } from "react";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { ChatDock } from "@/components/chat-dock/chat-dock";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { Live, signedInViewer, isStaffRole } from "@/components/ui/page-frame";
+import { LiveProvider, LiveSeed } from "@/components/live/live-provider";
+import { signedInViewer, isStaffRole } from "@/components/ui/page-frame";
 import { RevealObserver } from "@/components/ui/reveal-observer";
 import { RoleTabBar } from "@/components/ui/role-tab-bar";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
@@ -12,42 +13,53 @@ import { accountLinks, barTabs, roleTabs } from "@/lib/tours/dashboards";
 import { loadNotifications } from "@/lib/tours/notifications-server";
 
 /**
- * PageFrame for pages only a signed-in person can use, built so the page can be
- * prerendered (Cache Components) and served from the CDN at once.
+ * The chrome shared by every signed-in page, mounted once by the layout of the
+ * `(signed-in)` route group. Client navigations between those pages keep the
+ * layout, so the header, tab bar, chat dock and live poller are not fetched or
+ * rebuilt on each tap; only the page inside `{children}` changes.
  *
- * What is the same for every visitor is the static shell, sent immediately: the
- * skip link, a header and tab bar of the right size, the page itself, the footer
- * and the floating buttons. What depends on who is signed in (their name, photo,
- * role tabs, notifications, the chat dock) sits behind one <Suspense> boundary
- * and streams in. Nothing personal is ever cached: it is all read at request
- * time, inside the boundary.
+ * What is the same for every visitor is the static shell, prerendered and sent
+ * at once: the skip link, a header and tab bar of the right size, the footer and
+ * the floating buttons. What depends on who is signed in (their name, photo,
+ * role tabs, notifications, the chat dock) is read at request time behind one
+ * <Suspense> boundary and streams in. Nothing personal is ever cached.
  *
- * Because the page is signed-in only, the shell can say so: the compact footer,
- * room for the phone tab bar and the raised floating buttons hold for every role.
- * The live poller wraps only the streamed chrome, which is what reads it; the
- * page body does not use it.
+ * The live poller wraps both the streamed chrome and the page, because page
+ * bodies read it too (the inbox, live counts, the chat). It mounts empty and is
+ * handed the person's notifications by <LiveSeed> once the chrome has them.
+ *
+ * Because these pages are for signed-in people, the shell can say so: the
+ * compact footer, room for the phone tab bar and the raised floating buttons
+ * hold for every role. Each page lays out its own width with <PageBody>.
  */
-export function StreamingPageFrame({ children }: { children: ReactNode }) {
+export function SignedInFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen" data-has-tabs="">
-      <RevealObserver />
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-blue-600 focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
-      >
-        Skip to main content
-      </a>
-      <Suspense fallback={<ChromeFallback />}>
-        <ViewerChrome />
-      </Suspense>
-      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl px-4 py-6 outline-none sm:px-6 sm:py-10 lg:px-8">
-        {children}
-      </main>
-      <SiteFooter compact className="pb-24" />
-      <AssistantWidget signedIn raised />
-      <ScrollToTop raised />
-    </div>
+    <LiveProvider>
+      <div className="min-h-screen" data-has-tabs="">
+        <RevealObserver />
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-blue-600 focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
+        >
+          Skip to main content
+        </a>
+        <Suspense fallback={<ChromeFallback />}>
+          <ViewerChrome />
+        </Suspense>
+        <main id="main-content" tabIndex={-1} className="w-full outline-none">
+          {children}
+        </main>
+        <SiteFooter compact className="pb-24" />
+        <AssistantWidget signedIn raised />
+        <ScrollToTop raised />
+      </div>
+    </LiveProvider>
   );
+}
+
+/** The page's width and padding inside the shared frame. `bleed` is for pages that lay out their own full-width sections. */
+export function PageBody({ children, bleed = false }: { children: ReactNode; bleed?: boolean }) {
+  return bleed ? <>{children}</> : <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">{children}</div>;
 }
 
 /** The header, tab bar and chat dock for whoever is signed in. Reads cookies, so it runs per request. */
@@ -58,7 +70,8 @@ async function ViewerChrome() {
   const staff = isStaffRole(role);
   const account = viewer ? { initial: viewer.initial, name: viewer.name, avatarUrl: viewer.avatarUrl } : undefined;
   return (
-    <Live initial={role !== undefined ? notifications : null}>
+    <>
+      <LiveSeed initial={role !== undefined ? notifications : null} />
       <SiteHeader
         signedIn={role !== undefined}
         role={isStaffRole(role) ? role : undefined}
@@ -71,7 +84,7 @@ async function ViewerChrome() {
         account={account && !staff ? { ...account, links: accountLinks(role, tabs) } : undefined}
       />
       {role !== undefined ? <ChatDock /> : null}
-    </Live>
+    </>
   );
 }
 

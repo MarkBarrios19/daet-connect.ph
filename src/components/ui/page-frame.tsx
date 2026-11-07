@@ -12,11 +12,14 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { accountLinks, barTabs, roleTabs } from "@/lib/tours/dashboards";
 import { loadNotifications } from "@/lib/tours/notifications-server";
 import { getMyProfile } from "@/lib/tours/my-profile";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getDisplaySession } from "@/lib/tours/server-auth";
+import { RoleClaimSync } from "@/components/ui/role-claim-sync";
 import { displayName, initials } from "@/lib/profile/name";
 
 type Viewer = {
   role: string;
+  /** "claim": the role is the token's and may lag a role change; see RoleClaimSync. */
+  roleSource: "claim" | "rpc";
   initial: string;
   name: string;
   avatarUrl: string | null;
@@ -27,8 +30,10 @@ export async function signedInViewer(): Promise<Viewer | undefined> {
   try {
     // The profile row is the record (name and photo); the sign-up metadata and
     // the address are the fallbacks, so a header always has something to draw.
-    const [{ user, role }, profile] = await Promise.all([
-      getAuthenticatedSession(),
+    // The role here only chooses tabs, so the token claim is enough (and saves
+    // the get_my_role round trip). Pages still authorise with getAuthenticatedSession.
+    const [{ user, role, roleSource }, profile] = await Promise.all([
+      getDisplaySession(),
       getMyProfile(),
     ]);
     if (!user) return undefined;
@@ -46,6 +51,7 @@ export async function signedInViewer(): Promise<Viewer | undefined> {
     });
     return {
       role: role ?? "tourist",
+      roleSource: roleSource === "claim" ? "claim" : "rpc",
       name,
       initial: initials(name),
       avatarUrl: profile?.avatarUrl ?? null,
@@ -143,6 +149,7 @@ export async function PageFrame({
       {/* The way back to the top of a long page; lifted over the tab bar when there is one. */}
       <ScrollToTop raised={tabs.length > 0} />
       {role !== undefined ? <ChatDock /> : null}
+      {viewer?.roleSource === "claim" ? <RoleClaimSync shownRole={viewer.role} /> : null}
     </div>
     </Live>
   );

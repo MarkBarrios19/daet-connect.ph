@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { checkInAllowed } from "@/lib/tours/qr-token";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
 import { RosterCheckInButton } from "./roster-check-in-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ bookingId: string }> };

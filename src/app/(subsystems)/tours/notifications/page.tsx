@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -12,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LineIcon } from "@/components/ui/icons";
 import { notificationIcon, safeNotificationLink, timeAgo, type NotificationRow } from "@/lib/tours/notifications";
 import { MarkAllReadButton } from "./mark-all-read-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 export default async function NotificationsPage() {

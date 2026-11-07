@@ -71,4 +71,35 @@ describe("the session refresher", () => {
 
     expect(mockCreateClient).not.toHaveBeenCalled();
   });
+
+  it("sends a visitor without a session from a signed-in page to sign-in with a 307", async () => {
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("Auth session missing!"), { name: "AuthSessionMissingError", status: 400 }) });
+
+    for (const path of ["/tours/my-bookings", "/tours/messages", "/tours/me", "/tours/operator/bookings", "/tours/operator/packages", "/tours/operator/payments"]) {
+      const response = await proxy(request(path));
+      expect(response?.status).toBe(307);
+      expect(response?.headers.get("location")).toBe(`https://daet.test/login?next=${encodeURIComponent(path)}`);
+    }
+  });
+
+  it("lets a signed-in person through, and pages that work signed out", async () => {
+    getClaims.mockResolvedValue({ data: { claims: { sub: "u1" } }, error: null });
+    expect((await proxy(request("/tours/my-bookings")))?.headers.get("location")).toBeNull();
+
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("none"), { name: "AuthSessionMissingError", status: 400 }) });
+    for (const path of ["/tours/plan", "/tours/browse", "/tours/operator/payments/export", "/tours/messages/abc"]) {
+      expect((await proxy(request(path)))?.headers.get("location")).toBeNull();
+    }
+  });
+
+  it("does not call a failed lookup 'signed out' when Auth could not be reached", async () => {
+    getClaims.mockResolvedValue({ data: null, error: Object.assign(new Error("fetch failed"), { name: "AuthRetryableFetchError", status: 0 }) });
+    expect((await proxy(request("/tours/my-bookings")))?.headers.get("location")).toBeNull();
+  });
+
+  it("reports only a duration in Server-Timing, and only when asked", async () => {
+    expect((await proxy(request("/tours/browse")))?.headers.get("server-timing")).toBeNull();
+    process.env.SERVER_TIMING = "1";
+    expect((await proxy(request("/tours/browse")))?.headers.get("server-timing")).toMatch(/^proxy-auth;dur=\d+(\.\d)?$/);
+  });
 });

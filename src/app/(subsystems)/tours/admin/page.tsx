@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { LiveCount } from "@/components/live/live-count";
 import { LineIcon } from "@/components/ui/icons";
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -6,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { PageFrame } from '@/components/ui/page-frame';
 import { Notice } from '@/components/ui/notice';
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 export default async function AdminDashboardPage() {

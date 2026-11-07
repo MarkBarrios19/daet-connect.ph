@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QrScanner } from "./qr-scanner";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 export default async function GuideCheckInPage() {

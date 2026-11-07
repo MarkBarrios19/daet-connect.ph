@@ -1,4 +1,3 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
 import { ButtonLink } from "@/components/ui/button";
 import { hasTicket } from "@/lib/tours/ticket";
 import { notFound, redirect } from "next/navigation";
@@ -12,6 +11,7 @@ import { issueBookingTicket } from "@/lib/tours/qr-issue";
 import { SaveTicketOffline } from "@/components/tours/save-ticket-offline";
 import { MapPinIcon } from "@/components/ui/icons";
 import { PrintTicketButton } from "./print-ticket-button";
+import { getAuthUser } from "@/lib/tours/server-auth";
 
 
 type PageProps = { params: Promise<{ id: string }> };
