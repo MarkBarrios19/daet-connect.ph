@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { markNotificationsRead } from "@/app/(subsystems)/tours/notifications/actions";
 import { usePolling } from "@/components/live/use-polling";
 import { LineIcon } from "@/components/ui/icons";
@@ -53,6 +53,12 @@ export function LiveProvider({ initial: initialProp = null, children }: { initia
   const pathname = usePathname() ?? "";
   const pathRef = useRef(pathname);
   pathRef.current = pathname;
+  const router = useRouter();
+  // The page was drawn for a signed-in person, so a 401 means the session ended
+  // after it was drawn (signed out here or elsewhere, or revoked). Refresh the
+  // route once so the server redraws the header for who is really signed in.
+  // Once only: a page that still reads as signed in must not refresh in a loop.
+  const refreshedForSignOut = useRef(false);
 
   // Ids already shown, and whether the first poll has set the baseline.
   const known = useRef<Set<string>>(new Set(initial?.items.map((row) => row.id) ?? []));
@@ -81,7 +87,13 @@ export function LiveProvider({ initial: initialProp = null, children }: { initia
   const poll = useCallback(async () => {
     const visible = document.visibilityState === "visible" ? "1" : "0";
     const response = await fetch(`/api/live/summary?visible=${visible}`, { cache: "no-store", credentials: "same-origin" });
-    if (response.status === 401) return; // signed out: nothing to show, nothing to retry
+    if (response.status === 401) {
+      if (!refreshedForSignOut.current) {
+        refreshedForSignOut.current = true;
+        router.refresh();
+      }
+      return; // signed out: nothing to show, nothing to retry
+    }
     if (!response.ok) throw new Error(`summary ${response.status}`);
     const next = (await response.json()) as LiveSummary;
     const fresh = newNotifications(known.current, next.notifications.items);
@@ -93,7 +105,7 @@ export function LiveProvider({ initial: initialProp = null, children }: { initia
     // The first poll after load only sets the baseline: no toast for old items.
     if (baseline.current) announce(planToast(fresh, chatGrew && fresh.every((row) => row.type !== "message"), pathRef.current, safeNotificationLink));
     baseline.current = true;
-  }, [announce]);
+  }, [announce, router]);
 
   const { trigger } = usePolling(poll, pollInterval(realtime), isSupabaseConfigured() && Boolean(initial));
 
