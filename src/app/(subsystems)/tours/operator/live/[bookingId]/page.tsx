@@ -26,6 +26,9 @@ export default async function OperatorLiveTourPage({ params }: PageProps) {
   const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/operator/live/${bookingId}`)}`);
 
+  const { data: operator } = await supabase.from("tours_operators").select("id, accreditation_status").eq("profile_id", user.id).maybeSingle();
+  if (!operator || operator.accreditation_status !== "approved") notFound();
+
   const tour = await loadLiveTour(bookingId, user.id);
   if (!tour || !tour.isOperator) notFound();
 
