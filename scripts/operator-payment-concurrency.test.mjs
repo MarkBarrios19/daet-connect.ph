@@ -29,13 +29,15 @@ test('booking lock serializes manual and proof payments and rolls back proof fai
     DO $$ BEGIN CREATE ROLE anon; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     DO $$ BEGIN CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '${actor}'::uuid $$;
-    CREATE TABLE public.tours_bookings (id uuid PRIMARY KEY, total_amount numeric);
-    CREATE TABLE public.tours_operators (profile_id uuid, accreditation_status text);
+    CREATE TABLE public.tours_bookings (id uuid PRIMARY KEY, total_amount numeric, package_id uuid);
+    CREATE TABLE public.tours_packages (id uuid PRIMARY KEY, operator_id uuid);
+    CREATE TABLE public.tours_operators (id uuid PRIMARY KEY, profile_id uuid, accreditation_status text);
     CREATE TABLE public.tours_payments (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, booking_id uuid, amount numeric, payment_method text, payment_status text, reference_number text, payment_date timestamptz, notes text, recorded_by uuid);
     CREATE TABLE public.tours_payment_proofs (id uuid PRIMARY KEY, booking_id uuid, amount numeric, payment_method text, reference_number text, submitted_at timestamptz, verification_status text, verified_by uuid, verified_at timestamptz, rejection_reason text, payment_id uuid);
     CREATE FUNCTION public.tours_is_booking_operator(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT $1 = '${booking}'::uuid $$;
-    INSERT INTO public.tours_bookings VALUES ('${booking}', 100);
-    INSERT INTO public.tours_operators VALUES ('${actor}', 'approved');`);
+    INSERT INTO public.tours_bookings VALUES ('${booking}', 100, '${proof1}');
+    INSERT INTO public.tours_packages VALUES ('${proof1}', '${proof2}');
+    INSERT INTO public.tours_operators VALUES ('${proof2}', '${actor}', 'approved');`);
   run(readFileSync('supabase/migrations/20261107_atomic_operator_payments.sql', 'utf8'));
   const reset = () => run(`TRUNCATE public.tours_payments, public.tours_payment_proofs;
     INSERT INTO public.tours_payment_proofs (id, booking_id, amount, payment_method, submitted_at, verification_status) VALUES

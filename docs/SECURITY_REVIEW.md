@@ -45,6 +45,7 @@ The repository is public, so anyone could sign in as the Tourism Office admin. F
 | Open redirect after login | Fixed in F12: `?next=` accepted any URL (`/login?next=https://evil.example`). Now only same-site paths, via `safeNextPath` (tests) |
 | Privilege escalation | Fixed in F10: users could set their own `profiles.role`; browser updates are now limited to `full_name` and `avatar_url` |
 | RLS per role | `supabase/tests/integration.sql`: 31 checks across anon, tourist, operator, guide and admin. **31 pass** on the live project (rolled back) |
+| Package policy drift | The historical package migration's missing replacements are repaired by `20261128_reconcile_package_policies.sql`. Direct-table access is exercised offline by `scripts/package-policies.test.mjs`; `supabase/tests/package_policy_catalog.sql` is a read-only deployment check. See `docs/PACKAGE_POLICIES.md`. The reconciliation has **not** been applied to live Supabase by this repair |
 
 ## Rate limits
 

@@ -125,12 +125,15 @@ To turn on push to phones and desktops:
 | Unit and property tests | `npm test` |
 | E2E + accessibility at 375px (mock Supabase) | `npm run test:e2e:tours` (set `PW_CHROMIUM_PATH` to use a local Chromium) |
 | Database integration (rolls back) | `psql "$DATABASE_URL" -f supabase/tests/integration.sql` |
+| Package RLS regression (offline, in-memory Postgres) | `node --test scripts/package-policies.test.mjs` |
+| Package policy catalog (read-only; all rows must pass) | `psql "$DATABASE_URL" -f supabase/tests/package_policy_catalog.sql` |
 | Demo accounts and data for a staging project | `DEMO_PASSWORD=… DEMO_GROUPS=3 npm run seed:demo` |
 | Realistic demo set (5 operators, 8 guides, 10 tourists, bookings) | `DEMO_PROFILE=realistic DEMO_PASSWORD=… npm run seed:demo` |
 | Guide schedule and swap checks (rolled back) | `psql "$DATABASE_URL" -f supabase/tests/guide_swaps.sql` |
 
 - Evaluator walkthroughs and the credentials sheet: `docs/EVALUATION_KIT.md`.
 - Security findings and what to do about them: `docs/SECURITY_REVIEW.md`.
+- Package policy migration order, access matrix and drift verification: `docs/PACKAGE_POLICIES.md`.
 
 ## Rewards (CONNECT-Daet points)
 

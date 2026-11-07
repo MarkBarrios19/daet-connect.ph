@@ -18,10 +18,13 @@ BEGIN
   IF auth.uid() IS NULL OR NOT public.tours_is_booking_operator(p_booking_id) THEN
     RAISE EXCEPTION 'Not authorized to record payments for this booking.' USING ERRCODE = '42501';
   END IF;
-  IF p_proof_id IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM public.tours_operators WHERE profile_id = auth.uid() AND accreditation_status = 'approved'
+  IF NOT EXISTS (
+    SELECT 1 FROM public.tours_bookings b
+    JOIN public.tours_packages p ON p.id = b.package_id
+    JOIN public.tours_operators o ON o.id = p.operator_id
+    WHERE b.id = p_booking_id AND o.profile_id = auth.uid() AND o.accreditation_status = 'approved'
   ) THEN
-    RAISE EXCEPTION 'Only approved operators can verify payments.' USING ERRCODE = '42501';
+    RAISE EXCEPTION 'Only the approved operator of this booking can record payments.' USING ERRCODE = '42501';
   END IF;
 
   SELECT * INTO b FROM public.tours_bookings WHERE id = p_booking_id FOR UPDATE;

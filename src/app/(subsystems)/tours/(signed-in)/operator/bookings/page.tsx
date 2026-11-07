@@ -120,22 +120,18 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
   }
   const supabase = await createSupabaseServerClient();
 
-  // The operator row and the approved guides don't depend on each other, so they
-  // are asked for together.
-  const [{ data: operator }, availableGuides] = await timed("page:bookings-operator", () =>
-    Promise.all([
-      supabase.from("tours_operators").select("id, business_name").eq("profile_id", user.id).maybeSingle(),
-      loadAvailableGuides(supabase),
-    ]),
+  const { data: operator } = await timed("page:bookings-operator", async () =>
+    await supabase.from("tours_operators").select("id, business_name, accreditation_status").eq("profile_id", user.id).maybeSingle(),
   );
 
-  if (!operator) {
+  if (!operator || operator.accreditation_status !== "approved") {
     return (
-      <Notice variant="error" title="Operator profile not found">
+      <Notice variant="error" title="Approved operator account required">
         You need an approved operator account to view bookings.
       </Notice>
     );
   }
+  const availableGuides = await loadAvailableGuides(supabase);
 
   // Build query for bookings
   let query = supabase

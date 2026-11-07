@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { uploadPackageImage } from "@/lib/tours/image-upload";
+import { parseStops } from "./stops";
 
 type CreatePackageResult = {
   success: boolean;
@@ -13,6 +14,9 @@ type CreatePackageResult = {
 
 export async function createPackage(formData: FormData): Promise<CreatePackageResult> {
   try {
+    const parsedStops = parseStops(formData.get("stops"));
+    if (!parsedStops) return { success: false, error: "Add at least one stop with a valid location selected from attractions or the map." };
+
     const supabase = await createSupabaseServerClient();
 
     // Extract form data
@@ -26,7 +30,6 @@ export async function createPackage(formData: FormData): Promise<CreatePackageRe
     const minPax = formData.get("min_pax") ? parseInt(formData.get("min_pax") as string) : null;
     const inclusionsText = formData.get("inclusions") as string;
     const exclusionsText = formData.get("exclusions") as string;
-    const stopsText = formData.get("stops") as string;
 
 
     // Created as a draft: operators may only write their own drafts, and
@@ -109,25 +112,14 @@ export async function createPackage(formData: FormData): Promise<CreatePackageRe
     }
 
     // Create itinerary stops
-    const stopsLines = stopsText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    const stops = stopsLines.map((line, index) => {
-      const parts = line.split("-").map((p) => p.trim());
-      const locationName = parts[0] || line;
-      const desc = parts[1] || "";
-
-      return {
-        package_id: packageId,
-        location_name: locationName,
-        description: desc,
-        latitude: 14.1167, // Default coordinates (Daet)
-        longitude: 122.95,
-        stop_order: index,
-      };
-    });
+    const stops = parsedStops.map((stop, index) => ({
+      package_id: packageId,
+      location_name: stop.locationName,
+      description: stop.description,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+      stop_order: index,
+    }));
 
     if (stops.length > 0) {
       const { error: stopsError } = await supabase
@@ -136,7 +128,7 @@ export async function createPackage(formData: FormData): Promise<CreatePackageRe
 
       if (stopsError) {
         console.error("Stops error:", stopsError);
-        // Continue anyway - stops are optional for now
+        return { success: true, packageId, notice: "Saved as a draft, but the stops could not be saved. Please add them in the editor." };
       }
     }
 
