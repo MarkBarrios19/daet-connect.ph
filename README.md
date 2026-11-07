@@ -125,7 +125,6 @@ To turn on push to phones and desktops:
 | Unit and property tests | `npm test` |
 | E2E + accessibility at 375px (mock Supabase) | `npm run test:e2e:tours` (set `PW_CHROMIUM_PATH` to use a local Chromium) |
 | Database integration (rolls back) | `psql "$DATABASE_URL" -f supabase/tests/integration.sql` |
-| Operator accreditation authorization (staging, rolls back) | `psql "$STAGING_DB_URL" -f supabase/tests/operator_accreditation.sql` |
 | Package RLS regression (offline, in-memory Postgres) | `node --test scripts/package-policies.test.mjs` |
 | Package policy catalog (read-only; all rows must pass) | `psql "$DATABASE_URL" -f supabase/tests/package_policy_catalog.sql` |
 | Demo accounts and data for a staging project | `DEMO_PASSWORD=… DEMO_GROUPS=3 npm run seed:demo` |
