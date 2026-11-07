@@ -20,6 +20,10 @@ interface CoverImageStepProps {
   onUpdate: (data: CoverImageStepData) => void;
   errors: ValidationErrors;
   loading: boolean;
+  /** The section's DOM id, so the section navigation can link to it. */
+  id?: string;
+  /** This section has unsaved changes. */
+  dirty?: boolean;
 }
 
 /**
@@ -39,6 +43,8 @@ export function CoverImageStep({
   onUpdate,
   errors,
   loading,
+  id = "photos-section",
+  dirty = false,
 }: CoverImageStepProps) {
   const permissions = getEditPermissions(packageStatus);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -115,8 +121,28 @@ export function CoverImageStep({
   });
 
   return (
-    <div className="border rounded-2xl p-6 bg-surface">
-      <h2 className="text-xl font-bold text-daet-ink mb-6">Cover Image</h2>
+    <section
+      id={id}
+      tabIndex={-1}
+      aria-labelledby={`${id}-heading`}
+      className="scroll-mt-[calc(var(--header-h)+4.5rem)] space-y-4 rounded-2xl card-edge bg-surface p-5 outline-none sm:p-6"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 id={`${id}-heading`} className="text-xl font-bold text-daet-ink">
+            Photos
+          </h2>
+          {dirty ? (
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-800 dark:bg-blue-950/50 dark:text-blue-200">
+              Unsaved
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1 text-sm text-daet-ink/75">
+          {data.coverImageUrl ? "Cover photo set." : "No cover photo yet."} The cover is the first picture on the
+          package page.
+        </p>
+      </div>
 
       <div className="space-y-4" {...fileDrop.dropProps}>
         {/* Current Image Preview */}
@@ -225,11 +251,11 @@ export function CoverImageStep({
 
         {/* Read-only indicator */}
         {isReadOnly && (
-          <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-sm text-blue-900 dark:text-blue-300">
-            ℹ️ Cover image cannot be changed for this package status.
+          <div className="rounded-2xl bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+            Changes through review — copy to a new draft to change the cover photo.
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

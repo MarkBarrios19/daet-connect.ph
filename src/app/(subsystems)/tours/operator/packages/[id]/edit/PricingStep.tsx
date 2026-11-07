@@ -1,24 +1,52 @@
 "use client";
 
-import { Field, Input } from "@/components/ui/field";
+import { CheckboxField, Field, Input, Select } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { RowMenu } from "@/components/ui/row-menu";
+import { SectionCard } from "@/components/ui/section-card";
 import { formatPeso } from "@/lib/money";
-import React, { useCallback, useState } from "react";
-import { useFeedback } from "@/components/ui/feedback";
+import React, { useCallback, useId, useState } from "react";
 import type { EditPriceVariant, EditPackageStatus, ValidationErrors, StepProps } from "./edit-types";
 import { EDIT_LIMITS } from "./edit-constants";
 import { getEditPermissions } from "./permissions";
+import { validateVariant } from "./validation";
 
 type PricingStepProps = StepProps<EditPriceVariant[]>;
 
+const blankVariant = (isDefault: boolean): Partial<EditPriceVariant> => ({
+  variantName: "",
+  minPax: 1,
+  maxPax: null,
+  pricePerPax: null,
+  flatPrice: null,
+  isDefault,
+});
+
+/** The price shown on a row: per guest for a per-guest price, the whole price for a flat one. */
+function priceLabel(variant: EditPriceVariant): string {
+  if (variant.pricePerPax !== null) return `${formatPeso(variant.pricePerPax)} per guest`;
+  if (variant.flatPrice !== null) return `${formatPeso(variant.flatPrice)} for the whole group`;
+  return "No price yet";
+}
+
+function guestLabel(variant: EditPriceVariant): string {
+  if (variant.maxPax === null) return `${variant.minPax} or more guests`;
+  if (variant.maxPax === variant.minPax) return `${variant.minPax} guests`;
+  return `${variant.minPax}–${variant.maxPax} guests`;
+}
+
 /**
- * PricingStep Component
+ * PricingStep
  *
- * Manages price variants with:
- * - Table display of existing variants
- * - Add variant form/modal
- * - Edit variant functionality
- * - Delete variant with confirmation
- * - Status-aware restrictions
+ * Price options as compact rows: the name, how many guests it covers and the
+ * price, with one "⋯" menu per row instead of a row of buttons. Adding or
+ * editing one opens the shared Modal, which docks to the bottom of a phone's
+ * screen and traps focus on any screen. Nothing reaches the server here: Save
+ * lives in the sticky bar at the foot of the page.
+ *
+ * More than four options collapse behind "Show all", so a package with a dozen
+ * fares does not bury the sections below it.
  */
 export function PricingStep({
   data,
@@ -27,321 +55,320 @@ export function PricingStep({
   onUpdate,
   errors,
   loading,
+  id = "prices-section",
+  dirty = false,
 }: PricingStepProps) {
   const permissions = getEditPermissions(packageStatus);
-  const { toast, confirm } = useFeedback();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const fieldId = useId();
+  const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [formData, setFormData] = useState<Partial<EditPriceVariant>>({
-    variantName: "",
-    minPax: 1,
-    maxPax: null,
-    pricePerPax: null,
-    flatPrice: null,
-    isDefault: false,
-  });
+  const [showAll, setShowAll] = useState(false);
+  const [formData, setFormData] = useState<Partial<EditPriceVariant>>(blankVariant(false));
+  const [formError, setFormError] = useState<string | null>(null);
+  const [priceMode, setPriceMode] = useState<"perGuest" | "group">("perGuest");
 
   const canAddVariants = permissions.pricing.add;
   const canEditVariants = permissions.pricing.editPax;
   const canRemoveVariants = permissions.pricing.remove;
 
-  // Get pricing errors for the current step
-  const getPricingErrors = useCallback(() => {
-    const stepErrors: Record<string, string> = {};
-    Object.entries(errors).forEach(([key, value]) => {
-      if (key.startsWith("priceVariants")) {
-        stepErrors[key] = value;
-      }
-    });
-    return stepErrors;
-  }, [errors]);
+  const pricingErrors = Object.entries(errors).filter(([key]) => key.startsWith("priceVariants"));
+  const sectionError = pricingErrors.length
+    ? pricingErrors.map(([, message]) => message).join(" ")
+    : data.length === 0
+      ? "Add at least one price option before this package can be booked."
+      : null;
 
-  const handleAddVariant = useCallback(() => {
-    if (
-      !formData.variantName?.trim() ||
-      !formData.minPax ||
-      (formData.pricePerPax === null && formData.flatPrice === null)
-    ) {
+  const startAdd = () => {
+    setFormData(blankVariant(data.length === 0));
+    setPriceMode("perGuest");
+    setEditingId(undefined);
+    setFormError(null);
+    setOpen(true);
+  };
+
+  const startEdit = (variant: EditPriceVariant) => {
+    setFormData(variant);
+    setPriceMode(variant.flatPrice !== null && variant.pricePerPax === null ? "group" : "perGuest");
+    setEditingId(variant.id);
+    setFormError(null);
+    setOpen(true);
+  };
+
+  const close = () => {
+    setOpen(false);
+    setEditingId(undefined);
+    setFormError(null);
+  };
+
+  // Save in the modal applies the change to the form's own state, ready for
+  // the page's sticky bar. It does not talk to the server.
+  const apply = useCallback(() => {
+    const draft: EditPriceVariant = {
+      id: editingId ?? `new-${Date.now()}`,
+      variantName: (formData.variantName ?? "").trim(),
+      minPax: formData.minPax ?? 1,
+      maxPax: formData.maxPax ?? null,
+      pricePerPax: priceMode === "perGuest" ? (formData.pricePerPax ?? null) : null,
+      flatPrice: priceMode === "group" ? (formData.flatPrice ?? null) : null,
+      isDefault: Boolean(formData.isDefault),
+    };
+    // The same rules the server applies, so a bad row never leaves the modal.
+    const found = validateVariant(draft);
+    const first = Object.values(found)[0];
+    if (first) {
+      setFormError(first);
       return;
     }
 
-    const newVariant: EditPriceVariant = {
-      id: editingId || `new-${Date.now()}`,
-      variantName: formData.variantName,
-      minPax: formData.minPax,
-      maxPax: formData.maxPax ?? null,
-      pricePerPax: formData.pricePerPax ?? null,
-      flatPrice: formData.flatPrice ?? null,
-      isDefault: editingId ? data.find((v) => v.id === editingId)?.isDefault || false : data.length === 0,
-    };
-
     let updated: EditPriceVariant[];
     if (editingId) {
-      updated = data.map((v) => (v.id === editingId ? newVariant : v));
+      updated = data.map((variant) => (variant.id === editingId ? draft : variant));
     } else {
-      // Only one default allowed
-      if (newVariant.isDefault) {
-        updated = [...data.map((v) => ({ ...v, isDefault: false })), newVariant];
-      } else {
-        updated = [...data, newVariant];
-      }
+      updated = [...data, draft];
     }
+    // Exactly one default: this one if asked for, otherwise the first.
+    const wantsDefault = draft.isDefault;
+    const alreadyDefault = updated.some((variant) => variant.id !== draft.id && variant.isDefault);
+    updated = updated.map((variant) => ({
+      ...variant,
+      isDefault: wantsDefault ? variant.id === draft.id : alreadyDefault ? variant.isDefault : variant.id === draft.id,
+    }));
 
     onUpdate(updated);
-    setShowAddForm(false);
-    setEditingId(undefined);
-    setFormData({
-      variantName: "",
-      minPax: 1,
-      maxPax: null,
-      pricePerPax: null,
-      flatPrice: null,
-      isDefault: false,
-    });
-  }, [formData, editingId, data, onUpdate]);
+    close();
+  }, [data, editingId, formData, onUpdate, priceMode]);
 
-  const handleEdit = useCallback((variant: EditPriceVariant) => {
-    setFormData(variant);
-    setEditingId(variant.id);
-    setShowAddForm(true);
-  }, []);
+  const remove = (variant: EditPriceVariant) => {
+    const remaining = data.filter((item) => item.id !== variant.id);
+    // Taking out the default hands it to whatever is left first, so the package
+    // still has one price to show.
+    const next = remaining.map((item, index) => ({
+      ...item,
+      isDefault: remaining.some((other) => other.isDefault) ? item.isDefault : index === 0,
+    }));
+    onUpdate(next);
+  };
 
-  const handleDelete = useCallback(
-    (id: string | undefined) => {
-      if (!id) return;
-      onUpdate(data.filter((v) => v.id !== id));
-    },
-    [data, onUpdate]
-  );
+  const makeDefault = (variant: EditPriceVariant) => {
+    onUpdate(data.map((item) => ({ ...item, isDefault: item.id === variant.id })));
+  };
 
-  const handleSetDefault = useCallback(
-    (id: string | undefined) => {
-      if (!id) return;
-      onUpdate(
-        data.map((v) => ({
-          ...v,
-          isDefault: v.id === id,
-        }))
-      );
-    },
-    [data, onUpdate]
-  );
+  const move = (index: number, direction: -1 | 1) => {
+    const next = [...data];
+    const target = index + direction;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onUpdate(next);
+  };
 
-  const pricingErrors = getPricingErrors();
+  const shown = showAll ? data : data.slice(0, 4);
+  const hiddenCount = data.length - shown.length;
 
   return (
-    <div className="border rounded-2xl p-6 bg-surface">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-daet-ink">Price Variants</h2>
-        {canAddVariants && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddForm(true);
-              setFormData({
-                variantName: "",
-                minPax: 1,
-                maxPax: null,
-                pricePerPax: null,
-                flatPrice: null,
-                isDefault: data.length === 0,
-              });
-            }}
-            disabled={loading}
-            className="px-4 py-2 bg-daet-forest text-white rounded-2xl text-sm font-medium hover:bg-daet-leaf transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            + Add Variant
-          </button>
-        )}
-      </div>
-
-      {/* Variants Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-daet-ink/20 bg-canvas">
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Variant Name</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Min Pax</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Max Pax</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Price</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Default</th>
-              <th className="px-4 py-2 text-left font-bold text-daet-ink/80">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-daet-ink/10">
-            {data.map((variant) => (
-              <tr key={variant.id} className="hover:bg-canvas">
-                <td className="px-4 py-3 text-daet-ink">{variant.variantName}</td>
-                <td className="px-4 py-3 text-daet-ink/80">{variant.minPax}</td>
-                <td className="px-4 py-3 text-daet-ink/80">{variant.maxPax || "Unlimited"}</td>
-                <td className="px-4 py-3 text-daet-ink/80">
-                  {variant.pricePerPax ? `${formatPeso(variant.pricePerPax)}/pax` : formatPeso(variant.flatPrice)}
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    aria-label={`Default price option: ${variant.variantName}`}
-                    checked={variant.isDefault}
-                    onChange={() => handleSetDefault(variant.id)}
-                    disabled={!canEditVariants || loading}
-                    className="w-4 h-4 rounded-2xl border-daet-ink/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                </td>
-                <td className="px-4 py-3 space-x-2">
-                  {canEditVariants && (
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(variant)}
-                      disabled={loading}
-                      className="text-daet-leaf dark:text-blue-300 hover:text-daet-leaf dark:hover:text-blue-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {canRemoveVariants && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (await confirm({ title: "Delete this variant? This action cannot be undone.", confirmLabel: "Delete" })) {
-                          handleDelete(variant.id);
-                        }
-                      }}
-                      disabled={loading}
-                      className="text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {data.length === 0 && (
-          <div className="text-center py-8 text-daet-ink/70">
-            <p>No price variants yet. Add one to get started.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Validation Errors */}
-      {Object.keys(pricingErrors).length > 0 && (
-        <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/40 rounded-2xl text-sm text-red-800 dark:text-red-300">
-          <p className="font-medium">Pricing errors:</p>
-          <ul className="mt-1 space-y-1">
-            {Object.entries(pricingErrors).map(([key, message]) => (
-              <li key={key}>• {message}</li>
-            ))}
-          </ul>
-        </div>
+    <SectionCard
+      id={id}
+      title="Prices"
+      dirty={dirty}
+      summary={
+        data.length === 0
+          ? "No price options yet."
+          : `${data.length} price ${data.length === 1 ? "option" : "options"}${data.length === 1 ? `: ${priceLabel(data[0])}` : ""}.`
+      }
+      error={sectionError}
+      action={
+        canAddVariants ? (
+          <Button variant="secondary" onClick={startAdd} disabled={loading}>
+            Add a price option
+          </Button>
+        ) : null
+      }
+    >
+      {data.length === 0 ? (
+        <p className="text-sm text-daet-ink/75">
+          Add at least one price option: how many guests it is for and how much each pays.
+        </p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {shown.map((variant, index) => (
+            <li key={variant.id ?? variant.variantName} className="flex items-center gap-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold text-daet-ink">
+                  {variant.variantName}
+                  {variant.isDefault ? (
+                    <span className="ml-2 rounded-full bg-muted-strong px-2 py-0.5 text-xs font-bold text-daet-ink">
+                      Default
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-sm text-daet-ink/75">
+                  {guestLabel(variant)} · {priceLabel(variant)}
+                </p>
+              </div>
+              {canEditVariants || canRemoveVariants || permissions.pricing.setDefault ? (
+                <RowMenu
+                  label={`${variant.variantName} price option`}
+                  items={[
+                    ...(canEditVariants
+                      ? [{ label: "Edit", onSelect: () => startEdit(variant) }]
+                      : []),
+                    ...(canEditVariants
+                      ? [
+                          { label: "Move up", onSelect: () => move(index, -1), disabled: index === 0 },
+                          {
+                            label: "Move down",
+                            onSelect: () => move(index, 1),
+                            disabled: index === data.length - 1,
+                          },
+                        ]
+                      : []),
+                    ...(permissions.pricing.setDefault && !variant.isDefault
+                      ? [{ label: "Make default", onSelect: () => makeDefault(variant) }]
+                      : []),
+                    ...(canRemoveVariants
+                      ? [{ label: "Delete", onSelect: () => remove(variant), danger: true }]
+                      : []),
+                  ]}
+                />
+              ) : null}
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* Add/Edit Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card-edge bg-surface rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-daet-ink mb-4">
-              {editingId ? "Edit Variant" : "Add Variant"}
-            </h3>
+      {data.length > 4 ? (
+        <button
+          type="button"
+          onClick={() => setShowAll((current) => !current)}
+          aria-expanded={showAll}
+          className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-blue-700 hover:underline dark:text-blue-300"
+        >
+          {showAll ? "Show fewer" : `Show all ${data.length}`}
+          {!showAll && hiddenCount > 0 ? <span className="sr-only"> price options</span> : null}
+        </button>
+      ) : null}
 
-            <div className="space-y-4">
-              {/* Variant Name */}
-              <Field id="pv-variant-name" label="Variant Name" required>
-<Input
-                  type="text"
-                  value={formData.variantName || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, variantName: e.target.value })
-                  }
-                  maxLength={EDIT_LIMITS.variantName.max}
-                  placeholder="e.g., Early Bird" />
-</Field>
+      <Modal
+        open={open}
+        onClose={close}
+        title={editingId ? "Edit price option" : "Add a price option"}
+        description="You'll save everything with the Save button at the foot of the page."
+        footer={
+          <>
+            <Button variant="ghost" onClick={close}>
+              Cancel
+            </Button>
+            <Button onClick={apply}>{editingId ? "Save price option" : "Add price option"}</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field id={`${fieldId}-name`} label="What is this price called?" required>
+            <Input
+              value={formData.variantName ?? ""}
+              onChange={(event) => setFormData({ ...formData, variantName: event.target.value })}
+              maxLength={EDIT_LIMITS.variantName.max}
+              placeholder="Standard, Weekend, Student"
+            />
+          </Field>
 
-              {/* Min Pax */}
-              <Field id="pv-min-participants" label="Min Participants" required>
-<Input
+          <fieldset>
+            <legend className="block text-sm font-bold text-daet-ink">Who is it for?</legend>
+            <div className="mt-1 grid grid-cols-2 gap-3">
+              <Field id={`${fieldId}-min`} label="From">
+                <Input
                   type="number"
+                  inputMode="numeric"
                   min={EDIT_LIMITS.pax.min}
                   max={EDIT_LIMITS.pax.max}
-                  value={formData.minPax || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, minPax: parseInt(e.target.value) || 1 })
-                  } />
-</Field>
-
-              {/* Max Pax */}
-              <Field id="pv-max-participants" label="Max Participants">
-<Input
+                  value={formData.minPax ?? ""}
+                  onChange={(event) =>
+                    setFormData({ ...formData, minPax: event.target.value ? parseInt(event.target.value, 10) : 1 })
+                  }
+                />
+              </Field>
+              <Field id={`${fieldId}-max`} label="To (guests)">
+                <Input
                   type="number"
-                  min={formData.minPax || 1}
+                  inputMode="numeric"
+                  min={EDIT_LIMITS.pax.min}
                   max={EDIT_LIMITS.pax.max}
-                  value={formData.maxPax || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxPax: e.target.value ? parseInt(e.target.value) : null })
+                  value={formData.maxPax ?? ""}
+                  disabled={formData.maxPax === null && formData.minPax === 0}
+                  onChange={(event) =>
+                    setFormData({ ...formData, maxPax: event.target.value ? parseInt(event.target.value, 10) : null })
                   }
-                  placeholder="Leave blank for unlimited" />
-</Field>
-
-              {/* Price per Pax */}
-              <Field id="pv-price-per-person" label="Price per Person">
-<Input
-                  type="number"
-                  step="0.01"
-                  min={EDIT_LIMITS.price.min}
-                  max={EDIT_LIMITS.price.max}
-                  value={formData.pricePerPax || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pricePerPax: e.target.value ? parseFloat(e.target.value) : null })
-                  }
-                  placeholder="e.g., 1500" />
-</Field>
-
-              {/* Flat Price */}
-              <Field id="pv-flat-price" label="Flat Price">
-<Input
-                  type="number"
-                  step="0.01"
-                  min={EDIT_LIMITS.price.min}
-                  max={EDIT_LIMITS.price.max}
-                  value={formData.flatPrice || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, flatPrice: e.target.value ? parseFloat(e.target.value) : null })
-                  }
-                  placeholder="e.g., 5000" />
-</Field>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingId(undefined);
-                  }}
-                  className="flex-1 px-4 py-2 border border-daet-ink/20 text-daet-ink/80 rounded-2xl hover:bg-canvas transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddVariant}
-                  className="min-h-11 flex-1 px-4 py-2 bg-daet-forest text-white rounded-2xl hover:bg-daet-leaf transition"
-                >
-                  {editingId ? "Update" : "Add"}
-                </button>
-              </div>
+                  placeholder="No limit"
+                />
+              </Field>
             </div>
-          </div>
-        </div>
-      )}
+            <CheckboxField
+              id={`${fieldId}-no-limit`}
+              label="No limit on guests"
+              className="mt-2"
+              checked={formData.maxPax === null}
+              onChange={(checked) => setFormData({ ...formData, maxPax: checked ? null : (formData.minPax ?? 1) })}
+            />
+          </fieldset>
 
-      {/* Help text */}
-      {!canAddVariants && (
-        <div className="mt-4 p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-sm text-blue-900 dark:text-blue-300">
-          ℹ️ Price variants cannot be modified for this package status.
+          <div>
+            <label htmlFor={`${fieldId}-mode`} className="block text-sm font-bold text-daet-ink">
+              How is it priced?
+            </label>
+            <Select
+              id={`${fieldId}-mode`}
+              value={priceMode}
+              onChange={(event) => setPriceMode(event.target.value as "perGuest" | "group")}
+            >
+              <option value="perGuest">Price per guest</option>
+              <option value="group">One price for the whole group</option>
+            </Select>
+            {priceMode === "perGuest" ? (
+              <Field id={`${fieldId}-per-guest`} label="Price per guest (₱)" className="mt-3">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={EDIT_LIMITS.price.min}
+                  max={EDIT_LIMITS.price.max}
+                  value={formData.pricePerPax ?? ""}
+                  onChange={(event) =>
+                    setFormData({ ...formData, pricePerPax: event.target.value ? parseFloat(event.target.value) : null })
+                  }
+                  placeholder="1,500"
+                />
+              </Field>
+            ) : (
+              <Field id={`${fieldId}-flat`} label="Price for the group (₱)" className="mt-3">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={EDIT_LIMITS.price.min}
+                  max={EDIT_LIMITS.price.max}
+                  value={formData.flatPrice ?? ""}
+                  onChange={(event) =>
+                    setFormData({ ...formData, flatPrice: event.target.value ? parseFloat(event.target.value) : null })
+                  }
+                  placeholder="5,000"
+                />
+              </Field>
+            )}
+          </div>
+
+          <CheckboxField
+            id={`${fieldId}-default`}
+            label="Show this price on the package page"
+            checked={Boolean(formData.isDefault)}
+            onChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+          />
+
+          {formError ? (
+            <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-300">
+              {formError}
+            </p>
+          ) : null}
         </div>
-      )}
-    </div>
+      </Modal>
+    </SectionCard>
   );
 }
