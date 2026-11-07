@@ -11,7 +11,6 @@ import { inboxFilters, isConversationKind, type InboxRow } from "@/lib/tours/mes
 import { InboxList } from "./inbox-list";
 import { LiveInbox } from "./live-inbox";
 
-export const dynamic = "force-dynamic";
 
 
 type PageProps = { searchParams: Promise<{ kind?: string }> };

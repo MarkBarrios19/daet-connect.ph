@@ -18,7 +18,6 @@ import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-butt
 import { chatOperators } from "@/lib/tours/messaging";
 import { AvailabilityCalendar } from "./availability-calendar";
 
-export const dynamic = "force-dynamic";
 
 export default async function GuideDashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const searchParamsValue = await searchParams;

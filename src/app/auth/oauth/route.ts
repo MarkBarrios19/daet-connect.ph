@@ -6,7 +6,6 @@ import { safeNextPath } from "@/lib/safe-redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 /**
  * Start "Continue with Google".

@@ -4,7 +4,6 @@ import { requestOrigin } from "@/lib/auth/request";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 /** The link types we accept from the project's email templates. */
 const TOKEN_TYPES = ["signup", "email", "invite", "magiclink", "recovery", "email_change"] as const;

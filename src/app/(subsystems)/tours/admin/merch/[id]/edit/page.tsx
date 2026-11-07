@@ -5,7 +5,6 @@ import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { MERCH_COLUMNS, type MerchItem } from "@/lib/tours/promo-validation";
 import { MerchForm } from "../../merch-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit product" };
 
 export default async function EditMerchPage({ params }: { params: Promise<{ id: string }> }) {

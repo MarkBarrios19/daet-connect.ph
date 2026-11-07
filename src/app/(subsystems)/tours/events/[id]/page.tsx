@@ -10,7 +10,6 @@ import { EVENT_CATEGORIES, EVENT_COLUMNS, type TourEvent } from "@/lib/tours/pro
 import { ATTRACTION_CATEGORIES, isAttractionCategory } from "@/lib/tours/attractions";
 import { eventDayRange, toursDuringEvent, type AvailabilityWithPackage, type EventTour } from "@/lib/tours/event-tours";
 
-export const dynamic = "force-dynamic";
 
 async function loadEvent(id: string): Promise<TourEvent | null> {
   const supabase = await createSupabaseServerClient();

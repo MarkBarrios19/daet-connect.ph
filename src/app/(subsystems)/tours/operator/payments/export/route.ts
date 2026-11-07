@@ -2,7 +2,6 @@ import { monthKey, parseMonthParam } from "@/lib/tours/events-calendar";
 import { ledgerToCsv } from "@/lib/tours/ledger";
 import { loadOperatorLedger } from "../load-ledger";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const month = parseMonthParam(new URL(request.url).searchParams.get("month"));

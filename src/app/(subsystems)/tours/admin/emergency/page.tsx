@@ -10,7 +10,6 @@ import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { deleteEmergencyContact, markEmergencyChecked } from "./actions";
 import { EmergencyForm } from "./emergency-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Emergency numbers" };
 
 const STALE_DAYS = 90;

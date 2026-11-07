@@ -30,7 +30,6 @@ import { ReviewForm } from "./review-form";
 import { ReviewList } from "@/components/tours/review-list";
 import type { Review } from "@/lib/tours/reviews";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Booking" };
 
 type PageProps = {

@@ -9,7 +9,6 @@ import { formatPeso, MERCH_CATEGORIES, MERCH_REVIEW_LABELS, MERCH_SUBMISSION_COL
 import { deleteMerch } from "./actions";
 import { MerchReviewForm } from "./review-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Manage merchandise" };
 
 export default async function AdminMerchPage({

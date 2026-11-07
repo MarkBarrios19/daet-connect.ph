@@ -10,7 +10,6 @@ import { safeNextPath } from "@/lib/safe-redirect";
 import { ResendVerificationForm } from "./form";
 
 export const metadata: Metadata = { title: "Verify your email" };
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ email?: string; next?: string }>;
 

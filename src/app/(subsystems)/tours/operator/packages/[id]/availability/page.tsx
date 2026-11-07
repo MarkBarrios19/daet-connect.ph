@@ -10,7 +10,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isUuid } from "@/lib/tours/operator-access";
 import { AvailabilityList, OpenDatesForm } from "./availability-manager";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

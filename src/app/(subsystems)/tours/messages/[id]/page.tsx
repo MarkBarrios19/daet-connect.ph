@@ -11,7 +11,6 @@ import { LiveInbox } from "../live-inbox";
 import { isUuid } from "@/lib/tours/operator-access";
 import { markConversationRead, readMarks, threadExtras } from "../actions";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

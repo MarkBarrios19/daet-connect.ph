@@ -7,7 +7,6 @@ import { MerchCard } from "@/components/tours/merch-card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isMerchCategory, MERCH_CATEGORIES, MERCH_COLUMNS, type MerchItem } from "@/lib/tours/promo-validation";
 
-export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Daet merchandise",
   description: "T-shirts, mugs, souvenirs and pasalubong from local Daet sellers.",

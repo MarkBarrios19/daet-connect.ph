@@ -38,7 +38,6 @@ function groupFromPreferences(value: unknown): number | null {
   return Number.isInteger(size) && size > 0 ? size : null;
 }
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Itinerary" };
 
 export default async function ItineraryPage({ params }: { params: Promise<{ id: string }> }) {

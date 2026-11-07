@@ -16,7 +16,6 @@ import { placeMapsUrl } from "@/lib/tours/guide/maps";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, toAttraction } from "@/lib/tours/attractions";
 import { describeHours, openStatus } from "@/lib/tours/opening-hours";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ slug: string }> };
 

@@ -21,7 +21,6 @@ import {
 } from "@/lib/tours/events-calendar";
 import { EVENT_CATEGORIES, EVENT_COLUMNS, isEventCategory, type TourEvent } from "@/lib/tours/promo-validation";
 
-export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Events calendar",
   description: "Festivals, cultural shows, sports and markets happening in Daet, Camarines Norte.",

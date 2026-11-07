@@ -10,7 +10,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { ModerateForm } from "./moderate-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Moderate reviews" };
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("en-PH", { dateStyle: "medium", timeZone: "Asia/Manila" });

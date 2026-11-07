@@ -12,7 +12,6 @@ import { SaveTicketOffline } from "@/components/tours/save-ticket-offline";
 import { MapPinIcon } from "@/components/ui/icons";
 import { PrintTicketButton } from "./print-ticket-button";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

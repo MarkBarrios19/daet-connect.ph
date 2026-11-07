@@ -12,7 +12,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isBusyReason } from "@/lib/tours/guide-swap";
 import { SwapRequest, type MySwap } from "./swap-request";
 
-export const dynamic = "force-dynamic";
 
 export default async function GuideMyToursPage() {
   if (!isSupabaseConfigured()) {

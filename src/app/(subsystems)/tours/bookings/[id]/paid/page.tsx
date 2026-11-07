@@ -14,7 +14,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/tours/operator-access";
 import { RefreshUntilPaid } from "./refresh-until-paid";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 

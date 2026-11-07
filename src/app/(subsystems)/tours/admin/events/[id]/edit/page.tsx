@@ -5,7 +5,6 @@ import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { EVENT_COLUMNS, type TourEvent } from "@/lib/tours/promo-validation";
 import { EventForm } from "../../event-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit event" };
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {

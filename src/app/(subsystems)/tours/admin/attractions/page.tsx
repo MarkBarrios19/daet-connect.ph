@@ -10,7 +10,6 @@ import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { deleteAttraction } from "./actions";
 import { ImportAttractionsForm } from "./import-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Manage attractions" };
 
 export default async function AdminAttractionsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

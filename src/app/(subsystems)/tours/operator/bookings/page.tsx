@@ -23,7 +23,6 @@ import { GuideAssignment } from "./guide-assignment";
 import { PaymentRecorder } from "./payment-recorder";
 import { ProofReview, type ReviewableProof } from "./proof-review";
 
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{
   status?: string;

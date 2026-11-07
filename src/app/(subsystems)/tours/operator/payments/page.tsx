@@ -12,7 +12,6 @@ import { currentManilaMonth, formatMonthLabel, monthKey, parseMonthParam, shiftM
 import { ledgerMethodLabel, summarizeLedger } from "@/lib/tours/ledger";
 import { loadOperatorLedger } from "./load-ledger";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Payments ledger" };
 
 const peso = formatPeso;

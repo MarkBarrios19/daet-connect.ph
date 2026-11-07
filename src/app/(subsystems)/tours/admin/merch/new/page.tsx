@@ -3,7 +3,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { MerchForm } from "../merch-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Add product" };
 
 export default async function NewMerchPage() {

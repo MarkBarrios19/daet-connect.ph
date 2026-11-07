@@ -17,7 +17,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ATTRACTION_CATEGORIES, ATTRACTION_COLUMNS, isAttractionCategory, toAttraction } from "@/lib/tours/attractions";
 import { openStatus } from "@/lib/tours/opening-hours";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Attractions in Daet",
   description: "Beaches, heritage sites, islands and more around Daet, Camarines Norte.",

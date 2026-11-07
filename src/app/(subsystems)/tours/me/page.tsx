@@ -20,7 +20,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { balanceOf, sourceLabel, TOURS_REWARD_RULES, type LedgerEntry } from "@/lib/rewards";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "My trips" };
 
 const PAYMENT: Record<string, { label: string; tone: BadgeTone }> = {

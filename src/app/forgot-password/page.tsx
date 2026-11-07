@@ -6,7 +6,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { ForgotPasswordForm } from "./form";
 
 export const metadata: Metadata = { title: "Reset your password" };
-export const dynamic = "force-dynamic";
 
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: Promise<{ message?: string }> }) {
   const { message } = await searchParams;

@@ -8,7 +8,6 @@ import { getPaymongoConfig } from "@/lib/paymongo/client";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { LoginForm } from "./login-form";
 
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ next?: string; message?: string }>;
 

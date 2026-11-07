@@ -14,7 +14,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listOperatorPackages } from "./actions";
 
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ submitted?: string }>;
 

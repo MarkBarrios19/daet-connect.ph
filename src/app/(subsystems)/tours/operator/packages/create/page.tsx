@@ -12,7 +12,6 @@ import {
 } from "@/lib/tours/operator-contract";
 import { PackageCreateForm } from "./package-create-form";
 
-export const dynamic = "force-dynamic";
 
 export default async function CreatePackagePage() {
   if (!isSupabaseConfigured()) {

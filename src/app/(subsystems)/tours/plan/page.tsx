@@ -9,7 +9,6 @@ import { addDays } from "@/lib/tours/itinerary/types";
 import { PlannerApp } from "./planner-app";
 import { PlannerV2 } from "./planner-v2";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Plan your trip", description: "Build a day-by-day Daet itinerary that fits opening hours and your budget." };
 
 export default async function PlanPage({ searchParams }: { searchParams: Promise<{ describe?: string }> }) {

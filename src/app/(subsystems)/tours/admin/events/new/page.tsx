@@ -3,7 +3,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 import { EventForm } from "../event-form";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "New event" };
 
 export default async function NewEventPage() {

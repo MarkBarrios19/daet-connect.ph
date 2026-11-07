@@ -8,7 +8,6 @@ import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { OPERATOR_TABLE, OPERATOR_USER_ID_COLUMN } from "@/lib/tours/operator-contract";
 import { PaymentSettingsForm } from "./payment-settings-form";
 
-export const dynamic = "force-dynamic";
 
 export default async function OperatorSettingsPage() {
   if (!isSupabaseConfigured()) {

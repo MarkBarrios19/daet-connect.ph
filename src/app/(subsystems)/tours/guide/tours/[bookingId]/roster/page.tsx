@@ -11,7 +11,6 @@ import { checkInAllowed } from "@/lib/tours/qr-token";
 import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
 import { RosterCheckInButton } from "./roster-check-in-button";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ bookingId: string }> };
 

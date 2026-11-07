@@ -12,7 +12,6 @@ import { LineIcon } from "@/components/ui/icons";
 import { notificationIcon, safeNotificationLink, timeAgo, type NotificationRow } from "@/lib/tours/notifications";
 import { MarkAllReadButton } from "./mark-all-read-button";
 
-export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
   if (!isSupabaseConfigured()) {

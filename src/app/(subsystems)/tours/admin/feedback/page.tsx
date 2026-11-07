@@ -6,7 +6,6 @@ import { AdminPageHeading, PromoAdminDenied } from "@/components/tours/promo-adm
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requirePromoAdmin } from "@/lib/tours/promo-admin";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "Assistant feedback" };
 
 type Row = { id: string; helpful: boolean; mode: "ai" | "basic"; question: string | null; answer: string; page: string | null; created_at: string };

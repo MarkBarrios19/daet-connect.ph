@@ -3,7 +3,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dashboardPath } from "@/lib/tours/dashboards";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 
-export const dynamic = "force-dynamic";
 
 /** One entry point for every role: sends each user to their own dashboard. */
 export default async function DashboardPage() {

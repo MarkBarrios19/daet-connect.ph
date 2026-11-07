@@ -10,7 +10,6 @@ import { isUuid } from "@/lib/tours/operator-access";
 import { BookEachTrip } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Shared itinerary", robots: { index: false } };
 
 type Shared = { title: string; start_date: string | null; summary: string | null; items: SavedItem[] };

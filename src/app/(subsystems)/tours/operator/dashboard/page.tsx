@@ -8,7 +8,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { OperatorHome } from "./operator-home";
 
-export const dynamic = "force-dynamic";
 
 export default async function OperatorDashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   if (!isSupabaseConfigured()) {

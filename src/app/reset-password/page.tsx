@@ -7,7 +7,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { ResetPasswordForm } from "./form";
 
 export const metadata: Metadata = { title: "Choose a new password" };
-export const dynamic = "force-dynamic";
 
 export default async function ResetPasswordPage() {
   if (!isSupabaseConfigured()) redirect("/forgot-password");

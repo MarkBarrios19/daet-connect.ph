@@ -3,7 +3,6 @@ import { getPaymongoConfig, retrieveCheckoutSession } from "@/lib/paymongo/clien
 import { processPaymongoWebhook } from "@/lib/paymongo/webhook";
 import { createSupabaseWebhookStore } from "@/lib/paymongo/webhook-store";
 
-export const dynamic = "force-dynamic";
 
 /**
  * PayMongo webhook endpoint. Register it in the PayMongo dashboard (or API)

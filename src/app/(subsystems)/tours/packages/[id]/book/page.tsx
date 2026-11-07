@@ -10,7 +10,6 @@ import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { BookingForm } from "./booking-form";
 
-export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;

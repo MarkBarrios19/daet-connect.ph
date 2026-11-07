@@ -12,7 +12,6 @@ import { formatPeso, MERCH_CATEGORIES, MERCH_REVIEW_LABELS, MERCH_SUBMISSION_COL
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { deleteMyMerch } from "./actions";
 
-export const dynamic = "force-dynamic";
 export const metadata = { title: "My merchandise" };
 
 const TONE: Record<MerchSubmission["review_status"], BadgeTone> = { pending: "warning", approved: "success", rejected: "danger" };

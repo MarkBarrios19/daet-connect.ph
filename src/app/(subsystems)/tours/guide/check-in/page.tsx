@@ -8,7 +8,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { QrScanner } from "./qr-scanner";
 
-export const dynamic = "force-dynamic";
 
 export default async function GuideCheckInPage() {
   if (!isSupabaseConfigured()) {

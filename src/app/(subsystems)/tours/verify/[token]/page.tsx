@@ -8,7 +8,6 @@ import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { checkInAllowed, getQrSecret, verifyQrToken } from "@/lib/tours/qr-token";
 import { TicketCheckInButton } from "./ticket-check-in-button";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Verify QR · CONNECT-Daet", robots: { index: false } };
 
 type PageProps = { params: Promise<{ token: string }> };

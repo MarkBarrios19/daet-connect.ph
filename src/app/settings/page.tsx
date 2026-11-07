@@ -12,7 +12,6 @@ import { PhotoForm } from "./photo-form";
 import { ProfileForm } from "./profile-form";
 import { ResetCard } from "./reset-card";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Profile settings" };
 
 /**

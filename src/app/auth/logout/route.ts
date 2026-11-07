@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient, type CookieToSet } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 /**
  * End the session.
