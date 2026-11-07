@@ -64,3 +64,58 @@ export const getAuthenticatedSession = cache(async function getAuthenticatedSess
 
   return { user, role: normalizeRole(roleData), error: null };
 });
+
+/**
+ * The role claim the Custom Access Token hook adds to the JWT
+ * (supabase/migrations/20261125_role_access_token_hook.sql).
+ */
+export const ROLE_CLAIM = "app_role";
+const KNOWN_ROLES = ["tourist", "operator", "guide", "admin"];
+
+/**
+ * The role in a verified claims object, or null when it should not be trusted
+ * as a display hint: no claim (hook not enabled), a value that is not one of
+ * the roles the app knows, or a token that is not for this user.
+ */
+export function roleFromClaims(claims: unknown, userId: string): string | null {
+  if (!claims || typeof claims !== "object") return null;
+  const c = claims as Record<string, unknown>;
+  if (c.sub !== userId) return null;
+  const role = typeof c[ROLE_CLAIM] === "string" ? normalizeRole(c[ROLE_CLAIM]) : null;
+  return role && KNOWN_ROLES.includes(role) ? role : null;
+}
+
+export type DisplaySession = AuthenticatedSession & {
+  /** Where `role` came from: the token claim (may be stale) or get_my_role(). */
+  roleSource: "claim" | "rpc" | "none";
+};
+
+/**
+ * The signed-in user and a role good enough to DRAW the header's tabs.
+ *
+ * The role comes from the verified token's `app_role` claim when there is one,
+ * which saves the get_my_role round trip. A claim is as old as the token, so it
+ * can lag behind a role change by up to the JWT lifetime. That is fine for
+ * choosing tabs and wrong for anything else:
+ *
+ *   NEVER use this to allow a privileged read, write, page or route. Use
+ *   getAuthenticatedSession(), which always asks get_my_role().
+ *
+ * When the claim is missing or not trustworthy (hook not enabled yet, an unknown
+ * value, another user's token) this is exactly getAuthenticatedSession().
+ */
+export const getDisplaySession = cache(async function getDisplaySession(): Promise<DisplaySession> {
+  const user = await getAuthUser();
+  if (!user) return { user: null, role: null, error: null, roleSource: "none" };
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    const role = roleFromClaims(data?.claims, user.id);
+    if (role) return { user, role, error: null, roleSource: "claim" };
+  } catch {
+    // Fall through to the authoritative lookup.
+  }
+
+  return { ...(await getAuthenticatedSession()), roleSource: "rpc" };
+});
