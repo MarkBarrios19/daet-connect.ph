@@ -194,6 +194,10 @@ export function EditPackageForm({ packageData }: EditPackageFormProps) {
           ...prev,
           formData: updated,
           hasChanges,
+          // Let the operator retry after correcting a server-reported field
+          // error instead of leaving Save disabled with stale validation.
+          submissionError: null,
+          validationErrors: {},
         };
       });
     },

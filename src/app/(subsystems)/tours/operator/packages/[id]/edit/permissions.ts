@@ -6,7 +6,8 @@ import type { EditPackageFormData, EditPackageStatus } from "./edit-types";
  * (enforcement), so both sides always agree.
  *
  * - draft / rejected: everything editable
- * - published: limited edits (text details, pax ranges, captions, cover); no add/remove/reorder
+ * - published: limited edits (text details, pax ranges, captions, cover); structural edits are locked
+ *   except restoring the first required inclusion or stop on legacy packages that have none
  * - pending_review / archived: read-only
  */
 export interface EditPermissions {
@@ -104,7 +105,23 @@ export function findRestrictedChanges(
     });
   }
 
-  if (original.inclusions.length !== next.inclusions.length) {
+  const originalHasIncludedItem = original.inclusions.some((item) => item.isIncluded);
+  const preservesExistingInclusionStructure = original.inclusions.every((before, index) => {
+    const after = next.inclusions[index];
+    return (
+      after !== undefined &&
+      before.id === after.id &&
+      before.isIncluded === after.isIncluded &&
+      before.displayOrder === after.displayOrder
+    );
+  });
+  const addsFirstRequiredInclusion =
+    !originalHasIncludedItem &&
+    next.inclusions.length === original.inclusions.length + 1 &&
+    next.inclusions[original.inclusions.length]?.isIncluded === true &&
+    preservesExistingInclusionStructure;
+
+  if (original.inclusions.length !== next.inclusions.length && !addsFirstRequiredInclusion) {
     violations.push("Inclusions cannot be added or removed on a published package.");
   } else {
     original.inclusions.forEach((before, index) => {
