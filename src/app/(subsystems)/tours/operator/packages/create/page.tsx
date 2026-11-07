@@ -78,6 +78,12 @@ export default async function CreatePackagePage() {
     );
   }
 
+  const { data: attractions, error: attractionsError } = await supabase
+    .from("tours_attractions")
+    .select("id, name, description, latitude, longitude")
+    .eq("is_active", true)
+    .order("name");
+
   return (
     <PageFrame>
       <div className="mx-auto max-w-4xl">
@@ -89,7 +95,8 @@ export default async function CreatePackagePage() {
           </p>
         </div>
 
-        <PackageCreateForm operatorId={operator.id} />
+        {attractionsError && <Notice variant="warning" title="Attractions unavailable">You can still pick a point on the map.</Notice>}
+        <PackageCreateForm operatorId={operator.id} attractions={attractions ?? []} />
       </div>
     </PageFrame>
   );

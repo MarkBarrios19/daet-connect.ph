@@ -31,11 +31,11 @@ export default async function OperatorLivePage() {
   const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/operator/live")}`);
 
-  const { data: operator } = await supabase.from("tours_operators").select("id").eq("profile_id", user.id).maybeSingle();
-  if (!operator) {
+  const { data: operator } = await supabase.from("tours_operators").select("id, accreditation_status").eq("profile_id", user.id).maybeSingle();
+  if (!operator || operator.accreditation_status !== "approved") {
     return (
       <PageFrame>
-        <Notice variant="error" title="Operator profile not found">You need an approved operator account to see live tours.</Notice>
+        <Notice variant="error" title="Approved operator account required">You need an approved operator account to see live tours.</Notice>
       </PageFrame>
     );
   }

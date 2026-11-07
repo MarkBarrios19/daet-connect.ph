@@ -84,7 +84,10 @@ export default async function AdminAnalyticsPage({ searchParams }: { searchParam
         <ColumnChart title="Arrivals per day (check-ins)" unit="check-ins" points={arrivals.map((p) => ({ key: p.day, label: shortDay(p.day), value: p.checkins }))} />
       </Card>
 
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+      {/* grid-cols-1 (minmax(0,1fr)) keeps the track at the card width: a
+          single-line BarList label must not size the track to its content,
+          or every card and bar runs off the right edge of a phone. */}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Revenue by operator" />
           <BarList
