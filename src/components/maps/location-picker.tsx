@@ -15,13 +15,15 @@ type Props = {
   /** Called when the pin moves; `placeName` only comes from a search result. */
   onChange: (latitude: number, longitude: number, placeName?: string) => void;
   className?: string;
+  /** Only allow selecting a point on the map. */
+  mapOnly?: boolean;
 };
 
 /**
  * Pick a spot without copying numbers: search a place, tap the map, drag the
  * pin, or use your location. Stays inside Camarines Norte.
  */
-export function LocationPicker({ latitude, longitude, onChange, className = "h-64" }: Props) {
+export function LocationPicker({ latitude, longitude, onChange, className = "h-64", mapOnly = false }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
@@ -53,7 +55,8 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
       const dark = document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
       L.tileLayer(MAP_TILES.light, { attribution: MAP_ATTRIBUTION, maxZoom: TILE_MAX_ZOOM, className: dark ? "picker-dark-tiles" : "" }).addTo(map);
       const icon = L.divIcon({ className: "", html: `<span class="${PIN}"><span class="block h-2.5 w-2.5 rotate-45 rounded-full bg-surface"></span></span>`, iconSize: [0, 0] });
-      const marker = L.marker(start, { icon, draggable: true, keyboard: true, alt: "Stop location. Drag to move." }).addTo(map);
+      const marker = L.marker(start, { icon, draggable: true, keyboard: true, alt: "Stop location. Drag to move." });
+      if (!mapOnly || (latitude !== null && longitude !== null)) marker.addTo(map);
       const move = (lat: number, lng: number) => {
         if (!insideBounds(lat, lng)) {
           marker.setLatLng(markerRef.current?.getLatLng() ?? start);
@@ -61,6 +64,7 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
           return;
         }
         setMessage(null);
+        if (!map.hasLayer(marker)) marker.addTo(map);
         onChangeRef.current(roundCoord(lat), roundCoord(lng));
       };
       marker.on("dragend", () => {
@@ -93,6 +97,7 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
     const map = mapRef.current;
     const marker = markerRef.current;
     if (!map || !marker || latitude === null || longitude === null || !insideBounds(latitude, longitude)) return;
+    if (!map.hasLayer(marker)) marker.addTo(map);
     const current = marker.getLatLng();
     if (Math.abs(current.lat - latitude) < 1e-7 && Math.abs(current.lng - longitude) < 1e-7) return;
     marker.setLatLng([latitude, longitude]);
@@ -157,7 +162,7 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
 
   return (
     <div className="space-y-2">
-      <div className="relative">
+      {!mapOnly && <div className="relative">
         <label className="sr-only" htmlFor="place-search">Search for a place</label>
         <input
           id="place-search"
@@ -180,16 +185,16 @@ export function LocationPicker({ latitude, longitude, onChange, className = "h-6
             ))}
           </ul>
         ) : null}
-      </div>
+      </div>}
       <div className={`relative overflow-hidden rounded-2xl card-edge ${className}`}>
         <div ref={holder} className="absolute inset-0 z-0" role="application" aria-label="Map: tap to place the stop, or drag the pin" />
         <style>{`.picker-dark-tiles{filter:${DARK_TILE_FILTER}}`}</style>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <p className="text-daet-ink/70" aria-live="polite">{searching ? "Searching…" : (message ?? "Tap the map or drag the pin to set the spot.")}</p>
-        <button type="button" onClick={useMyLocation} className="min-h-11 rounded-full px-3 font-bold text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
+        {!mapOnly && <button type="button" onClick={useMyLocation} className="min-h-11 rounded-full px-3 font-bold text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40">
           Use my location
-        </button>
+        </button>}
       </div>
     </div>
   );
