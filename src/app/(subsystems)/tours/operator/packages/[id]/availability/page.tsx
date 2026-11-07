@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -27,9 +28,7 @@ export default async function PackageAvailabilityPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/operator/packages/${id}/availability`)}`);
 
   const { data: operator } = await supabase

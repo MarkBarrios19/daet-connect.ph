@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { userFacingDbError } from "@/lib/tours/db-errors";
 import { attachmentPath, chatRpc, describeThread, KIND_LABELS, MESSAGE_ATTACHMENT_BUCKET, MESSAGE_COLUMNS, MESSAGE_PAGE_SIZE, parseMessageForm, type ChatMembers, type ChatMessage, type ChatTarget, type ConversationHeader } from "@/lib/tours/messaging";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { isReactionKey, type Reaction, type ReadMark } from "@/lib/tours/messenger";
 import { isUuid } from "@/lib/tours/operator-access";
 
@@ -204,7 +204,7 @@ export async function dockThread(conversationId: string): Promise<DockThread | n
   const { data: rawHeader } = await supabase.rpc("tours_conversation_header", { p_conversation_id: conversationId });
   const header = rawHeader as ConversationHeader | null;
   if (!header) return null;
-  const view = describeThread(header, user.id, (await getAuthenticatedSession()).role);
+  const view = describeThread(header, user.id, (await getVerifiedSession()).role);
   const { data: latest } = await supabase.from("tours_messages").select(MESSAGE_COLUMNS).eq("conversation_id", header.id).order("created_at", { ascending: false }).limit(MESSAGE_PAGE_SIZE);
   const messages = ((latest ?? []) as ChatMessage[]).reverse();
   const [extras, marks] = await Promise.all([threadExtras(header.id, messages), header.is_member ? readMarks(header.id) : Promise.resolve([])]);

@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +31,7 @@ export default async function GuideRosterPage({ params }: PageProps) {
   const { bookingId } = await params;
   if (!isUuid(bookingId)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/guide/tours/${bookingId}/roster`)}`);
 
   // RLS: the tourist, the operator, the assigned guide and admins can read the booking.

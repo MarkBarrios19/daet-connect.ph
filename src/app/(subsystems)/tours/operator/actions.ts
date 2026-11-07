@@ -15,7 +15,7 @@ import {
 } from "@/lib/tours/operator-contract";
 import type { OperatorActionState } from "@/lib/tours/operator-action-state";
 import { isUuid } from "@/lib/tours/operator-access";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import {
   isAllowedTotalUploadSize,
   inspectOperatorUpload,
@@ -77,7 +77,7 @@ export async function submitOperatorRegistration(
   const newlyUploadedPaths: string[] = [];
 
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) {
       return { status: "error", message: "Please sign in before submitting an operator application." };
     }
@@ -284,7 +284,7 @@ export async function reviewOperatorApplication(
   formData: FormData,
 ): Promise<OperatorActionState> {
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) {
       return { status: "error", message: "Please sign in with an admin account." };
     }

@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { ButtonLink } from "@/components/ui/button";
 import { hasTicket } from "@/lib/tours/ticket";
 import { notFound, redirect } from "next/navigation";
@@ -30,9 +31,7 @@ export default async function BookingTicketPage({ params }: PageProps) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/bookings/${id}/ticket`)}`);
 
   const { data: booking } = await supabase

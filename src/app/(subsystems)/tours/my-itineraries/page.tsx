@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
 import { redirect } from "next/navigation";
@@ -22,9 +23,7 @@ export default async function MyItinerariesPage({ searchParams }: { searchParams
     );
   }
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/my-itineraries")}`);
 
   const params = await searchParams;

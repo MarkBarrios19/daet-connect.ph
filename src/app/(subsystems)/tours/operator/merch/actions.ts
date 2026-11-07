@@ -5,10 +5,10 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { removePromoImage, uploadPromoImage } from "@/lib/tours/promo-admin";
 import { parseMerchForm, readPromoImage, type PromoFormState } from "@/lib/tours/promo-validation";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 
 async function requireApprovedOperator() {
-  const session = await getAuthenticatedSession();
+  const session = await getVerifiedSession();
   if (!session.user) return { ok: false as const, error: "Please sign in again." };
   if (session.role !== "operator") return { ok: false as const, error: "Only accredited operators can submit products." };
   const supabase = await createSupabaseServerClient();

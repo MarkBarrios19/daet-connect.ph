@@ -25,7 +25,7 @@ import {
   getPackageDetail,
   type PackageCoreInput,
 } from "@/app/(subsystems)/tours/operator/packages/actions";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   PACKAGE_TABLE,
@@ -41,8 +41,8 @@ jest.mock("@/lib/tours/server-auth");
 jest.mock("@/lib/supabase/server");
 jest.mock("next/cache");
 
-const mockGetSession = getAuthenticatedSession as jest.MockedFunction<
-  typeof getAuthenticatedSession
+const mockGetSession = getVerifiedSession as jest.MockedFunction<
+  typeof getVerifiedSession
 >;
 const mockCreateSessionClient = createSupabaseServerClient as jest.MockedFunction<
   typeof createSupabaseServerClient

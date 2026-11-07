@@ -1,13 +1,13 @@
 import { replacePriceVariants } from "@/app/(subsystems)/tours/operator/packages/actions";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 jest.mock("server-only", () => ({}));
-jest.mock("@/lib/tours/server-auth", () => ({ getAuthenticatedSession: jest.fn() }));
+jest.mock("@/lib/tours/server-auth", () => ({ getVerifiedSession: jest.fn() }));
 jest.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
-const mockGetSession = getAuthenticatedSession as jest.MockedFunction<typeof getAuthenticatedSession>;
+const mockGetSession = getVerifiedSession as jest.MockedFunction<typeof getVerifiedSession>;
 const mockCreateSessionClient = createSupabaseServerClient as jest.MockedFunction<typeof createSupabaseServerClient>;
 
 const packageId = "46f8a59e-3d31-4508-86a8-d2b8919eec31";

@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
@@ -106,14 +107,14 @@ type PackageRow = {
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
   const [
-    { data: { user } },
+    user,
     eventsResult,
     merchResult,
     tripsResult,
     placesResult,
     countsResult,
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    getAuthUser(),
     supabase.from("tours_events").select(EVENT_COLUMNS).eq("is_published", true).gte("ends_at", new Date().toISOString()).order("starts_at", { ascending: true }).limit(4),
     supabase.from("tours_merchandise").select(MERCH_COLUMNS).eq("is_active", true).eq("is_featured", true).order("created_at", { ascending: false }).limit(4),
     // Trips on the home page: the newest published ones, with the same columns

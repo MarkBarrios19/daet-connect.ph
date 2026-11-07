@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { maskEmail } from "@/lib/tours/mask-email";
 import { hasTicket } from "@/lib/tours/ticket";
 import Image from "next/image";
@@ -56,9 +57,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   const supabase = await createSupabaseServerClient();
 
   // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/tours/bookings/${id}`)}`);

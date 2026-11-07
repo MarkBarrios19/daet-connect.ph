@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { ShowOnMap, StopFocus, TripFocusProvider, TripMap } from "@/components/planner/trip-focus";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -44,9 +45,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   if (!isSupabaseConfigured() || !isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/my-itineraries/${id}`)}`);
 
   const { data: itinerary } = await supabase

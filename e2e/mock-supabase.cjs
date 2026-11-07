@@ -1,4 +1,5 @@
 const crypto = require("node:crypto");
+const { JWKS, signAccessToken, roleOfToken } = require("./test-jwt.cjs");
 /**
  * Mock Supabase (Auth + PostgREST subset) for the tours E2E suite.
  *
@@ -1209,9 +1210,10 @@ http
         /^Bearer\s+/i,
         "",
       );
-      const role = /^e2e-(tourist|operator|guide|admin)$/.test(token)
-        ? token.slice(4)
-        : "anon";
+      const role = roleOfToken(token);
+      // The public keys the app checks access tokens against (auth.getClaims).
+      if (url.pathname === "/auth/v1/.well-known/jwks.json")
+        return send(200, JWKS);
       const { tables, analytics, inbox, header, user } = build(role);
       // GET reads the session's user; the PUT that saves a name or a password is
       // handled below, once the auth log exists to record it.
@@ -1256,7 +1258,7 @@ http
       }
 
       const session = (email, metadata = {}) => ({
-        access_token: "e2e-tourist",
+        access_token: signAccessToken("tourist", { email, metadata }),
         refresh_token: "e2e-refresh",
         token_type: "bearer",
         expires_in: 3600,

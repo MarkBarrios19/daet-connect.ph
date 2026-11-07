@@ -19,7 +19,7 @@ import {
 import type { GuideActionState, GuideQrPreviewResult } from "@/lib/tours/guide-action-state";
 import { auditGuideSensitiveAccess } from "@/lib/tours/guide-audit";
 import { isUuid } from "@/lib/tours/operator-access";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { createGuideQrPngDataUrl } from "@/lib/tours/guide-qr";
 import { inspectGuideIdDocument } from "@/lib/tours/guide-upload-validation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -74,7 +74,7 @@ function makeGuideQrResult(guideId: string): Promise<string> {
  */
 export async function prepareGuideQrPreview(): Promise<GuideQrPreviewResult> {
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) {
       return { status: "error", message: "Sign in before preparing your guide application." };
     }
@@ -144,7 +144,7 @@ export async function submitGuideRegistration(
   let guideId = "";
 
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) {
       return { status: "error", message: "Please sign in before submitting a guide application." };
     }
@@ -402,7 +402,7 @@ export async function getGuideSensitiveDocumentLink(
   formData: FormData,
 ): Promise<GuideActionState> {
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) return { status: "error", message: "Sign in with an admin account to view ID documents." };
     if (session.error || session.role !== "admin") {
       return { status: "error", message: session.error ?? "Only an admin can view guide ID documents." };
@@ -484,7 +484,7 @@ export async function reviewGuideApplication(
   formData: FormData,
 ): Promise<GuideActionState> {
   try {
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
     if (!session.user) return { status: "error", message: "Sign in with an admin account to review guides." };
     if (session.error || session.role !== "admin") {
       return { status: "error", message: session.error ?? "Only an admin can review guide applications." };

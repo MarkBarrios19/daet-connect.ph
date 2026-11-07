@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import type { Metadata } from "next";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
@@ -23,9 +24,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const { describe } = await searchParams;
   const initialDescription = typeof describe === "string" ? describe.slice(0, 500) : "";
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   // The merged chat + plan planner. TRIP_PLANNER_V2=off brings back the old form.
   if (process.env.TRIP_PLANNER_V2 !== "off") {

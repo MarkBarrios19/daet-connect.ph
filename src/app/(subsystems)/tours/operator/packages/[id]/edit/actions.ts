@@ -1,6 +1,6 @@
 "use server";
 
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { isUuid } from "@/lib/tours/operator-access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -146,7 +146,7 @@ export async function requireAuthenticated(
 > {
   try {
     // Get the authenticated session (user + role)
-    const session = await getAuthenticatedSession();
+    const session = await getVerifiedSession();
 
     // Check if user is authenticated (401 if not)
     if (session.error || !session.user) {

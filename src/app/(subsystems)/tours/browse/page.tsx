@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { LineIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -111,9 +112,7 @@ export default async function BrowsePackagesPage({
   }
 
   // Check if user is logged in
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   // Filter by price range
   let filteredPackages = packagesWithPricing;

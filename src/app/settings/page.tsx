@@ -55,11 +55,10 @@ export default async function SettingsPage() {
 
   // A Google account has no password until one is set through a reset link;
   // saying so is kinder than a form that can only fail.
+  // `app_metadata.providers` rides in the access token for every signed-in user.
   const providers = Array.isArray(session.user.app_metadata?.providers)
     ? (session.user.app_metadata.providers as string[])
-    : (session.user.identities ?? [])
-        .map((identity) => identity.provider)
-        .filter(Boolean);
+    : [];
   const canHavePassword = providers.length === 0 || providers.includes("email");
 
   return (

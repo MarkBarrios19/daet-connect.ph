@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { formatPeso } from "@/lib/money";
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -14,7 +15,7 @@ export default async function AdminPackageReviewPage({
   const supabase = await createSupabaseServerClient();
   
   // Check if user is admin
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect('/');
   
   const { data: profile } = await supabase

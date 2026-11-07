@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 
 export const PROMO_IMAGES_BUCKET = "tours-promo-images";
 
@@ -11,7 +11,7 @@ type AdminContext =
 
 /** Re-checks the admin role server-side; RLS enforces the same rule in the database. */
 export async function requirePromoAdmin(): Promise<AdminContext> {
-  const session = await getAuthenticatedSession();
+  const session = await getVerifiedSession();
   if (!session.user) return { ok: false, error: "Please sign in with a Tourism Office admin account." };
   if (session.error) return { ok: false, error: session.error };
   if (session.role !== "admin") return { ok: false, error: "Only Tourism Office admins can manage this content." };

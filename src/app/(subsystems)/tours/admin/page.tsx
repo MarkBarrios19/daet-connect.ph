@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { LiveCount } from "@/components/live/live-count";
 import { LineIcon } from "@/components/ui/icons";
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -11,7 +12,7 @@ export default async function AdminDashboardPage() {
   const supabase = await createSupabaseServerClient();
   
   // Check if user is admin
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) {
     return (
       <PageFrame>

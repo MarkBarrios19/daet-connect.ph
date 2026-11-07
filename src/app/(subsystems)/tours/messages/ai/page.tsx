@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AssistantPane } from "@/components/assistant/assistant-pane";
@@ -15,9 +16,7 @@ export const metadata = { title: "Daet AI assistant" };
 export default async function AiChatPage() {
   if (!isSupabaseConfigured()) redirect("/tours/help");
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/tours/help");
   const { data: inboxData } = await supabase.rpc("tours_chat_inbox");
   const inbox = (inboxData ?? []) as InboxRow[];

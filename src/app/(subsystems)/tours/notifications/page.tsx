@@ -1,3 +1,4 @@
+import { getAuthUser } from "@/lib/tours/server-auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -23,9 +24,7 @@ export default async function NotificationsPage() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent("/tours/notifications")}`);
 
   const { data, error } = await supabase
