@@ -5,6 +5,57 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="p1_title" value="1. Pangkalahatang system at role routing" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1420" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_start" value="SIMULA&lt;br&gt;Buksan ang CONNECT-DAET" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="680" y="85" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_home" value="Home page&lt;br&gt;Public tourism content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="635" y="175" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_session" value="May valid na&lt;br&gt;login session?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="715" y="280" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_public" value="Public browse&lt;br&gt;Tours • attractions • events&lt;br&gt;merchandise • FAQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="55" y="420" width="310" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_protected" value="Protected action&lt;br&gt;ba ang susunod?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="115" y="555" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_continue" value="Mag-browse pa&lt;br&gt;o umalis" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="45" y="710" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_auth" value="Mag-sign up o mag-login&lt;br&gt;Email o Google" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="625" y="420" width="360" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_verified" value="Valid at verified&lt;br&gt;ang account?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="710" y="550" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_recover" value="Email verification,&lt;br&gt;resend link o password recovery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="565" width="280" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_server" value="Server checks session,&lt;br&gt;profile role at accreditation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="625" y="710" width="360" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_role" value="Account role?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="720" y="835" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_tourist" value="TOURIST&lt;br&gt;Browse • booking • itinerary planner&lt;br&gt;messages • reviews • rewards • notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="25" y="1015" width="330" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_operator" value="OPERATOR&lt;br&gt;Application • package management&lt;br&gt;availability • bookings • payments • guides" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1015" width="330" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_guide" value="GUIDE&lt;br&gt;Application • availability&lt;br&gt;assigned tours • roster • QR check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="735" y="1015" width="330" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_admin" value="ADMIN / Tourism Office&lt;br&gt;Approvals • public content • analytics&lt;br&gt;reviews • safety and feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="1015" width="330" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p1_data" value="SHARED DATA&lt;br&gt;Supabase Auth • Postgres • RLS • RPCs&lt;br&gt;Storage • Realtime" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="525" y="1190" width="450" height="105" as="geometry" />
+        </mxCell>
         <mxCell id="p1_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_start" target="p1_home">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -68,57 +119,6 @@
         <mxCell id="p1_e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p1_admin" target="p1_data">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p1_title" value="1. Pangkalahatang system at role routing" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1420" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_start" value="SIMULA&lt;br&gt;Buksan ang CONNECT-DAET" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="680" y="85" width="250" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_home" value="Home page&lt;br&gt;Public tourism content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="635" y="175" width="340" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_session" value="May valid na&lt;br&gt;login session?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="715" y="280" width="190" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_public" value="Public browse&lt;br&gt;Tours • attractions • events&lt;br&gt;merchandise • FAQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="55" y="420" width="310" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_protected" value="Protected action&lt;br&gt;ba ang susunod?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="115" y="555" width="190" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_continue" value="Mag-browse pa&lt;br&gt;o umalis" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="45" y="710" width="220" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_auth" value="Mag-sign up o mag-login&lt;br&gt;Email o Google" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="625" y="420" width="360" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_verified" value="Valid at verified&lt;br&gt;ang account?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="710" y="550" width="190" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_recover" value="Email verification,&lt;br&gt;resend link o password recovery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="565" width="280" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_server" value="Server checks session,&lt;br&gt;profile role at accreditation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="625" y="710" width="360" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_role" value="Account role?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="720" y="835" width="180" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_tourist" value="TOURIST&lt;br&gt;Browse • booking • itinerary planner&lt;br&gt;messages • reviews • rewards • notifications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="25" y="1015" width="330" height="125" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_operator" value="OPERATOR&lt;br&gt;Application • package management&lt;br&gt;availability • bookings • payments • guides" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="380" y="1015" width="330" height="125" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_guide" value="GUIDE&lt;br&gt;Application • availability&lt;br&gt;assigned tours • roster • QR check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="735" y="1015" width="330" height="125" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_admin" value="ADMIN / Tourism Office&lt;br&gt;Approvals • public content • analytics&lt;br&gt;reviews • safety and feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="1015" width="330" height="125" as="geometry" />
-        </mxCell>
-        <mxCell id="p1_data" value="SHARED DATA&lt;br&gt;Supabase Auth • Postgres • RLS • RPCs&lt;br&gt;Storage • Realtime" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="525" y="1190" width="450" height="105" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -127,6 +127,132 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="p2_title" value="2. Tour booking, payment at check-in" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1570" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_start" value="SIMULA&lt;br&gt;Pumili ng tour" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="665" y="75" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_browse" value="Browse at buksan ang&lt;br&gt;package details" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="165" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_published" value="Published ba&lt;br&gt;ang package?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="705" y="270" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_unavailable" value="Hindi available&lt;br&gt;sa booking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="280" width="230" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_signed" value="Naka-login ba&lt;br&gt;ang tourist?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="705" y="400" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_login" value="Mag-login / sign up;&lt;br&gt;bumalik sa booking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="415" width="240" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_input" value="Pumili ng price variant,&lt;br&gt;petsa at bilang ng guests;&lt;br&gt;ilagay ang contact details" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="635" y="530" width="310" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_validate" value="Server validates input&lt;br&gt;at kinukuha ang presyo&lt;br&gt;sa database" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="635" y="655" width="310" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_valid" value="Valid ba&lt;br&gt;ang request?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="705" y="780" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_fix" value="Ipakita ang error;&lt;br&gt;ipaayos ang input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="795" width="240" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_capacity" value="Database locks availability row&lt;br&gt;at sinusuri ang natitirang seats" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="620" y="915" width="340" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_seats" value="May sapat&lt;br&gt;na seats?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="705" y="1030" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_full" value="Sold out o kulang&lt;br&gt;ang capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="1045" width="240" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_create" value="Gumawa ng booking na pending;&lt;br&gt;ligtas na ireserba ang capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="620" y="1165" width="340" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_operator" value="I-review ng operator:&lt;br&gt;i-confirm o i-decline" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="705" y="1280" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_decline" value="I-update ang status;&lt;br&gt;abisuhan ang tourist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="1295" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_confirmed" value="Booking confirmed;&lt;br&gt;magpadala ng confirmation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="620" y="1415" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_ticket" value="Ipakita ang signed&lt;br&gt;booking QR ticket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="230" y="1535" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_paymethod" value="Pumili ng paraan&lt;br&gt;ng pagbabayad" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1530" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_assign" value="Operator magtalaga ng&lt;br&gt;approved at available na guide" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="1545" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_online" value="ONLINE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1680" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_manual" value="MANUAL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="900" y="1680" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_checkout" value="Gumawa ng PayMongo&lt;br&gt;Checkout session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1780" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_paymongo" value="Tourist magbayad&lt;br&gt;sa PayMongo" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1880" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_webhook" value="Webhook verifies signature&lt;br&gt;at kinukuha muli ang status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="310" y="1980" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_paid" value="Verified at&lt;br&gt;successful?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="375" y="2100" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_retry" value="Unpaid / pending;&lt;br&gt;subukang muli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="70" y="2120" width="230" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_receipt" value="I-upload ang receipt&lt;br&gt;sa private Storage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="855" y="1780" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_proofreview" value="Operator nagre-review&lt;br&gt;ng payment proof" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="855" y="1880" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_proofok" value="Inaprubahan&lt;br&gt;ba ang proof?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="905" y="1990" width="170" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_resubmit" value="Ipaalam sa tourist;&lt;br&gt;magsumite ulit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="2005" width="220" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_ledger" value="Itala sa payment ledger;&lt;br&gt;i-update ang balance/status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="610" y="2240" width="360" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_tourdate" value="Araw na ng tour;&lt;br&gt;guide buksan ang check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="1680" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_scan" value="I-scan ang QR o&lt;br&gt;gamitin ang guest roster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="1785" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_qrvalid" value="Valid ang ticket,&lt;br&gt;booking, petsa at guide?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="1890" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_deny" value="Tanggihan ang scan;&lt;br&gt;huwag mag-check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="1910" width="210" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_checkin" value="Itala ang guest check-in&lt;br&gt;(idempotent ang ulit na scan)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="2030" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_complete" value="Operator markahang&lt;br&gt;completed ang tour" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="2135" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_review" value="Tourist maaaring magsumite&lt;br&gt;ng review at makakuha ng rewards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="2240" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_end" value="KATAPUSAN&lt;br&gt;Tour completed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="2350" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p2_db" value="Supabase bookings • availability • payments&lt;br&gt;participants • check-ins • notifications" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="2290" width="400" height="90" as="geometry" />
+        </mxCell>
         <mxCell id="p2_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p2_start" target="p2_browse">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -277,132 +403,6 @@
         <mxCell id="p2_e50" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p2_checkin" target="p2_db">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p2_title" value="2. Tour booking, payment at check-in" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1570" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_start" value="SIMULA&lt;br&gt;Pumili ng tour" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="665" y="75" width="250" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_browse" value="Browse at buksan ang&lt;br&gt;package details" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="640" y="165" width="300" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_published" value="Published ba&lt;br&gt;ang package?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="705" y="270" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_unavailable" value="Hindi available&lt;br&gt;sa booking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="280" width="230" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_signed" value="Naka-login ba&lt;br&gt;ang tourist?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="705" y="400" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_login" value="Mag-login / sign up;&lt;br&gt;bumalik sa booking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="415" width="240" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_input" value="Pumili ng price variant,&lt;br&gt;petsa at bilang ng guests;&lt;br&gt;ilagay ang contact details" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="635" y="530" width="310" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_validate" value="Server validates input&lt;br&gt;at kinukuha ang presyo&lt;br&gt;sa database" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="635" y="655" width="310" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_valid" value="Valid ba&lt;br&gt;ang request?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="705" y="780" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_fix" value="Ipakita ang error;&lt;br&gt;ipaayos ang input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="795" width="240" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_capacity" value="Database locks availability row&lt;br&gt;at sinusuri ang natitirang seats" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="620" y="915" width="340" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_seats" value="May sapat&lt;br&gt;na seats?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="705" y="1030" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_full" value="Sold out o kulang&lt;br&gt;ang capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="1045" width="240" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_create" value="Gumawa ng booking na pending;&lt;br&gt;ligtas na ireserba ang capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="620" y="1165" width="340" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_operator" value="I-review ng operator:&lt;br&gt;i-confirm o i-decline" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="705" y="1280" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_decline" value="I-update ang status;&lt;br&gt;abisuhan ang tourist" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1010" y="1295" width="240" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_confirmed" value="Booking confirmed;&lt;br&gt;magpadala ng confirmation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="620" y="1415" width="340" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_ticket" value="Ipakita ang signed&lt;br&gt;booking QR ticket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="230" y="1535" width="250" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_paymethod" value="Pumili ng paraan&lt;br&gt;ng pagbabayad" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="700" y="1530" width="180" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_assign" value="Operator magtalaga ng&lt;br&gt;approved at available na guide" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1110" y="1545" width="280" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_online" value="ONLINE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="420" y="1680" width="170" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_manual" value="MANUAL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="900" y="1680" width="170" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_checkout" value="Gumawa ng PayMongo&lt;br&gt;Checkout session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="340" y="1780" width="240" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_paymongo" value="Tourist magbayad&lt;br&gt;sa PayMongo" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="340" y="1880" width="240" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_webhook" value="Webhook verifies signature&lt;br&gt;at kinukuha muli ang status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="310" y="1980" width="300" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_paid" value="Verified at&lt;br&gt;successful?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="375" y="2100" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_retry" value="Unpaid / pending;&lt;br&gt;subukang muli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="70" y="2120" width="230" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_receipt" value="I-upload ang receipt&lt;br&gt;sa private Storage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="855" y="1780" width="270" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_proofreview" value="Operator nagre-review&lt;br&gt;ng payment proof" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="855" y="1880" width="270" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_proofok" value="Inaprubahan&lt;br&gt;ba ang proof?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="905" y="1990" width="170" height="95" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_resubmit" value="Ipaalam sa tourist;&lt;br&gt;magsumite ulit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="2005" width="220" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_ledger" value="Itala sa payment ledger;&lt;br&gt;i-update ang balance/status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="610" y="2240" width="360" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_tourdate" value="Araw na ng tour;&lt;br&gt;guide buksan ang check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1100" y="1680" width="300" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_scan" value="I-scan ang QR o&lt;br&gt;gamitin ang guest roster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1100" y="1785" width="300" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_qrvalid" value="Valid ang ticket,&lt;br&gt;booking, petsa at guide?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="1890" width="180" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_deny" value="Tanggihan ang scan;&lt;br&gt;huwag mag-check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1390" y="1910" width="210" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_checkin" value="Itala ang guest check-in&lt;br&gt;(idempotent ang ulit na scan)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="2030" width="320" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_complete" value="Operator markahang&lt;br&gt;completed ang tour" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="2135" width="320" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_review" value="Tourist maaaring magsumite&lt;br&gt;ng review at makakuha ng rewards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="2240" width="320" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_end" value="KATAPUSAN&lt;br&gt;Tour completed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1140" y="2350" width="220" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p2_db" value="Supabase bookings • availability • payments&lt;br&gt;participants • check-ins • notifications" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="40" y="2290" width="400" height="90" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -411,6 +411,93 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="p3_title" value="3. Operator accreditation at package lifecycle" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1570" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_start" value="SIMULA&lt;br&gt;Operator applicant mag-login" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="75" y="85" width="270" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_status" value="Accreditation&lt;br&gt;status?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="110" y="205" width="200" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_apply" value="Magsumite o mag-update&lt;br&gt;ng operator application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="365" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_adminreview" value="Tourism Office&lt;br&gt;mag-review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="480" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_approve" value="Aprubahan?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="595" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_reject" value="I-record ang dahilan;&lt;br&gt;abisuhan ang applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="380" y="610" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_wait" value="Pending:&lt;br&gt;hintayin ang review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="380" y="200" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_dashboard" value="Operator dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="230" width="290" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_draft" value="Gumawa ng package&lt;br&gt;bilang draft" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="350" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_complete" value="Kumpleto at&lt;br&gt;valid ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="465" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_editdraft" value="I-edit details, duration,&lt;br&gt;prices, inclusions, stops&lt;br&gt;at photos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="470" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_submit" value="I-submit para sa&lt;br&gt;Tourism Office review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="600" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_pending" value="pending_review&lt;br&gt;Read-only habang sinusuri" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="710" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_review" value="Admin mag-review&lt;br&gt;ng package" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="820" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_decision" value="I-publish ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="930" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_rejected" value="rejected&lt;br&gt;May reviewer reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="945" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_published" value="published&lt;br&gt;Public at bookable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1070" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_change" value="May pagbabago&lt;br&gt;ba sa package?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1180" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_editlive" value="I-edit ang lahat ng fields:&lt;br&gt;prices, stops, inclusions&lt;br&gt;at photos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="1190" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_guard" value="Server / database checks:&lt;br&gt;owner • validation • version&lt;br&gt;booked-price safeguards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="1320" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_safe" value="Ligtas at valid&lt;br&gt;ang save?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="1125" y="1450" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_liveerror" value="Error; walang partial save.&lt;br&gt;Refresh kung may conflict." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="1470" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_save" value="Atomic save;&lt;br&gt;changes go live immediately&lt;br&gt;walang resubmission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="1600" width="320" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_archive" value="archived packages&lt;br&gt;Read-only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="800" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_availability" value="Pamahalaan ang open dates&lt;br&gt;at tour capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1780" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_bookings" value="Manage bookings:&lt;br&gt;confirm/decline, assign guide,&lt;br&gt;review manual receipts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1780" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_operations" value="Payments ledger • CSV export&lt;br&gt;reviews • live tour tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1780" width="300" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p3_db" value="Supabase packages, relations,&lt;br&gt;availability, bookings at Storage" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="500" y="1930" width="470" height="90" as="geometry" />
+        </mxCell>
         <mxCell id="p3_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p3_start" target="p3_status">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -516,93 +603,6 @@
         <mxCell id="p3_e35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p3_bookings" target="p3_db">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p3_title" value="3. Operator accreditation at package lifecycle" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1570" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_start" value="SIMULA&lt;br&gt;Operator applicant mag-login" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="75" y="85" width="270" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_status" value="Accreditation&lt;br&gt;status?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="110" y="205" width="200" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_apply" value="Magsumite o mag-update&lt;br&gt;ng operator application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="365" width="260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_adminreview" value="Tourism Office&lt;br&gt;mag-review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="480" width="260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_approve" value="Aprubahan?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="120" y="595" width="180" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_reject" value="I-record ang dahilan;&lt;br&gt;abisuhan ang applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="380" y="610" width="250" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_wait" value="Pending:&lt;br&gt;hintayin ang review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="380" y="200" width="250" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_dashboard" value="Operator dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="230" width="290" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_draft" value="Gumawa ng package&lt;br&gt;bilang draft" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="350" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_complete" value="Kumpleto at&lt;br&gt;valid ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="760" y="465" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_editdraft" value="I-edit details, duration,&lt;br&gt;prices, inclusions, stops&lt;br&gt;at photos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="470" width="300" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_submit" value="I-submit para sa&lt;br&gt;Tourism Office review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="600" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_pending" value="pending_review&lt;br&gt;Read-only habang sinusuri" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="710" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_review" value="Admin mag-review&lt;br&gt;ng package" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="820" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_decision" value="I-publish ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="760" y="930" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_rejected" value="rejected&lt;br&gt;May reviewer reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="945" width="260" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_published" value="published&lt;br&gt;Public at bookable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="1070" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_change" value="May pagbabago&lt;br&gt;ba sa package?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="760" y="1180" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_editlive" value="I-edit ang lahat ng fields:&lt;br&gt;prices, stops, inclusions&lt;br&gt;at photos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="1190" width="300" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_guard" value="Server / database checks:&lt;br&gt;owner • validation • version&lt;br&gt;booked-price safeguards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1060" y="1320" width="300" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_safe" value="Ligtas at valid&lt;br&gt;ang save?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="1125" y="1450" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_liveerror" value="Error; walang partial save.&lt;br&gt;Refresh kung may conflict." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1370" y="1470" width="220" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_save" value="Atomic save;&lt;br&gt;changes go live immediately&lt;br&gt;walang resubmission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="1600" width="320" height="85" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_archive" value="archived packages&lt;br&gt;Read-only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="800" width="270" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_availability" value="Pamahalaan ang open dates&lt;br&gt;at tour capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="370" y="1780" width="300" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_bookings" value="Manage bookings:&lt;br&gt;confirm/decline, assign guide,&lt;br&gt;review manual receipts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="700" y="1780" width="330" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_operations" value="Payments ledger • CSV export&lt;br&gt;reviews • live tour tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1080" y="1780" width="300" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p3_db" value="Supabase packages, relations,&lt;br&gt;availability, bookings at Storage" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="500" y="1930" width="470" height="90" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -611,6 +611,69 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="p4_title" value="4. Guide accreditation, assignment at check-in" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1370" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_start" value="SIMULA&lt;br&gt;User mag-apply bilang guide" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="610" y="75" width="300" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_submit" value="Isumite ang guide profile,&lt;br&gt;consent at private ID documents" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="180" width="340" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_pending" value="Application status:&lt;br&gt;pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="615" y="305" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_admin" value="Tourism Office mag-review&lt;br&gt;ng guide application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="420" width="340" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_approved" value="Approved ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="665" y="535" width="190" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_rejected" value="Rejected: ipakita ang notes;&lt;br&gt;i-update at isumite muli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="940" y="550" width="310" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_dashboard" value="Approved guide dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="700" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_availability" value="Itakda ang guide&lt;br&gt;availability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="810" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_assign" value="Operator magtalaga ng&lt;br&gt;approved at available guide" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="920" width="340" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_notify" value="Guide makatanggap&lt;br&gt;ng assignment notification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1035" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_day" value="Araw na ng confirmed tour" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1145" width="340" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_method" value="Paraan ng check-in?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="675" y="1250" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_qr" value="I-scan ang booking QR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1390" width="260" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_roster" value="Gamitin ang roster&lt;br&gt;para sa manual check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="900" y="1390" width="280" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_verify" value="Verify signed token, expiry,&lt;br&gt;booking status, tour date&lt;br&gt;at guide assignment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1510" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_valid" value="Lahat ba ng checks&lt;br&gt;ay pasado?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1640" width="190" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_deny" value="Tanggihan ang request;&lt;br&gt;walang check-in record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1660" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_checkin" value="Itala ang guest check-in;&lt;br&gt;duplicate scan ay harmless" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1810" width="340" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_end" value="KATAPUSAN&lt;br&gt;Guest checked in" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="645" y="1930" width="230" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p4_db" value="Supabase guides, availability,&lt;br&gt;bookings, QR scans at notifications" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="110" y="1810" width="390" height="90" as="geometry" />
+        </mxCell>
         <mxCell id="p4_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p4_start" target="p4_submit">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -677,69 +740,6 @@
         <mxCell id="p4_e22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p4_assign" target="p4_db">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p4_title" value="4. Guide accreditation, assignment at check-in" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1370" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_start" value="SIMULA&lt;br&gt;User mag-apply bilang guide" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="610" y="75" width="300" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_submit" value="Isumite ang guide profile,&lt;br&gt;consent at private ID documents" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="180" width="340" height="85" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_pending" value="Application status:&lt;br&gt;pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="615" y="305" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_admin" value="Tourism Office mag-review&lt;br&gt;ng guide application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="420" width="340" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_approved" value="Approved ba?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="665" y="535" width="190" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_rejected" value="Rejected: ipakita ang notes;&lt;br&gt;i-update at isumite muli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="940" y="550" width="310" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_dashboard" value="Approved guide dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="700" width="340" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_availability" value="Itakda ang guide&lt;br&gt;availability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="810" width="340" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_assign" value="Operator magtalaga ng&lt;br&gt;approved at available guide" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="920" width="340" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_notify" value="Guide makatanggap&lt;br&gt;ng assignment notification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="1035" width="340" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_day" value="Araw na ng confirmed tour" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="1145" width="340" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_method" value="Paraan ng check-in?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="675" y="1250" width="170" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_qr" value="I-scan ang booking QR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="370" y="1390" width="260" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_roster" value="Gamitin ang roster&lt;br&gt;para sa manual check-in" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="900" y="1390" width="280" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_verify" value="Verify signed token, expiry,&lt;br&gt;booking status, tour date&lt;br&gt;at guide assignment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="1510" width="340" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_valid" value="Lahat ba ng checks&lt;br&gt;ay pasado?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="665" y="1640" width="190" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_deny" value="Tanggihan ang request;&lt;br&gt;walang check-in record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="940" y="1660" width="300" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_checkin" value="Itala ang guest check-in;&lt;br&gt;duplicate scan ay harmless" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="590" y="1810" width="340" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_end" value="KATAPUSAN&lt;br&gt;Guest checked in" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="645" y="1930" width="230" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p4_db" value="Supabase guides, availability,&lt;br&gt;bookings, QR scans at notifications" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="110" y="1810" width="390" height="90" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -748,6 +748,66 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="p5_title" value="5. Tourism Office admin at content management" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="18" width="1420" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_start" value="SIMULA&lt;br&gt;Admin mag-login" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="650" y="70" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_role" value="Admin role&lt;br&gt;verified?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="175" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_deny" value="Access denied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="190" width="220" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_dashboard" value="Admin dashboard&lt;br&gt;Analytics at quick actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="620" y="325" width="320" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_task" value="Anong admin task?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="450" width="160" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_operators" value="Review operator&lt;br&gt;applications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="640" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_guides" value="Review guide applications&lt;br&gt;at private ID access" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="390" y="640" width="290" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_packages" value="Review pending&lt;br&gt;tour packages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="730" y="640" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_merch" value="Review operator&lt;br&gt;merchandise submissions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="640" width="280" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_content" value="Manage public content:&lt;br&gt;attractions, events, fares,&lt;br&gt;guide places" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="820" width="290" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_safety" value="Emergency contacts,&lt;br&gt;feedback and reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="820" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_reviews" value="Hide abusive reviews&lt;br&gt;with a reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="760" y="820" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_decision" value="Approve or reject?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="980" width="180" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_approve" value="Update status / publish;&lt;br&gt;notify applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1160" width="290" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_reject" value="Record reason;&lt;br&gt;notify applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="830" y="1160" width="260" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_editcontent" value="Validate at save ang content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1000" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_hide" value="Hide review;&lt;br&gt;remove it from public average" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1000" width="290" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_analytics" value="KPI and analytics&lt;br&gt;for selected date range" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="820" width="280" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p5_db" value="Supabase database, RLS,&lt;br&gt;private Storage and admin RPCs" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="540" y="1330" width="430" height="90" as="geometry" />
+        </mxCell>
         <mxCell id="p5_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p5_start" target="p5_role">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -826,66 +886,6 @@
         <mxCell id="p5_e26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p5_analytics" target="p5_db">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p5_title" value="5. Tourism Office admin at content management" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="18" width="1420" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_start" value="SIMULA&lt;br&gt;Admin mag-login" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="650" y="70" width="260" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_role" value="Admin role&lt;br&gt;verified?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="700" y="175" width="160" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_deny" value="Access denied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1000" y="190" width="220" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_dashboard" value="Admin dashboard&lt;br&gt;Analytics at quick actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="620" y="325" width="320" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_task" value="Anong admin task?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="700" y="450" width="160" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_operators" value="Review operator&lt;br&gt;applications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="640" width="260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_guides" value="Review guide applications&lt;br&gt;at private ID access" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="390" y="640" width="290" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_packages" value="Review pending&lt;br&gt;tour packages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="730" y="640" width="260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_merch" value="Review operator&lt;br&gt;merchandise submissions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1050" y="640" width="280" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_content" value="Manage public content:&lt;br&gt;attractions, events, fares,&lt;br&gt;guide places" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="820" width="290" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_safety" value="Emergency contacts,&lt;br&gt;feedback and reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="420" y="820" width="290" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_reviews" value="Hide abusive reviews&lt;br&gt;with a reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="760" y="820" width="260" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_decision" value="Approve or reject?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
-          <mxGeometry x="700" y="980" width="180" height="105" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_approve" value="Update status / publish;&lt;br&gt;notify applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="420" y="1160" width="290" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_reject" value="Record reason;&lt;br&gt;notify applicant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="830" y="1160" width="260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_editcontent" value="Validate at save ang content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="80" y="1000" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_hide" value="Hide review;&lt;br&gt;remove it from public average" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="760" y="1000" width="290" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_analytics" value="KPI and analytics&lt;br&gt;for selected date range" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#4d9bd6;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="1120" y="820" width="280" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="p5_db" value="Supabase database, RLS,&lt;br&gt;private Storage and admin RPCs" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=13;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
-          <mxGeometry x="540" y="1330" width="430" height="90" as="geometry" />
-        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -894,105 +894,6 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="p6_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_browse" target="p6_contentdb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_browse" target="p6_merchnote">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_planner" target="p6_preferences">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_preferences" target="p6_engine">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_engine" target="p6_validate">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validate" target="p6_validplan">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e7" value="Hindi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validplan" target="p6_editplan">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_editplan" target="p6_engine">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e9" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validplan" target="p6_saveplan">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_saveplan" target="p6_contentdb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_assistant" target="p6_question">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_question" target="p6_context">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_context" target="p6_llm">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e14" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_llm" target="p6_gemini">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e15" value="Hindi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_llm" target="p6_basic">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_gemini" target="p6_answer">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_basic" target="p6_answer">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e18" value="Kapag nagbukas ng actual action" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_answer" target="p6_events">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_messaging" target="p6_message">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_message" target="p6_chatcheck">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_chatcheck" target="p6_chatdb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_events" target="p6_triggers">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_triggers" target="p6_notifydb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_notifydb" target="p6_inapp">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_notifydb" target="p6_pushchoice">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e26" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_pushchoice" target="p6_push">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e27" value="Email events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_pushchoice" target="p6_email">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_security">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_security" target="p6_supabase">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e30" value="Webhook / ledger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_paymongo" target="p6_supabase">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_supabase" target="p6_notifydb">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e32" value="Optional maps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_maps">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="p6_e33" value="Optional AI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_ai">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
         <mxCell id="p6_title" value="6. Tourism content, planner, assistant at shared integrations" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#16324f;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="40" y="18" width="1570" height="48" as="geometry" />
         </mxCell>
@@ -1106,6 +1007,105 @@
         </mxCell>
         <mxCell id="p6_safety" value="Private documents/receipts stay server-protected;&lt;br&gt;service-role key is never used in browser code" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#1f2937;fontSize=12;align=left;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
           <mxGeometry x="1130" y="1715" width="400" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_browse" target="p6_contentdb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_browse" target="p6_merchnote">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_planner" target="p6_preferences">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_preferences" target="p6_engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_engine" target="p6_validate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validate" target="p6_validplan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e7" value="Hindi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validplan" target="p6_editplan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_editplan" target="p6_engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e9" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_validplan" target="p6_saveplan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_saveplan" target="p6_contentdb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_assistant" target="p6_question">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_question" target="p6_context">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_context" target="p6_llm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e14" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_llm" target="p6_gemini">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e15" value="Hindi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_llm" target="p6_basic">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_gemini" target="p6_answer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_basic" target="p6_answer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e18" value="Kapag nagbukas ng actual action" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_answer" target="p6_events">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_messaging" target="p6_message">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_message" target="p6_chatcheck">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_chatcheck" target="p6_chatdb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_events" target="p6_triggers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_triggers" target="p6_notifydb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_notifydb" target="p6_inapp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_notifydb" target="p6_pushchoice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e26" value="Oo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_pushchoice" target="p6_push">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e27" value="Email events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_pushchoice" target="p6_email">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_security">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_security" target="p6_supabase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e30" value="Webhook / ledger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_paymongo" target="p6_supabase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_supabase" target="p6_notifydb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e32" value="Optional maps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_maps">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6_e33" value="Optional AI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#526579;strokeWidth=2;fontColor=#334155;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p6_app" target="p6_ai">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
