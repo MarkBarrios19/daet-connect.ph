@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
+import { SearchBox } from "@/components/ui/search-box";
+import { searchTerm } from "@/components/ui/search-term";
 import {
   OPERATOR_APPLICATION_SELECT,
   OPERATOR_DOCUMENT_BUCKET,
@@ -15,7 +17,7 @@ import { OperatorReviewCard, type OperatorDocumentLinks } from "@/app/(subsystem
 
 const PAGE_SIZE = 20;
 const SIGNED_URL_TTL_SECONDS = 10 * 60;
-type SearchParams = Promise<{ page?: string }>;
+type SearchParams = Promise<{ page?: string; q?: string }>;
 
 function safePage(value?: string): number {
   const parsed = Number(value);
@@ -76,12 +78,17 @@ export default async function AdminOperatorQueuePage({
 
   const params = await searchParams;
   const page = safePage(params.page);
+  const q = searchTerm(params.q);
   const firstRow = (page - 1) * PAGE_SIZE;
   const admin = createSupabaseAdminClient();
-  const { data: rows, error } = await admin
+  let query = admin
     .from(OPERATOR_TABLE)
     .select(OPERATOR_APPLICATION_SELECT)
-    .eq("accreditation_status", "pending")
+    .eq("accreditation_status", "pending");
+  if (q) {
+    query = query.or(`business_name.ilike.%${q}%,contact_person.ilike.%${q}%,contact_email.ilike.%${q}%,contact_phone.ilike.%${q}%,business_address.ilike.%${q}%`);
+  }
+  const { data: rows, error } = await query
     .order("created_at", { ascending: true })
     .range(firstRow, firstRow + PAGE_SIZE - 1);
 
@@ -135,6 +142,7 @@ export default async function AdminOperatorQueuePage({
         <span className="inline-flex min-h-10 items-center self-start rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-4 text-sm font-bold text-yellow-900 dark:text-yellow-200 sm:self-auto">Pending · page {page}</span>
       </div>
 
+      <SearchBox action="/tours/admin/operators" label="Search pending operator applications" placeholder="Business, contact, email or phone" value={q} className="mb-6" />
       <Notice variant="info" className="mb-6">
         Applicant documents are private and the links below expire in 10 minutes. Open them only on an authorized device; do not forward them.
       </Notice>
@@ -143,7 +151,7 @@ export default async function AdminOperatorQueuePage({
         <section className="rounded-2xl card-edge bg-surface px-6 py-14 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-green-50 dark:bg-green-950/40 text-2xl text-green-700 dark:text-green-300" aria-hidden="true">✓</span>
           <h2 className="mt-4 text-xl font-bold text-daet-ink">You’re all caught up</h2>
-          <p className="mt-2 text-sm text-daet-ink/70">There are no pending operator applications on this page.</p>
+          <p className="mt-2 text-sm text-daet-ink/70">{q ? `No pending operator applications match “${q}”.` : "There are no pending operator applications on this page."}</p>
         </section>
       ) : (
         <div className="space-y-5">
@@ -166,10 +174,10 @@ export default async function AdminOperatorQueuePage({
 
       <nav className="mt-7 flex items-center justify-between" aria-label="Application pages">
         {page > 1 ? (
-          <Link href={`/tours/admin/operators?page=${page - 1}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">← Previous</Link>
+          <Link href={`/tours/admin/operators?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">← Previous</Link>
         ) : <span />}
         {hasNextPage ? (
-          <Link href={`/tours/admin/operators?page=${page + 1}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">Next →</Link>
+          <Link href={`/tours/admin/operators?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">Next →</Link>
         ) : <span />}
       </nav>
     </PageFrame>
