@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CONNECT-DAET — System Flowchart (Reviewed)</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17324d;
+      --muted: #526579;
+      --line: #d7e0e8;
+      --page: #f3f6fa;
+      --blue: #eaf3ff;
+      --blue-line: #7a9bc1;
+      --green: #eaf7ee;
+      --green-line: #6b9a79;
+      --yellow: #fff7dc;
+      --yellow-line: #c4a34f;
+      --red: #fff0ed;
+      --red-line: #c47a70;
+      --purple: #f2edfa;
+      --purple-line: #9276ac;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: #202b36;
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 28px clamp(18px, 4vw, 56px) 24px;
+      background: #17324d;
+      color: white;
+    }
+    header .eyebrow { margin: 0 0 5px; color: #bdd5ef; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+    header h1 { margin: 0; font-size: clamp(26px, 4vw, 40px); line-height: 1.15; }
+    header p { max-width: 900px; margin: 10px 0 0; color: #d9e7f5; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    nav a {
+      display: inline-block; padding: 7px 11px; border-radius: 999px;
+      background: white; color: var(--ink); text-decoration: none;
+      font-size: 13px; font-weight: 750;
+    }
+    nav a:hover { background: #dcecff; }
+    main { width: min(1180px, calc(100% - 32px)); margin: 22px auto 42px; }
+    .review-note, .panel { background: white; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 5px 20px #10243b0a; }
+    .review-note { padding: 18px 20px; margin-bottom: 18px; }
+    .review-note h2 { margin: 0 0 6px; color: var(--ink); font-size: 19px; }
+    .review-note p { margin: 5px 0; color: var(--muted); }
+    .review-note ul { margin: 8px 0 0; padding-left: 21px; color: var(--muted); }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .swatch { width: 11px; height: 11px; display: inline-block; border-radius: 3px; }
+    .panel { padding: clamp(16px, 2.4vw, 26px); margin: 18px 0; scroll-margin-top: 12px; }
+    .panel h2 { margin: 0 0 4px; color: var(--ink); font-size: clamp(20px, 2.8vw, 26px); }
+    .panel-intro { margin: 0 0 18px; color: var(--muted); }
+    h3 { margin: 18px 0 10px; color: var(--ink); font-size: 18px; }
+    .stack { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .node {
+      width: min(640px, 100%); padding: 12px 16px; text-align: center;
+      border: 1.5px solid var(--blue-line); border-radius: 11px; background: var(--blue);
+    }
+    .node strong { display: block; color: #17324d; }
+    .node small { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .node.start, .node.end { width: min(420px, 100%); border-radius: 999px; background: var(--green); border-color: var(--green-line); }
+    .node.success { background: var(--green); border-color: var(--green-line); }
+    .node.decision { background: var(--yellow); border-color: var(--yellow-line); }
+    .node.problem { background: var(--red); border-color: var(--red-line); }
+    .node.role, .node.menu { background: var(--purple); border-color: var(--purple-line); }
+    .arrow-down { height: 34px; display: flex; align-items: center; justify-content: center; color: #53677a; font-size: 25px; font-weight: 800; line-height: 1; }
+    .arrow-note { margin: -3px 0 5px; color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; }
+    .branch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; width: 100%; margin-top: 12px; }
+    .branch {
+      min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 13px;
+      background: #fbfcfe;
+    }
+    .branch-label { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 9px; border-radius: 999px; background: #edf1f5; color: #34495e; font-size: 11px; font-weight: 850; letter-spacing: .05em; }
+    .branch-label.yes { background: #e5f5e9; color: #25603a; }
+    .branch-label.no { background: #fff0ed; color: #8a3d35; }
+    .branch .stack { margin-top: 8px; }
+    .branch .node { width: 100%; }
+    .branch .arrow-down { height: 27px; }
+    .decision-wrap { width: min(640px, 100%); }
+    .role-grid, .task-grid, .independent-grid, .integration-grid { display: grid; gap: 12px; width: 100%; }
+    .role-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 12px; }
+    .task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+    .admin-task-grid { grid-template-columns: 1fr; }
+    .independent-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
+    .integration-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 12px; }
+    .tile { padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfe; }
+    .tile strong { display: block; margin-bottom: 4px; color: var(--ink); }
+    .tile p { margin: 0; color: var(--muted); font-size: 13px; }
+    .tile.role-tile { background: var(--purple); border-color: #d7c9e6; }
+    .task-tile { background: #f9fbfd; }
+    .section-note { margin: 12px 0 0; padding: 10px 12px; border-left: 4px solid #7b9abc; border-radius: 6px; background: #f3f7fb; color: var(--muted); font-size: 13px; }
+    .two-lane { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+    .lane { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe; }
+    .lane h3 { margin: 0 0 12px; text-align: center; }
+    .lane .node { width: 100%; }
+    .lane .stack { width: 100%; }
+    .lane .branch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .lane .branch { padding: 9px; }
+    .lane .node small { font-size: 12px; }
+    .join-card { margin: 12px auto 0; width: min(730px, 100%); padding: 12px 16px; border: 1px dashed #8295a8; border-radius: 12px; background: #f6f8fb; color: var(--muted); text-align: center; }
+    .join-card strong { display: block; color: var(--ink); }
+    .arch-row { display: grid; grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr); gap: 6px; align-items: stretch; }
+    .arch-row .tile { display: flex; flex-direction: column; justify-content: center; min-height: 128px; }
+    .arrow-right { display: flex; align-items: center; justify-content: center; color: #53677a; font-size: 25px; font-weight: 800; }
+    .callout { margin-top: 14px; padding: 12px 14px; border: 1px dashed #8092a4; border-radius: 12px; background: #f7f9fb; color: var(--muted); }
+    .callout strong { color: var(--ink); }
+    .jump-link { display: inline-block; margin-top: 8px; color: #145fa0; font-weight: 750; text-decoration: underline; }
+    footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 28px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 820px) {
+      .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .integration-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .independent-grid { grid-template-columns: 1fr; }
+      .arch-row { grid-template-columns: 1fr; }
+      .arrow-right { min-height: 26px; transform: rotate(90deg); }
+    }
+    @media (max-width: 620px) {
+      .branch-grid, .two-lane, .task-grid { grid-template-columns: 1fr; }
+      .lane .branch-grid { grid-template-columns: 1fr; }
+      .panel { padding: 15px; }
+    }
+    @media print {
+      body { background: white; font-size: 12px; }
+      header { padding: 12px; background: white; color: #17324d; border-bottom: 2px solid #17324d; }
+      header p, header .eyebrow { color: #526579; }
+      nav { display: none; }
+      main { width: 100%; margin: 10px auto; }
+      .panel, .review-note { box-shadow: none; break-inside: avoid; }
+      .panel { break-after: page; }
+      .branch, .tile, .lane { break-inside: avoid; }
+      footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Reviewed against current CONNECT-DAET application flows</p>
+    <h1>System Flowchart</h1>
+    <p>A simplified, readable version with direct step arrows, separate decision branches, and no crossing or duplicated connector lines.</p>
+    <nav aria-label="Flowchart sections">
+      <a href="#overview">01 Overview</a>
+      <a href="#booking">02 Booking & payment</a>
+      <a href="#operator">03 Operator & packages</a>
+      <a href="#guide">04 Guide workflow</a>
+      <a href="#admin">05 Admin workflow</a>
+      <a href="#services">06 Shared services</a>
+    </nav>
+  </header>
+
+  <main>
+    <aside class="review-note">
+      <h2>How to read this version</h2>
+      <p>Each down arrow means one next step. A decision is split into labeled YES/NO (or method) cards. Cards in a task menu are independent choices, not a sequence. Shared databases and external services are shown separately so their links do not cross the user workflow.</p>
+      <ul>
+        <li>Booking is created as <code>pending</code>; the operator confirms or declines it before payment.</li>
+        <li>Payment and tour check-in are separate processes. QR and roster check-in join at one server-side validation step.</li>
+        <li>Operator dashboard tasks and admin task types are not connected as one long chain.</li>
+      </ul>
+      <div class="legend" aria-label="Shape and color legend">
+        <span><i class="swatch" style="background:#eaf7ee;border:1px solid #6b9a79"></i>Start / successful outcome</span>
+        <span><i class="swatch" style="background:#eaf3ff;border:1px solid #7a9bc1"></i>Process</span>
+        <span><i class="swatch" style="background:#fff7dc;border:1px solid #c4a34f"></i>Decision</span>
+        <span><i class="swatch" style="background:#fff0ed;border:1px solid #c47a70"></i>Decline / error</span>
+        <span><i class="swatch" style="background:#f2edfa;border:1px solid #9276ac"></i>Role / menu</span>
+      </div>
+    </aside>
+
+    <section class="panel" id="overview">
+      <h2>01. Entry, authorization, and role routing</h2>
+      <p class="panel-intro">Public pages can be browsed without entering a role workspace. Sign-in and server-side authorization are checked when a protected action is used.</p>
+      <div class="stack">
+        <div class="node start"><strong>START</strong><small>Visitor opens CONNECT-DAET</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Public home and tourism pages</strong><small>Packages, attractions, events, FAQs, and other public information</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node decision"><strong>Does the visitor choose a protected action?</strong><small>For example: create a booking, manage an account, or open a role dashboard</small></div>
+        <div class="branch-grid">
+          <article class="branch">
+            <span class="branch-label no">NO — PUBLIC PATH</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node success"><strong>Continue browsing</strong><small>Stay on public pages or leave the site</small></div>
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node end"><strong>END</strong></div>
+            </div>
+          </article>
+          <article class="branch">
+            <span class="branch-label yes">YES — PROTECTED PATH</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node process"><strong>Sign in or create an account if needed</strong><small>Return to the requested feature after authentication</small></div>
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node process"><strong>Server checks the session, role, and required approval status</strong><small>Protected actions also check ownership and input on the server</small></div>
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node decision"><strong>Is access allowed for this route?</strong></div>
+              <div class="branch-grid">
+                <div class="branch">
+                  <span class="branch-label no">NO</span>
+                  <div class="stack">
+                    <div class="arrow-down" aria-hidden="true">↓</div>
+                    <div class="node problem"><strong>Show the correct next step</strong><small>Sign in again, show application pending/rejected, or deny access</small></div>
+                  </div>
+                </div>
+                <div class="branch">
+                  <span class="branch-label yes">YES</span>
+                  <div class="stack">
+                    <div class="arrow-down" aria-hidden="true">↓</div>
+                    <div class="node success"><strong>Route to the verified role workspace</strong></div>
+                    <div class="role-grid">
+                      <div class="tile role-tile"><strong>Tourist</strong><p>Bookings, planner, messages, reviews, and rewards</p></div>
+                      <div class="tile role-tile"><strong>Approved operator</strong><p>Packages, bookings, guide assignment, and payments</p></div>
+                      <div class="tile role-tile"><strong>Approved guide</strong><p>Availability, assigned tours, and check-in</p></div>
+                      <div class="tile role-tile"><strong>Admin</strong><p>Applications, public content, reviews, and analytics</p></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="booking">
+      <h2>02. Tourist booking and payment</h2>
+      <p class="panel-intro">The booking decision happens first. Payment begins only after the operator confirms the booking.</p>
+      <div class="stack">
+        <div class="node start"><strong>START</strong><small>Tourist selects a tour package</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Sign in if needed; enter booking details</strong><small>Choose date and price option; enter party size and contact information</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Server validates the request</strong><small>Requires an authenticated tourist and a published package</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Database checks the date and remaining capacity</strong><small>Availability is checked safely when the booking is inserted</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node success"><strong>Create booking with status: pending</strong><small>The operator receives it for review</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node decision"><strong>Operator decision: confirm or decline?</strong></div>
+        <div class="branch-grid">
+          <article class="branch">
+            <span class="branch-label yes">CONFIRM</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node success"><strong>Status becomes confirmed</strong><small>Tourist is notified and can proceed to payment</small></div>
+              <a class="jump-link" href="#payment-paths">Continue to payment methods ↓</a>
+            </div>
+          </article>
+          <article class="branch">
+            <span class="branch-label no">DECLINE</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node problem"><strong>Status becomes rejected</strong><small>Operator provides a reason; reserved capacity is released</small></div>
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node end"><strong>END — booking not confirmed</strong></div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <h3 id="payment-paths">Payment paths — confirmed bookings only</h3>
+      <div class="node decision" style="margin:0 auto 14px"><strong>Tourist chooses a payment method</strong><small>Online checkout or manual payment proof</small></div>
+      <div class="two-lane">
+        <article class="lane">
+          <h3>Online payment</h3>
+          <div class="stack">
+            <div class="node process"><strong>Start PayMongo checkout</strong><small>Charge the booking's remaining balance</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Tourist pays on PayMongo</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Server verifies payment status</strong><small>Signed webhook or return handler rechecks the PayMongo session</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Does PayMongo confirm payment?</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label yes">YES</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Record payment</strong><small>Ledger and remaining balance update</small></div></div></div>
+              <div class="branch"><span class="branch-label no">NO / WAITING</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Keep payment pending</strong><small>Tourist can retry; do not mark as paid without provider confirmation</small></div></div></div>
+            </div>
+          </div>
+        </article>
+        <article class="lane">
+          <h3>Manual payment</h3>
+          <div class="stack">
+            <div class="node process"><strong>Tourist uploads a payment proof</strong><small>Receipt is stored privately</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Operator reviews the proof</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Is the proof approved?</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label yes">YES</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Record the payment</strong><small>Ledger and remaining balance update</small></div></div></div>
+              <div class="branch"><span class="branch-label no">NO</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Ask the tourist to submit corrected proof</strong></div></div></div>
+            </div>
+          </div>
+        </article>
+      </div>
+      <p class="section-note">A failed or unconfirmed payment does not change the booking to paid. The diagram intentionally keeps payment separate from guide assignment and tour-day check-in.</p>
+    </section>
+
+    <section class="panel" id="operator">
+      <h2>03. Operator application, package review, and dashboard tasks</h2>
+      <p class="panel-intro">Accreditation, package publication, and day-to-day operations are related but separate workflows.</p>
+      <div class="two-lane">
+        <article class="lane">
+          <h3>Operator accreditation</h3>
+          <div class="stack">
+            <div class="node start"><strong>START</strong><small>Operator submits an application</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Application status: pending</strong><small>Tourism Office reviews the application</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Application decision</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label yes">APPROVED</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Approved operator account</strong><small>Package and booking tools become available</small></div></div></div>
+              <div class="branch"><span class="branch-label no">REJECTED</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Show the decision and reviewer reason</strong></div></div></div>
+            </div>
+          </div>
+        </article>
+        <article class="lane">
+          <h3>Package submission and review</h3>
+          <div class="stack">
+            <div class="node process"><strong>Approved operator creates a draft</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Add package details, price option(s), and map stop(s)</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Submit the draft for review</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Server validates required package data</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Submission valid?</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label no">NO</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Show validation error</strong><small>This attempt stops; correct the draft and submit again</small></div></div></div>
+              <div class="branch"><span class="branch-label yes">YES</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Valid submission accepted</strong><small>Only this branch continues to review</small></div></div></div>
+            </div>
+            <div class="arrow-note">YES branch only</div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node success"><strong>Status becomes pending_review</strong><small>Package is read-only while under review</small></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node process"><strong>Tourism Office reviews the package</strong></div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Publish or reject?</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label yes">PUBLISH</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Status becomes published</strong><small>Visible and bookable by tourists</small></div></div></div>
+              <div class="branch"><span class="branch-label no">REJECT</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Status becomes rejected</strong><small>Reviewer reason is recorded</small></div></div></div>
+            </div>
+          </div>
+        </article>
+      </div>
+      <h3>Separate operator dashboard tasks</h3>
+      <p class="panel-intro">These are independent choices from the operator dashboard—not steps that must happen one after another.</p>
+      <div class="independent-grid">
+        <div class="tile"><strong>Dates & capacity</strong><p>Manage availability for tour dates.</p></div>
+        <div class="tile"><strong>Bookings & guides</strong><p>Confirm or decline bookings; assign an approved guide.</p></div>
+        <div class="tile"><strong>Payments</strong><p>Review manual proofs and view the payment ledger.</p></div>
+      </div>
+      <p class="section-note">The diagram does not show a rejected package automatically looping back to editing. The current operator edit actions are for drafts, so that loop would be misleading.</p>
+    </section>
+
+    <section class="panel" id="guide">
+      <h2>04. Guide approval, assignment, and check-in</h2>
+      <p class="panel-intro">The QR and roster paths stay separate until they reach the same server-side check-in validation.</p>
+      <div class="stack">
+        <div class="node start"><strong>START</strong><small>Guide applicant submits profile, consent, and ID documents</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Tourism Office reviews the application</strong><small>ID documents remain private; open them only through the protected review flow</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node decision"><strong>Approve the guide?</strong></div>
+        <div class="branch-grid">
+          <div class="branch"><span class="branch-label no">NO</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Reject with reviewer notes</strong><small>Guide may update and resubmit the application</small></div></div></div>
+          <div class="branch"><span class="branch-label yes">YES</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Approved guide can access the guide dashboard</strong></div><div class="arrow-down" aria-hidden="true">↓</div><div class="node process"><strong>Guide sets availability</strong></div><div class="arrow-down" aria-hidden="true">↓</div><div class="node process"><strong>Operator assigns an approved guide to a booking</strong><small>Database checks the guide's schedule and existing assignments</small></div><div class="arrow-down" aria-hidden="true">↓</div><div class="node process"><strong>On the tour date, the assigned guide opens check-in</strong></div><div class="arrow-down" aria-hidden="true">↓</div><div class="node decision"><strong>Choose a check-in method</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label">QR SCAN</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node process"><strong>Scan the booking ticket</strong><small>Server verifies the signed token and expiry</small></div></div></div>
+              <div class="branch"><span class="branch-label">ROSTER</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node process"><strong>Select the booking or guest</strong><small>Manual check-in is available from the assigned tour roster</small></div></div></div>
+            </div>
+            <div class="join-card"><strong>Both methods continue to the same check</strong>One server-side RPC verifies the assigned guide, tour date, and booking/check-in state.</div>
+            <div class="arrow-down" aria-hidden="true">↓</div>
+            <div class="node decision"><strong>Do all checks pass?</strong></div>
+            <div class="branch-grid">
+              <div class="branch"><span class="branch-label no">NO</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node problem"><strong>Reject the check-in</strong><small>Do not record arrival</small></div></div></div>
+              <div class="branch"><span class="branch-label yes">YES</span><div class="stack"><div class="arrow-down" aria-hidden="true">↓</div><div class="node success"><strong>Record guest check-in</strong><small>A repeated scan returns “already checked in” instead of duplicating the record</small></div><div class="arrow-down" aria-hidden="true">↓</div><div class="node end"><strong>END</strong></div></div></div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="admin">
+      <h2>05. Admin authorization and independent tasks</h2>
+      <p class="panel-intro">Different admin tasks have different outcomes. They do not all feed into one shared approval decision.</p>
+      <div class="stack">
+        <div class="node start"><strong>START</strong><small>Admin signs in and opens the admin area</small></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node process"><strong>Server verifies the admin role</strong></div>
+        <div class="arrow-down" aria-hidden="true">↓</div>
+        <div class="node decision"><strong>Is this account authorized as an admin?</strong></div>
+        <div class="branch-grid">
+          <div class="branch">
+            <span class="branch-label no">NO</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node problem"><strong>Access denied</strong></div>
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node end"><strong>END</strong></div>
+            </div>
+          </div>
+          <div class="branch">
+            <span class="branch-label yes">YES</span>
+            <div class="stack">
+              <div class="arrow-down" aria-hidden="true">↓</div>
+              <div class="node success"><strong>Open Tourism Office dashboard</strong></div>
+              <h3>Choose one independent task</h3>
+              <div class="task-grid admin-task-grid">
+                <div class="tile task-tile"><strong>Operator and guide applications</strong><p>Review the application; approve or reject and record the decision. Guide ID documents use a protected, expiring review link.</p></div>
+                <div class="tile task-tile"><strong>Packages and merchandise submissions</strong><p>Review the submission and update its review status; package publication makes it visible/bookable.</p></div>
+                <div class="tile task-tile"><strong>Public tourism content</strong><p>Manage attractions, events, fares, and local guide places; validate and save each record.</p></div>
+                <div class="tile task-tile"><strong>Reviews, safety, and feedback</strong><p>Moderate reviews, manage emergency information, and review feedback or reports.</p></div>
+                <div class="tile task-tile"><strong>Analytics</strong><p>Select a date range and view the available tourism and operations metrics.</p></div>
+              </div>
+              <p class="section-note">Each tile starts its own workflow from the dashboard. The task tiles are deliberately not connected to one another.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="services">
+      <h2>06. Shared application and service connections</h2>
+      <p class="panel-intro">This is the shared technical path. Service cards below it are dependencies, not extra user-workflow steps.</p>
+      <div class="arch-row" aria-label="Browser to application to server authorization to database">
+        <div class="tile"><strong>1. Browser / phone</strong><p>Tourist, operator, guide, or admin uses the site.</p></div>
+        <div class="arrow-right" aria-hidden="true">→</div>
+        <div class="tile"><strong>2. CONNECT-DAET app</strong><p>Next.js pages, Server Components, Server Actions, and API routes.</p></div>
+        <div class="arrow-right" aria-hidden="true">→</div>
+        <div class="tile"><strong>3. Server checks</strong><p>Session, role, ownership, and input validation before protected writes.</p></div>
+        <div class="arrow-right" aria-hidden="true">→</div>
+        <div class="tile"><strong>4. Supabase</strong><p>Auth, Postgres, RLS/RPCs, private Storage, and Realtime.</p></div>
+      </div>
+      <div class="callout"><strong>Security boundary:</strong> private ID documents and payment proofs stay in protected storage. A browser result should not expose raw private file paths or permanent public URLs. Database policies and server-side checks enforce access.</div>
+      <h3>External or optional integrations</h3>
+      <div class="integration-grid">
+        <div class="tile"><strong>PayMongo</strong><p>Hosted online checkout; signed webhooks and return handling recheck provider status before updating the payment ledger.</p></div>
+        <div class="tile"><strong>Maps / Routes</strong><p>Optional route data for itinerary planning; the planner can use its fallback estimate.</p></div>
+        <div class="tile"><strong>AI provider</strong><p>Optional assistant model; a basic fallback is available when a provider is not configured.</p></div>
+        <div class="tile"><strong>Email / Push</strong><p>Email and Web Push deliver selected notifications; in-app updates use the application’s notification services.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer>Reviewed version of the supplied System Flowchart. It simplifies the connectors and separates independent workflows; it does not add these documentation files to the admin-search pull request.</footer>
+</body>
+</html>
