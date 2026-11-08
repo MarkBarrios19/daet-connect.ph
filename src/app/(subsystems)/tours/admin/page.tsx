@@ -1,14 +1,20 @@
 import { LiveCount } from "@/components/live/live-count";
 import { LineIcon } from "@/components/ui/icons";
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { PageFrame } from '@/components/ui/page-frame';
-import { Notice } from '@/components/ui/notice';
+import { Notice } from "@/components/ui/notice";
+import { PageFrame } from "@/components/ui/page-frame";
+import { Field, Input, Select } from "@/components/ui/field";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/tours/server-auth";
+import { searchTerm } from "@/components/ui/search-term";
+import { ADMIN_SEARCH_STATUSES, ADMIN_SEARCH_TYPES, parseAdminSearchStatus, parseAdminSearchType } from "@/lib/tours/admin-search";
+import { searchAdminRecords, type AdminSearchResult } from "@/lib/tours/admin-search.server";
+import Link from "next/link";
 
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({ searchParams }: { searchParams: SearchParams }) {
   const supabase = await createSupabaseServerClient();
   
   // Check if user is admin
@@ -45,6 +51,29 @@ export default async function AdminDashboardPage() {
       </PageFrame>
     );
   }
+
+  const params = await searchParams;
+  const query = searchTerm(params.q);
+  const searchType = parseAdminSearchType(params.type);
+  const searchStatus = parseAdminSearchStatus(params.status);
+  const searchResult = query.length >= 2
+    ? await searchAdminRecords({
+        supabase,
+        applicationSupabase: isSupabaseAdminConfigured() ? createSupabaseAdminClient() : supabase,
+        term: query,
+        type: searchType,
+        status: searchStatus,
+      })
+    : null;
+  const searchGroups = searchResult?.results.reduce<Array<{ kind: string; items: AdminSearchResult[] }>>((groups, result) => {
+    let group = groups.find((item) => item.kind === result.kind);
+    if (!group) {
+      group = { kind: result.kind, items: [] };
+      groups.push(group);
+    }
+    group.items.push(result);
+    return groups;
+  }, []) ?? [];
 
   // Get counts of pending items
   const [
@@ -86,6 +115,71 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      <section id="admin-search" aria-labelledby="admin-search-title" className="mb-8 rounded-2xl card-edge bg-surface p-5 sm:p-6">
+        <div>
+          <h2 id="admin-search-title" className="text-xl font-bold text-daet-ink">Find admin records</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-daet-ink/70">
+            Search applications, attractions, events, local places, fares, packages, merchandise and reviews. Search results link to the right record or review queue.
+          </p>
+        </div>
+        <form action="/tours/admin" method="get" role="search" className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(12rem,1fr)_minmax(12rem,1fr)_auto] lg:items-end">
+          <Field id="admin-search-query" label="Search" required className="block">
+            <Input
+              type="search"
+              name="q"
+              defaultValue={query}
+              minLength={2}
+              maxLength={80}
+              required
+              placeholder="Name, title, route, applicant or review text"
+            />
+          </Field>
+          <Field id="admin-search-type" label="Record type" className="block">
+            <Select name="type" defaultValue={searchType}>
+              {ADMIN_SEARCH_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </Select>
+          </Field>
+          <Field id="admin-search-status" label="Status" className="block">
+            <Select name="status" defaultValue={searchStatus}>
+              {ADMIN_SEARCH_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </Select>
+          </Field>
+          <div className="flex items-center gap-3">
+            <button type="submit" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-daet-forest px-5 text-sm font-bold text-white transition hover:bg-blue-700 lg:flex-none">Search records</button>
+            {query || searchType !== "all" || searchStatus !== "all" ? <Link href="/tours/admin#admin-search" className="inline-flex min-h-11 items-center text-sm font-bold text-blue-700 underline underline-offset-4 dark:text-blue-300">Clear</Link> : null}
+          </div>
+        </form>
+        <p className="mt-3 text-xs leading-5 text-daet-ink/65">Search at least 2 characters. Up to 12 matches per record type are shown; narrow by type or status for a shorter list. Application results show pending operator and guide reviews only; private files remain behind their short-lived review links.</p>
+        {query.length === 1 ? <p className="mt-3 text-sm font-semibold text-amber-800 dark:text-amber-200">Enter at least 2 characters to search.</p> : null}
+        {searchResult?.hasError ? <Notice variant="warning" className="mt-4">Some record types could not be searched. The results below may be incomplete.</Notice> : null}
+        {searchResult && searchResult.results.length === 0 ? <p className="mt-5 rounded-xl bg-canvas p-4 text-sm text-daet-ink/70">No records match “{query}” with those filters. Try a different search or status.</p> : null}
+        {searchGroups.length > 0 ? (
+          <div className="mt-5 space-y-5">
+            {searchGroups.map((group) => (
+              <section key={group.kind} aria-label={group.items[0].kindLabel}>
+                <h3 className="mb-2 text-sm font-bold text-daet-ink/65">{group.items[0].kindLabel} <span className="font-normal">({group.items.length}{group.items.length === 12 ? "+" : ""})</span></h3>
+                <ul className="divide-y divide-daet-ink/10 overflow-hidden rounded-xl border border-daet-ink/10">
+                  {group.items.map((result) => (
+                    <li key={`${result.kind}-${result.id}`}>
+                      <Link href={result.href} className="flex min-h-16 flex-col gap-2 bg-canvas px-4 py-3 transition hover:bg-blue-50 dark:hover:bg-blue-950/40 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="min-w-0">
+                          <span className="block truncate font-bold text-daet-ink">{result.title}</span>
+                          <span className="mt-0.5 block truncate text-sm text-daet-ink/70">{result.detail}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          <span className="rounded-full bg-daet-sand px-3 py-1 text-xs font-bold text-daet-forest dark:text-blue-300">{result.status}</span>
+                          <span className="text-sm font-bold text-blue-700 dark:text-blue-300">Open →</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       {/* Two figures per row on phones; what waits on the office is amber and links to its queue. */}
       <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-5">

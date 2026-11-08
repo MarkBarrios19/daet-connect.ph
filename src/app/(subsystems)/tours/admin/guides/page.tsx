@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Notice } from "@/components/ui/notice";
 import { PageFrame } from "@/components/ui/page-frame";
+import { SearchBox } from "@/components/ui/search-box";
+import { searchTerm } from "@/components/ui/search-term";
 import { GUIDE_ADMIN_SELECT, GUIDE_TABLE, type GuideAdminRecord } from "@/lib/tours/guide-contract";
 import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -9,7 +11,7 @@ import { GuideReviewCard } from "@/app/(subsystems)/tours/admin/guides/guide-rev
 
 
 const PAGE_SIZE = 20;
-type SearchParams = Promise<{ page?: string }>;
+type SearchParams = Promise<{ page?: string; q?: string }>;
 
 function safePage(value?: string): number {
   const parsed = Number(value);
@@ -44,13 +46,25 @@ export default async function AdminGuideQueuePage({ searchParams }: { searchPara
 
   const params = await searchParams;
   const page = safePage(params.page);
+  const q = searchTerm(params.q);
   const supabase = await createSupabaseServerClient();
+  // Search names through the public profile field; sensitive ID storage is not queried.
+  const profileSearch = q
+    ? await supabase.from("profiles").select("id").ilike("full_name", `%${q}%`).limit(500)
+    : { data: [], error: null };
+  const profileIds = (profileSearch.data ?? []).map((profile) => profile.id);
   // The admin review list only selects public guide-profile fields. It never
   // queries tours_guide_sensitive_info; ID access is a separate Server Action.
-  const { data: rows, error } = await supabase
+  let guideQuery = supabase
     .from(GUIDE_TABLE)
     .select(GUIDE_ADMIN_SELECT)
-    .eq("accreditation_status", "pending")
+    .eq("accreditation_status", "pending");
+  if (q) {
+    const searchFilters = [`contact_phone.ilike.%${q}%`, `bio.ilike.%${q}%`];
+    if (profileIds.length) searchFilters.push(`profile_id.in.(${profileIds.join(",")})`);
+    guideQuery = guideQuery.or(searchFilters.join(","));
+  }
+  const { data: rows, error } = await guideQuery
     .order("created_at", { ascending: true })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
@@ -86,6 +100,8 @@ export default async function AdminGuideQueuePage({ searchParams }: { searchPara
         </div>
         <span className="inline-flex min-h-10 items-center self-start rounded-full bg-yellow-50 dark:bg-yellow-950/40 px-4 text-sm font-bold text-yellow-900 dark:text-yellow-200 sm:self-auto">Pending · page {page}</span>
       </div>
+      <SearchBox action="/tours/admin/guides" label="Search pending guide applications" placeholder="Guide name, phone or introduction" value={q} className="mb-6" />
+      {profileSearch.error ? <Notice variant="warning" className="mb-4">Guide names could not be searched, but phone numbers and introductions can still be matched.</Notice> : null}
       <Notice variant="warning" className="mb-6">
         Government ID files are highly sensitive. Open them only when needed for verification. Links expire after 3 minutes; do not forward or retain copies outside approved systems.
       </Notice>
@@ -93,14 +109,14 @@ export default async function AdminGuideQueuePage({ searchParams }: { searchPara
         <section className="rounded-2xl card-edge bg-surface px-6 py-14 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-green-50 dark:bg-green-950/40 text-2xl text-green-700 dark:text-green-300" aria-hidden="true">✓</span>
           <h2 className="mt-4 text-xl font-bold text-daet-ink">No pending guide applications</h2>
-          <p className="mt-2 text-sm text-daet-ink/70">You’re all caught up on this page.</p>
+          <p className="mt-2 text-sm text-daet-ink/70">{q ? `No pending guide applications match “${q}”.` : "You’re all caught up on this page."}</p>
         </section>
       ) : (
         <div className="space-y-5">{guides.map((guide) => <GuideReviewCard key={guide.id} guide={guide} />)}</div>
       )}
       <nav className="mt-7 flex items-center justify-between" aria-label="Guide application pages">
-        {page > 1 ? <Link href={`/tours/admin/guides?page=${page - 1}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">← Previous</Link> : <span />}
-        {hasNext ? <Link href={`/tours/admin/guides?page=${page + 1}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">Next →</Link> : <span />}
+        {page > 1 ? <Link href={`/tours/admin/guides?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">← Previous</Link> : <span />}
+        {hasNext ? <Link href={`/tours/admin/guides?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="inline-flex min-h-11 items-center rounded-full border border-daet-ink/15 px-5 text-sm font-bold text-daet-ink hover:bg-surface">Next →</Link> : <span />}
       </nav>
     </PageFrame>
   );

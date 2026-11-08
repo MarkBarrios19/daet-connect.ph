@@ -20,13 +20,15 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
 
   const params = await searchParams;
   const filter = params.show === "hidden" ? "hidden" : params.show === "low" ? "low" : "all";
+  const reviewId = typeof params.review === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.review) ? params.review : null;
   let query = admin.supabase
     .from("tours_reviews")
     .select("id, rating, comment, created_at, operator_reply, is_hidden, hidden_reason, package_id, tours_packages(title), tours_operators(business_name)")
     .order("created_at", { ascending: false })
     .limit(200);
-  if (filter === "hidden") query = query.eq("is_hidden", true);
-  if (filter === "low") query = query.lte("rating", 2);
+  if (reviewId) query = query.eq("id", reviewId);
+  else if (filter === "hidden") query = query.eq("is_hidden", true);
+  else if (filter === "low") query = query.lte("rating", 2);
   const { data, error } = await query;
   const reviews = data ?? [];
 
@@ -39,6 +41,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
   return (
     <PageFrame adminNav>
       <AdminPageHeading title="Reviews" backHref="/tours/admin" backLabel="Admin dashboard" />
+      {reviewId ? <p className="-mt-3 mb-4 text-sm text-daet-ink/70">Showing the selected review. <Link href="/tours/admin/reviews" className="font-bold text-blue-700 underline underline-offset-4 dark:text-blue-300">Show all reviews</Link></p> : null}
 
       <p className="mb-4 max-w-2xl text-sm text-daet-ink/65">
         Hidden reviews disappear from the public pages and no longer count toward ratings. The traveller and the operator still see them, with your reason.
