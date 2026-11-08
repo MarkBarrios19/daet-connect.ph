@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { bookingConfirmedEmail, bookingReceivedEmail, guideAssignedEmail, newBookingForOperatorEmail, paymentReceivedEmail, paymentReceivedForOperatorEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
+import { bookingConfirmedEmail, bookingReceivedEmail, guideAssignedEmail, newBookingForOperatorEmail, paymentReceivedEmail, paymentReceivedForOperatorEmail, refundSentEmail, tripCalledOffEmail, type BookingEmailData } from "@/lib/email/booking-emails";
 import { isEmailConfigured, sendEmail } from "@/lib/email/send";
 import { meetingPointOf, meetingTimeLabel } from "@/lib/tours/guide/meeting";
 
@@ -138,5 +138,16 @@ export function emailTripCalledOff(bookingId: string, reason: string) {
   later(async () => {
     const booking = await loadBooking(bookingId);
     if (booking) await sendEmail({ to: booking.to, ...tripCalledOffEmail(booking.data, reason) });
+  });
+}
+
+/** Tells the tourist money was sent back, and how much is still to come. */
+export function emailRefundSent(bookingId: string, amount: number) {
+  if (!isEmailConfigured()) return;
+  later(async () => {
+    const booking = await loadBooking(bookingId);
+    // The ledger trigger has already added the refund to total_paid's sibling
+    // columns by the time this runs; the email quotes what it was sent.
+    if (booking) await sendEmail({ to: booking.to, ...refundSentEmail(booking.data, amount) });
   });
 }
