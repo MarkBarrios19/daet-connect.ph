@@ -5,18 +5,18 @@ import { checkA11y, signInAs } from "./fixtures";
 // actions behind More, and a guide calendar where a switch sets what a tap does.
 test.use({ viewport: { width: 375, height: 812 }, isMobile: true });
 
-test("operator cards keep Cancel and Decline behind More, with a confirm that names the booking", async ({ context, page }) => {
+test("operator rows keep the risky actions out of the row, behind a confirm that names the booking", async ({ context, page }) => {
   await signInAs(context, "operator");
   await page.goto("/tours/operator/bookings", { waitUntil: "networkidle" });
-  // Cancel booking is no longer a button on the card itself (a guide swap's "Decline" is a different action).
-  await expect(page.getByRole("button", { name: /^Cancel booking$/ })).toHaveCount(0);
-  const more = page.getByRole("button", { name: "More" }).first();
-  await expect(more).toHaveAttribute("aria-expanded", "false");
-  await more.click();
-  await expect(more).toHaveAttribute("aria-expanded", "true");
-  const risky = page.getByRole("button", { name: /^(Cancel booking|Decline)…$/ }).first();
-  await risky.click();
-  await expect(page.getByRole("dialog", { name: /^(Cancel booking|Decline) BK-\S+ for .+\?$/ })).toBeVisible();
+  // One main action per row: approving. Cancelling and declining live in the
+  // row's detail panel, and each confirm names the booking.
+  const row = page.getByRole("article").filter({ hasText: "BK-20261023-7F3K2Q" }).first();
+  await expect(row.getByRole("button", { name: /^Cancel booking$/ })).toHaveCount(0);
+  await expect(row.getByRole("button", { name: /^Decline$/ })).toHaveCount(0);
+
+  await row.getByRole("button", { name: /Show details for/ }).click();
+  await row.getByRole("button", { name: /^Cancel booking$/ }).click();
+  await expect(page.getByRole("dialog", { name: /^Cancel BK-\S+ for .+\?$/ })).toBeVisible();
   await checkA11y(page, "operator cancel confirm");
   await page.getByRole("button", { name: "Keep as is" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();

@@ -14,6 +14,8 @@ const TONES = {
   warning: "bg-yellow-500 text-slate-950 dark:bg-yellow-400/15 dark:text-yellow-200",
   danger: "bg-red-600 text-white dark:bg-red-500/20 dark:text-red-200",
   info: "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-300",
+  // Money returned: violet, so a refund never reads as a warning or an error.
+  refund: "bg-violet-100 text-violet-900 dark:bg-violet-500/20 dark:text-violet-200",
 } as const;
 
 export type BadgeTone = keyof typeof TONES;

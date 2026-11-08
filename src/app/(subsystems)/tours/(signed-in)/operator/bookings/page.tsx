@@ -1,74 +1,81 @@
 import { Suspense } from "react";
-import { LiveCount } from "@/components/live/live-count";
-import { badgeTone } from "@/components/ui/badge";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LineIcon } from "@/components/ui/icons";
-import { Field, Input } from "@/components/ui/field";
-import { bookingSearchFilter, bookingSearchPattern } from "@/lib/tours/booking-search";
-import { formatPeso } from "@/lib/money";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { PageBody } from "@/components/ui/signed-in-frame";
 import { Notice } from "@/components/ui/notice";
+import { PageBody } from "@/components/ui/signed-in-frame";
+import { bookingSearchFilter, bookingSearchPattern } from "@/lib/tours/booking-search";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { timed } from "@/lib/server-timing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/tours/server-auth";
-import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { manilaDayStartUtc, toManilaDateKey } from "@/lib/tours/events-calendar";
-import { OpenChatButton } from "@/app/(subsystems)/tours/messages/open-chat-button";
-import { BookingActionButtons } from "@/app/(subsystems)/tours/operator/bookings/booking-action-buttons";
-import { CallOffButton } from "@/app/(subsystems)/tours/operator/bookings/call-off-button";
-import { callOffState, canCallOff } from "@/lib/tours/call-off";
-import { CancellationReview, RefundPanel, type CancellationRequest } from "@/app/(subsystems)/tours/operator/bookings/cancellation-review";
+import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { isBusyReason, type BusyReason } from "@/lib/tours/guide-swap";
-import { SwapReview, type PendingSwap } from "@/app/(subsystems)/tours/operator/bookings/swap-review";
-import { GuideAssignment } from "@/app/(subsystems)/tours/operator/bookings/guide-assignment";
-import { PaymentRecorder } from "@/app/(subsystems)/tours/operator/bookings/payment-recorder";
-import { ProofReview, type ReviewableProof } from "@/app/(subsystems)/tours/operator/bookings/proof-review";
+import { canCallOff, callOffState } from "@/lib/tours/call-off";
+import { getPaymongoConfig } from "@/lib/paymongo/client";
+import {
+  boardCounts,
+  boardStatus,
+  boardUrl,
+  matchesBoardFilter,
+  paginate,
+  parseBoardFilter,
+  paymentNote,
+  type BoardFilter,
+} from "@/lib/tours/booking-board";
+import { BoardFilters } from "@/app/(subsystems)/tours/operator/bookings/board-filters";
+import { BoardPagination } from "@/app/(subsystems)/tours/operator/bookings/pagination";
+import { BookingBoard } from "@/app/(subsystems)/tours/operator/bookings/board";
+import type { BoardRow } from "@/app/(subsystems)/tours/operator/bookings/board-types";
+import type { ReviewableProof } from "@/app/(subsystems)/tours/operator/bookings/proof-review";
 
+export const metadata = { title: "Bookings" };
+
+const BASE = "/tours/operator/bookings";
+const PAGE_SIZE = 10;
+const round2 = (value: number) => Math.round(value * 100) / 100;
+/** The board only marks the two states worth a note; "none" is silence. */
+const awaitableState = (state: string): "awaiting" | "rescheduled" | null =>
+  state === "awaiting" || state === "rescheduled" ? state : null;
 
 type SearchParams = Promise<{
   status?: string;
   q?: string;
+  package?: string;
+  date?: string;
+  page?: string;
 }>;
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-/** Approved guides for assignment, with their full names from profiles. */
-async function loadAvailableGuides(supabase: Supabase) {
-  const { data: guidesData, error: guidesError } = await supabase
+/** Approved guides, with their name and the two specialties the picker shows. */
+async function loadGuides(supabase: Supabase) {
+  const { data: guideRows, error } = await supabase
     .from("tours_guides")
-    .select("id, profile_id, contact_phone")
+    .select("id, profile_id, contact_phone, specialties")
     .eq("accreditation_status", "approved")
     .order("id", { ascending: true });
-  if (guidesError) {
-    console.error("Guides fetch error:", guidesError);
-    console.error("Guides error details:", JSON.stringify(guidesError, null, 2));
-  }
+  if (error) console.error("Guides fetch error:", error);
 
-  const profileIds = guidesData?.map((g) => g.profile_id).filter(Boolean) || [];
-  let profilesData: Array<{ id: string; full_name: string | null }> | null = null;
+  const profileIds = (guideRows ?? []).map((guide) => guide.profile_id).filter(Boolean);
+  let profiles: Array<{ id: string; full_name: string | null }> = [];
   if (profileIds.length > 0) {
     const { data, error: profilesError } = await supabase.from("profiles").select("id, full_name").in("id", profileIds);
-    profilesData = data;
+    profiles = data ?? [];
     if (profilesError) console.error("Profiles fetch error:", profilesError);
   }
 
-  return (
-    guidesData?.map((guide) => ({
-      id: guide.id,
-      full_name: profilesData?.find((p) => p.id === guide.profile_id)?.full_name || "Unknown Guide",
-      contact_phone: guide.contact_phone,
-    })) || []
-  );
+  return (guideRows ?? []).map((guide) => ({
+    id: guide.id,
+    full_name: profiles.find((profile) => profile.id === guide.profile_id)?.full_name || "Unknown Guide",
+    contact_phone: guide.contact_phone,
+    specialties: guide.specialties ?? [],
+  }));
 }
 
-export default function OperatorBookingsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default function OperatorBookingsPage({ searchParams }: { searchParams: SearchParams }) {
   // The heading is the same for everyone, so it is in the prerendered shell;
   // the filters and the list wait for the operator.
   return (
@@ -91,14 +98,15 @@ function BookingsSkeleton() {
       </p>
       <div aria-hidden="true" className="animate-pulse">
         <div className="mt-2 h-6 w-1/2 max-w-sm rounded-full bg-daet-ink/10" />
-        <div className="mb-6 mt-6 flex flex-wrap gap-2">
-          {[0, 1, 2, 3, 4].map((i) => (
+        <div className="mt-6 h-40 rounded-2xl bg-daet-ink/10" />
+        <div className="mb-6 mt-4 flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-11 w-28 rounded-full bg-daet-ink/10" />
           ))}
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-40 rounded-2xl card-edge bg-surface" />
+            <div key={i} className="h-28 rounded-2xl card-edge bg-surface" />
           ))}
         </div>
       </div>
@@ -117,18 +125,15 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
 
   const params = await searchParams;
   const user = await getAuthUser();
-
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent("/tours/operator/bookings")}`);
+    redirect(`/login?next=${encodeURIComponent(BASE)}`);
   }
-  const supabase = await createSupabaseServerClient();
 
-  // The operator row and the approved guides don't depend on each other, so they
-  // are asked for together.
-  const [{ data: operator }, availableGuides] = await timed("page:bookings-operator", () =>
+  const supabase = await createSupabaseServerClient();
+  const [{ data: operator }, guides] = await timed("page:bookings-operator", () =>
     Promise.all([
       supabase.from("tours_operators").select("id, business_name").eq("profile_id", user.id).maybeSingle(),
-      loadAvailableGuides(supabase),
+      loadGuides(supabase),
     ]),
   );
 
@@ -140,447 +145,352 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
     );
   }
 
-  const search = typeof params.q === "string" ? params.q.trim().slice(0, 200) : "";
-  const status = typeof params.status === "string" ? params.status : "all";
-  const bookingUrl = (selectedStatus: string, query = search) => {
-    const values = new URLSearchParams();
-    if (selectedStatus !== "all") values.set("status", selectedStatus);
-    if (query) values.set("q", query);
-    const suffix = values.toString();
-    return `/tours/operator/bookings${suffix ? `?${suffix}` : ""}`;
+  const filters = {
+    status: parseBoardFilter(params.status),
+    q: typeof params.q === "string" ? params.q.trim().slice(0, 200) : "",
+    packageId: typeof params.package === "string" ? params.package : "",
+    date: typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : "",
+    page: Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1),
   };
 
-  // Look up matching package IDs separately so the OR can also match booking fields.
-  // Both this lookup and the booking query are scoped to the signed-in operator.
+  // The tour list for the package picker, the search's package ids, and every
+  // booking's status for the chips: none of them depends on another.
   let packageIds: string[] = [];
-  if (search) {
-    const { data, error: packageError } = await supabase.from("tours_packages")
-      .select("id").eq("operator_id", operator.id).ilike("title", bookingSearchPattern(search));
+  if (filters.q) {
+    const { data, error: packageError } = await supabase
+      .from("tours_packages")
+      .select("id")
+      .eq("operator_id", operator.id)
+      .ilike("title", bookingSearchPattern(filters.q));
     if (packageError) {
       console.error("Booking package search error:", packageError);
-      return <Notice variant="error" title="Search unavailable">Please try again later.</Notice>;
+      return (
+        <Notice variant="error" title="Search unavailable">
+          Please try again later.
+        </Notice>
+      );
     }
     packageIds = (data ?? []).map((pkg) => pkg.id);
   }
 
-  // Build query for bookings
+  // Only the tours that have been booked, so the picker stays short.
   let query = supabase
     .from("tours_bookings")
     .select(
       `
-      *,
-      tours_packages!inner (
-        id,
-        title,
-        cover_image_url,
-        operator_id
-      )
-    `
+      id, booking_reference, status, tour_date, number_of_pax, total_amount, total_paid, payment_status,
+      contact_name, contact_email, contact_phone, special_requests, assigned_guide_id, package_id,
+      called_off_at, called_off_reason, call_off_resolution, rescheduled_from, cancellation_reason,
+      tours_packages!inner ( id, title, cover_image_url, operator_id )
+    `,
     )
     .eq("tours_packages.operator_id", operator.id)
     .order("created_at", { ascending: false });
 
-  // Filter by status if provided
-  if (params.status && params.status !== "all") {
-    query = query.eq("status", params.status);
-  }
+  if (filters.packageId) query = query.eq("package_id", filters.packageId);
+  if (filters.date) query = query.eq("tour_date", filters.date);
+  if (filters.q) query = query.or(bookingSearchFilter(filters.q, packageIds));
 
-  if (search) query = query.or(bookingSearchFilter(search, packageIds));
-
-  // The list and the chip counts are separate reads; neither waits for the other.
-  // Counts cover every booking, not just the selected filter, so the chips
-  // read the same whichever one is open.
-  const [{ data: bookings, error }, { data: statusRows }] = await timed("page:bookings-list", () =>
+  const [
+    { data: bookings, error },
+    { data: statusRows },
+    { data: packageRows },
+    paymongo,
+  ] = await timed("page:bookings-list", () =>
     Promise.all([
       query,
       supabase
         .from("tours_bookings")
-        .select("status, tours_packages!inner(operator_id)")
+        .select("id, status, total_amount, total_paid, tours_packages!inner(operator_id)")
         .eq("tours_packages.operator_id", operator.id),
+      supabase
+        .from("tours_packages")
+        .select("id, title")
+        .eq("operator_id", operator.id)
+        .order("title", { ascending: true }),
+      Promise.resolve(getPaymongoConfig()),
     ]),
   );
-
-  // Everything below hangs off the bookings and the guides already in hand, and
-  // none of it depends on anything else here, so it is asked for all at once.
-  const bookingIds = (bookings ?? []).map((b) => b.id);
-  const today = toManilaDateKey(new Date());
-  const tourDates = [...new Set((bookings ?? []).map((b) => b.tour_date))];
-  const upcomingDates = tourDates.filter((d) => d >= today);
-  const refundCandidates = (bookings ?? []).filter(
-    (b) => (b.status === "cancelled" || b.status === "rejected") && Number(b.total_paid ?? 0) > 0,
-  );
-
-  const [
-    { data: pendingProofRows },
-    { data: requestRows },
-    { data: availabilityRows },
-    busyRows,
-    refundableRows,
-    { data: swapRows },
-  ] = await timed("page:bookings-details", () => Promise.all([
-    // Receipts waiting for verification on these bookings (RLS: operator's own bookings only)
-    bookingIds.length
-      ? supabase
-          .from("tours_payment_proofs")
-          .select("id, booking_id, amount, payment_method, reference_number, submitted_at")
-          .in("booking_id", bookingIds)
-          .eq("verification_status", "pending")
-          .order("submitted_at", { ascending: true })
-      : { data: [] as Array<ReviewableProof & { booking_id: string }> },
-    // Open cancellation requests.
-    bookingIds.length
-      ? supabase
-          .from("tours_cancellations")
-          .select("id, booking_id, reason, requested_at, status")
-          .in("booking_id", bookingIds)
-          .eq("status", "requested")
-      : { data: [] as Array<CancellationRequest & { booking_id: string }> },
-    // Guides' own availability for the dates on this page (F9), shown in the picker.
-    tourDates.length && availableGuides.length
-      ? supabase
-          .from("tours_guide_availability")
-          .select("guide_id, available_date, is_available")
-          .in("available_date", tourDates)
-          .in("guide_id", availableGuides.map((g) => g.id))
-      : { data: [] as { guide_id: string; available_date: string; is_available: boolean }[] },
-    // R6: who can take each upcoming date (approved, marked available, not on another tour that day).
-    Promise.all(
-      upcomingDates.map(async (date) => {
-        const { data } = await supabase.rpc("tours_guides_free_on", { p_date: date });
-        return [date, (data ?? []) as Array<{ guide_id: string; full_name: string; reason: string | null }>] as const;
-      }),
-    ),
-    // Money still to return on cancelled/declined bookings.
-    Promise.all(
-      refundCandidates.map(async (b) => {
-        const { data } = await supabase.rpc("tours_refundable_amount", { p_booking_id: b.id });
-        return [b.id, Number(data ?? 0)] as const;
-      }),
-    ),
-    // R6: guides' pending swap requests on these bookings.
-    bookingIds.length
-      ? supabase
-          .from("tours_guide_swap_requests")
-          .select("id, booking_id, from_guide_id, to_guide_id, reason, created_at")
-          .in("booking_id", bookingIds)
-          .eq("status", "pending")
-      : { data: [] as Array<{ id: string; booking_id: string; from_guide_id: string; to_guide_id: string | null; reason: string; created_at: string }> },
-  ]));
-
-  const proofsByBooking = new Map<string, ReviewableProof[]>();
-  for (const proof of pendingProofRows ?? []) {
-    const list = proofsByBooking.get(proof.booking_id) ?? [];
-    list.push(proof);
-    proofsByBooking.set(proof.booking_id, list);
-  }
-  const requestByBooking = new Map<string, CancellationRequest>(
-    (requestRows ?? []).map((row) => [row.booking_id, row]),
-  );
-  const refundableByBooking = new Map<string, number>(refundableRows.filter(([, amount]) => amount > 0));
 
   if (error) {
     console.error("Bookings fetch error:", error);
     console.error("Bookings error details:", JSON.stringify(error, null, 2));
+    return <Notice variant="error" title="Bookings unavailable">Please try again later.</Notice>;
   }
 
-  const availabilityFor = (date: string): Record<string, boolean> =>
-    Object.fromEntries((availabilityRows ?? []).filter((r) => r.available_date === date).map((r) => [r.guide_id, r.is_available]));
-  const busyByDate = new Map(busyRows.map(([date, rows]) => [date, rows]));
-  const busyFor = (date: string): Record<string, BusyReason | null> =>
-    Object.fromEntries((busyByDate.get(date) ?? []).map((r) => [r.guide_id, isBusyReason(r.reason) ? r.reason : null]));
-  const pickerFor = (date: string) =>
-    (busyByDate.get(date) ?? []).map((r) => ({ id: r.guide_id, full_name: r.full_name, reason: isBusyReason(r.reason) ? r.reason : null }));
+  const bookingIds = (bookings ?? []).map((booking) => booking.id);
+  const tourDates = [...new Set((bookings ?? []).map((booking) => booking.tour_date))];
+  const today = toManilaDateKey(new Date());
+  const upcomingDates = tourDates.filter((date) => date >= today);
+  const moneyBookings = (bookings ?? []).filter((booking) => Number(booking.total_paid ?? 0) > 0);
+  const packageIdsForSlots = [...new Set((bookings ?? []).map((booking) => booking.package_id))];
 
-  const guideName = (id: string | null) => (id ? availableGuides.find((g) => g.id === id)?.full_name ?? "A guide" : null);
-  const swapByBooking = new Map<string, PendingSwap>(
-    (swapRows ?? []).map((row) => [
-      row.booking_id,
-      { id: row.id, fromGuideId: row.from_guide_id, fromGuideName: guideName(row.from_guide_id) ?? "A guide", toGuideId: row.to_guide_id, toGuideName: guideName(row.to_guide_id), reason: row.reason, createdAt: row.created_at },
+  const [
+    { data: proofRows },
+    { data: requestRows },
+    { data: refundRows },
+    { data: availabilityRows },
+    { data: allAvailabilityRows },
+    busyRows,
+    refundableRows,
+    { data: swapRows },
+  ] = await timed("page:bookings-details", () =>
+    Promise.all([
+      // Receipts waiting for verification (RLS: the operator's own bookings only).
+      bookingIds.length
+        ? supabase
+            .from("tours_payment_proofs")
+            .select("id, booking_id, amount, payment_method, reference_number, submitted_at")
+            .in("booking_id", bookingIds)
+            .eq("verification_status", "pending")
+            .order("submitted_at", { ascending: true })
+        : { data: [] as Array<ReviewableProof & { booking_id: string }> },
+      bookingIds.length
+        ? supabase
+            .from("tours_cancellations")
+            .select("id, booking_id, reason, requested_at, status")
+            .in("booking_id", bookingIds)
+            .eq("status", "requested")
+        : { data: [] as Array<{ id: string; booking_id: string; reason: string; requested_at: string; status: string }> },
+      // Money already sent back: what makes a booking "Refunded", and what the
+      // payment line names. The ledger's own rows, so no joined booking here.
+      moneyBookings.length
+        ? supabase
+            .from("tours_payments")
+            .select("booking_id, amount, payment_method, provider, provider_method, reference_number, payment_status, payment_date")
+            .eq("payment_status", "refunded")
+            .order("payment_date", { ascending: true })
+        : { data: [] as Array<Record<string, unknown> & { booking_id: string }> },
+      // Guides' own availability for the dates on this page, shown in the picker.
+      tourDates.length && guides.length
+        ? supabase
+            .from("tours_guide_availability")
+            .select("guide_id, available_date, is_available")
+            .in("available_date", tourDates)
+            .in("guide_id", guides.map((guide) => guide.id))
+        : { data: [] as Array<{ guide_id: string; available_date: string; is_available: boolean }> },
+      // The seats left on each date, for the Approve dialog's capacity check.
+      // Keyed by booking (package + date), so two tours on the same day both work.
+      tourDates.length
+        ? supabase
+            .from("tours_package_availability")
+            .select("package_id, available_date, capacity_total, capacity_booked")
+            .in("package_id", packageIdsForSlots)
+            .in("available_date", tourDates)
+        : { data: [] as Array<{ package_id: string; available_date: string; capacity_total: number; capacity_booked: number }> },
+      // R6: who can take each upcoming date (approved, free, not on another tour).
+      Promise.all(
+        upcomingDates.map(async (date) => {
+          const { data } = await supabase.rpc("tours_guides_free_on", { p_date: date });
+          return [date, (data ?? []) as Array<{ guide_id: string; full_name: string; reason: string | null }>] as const;
+        }),
+      ),
+      // Money still to return on closed bookings.
+      Promise.all(
+        moneyBookings.map(async (booking) => {
+          const { data } = await supabase.rpc("tours_refundable_amount", { p_booking_id: booking.id });
+          return [booking.id, round2(Number(data ?? 0))] as const;
+        }),
+      ),
+      // R6: guides' pending swap requests.
+      bookingIds.length
+        ? supabase
+            .from("tours_guide_swap_requests")
+            .select("id, booking_id, from_guide_id, to_guide_id, reason, created_at")
+            .in("booking_id", bookingIds)
+            .eq("status", "pending")
+        : { data: [] as Array<{ id: string; booking_id: string; from_guide_id: string; to_guide_id: string | null; reason: string; created_at: string }> },
     ]),
   );
 
-  const statusColors: Record<string, string> = {
-    pending: badgeTone("warning"),
-    confirmed: badgeTone("success"),
-    cancelled: badgeTone("neutral"),
-    completed: badgeTone("info"),
-    rejected: badgeTone("danger"),
+  const proofsByBooking = new Map<string, ReviewableProof[]>();
+  for (const proof of proofRows ?? []) {
+    const list = proofsByBooking.get(proof.booking_id) ?? [];
+    list.push(proof);
+    proofsByBooking.set(proof.booking_id, list);
+  }
+  const requestByBooking = new Map((requestRows ?? []).map((row) => [row.booking_id, row]));
+  // The refunds already returned on a booking (the ledger rows the board reads).
+  type RefundRow = {
+    booking_id: string;
+    amount: number | string;
+    payment_method: string;
+    provider: string | null;
+    provider_method: string | null;
+    reference_number: string | null;
+    payment_status: string;
   };
+  const refundsByBooking = new Map<string, RefundRow[]>();
+  for (const row of (refundRows ?? []) as RefundRow[]) {
+    const list = refundsByBooking.get(row.booking_id) ?? [];
+    list.push(row);
+    refundsByBooking.set(row.booking_id, list);
+  }
+  const refundableByBooking = new Map<string, number>(refundableRows.filter(([, amount]) => amount > 0));
+  const availabilityFor = (date: string): Record<string, boolean> =>
+    Object.fromEntries(
+      (availabilityRows ?? []).filter((row) => row.available_date === date).map((row) => [row.guide_id, row.is_available]),
+    );
+  const busyByDate = new Map(busyRows.map(([date, rows]) => [date, rows]));
+  const busyFor = (date: string): Record<string, BusyReason | null> =>
+    Object.fromEntries(
+      (busyByDate.get(date) ?? []).map((row) => [row.guide_id, isBusyReason(row.reason) ? row.reason : null]),
+    );
+  const pickerFor = (date: string) =>
+    (busyByDate.get(date) ?? []).map((row) => {
+      const guide = guides.find((item) => item.id === row.guide_id);
+      return {
+        id: row.guide_id,
+        full_name: row.full_name,
+        contact_phone: guide?.contact_phone ?? null,
+        specialties: guide?.specialties ?? null,
+        reason: isBusyReason(row.reason) ? row.reason : null,
+      };
+    });
+  const slotFor = (packageId: string, date: string) =>
+    (allAvailabilityRows ?? []).find((row) => row.package_id === packageId && row.available_date === date) ?? null;
+  const guideName = (id: string | null) => (id ? (guides.find((guide) => guide.id === id)?.full_name ?? "A guide") : null);
+  const refundsFor = (id: string) => refundsByBooking.get(id) ?? [];
 
-  const statusLabels: Record<string, string> = {
-    pending: "Pending",
-    confirmed: "Confirmed",
-    cancelled: "Cancelled",
-    completed: "Completed",
-    rejected: "Declined",
-  };
+  // The chips count every booking, whichever filter is open.
+  const allRows = (statusRows ?? []) as Array<{
+    id: string;
+    status: string;
+    total_amount: number | string;
+    total_paid: number | string | null;
+  }>;
+  const counts = boardCounts(allRows, refundsByBooking);
 
-  // Calculate stats
-  const allBookings = statusRows ?? [];
-  const stats = {
-    total: allBookings.length,
-    pending: allBookings.filter((b) => b.status === "pending").length,
-    confirmed: allBookings.filter((b) => b.status === "confirmed").length,
-    completed: allBookings.filter((b) => b.status === "completed").length,
-    rejected: allBookings.filter((b) => b.status === "rejected").length,
-  };
+  const mapped: BoardRow[] = (bookings ?? []).map((booking) => {
+    const pkg = Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages;
+    const refunds = refundsFor(booking.id);
+    // PayMongo can only return what came in through PayMongo. The board does not
+    // need the split to draw a row; Process Refund reads the payments itself.
+    const onlinePaid = round2(Number(booking.total_paid ?? 0));
+    const status = boardStatus(
+      { id: booking.id, status: booking.status, total_amount: booking.total_amount, total_paid: booking.total_paid },
+      refunds,
+    );
+    const request = requestByBooking.get(booking.id);
+    return {
+      id: booking.id,
+      reference: booking.booking_reference,
+      lifecycleStatus: booking.status,
+      status,
+      packageId: booking.package_id,
+      packageTitle: pkg?.title ?? "Tour package",
+      coverImageUrl: pkg?.cover_image_url ?? null,
+      tourDate: booking.tour_date,
+      pax: booking.number_of_pax,
+      totalAmount: round2(Number(booking.total_amount ?? 0)),
+      totalPaid: round2(Number(booking.total_paid ?? 0)),
+      paymentStatus: booking.payment_status ?? "unpaid",
+      contactName: booking.contact_name,
+      contactPhone: booking.contact_phone,
+      contactEmail: booking.contact_email,
+      specialRequests: booking.special_requests,
+      guideId: booking.assigned_guide_id,
+      guideName: guideName(booking.assigned_guide_id),
+      note: paymentNote({
+        totalAmount: booking.total_amount,
+        totalPaid: booking.total_paid,
+        pendingProofs: proofsByBooking.get(booking.id)?.length ?? 0,
+        refunds,
+      }),
+      pendingProofs: proofsByBooking.get(booking.id) ?? [],
+      refundable: status === "refunded" ? 0 : (refundableByBooking.get(booking.id) ?? 0),
+      onlinePaid,
+      capacity: slotFor(booking.package_id, booking.tour_date)
+        ? {
+            capacity_total: slotFor(booking.package_id, booking.tour_date)!.capacity_total,
+            capacity_booked: slotFor(booking.package_id, booking.tour_date)!.capacity_booked,
+          }
+        : null,
+      availability: availabilityFor(booking.tour_date),
+      busy: busyFor(booking.tour_date),
+      picker: pickerFor(booking.tour_date),
+      swap: swapRows?.find((row) => row.booking_id === booking.id)
+        ? (() => {
+            const row = swapRows.find((item) => item.booking_id === booking.id)!;
+            return {
+              id: row.id,
+              fromGuideId: row.from_guide_id,
+              fromGuideName: guideName(row.from_guide_id) ?? "A guide",
+              toGuideId: row.to_guide_id,
+              toGuideName: guideName(row.to_guide_id),
+              reason: row.reason,
+              createdAt: row.created_at,
+            };
+          })()
+        : null,
+      cancellation: request
+        ? {
+            id: request.id,
+            reason: request.reason,
+            requestedAt: request.requested_at,
+            late:
+              manilaDayStartUtc(booking.tour_date).getTime() - new Date(request.requested_at).getTime() <
+              FREE_CANCELLATION_HOURS * 3600 * 1000,
+          }
+        : null,
+      canCallOff: canCallOff(booking as never, today),
+      calledOff: awaitableState(callOffState(booking as never)),
+      calledOffReason: booking.called_off_reason ?? null,
+      rescheduledFrom: booking.rescheduled_from ?? null,
+      cancellationReason: booking.cancellation_reason ?? null,
+      paymongoConfigured: Boolean(paymongo),
+      paymongoLive: paymongo?.mode === "live",
+    };
+  });
+
+  const visible = mapped.filter((row) => matchesBoardFilter(row.status, filters.status));
+  const page = paginate(visible, filters.page, PAGE_SIZE);
+  const searchLink = (patch: { status?: BoardFilter; page?: number }) =>
+    boardUrl(BASE, filters, patch);
 
   return (
     <>
-        <p className="mb-6 mt-2 text-lg text-daet-ink">Every booking for {operator.business_name}, newest first.</p>
+      <p className="mb-6 mt-2 text-lg text-daet-ink">
+        Every booking for {operator.business_name}, newest first.
+      </p>
 
-        <form action="/tours/operator/bookings" method="get" role="search" className="mb-6 flex flex-wrap items-end gap-3">
-          {status !== "all" && <Input type="hidden" name="status" value={status} />}
-          <Field id="booking-search" label="Search bookings" className="w-full sm:max-w-md">
-            <Input id="booking-search" name="q" type="search" defaultValue={search} maxLength={200} placeholder="Reference, package, name or phone" />
-          </Field>
-          <button type="submit" className="min-h-12 rounded-2xl bg-blue-600 px-5 font-bold text-white hover:bg-blue-700">Search</button>
-          {search && <Link href={bookingUrl(status, "")} className="inline-flex min-h-12 items-center rounded-2xl px-4 font-bold text-daet-ink hover:bg-muted">Clear search</Link>}
-        </form>
+      <BoardFilters
+        filters={{ status: filters.status, q: filters.q, packageId: filters.packageId, date: filters.date }}
+        counts={counts}
+        packages={packageRows ?? []}
+      />
 
-        {/* Chips wrap on phones so none is cut off at the edge. */}
-        <nav aria-label="Filter by status" className="mb-6">
-          <ul className="flex flex-wrap gap-2">
-            {(
-              [
-                ["all", "All", stats.total],
-                ["pending", "To confirm", stats.pending],
-                ["confirmed", "Confirmed", stats.confirmed],
-                ["completed", "Completed", stats.completed],
-                ["rejected", "Declined", stats.rejected],
-              ] as const
-            ).map(([value, label, count]) => {
-              const active = status === value;
-              return (
-                <li key={value}>
-                  <Link
-                    href={bookingUrl(value)}
-                    aria-current={active ? "page" : undefined}
-                    className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-bold transition active:scale-[0.98] ${active ? "bg-blue-600 text-white" : "bg-surface text-daet-ink hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
-                  >
-                    {label}
-                    <span className={`rounded-full px-2 text-sm ${active ? "bg-white/20" : value === "pending" && count > 0 ? badgeTone("warning") : "bg-muted"}`}>{value === "pending" ? <LiveCount name="operatorPending" initial={count} /> : count}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+      {visible.length === 0 ? (
+        <EmptyState
+          icon={<LineIcon name="calendar" />}
+          title={filters.q || filters.packageId || filters.date ? "No matching bookings" : "No bookings here"}
+          description={
+            filters.q || filters.packageId || filters.date
+              ? "Try another search, or clear the filters to see every booking."
+              : filters.status !== "all"
+                ? "Nothing with this status right now."
+                : "Bookings appear here as soon as tourists request a date."
+          }
+          action={
+            filters.q || filters.packageId || filters.date ? (
+              <Link href={searchLink({ status: filters.status, page: 1 }).split("?")[0]} className="font-bold text-blue-600 underline dark:text-blue-300">
+                Clear filters
+              </Link>
+            ) : undefined
+          }
+        />
+      ) : (
+        <BookingBoard
+          rows={page.rows}
+          selectableIds={page.rows.filter((row) => row.status === "pending").map((row) => row.id)}
+        />
+      )}
 
-        {/* Bookings List */}
-        {error ? (
-          <Notice variant="error" title="Bookings unavailable">Please try again later.</Notice>
-        ) : !bookings || bookings.length === 0 ? (
-          <EmptyState
-            icon={<LineIcon name="calendar" />}
-            title={search ? "No matching bookings" : "No bookings here"}
-            description={search ? "Try another search or clear it to see more bookings." : status !== "all" ? "Nothing with this status right now." : "Bookings appear here as soon as tourists request a date."}
-            action={search ? <Link href={bookingUrl(status, "")} className="font-bold text-blue-600 underline dark:text-blue-300">Clear search</Link> : undefined}
-          />
-        ) : (
-          <div className="space-y-4">
-            {bookings.map((booking) => {
-              const pkg = Array.isArray(booking.tours_packages)
-                ? booking.tours_packages[0]
-                : booking.tours_packages;
-
-              return (
-                <div
-                  key={booking.id}
-                  id={`booking-${booking.id}`}
-                  className="scroll-mt-6 overflow-hidden rounded-2xl bg-surface p-4 target:ring-2 target:ring-daet-forest/50 sm:p-6"
-                >
-                  {/* Phones: photo on top, details full width. Wider: side by side. */}
-                  <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-                    {/* Package Image */}
-                    {pkg?.cover_image_url && (
-                      <img
-                        src={pkg.cover_image_url}
-                        alt={pkg.title}
-                        className="h-36 w-full rounded-2xl object-cover sm:h-32 sm:w-40 sm:shrink-0"
-                      />
-                    )}
-
-                    {/* Booking Details */}
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      {/* Top Row: Package + Status */}
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="text-xl font-bold text-daet-ink">
-                            {pkg?.title || "Package"}
-                          </h3>
-                          <p className="mt-1 break-words text-sm font-bold text-daet-forest dark:text-blue-300">
-                            {booking.booking_reference}
-                          </p>
-                        </div>
-                        <span
-                          className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${statusColors[booking.status] || "bg-muted text-slate-800 dark:text-slate-100"}`}
-                        >
-                          {statusLabels[booking.status] || booking.status}
-                        </span>
-                      </div>
-
-                      {/* Details Grid */}
-                      <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:gap-x-8 md:grid-cols-4 [&>div]:min-w-0 [&_p]:break-words">
-                        <div>
-                          <p className="text-daet-ink/70">Tour date</p>
-                          <p className="font-bold text-daet-ink">
-                            {new Date(booking.tour_date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-daet-ink/70">Guests</p>
-                          <p className="font-bold text-daet-ink">{booking.number_of_pax} guest{booking.number_of_pax === 1 ? "" : "s"}</p>
-                        </div>
-                        <div>
-                          <p className="text-daet-ink/70">Contact</p>
-                          <p className="font-bold text-daet-ink">{booking.contact_name}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">{booking.contact_phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-daet-ink/70">Total</p>
-                          <p className="text-lg font-bold text-daet-forest dark:text-blue-300">
-                            {formatPeso(booking.total_amount)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Special Requests */}
-                      {booking.special_requests && (
-                        <div className="mb-4 rounded-2xl bg-canvas p-3">
-                          <p className="text-sm text-slate-600 dark:text-slate-400">Special requests</p>
-                          <p className="mt-1 text-sm text-daet-ink">{booking.special_requests}</p>
-                        </div>
-                      )}
-
-                      {/* Guide and payment fold into one-line summaries; they open when something needs doing. */}
-                      {booking.status === "confirmed" && (
-                        <>
-                          <details
-                            className="group mb-3 rounded-2xl bg-canvas"
-                            open={!booking.assigned_guide_id || swapByBooking.has(booking.id)}
-                          >
-                            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm">
-                              <span className="min-w-0">
-                                <span className="text-slate-600 dark:text-slate-400">Guide </span>
-                                <span className="font-bold text-daet-ink">
-                                  {booking.assigned_guide_id ? guideName(booking.assigned_guide_id) : "None yet"}
-                                </span>
-                                {swapByBooking.has(booking.id) ? <span className="font-bold text-yellow-800 dark:text-yellow-200"> · swap requested</span> : null}
-                              </span>
-                              <LineIcon name="chevron-down" className="h-5 w-5 shrink-0 text-daet-ink/70 transition-transform group-open:rotate-180" />
-                            </summary>
-                            <div className="px-4 pb-4">
-                              {swapByBooking.get(booking.id) ? (
-                                <SwapReview swap={swapByBooking.get(booking.id)!} guides={pickerFor(booking.tour_date)} />
-                              ) : null}
-                              <GuideAssignment
-                                bookingId={booking.id}
-                                currentGuideId={booking.assigned_guide_id}
-                                availableGuides={availableGuides || []}
-                                availability={availabilityFor(booking.tour_date)}
-                                busy={busyFor(booking.tour_date)}
-                              />
-                            </div>
-                          </details>
-
-                          <ProofReview proofs={proofsByBooking.get(booking.id) ?? []} />
-
-                          <details className="group mb-4 rounded-2xl bg-canvas">
-                            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm">
-                              <span className="min-w-0">
-                                <span className="text-slate-600 dark:text-slate-400">Payment </span>
-                                <span className="font-bold text-daet-ink">
-                                  {formatPeso(Number(booking.total_paid ?? 0))} of {formatPeso(booking.total_amount)} paid
-                                </span>
-                              </span>
-                              <LineIcon name="chevron-down" className="h-5 w-5 shrink-0 text-daet-ink/70 transition-transform group-open:rotate-180" />
-                            </summary>
-                            <div className="px-1 pb-1">
-                              <PaymentRecorder
-                                bookingId={booking.id}
-                                bookingReference={booking.booking_reference}
-                                totalAmount={booking.total_amount}
-                                totalPaid={booking.total_paid || 0}
-                                paymentStatus={booking.payment_status || "unpaid"}
-                              />
-                            </div>
-                          </details>
-                        </>
-                      )}
-
-                      {callOffState(booking) === "awaiting" ? (
-                        <p className="mb-4 rounded-2xl bg-yellow-50 p-3 text-sm text-daet-ink dark:bg-yellow-950/30">
-                          <span className="font-bold">Called off:</span> {booking.called_off_reason} The traveller is choosing a new date or a full refund.
-                        </p>
-                      ) : callOffState(booking) === "rescheduled" ? (
-                        <p className="mb-4 rounded-2xl bg-canvas p-3 text-sm text-daet-ink">
-                          <span className="font-bold">Moved after a call-off</span>
-                          {booking.rescheduled_from ? ` from ${new Date(`${booking.rescheduled_from}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" })}` : ""}. The traveller picked this date.
-                        </p>
-                      ) : null}
-
-                      {(booking.status === "cancelled" || booking.status === "rejected") && booking.cancellation_reason ? (
-                        <p className="mb-4 rounded-2xl bg-canvas p-3 text-sm text-daet-ink">
-                          <span className="font-bold">{booking.status === "cancelled" ? "Cancellation reason" : "Declined because"}:</span>{" "}
-                          {booking.cancellation_reason}
-                        </p>
-                      ) : null}
-
-                      {requestByBooking.has(booking.id) ? (
-                        <CancellationReview
-                          bookingId={booking.id}
-                          request={requestByBooking.get(booking.id)!}
-                          late={
-                            manilaDayStartUtc(booking.tour_date).getTime() -
-                              new Date(requestByBooking.get(booking.id)!.requested_at).getTime() <
-                            FREE_CANCELLATION_HOURS * 3600 * 1000
-                          }
-                        />
-                      ) : null}
-
-                      {refundableByBooking.has(booking.id) ? (
-                        <RefundPanel bookingId={booking.id} refundable={refundableByBooking.get(booking.id)!} />
-                      ) : null}
-
-                      {/* The next step first, messages beside it, Decline and Cancel under More. */}
-                      <BookingActionButtons
-                        bookingId={booking.id}
-                        currentStatus={booking.status}
-                        tourDate={booking.tour_date}
-                        totalPaid={Number(booking.total_paid ?? 0)}
-                        today={today}
-                        bookingReference={booking.booking_reference}
-                        contactName={booking.contact_name}
-                      >
-                        {booking.status !== "cancelled" && booking.status !== "rejected" ? (
-                          <>
-                            <OpenChatButton bookingId={booking.id} label="Message tourist" variant="ghost" />
-                            {canCallOff(booking, today) ? (
-                              <CallOffButton
-                                bookingId={booking.id}
-                                bookingReference={booking.booking_reference}
-                                contactName={booking.contact_name}
-                                tourDay={new Date(`${booking.tour_date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}
-                              />
-                            ) : null}
-                            {booking.assigned_guide_id ? (
-                              <OpenChatButton target={{ kind: "operator_guide", guideId: booking.assigned_guide_id }} label="Message guide" variant="ghost" />
-                            ) : null}
-                          </>
-                        ) : null}
-                      </BookingActionButtons>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <BoardPagination
+        page={page.page}
+        pageCount={page.pageCount}
+        href={(next) => boardUrl(BASE, filters, { page: next })}
+      />
     </>
   );
 }

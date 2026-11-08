@@ -1,6 +1,7 @@
 import "server-only";
 import { resolveAppUrl } from "@/lib/app-url";
 import { parsePaymentMethods, type PaymongoMethod } from "@/lib/paymongo/checkout";
+import type { RefundResource } from "@/lib/paymongo/refunds";
 import type { SignatureMode } from "@/lib/paymongo/signature";
 
 const API_BASE = "https://api.paymongo.com/v1";
@@ -79,5 +80,34 @@ export async function createCheckoutSession(config: PaymongoConfig, body: unknow
 export async function retrieveCheckoutSession(config: PaymongoConfig, id: string): Promise<CheckoutSessionResource> {
   if (!/^cs_[A-Za-z0-9]+$/.test(id)) throw new PaymongoApiError("Invalid checkout session id", 400, null);
   const result = await paymongoRequest<{ data: CheckoutSessionResource }>(config, `/checkout_sessions/${id}`);
+  return result.data;
+}
+
+/**
+ * Refunds a PayMongo payment (docs.paymongo.com/reference/refund-resource).
+ * `amount` is centavos and must not exceed what that payment has left after
+ * its earlier refunds; `refunds.ts` works the split out.
+ */
+export async function createRefund(
+  config: PaymongoConfig,
+  input: { paymentId: string; amountCentavos: number; reason: string; notes?: string },
+): Promise<RefundResource> {
+  if (!/^pay_[A-Za-z0-9]+$/.test(input.paymentId)) throw new PaymongoApiError("Invalid payment id", 400, null);
+  if (!Number.isInteger(input.amountCentavos) || input.amountCentavos < 100) {
+    throw new PaymongoApiError("PayMongo's smallest refund is ₱1.00", 400, null);
+  }
+  const result = await paymongoRequest<{ data: RefundResource }>(config, "/refunds", {
+    method: "POST",
+    body: JSON.stringify({
+      data: {
+        attributes: {
+          amount: input.amountCentavos,
+          payment_id: input.paymentId,
+          reason: input.reason,
+          ...(input.notes ? { notes: input.notes.slice(0, 255) } : {}),
+        },
+      },
+    }),
+  });
   return result.data;
 }

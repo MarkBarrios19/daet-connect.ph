@@ -209,6 +209,36 @@ function build(role) {
     payment_status: "partial",
     cancellation_reason: "Typhoon signal no. 2 raised for Camarines Norte.",
   };
+  // Cancelled and fully returned: the board's Refunded chip, with the PayMongo
+  // refund row that makes it so.
+  const refundedB = {
+    ...booking,
+    id: "b-refd",
+    booking_reference: "BK-20261012-RF22MM",
+    tour_date: daysFromToday(-20),
+    status: "cancelled",
+    total_paid: 932,
+    total_amount: 932,
+    number_of_pax: 2,
+    payment_status: "refunded",
+    contact_name: "Ana Reyes",
+    cancellation_reason: "Typhoon signal no. 3 raised; the coast guard stopped trips.",
+  };
+  payments.push({
+    id: "pay-r1",
+    booking_id: refundedB.id,
+    amount: 932,
+    payment_method: "gcash",
+    provider: "paymongo",
+    provider_method: "gcash",
+    provider_ref: "pay_refunded0001",
+    reference_number: "ref_20261012001",
+    payment_date: "2026-10-12T03:00:00Z",
+    created_at: "2026-10-12T03:00:00Z",
+    payment_status: "refunded",
+    notes: "Refund via PayMongo",
+    refund_of: "pay-r0",
+  });
   const availability = [
     {
       id: "a1000000-0000-4000-8000-000000000001",
@@ -1143,7 +1173,7 @@ function build(role) {
     tours_live_flares: live.flares,
     tours_bookings:
       role === "operator"
-        ? [booking, later, pendingB, cancelled]
+        ? [booking, later, pendingB, cancelled, refundedB]
         : [booking, later, pendingB, paidB, doneB],
     tours_packages: [pkg],
     tours_package_availability: availability,
@@ -1490,8 +1520,26 @@ http
       }
       if (url.pathname === "/rest/v1/rpc/get_my_role")
         return send(200, role === "anon" ? null : role);
-      if (url.pathname === "/rest/v1/rpc/tours_refundable_amount")
-        return send(200, 500);
+      if (url.pathname === "/rest/v1/rpc/tours_refundable_amount") {
+        let args = {};
+        try {
+          args = JSON.parse(body || "{}");
+        } catch {
+          args = {};
+        }
+        // Paid minus refunded, as the SQL function computes it.
+        const mine = (tables.tours_payments || []).filter(
+          (p) => p.booking_id === args.p_booking_id,
+        );
+        const refunded = mine
+          .filter((p) => p.payment_status === "refunded")
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        // Paid on the booking, from the table the mock already holds.
+        const paidOn =
+          ((tables.tours_bookings || []).find((b) => b.id === args.p_booking_id)
+            ?.total_paid) || 0;
+        return send(200, Math.max(0, Math.round((paidOn - refunded) * 100) / 100));
+      }
       if (url.pathname === "/rest/v1/rpc/tours_admin_analytics")
         return send(200, analytics);
       if (url.pathname === "/rest/v1/rpc/tours_chat_inbox")
@@ -1533,6 +1581,21 @@ http
           : send(201, [saved]);
       }
       // R6: guides free on a date (one free, one booked), and the swap RPCs.
+      // Recording a refund (manual or automatic): the ledger write, then what is left.
+      if (
+        url.pathname === "/rest/v1/rpc/tours_record_refund" ||
+        url.pathname === "/rest/v1/rpc/tours_record_online_refund"
+      ) {
+        let args = {};
+        try {
+          args = JSON.parse(body || "{}");
+        } catch {
+          args = {};
+        }
+        const rows = Array.isArray(args.p_rows) ? args.p_rows : [args];
+        const refunded = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        return send(200, Math.max(0, Math.round((500 - refunded) * 100) / 100));
+      }
       if (url.pathname === "/rest/v1/rpc/tours_guides_free_on")
         return send(200, [
           {
@@ -1824,15 +1887,32 @@ http
           },
         ];
       }
+      // A dotted key is a filter on an embedded row (tours_packages.operator_id).
+      const embedded = (r, path) => {
+        let value = r;
+        for (const part of path.split(".")) {
+          if (value == null) return undefined;
+          value = Array.isArray(value) ? value[0]?.[part] : value[part];
+        }
+        return value;
+      };
       for (const [k, v] of url.searchParams) {
-        if (v.startsWith("eq.") && !k.includes("."))
-          rows = rows.filter((r) => !(k in r) || String(r[k]) === v.slice(3));
-        if (v.startsWith("in.(") && !k.includes(".")) {
+        if (v.startsWith("eq.")) {
+          const wanted = v.slice(3);
+          rows = rows.filter((r) => {
+            const value = embedded(r, k);
+            return value === undefined || String(value) === wanted;
+          });
+        }
+        if (v.startsWith("in.(")) {
           const list = v
             .slice(4, -1)
             .split(",")
             .map((x) => x.replace(/^"|"$/g, ""));
-          rows = rows.filter((r) => !(k in r) || list.includes(String(r[k])));
+          rows = rows.filter((r) => {
+            const value = embedded(r, k);
+            return value === undefined || list.includes(String(value));
+          });
         }
       }
       const prefer = req.headers.prefer || "";
