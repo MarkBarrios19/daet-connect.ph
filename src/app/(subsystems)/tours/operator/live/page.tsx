@@ -8,6 +8,7 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import { loadGuideNotNeeded } from "@/lib/tours/guide-not-needed-server";
 import { formatClock } from "@/lib/tours/live-tracking";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
@@ -43,13 +44,15 @@ export default async function OperatorLivePage() {
   const today = toManilaDateKey(new Date());
   const { data: bookings } = await supabase
     .from("tours_bookings")
-    .select("id, tour_date, booking_reference, contact_name, number_of_pax, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id, meeting_time )")
+    .select("id, tour_date, booking_reference, contact_name, number_of_pax, assigned_guide_id, tours_packages!inner ( title, operator_id, meeting_time )")
     .eq("tours_packages.operator_id", operator.id)
     .eq("status", "confirmed")
     .gte("tour_date", shiftDay(today, -1))
     .lte("tour_date", shiftDay(today, 1))
     .order("tour_date");
   const ids = (bookings ?? []).map((b) => b.id);
+  // Its own read, so a database that is a migration behind still lists the tours.
+  const guideNotNeeded = await loadGuideNotNeeded(supabase, ids);
   const [{ data: sessions }, { data: flares }, { data: positions }] = ids.length
     ? await Promise.all([
         supabase.from("tours_live_sessions").select("booking_id, started_at, ended_at, stops_reached").in("booking_id", ids),
@@ -97,7 +100,7 @@ export default async function OperatorLivePage() {
                 </span>
                 <span className="mt-1 block text-sm text-daet-ink/75">
                   {!b.assigned_guide_id
-                    ? b.guide_not_needed_at
+                    ? guideNotNeeded.has(b.id)
                       ? "No guide: the guest asked to go without one."
                       : "No guide assigned yet."
                     : state === "live"

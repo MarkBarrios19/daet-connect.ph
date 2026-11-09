@@ -28,6 +28,21 @@ It adds `tours_bookings.guide_not_needed_at` and `guide_not_needed_note` (≤300
 `supabase/tests/guide_not_needed.sql` is a self-rolling-back check for all of the above
 (`psql "$DATABASE_URL" -f supabase/tests/guide_not_needed.sql`; read `REPORT pass=N fail=M`).
 
+### When the code deploys before the SQL
+
+Code and database ship separately here (SQL is run by hand), and a Vercel preview points at the shared
+project — so the operator board can meet a database that is still a migration behind. It did, once:
+the board's main query asked for `guide_not_needed_at` and PostgREST answered `42703`, which the page
+turned into "Bookings unavailable".
+
+The fix, and the rule for anything added the same way: **optional columns get their own read**.
+`src/lib/tours/guide-not-needed-server.ts` (`loadGuideNotNeeded`, `loadGuideNotNeededFor`) selects the two
+columns on their own and returns an empty map when they don't exist
+(`isMissingGuideNotNeededColumn()`), with one console warning naming the migration. Every page then
+draws exactly as before, with every booking still expecting a guide. The write side does the same:
+`assignGuideToBooking` retries without the flag columns, and `setGuideNotNeeded` answers
+"No-guide requests can't be saved yet: the site's database update is still pending."
+
 ## 2. The rule, in one place
 
 `src/lib/tours/guide-not-needed.ts` — `guideCoverage()` returns `assigned` | `waived` | `unassigned`,
@@ -58,6 +73,9 @@ so the three states read the same everywhere.
 | `operator/dashboard/operator-home.tsx` | Uses `guideCoverageNote()` — " · no guide yet" only when nobody has decided. |
 | `operator/live/page.tsx`, `operator/live/[bookingId]/page.tsx` | "No guide: the guest asked to go without one." instead of "No guide assigned yet." |
 | `live/load-live-tour.ts` | Carries `guideNotNeeded` for the operator's live page. |
+
+None of those queries name the new columns directly: each page loads them through
+`loadGuideNotNeeded()`, so none of them fails while the SQL is pending.
 | `bookings/[id]/page.tsx` (tourist) | "No guide for this tour — as you asked…" so the guest sees their request was heard. |
 | `lib/tours/notifications.ts` | `guide_unassigned` and `guide_not_needed` get the guide icon. |
 
@@ -66,7 +84,10 @@ The guide's own dashboard, my-tours and check-in needed no change: their queries
 
 ## 5. Tests
 
-- `src/lib/tours/guide-not-needed.test.ts` — the three states, the note rules, the date label.
+- `src/lib/tours/guide-not-needed.test.ts` — the three states, the note rules, the date label, and the
+  "column is missing" check.
+- `src/lib/tours/guide-not-needed-server.test.ts` — the loader: one query, deduplicated ids, and an empty
+  map (not a thrown page) when the columns aren't there.
 - `src/app/(subsystems)/tours/operator/bookings/actions.test.ts` — who may write, what is written,
   closed bookings refused, over-long note refused before the round trip.
 - `src/app/(subsystems)/tours/operator/bookings/guide-assignment.test.tsx` — the panel in all three

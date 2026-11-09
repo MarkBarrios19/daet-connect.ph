@@ -1,6 +1,7 @@
 import "server-only";
 import type { LiveTourBoardProps } from "@/components/tours/live/live-tour-board";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { loadGuideNotNeededFor } from "@/lib/tours/guide-not-needed-server";
 
 type Loaded = Omit<LiveTourBoardProps, "role"> & { touristId: string; status: string; tourDate: string; isGuide: boolean; isOperator: boolean; hasGuide: boolean; guideNotNeeded: boolean };
 
@@ -16,7 +17,7 @@ export async function loadLiveTour(bookingId: string, viewerId: string): Promise
   const { data: booking } = await supabase
     .from("tours_bookings")
     .select(
-      "id, user_id, status, tour_date, booking_reference, contact_name, contact_phone, assigned_guide_id, guide_not_needed_at, tours_packages ( id, title, meeting_point_name, meeting_lat, meeting_lng, tours_operators ( profile_id ) )",
+      "id, user_id, status, tour_date, booking_reference, contact_name, contact_phone, assigned_guide_id, tours_packages ( id, title, meeting_point_name, meeting_lat, meeting_lng, tours_operators ( profile_id ) )",
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -26,11 +27,13 @@ export async function loadLiveTour(bookingId: string, viewerId: string): Promise
 
   // tours_guides links to profiles twice (profile_id, reviewed_by), so the
   // embed names its foreign key; an unnamed one fails and the guide reads as null.
-  const [{ data: stops }, { data: guide }, { data: participants }, { data: checkins }] = await Promise.all([
+  const [{ data: stops }, { data: guide }, { data: participants }, { data: checkins }, guideNotNeeded] = await Promise.all([
     pkg ? supabase.from("tours_package_stops").select("location_name, latitude, longitude, stop_order").eq("package_id", pkg.id).order("stop_order") : Promise.resolve({ data: [] }),
     booking.assigned_guide_id ? supabase.from("tours_guides").select("profile_id, profiles!tours_guides_profile_id_fkey ( full_name )").eq("id", booking.assigned_guide_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("tours_booking_participants").select("id").eq("booking_id", booking.id),
     supabase.from("tours_checkins").select("participant_id").eq("booking_id", booking.id),
+    // Its own read: absent when the database is a migration behind.
+    loadGuideNotNeededFor(supabase, booking.id),
   ]);
   const guideProfile = guide ? (Array.isArray(guide.profiles) ? guide.profiles[0] : guide.profiles) : null;
   const meetLat = num(pkg?.meeting_lat);
@@ -43,7 +46,7 @@ export async function loadLiveTour(bookingId: string, viewerId: string): Promise
     status: booking.status,
     tourDate: booking.tour_date,
     hasGuide: Boolean(booking.assigned_guide_id),
-    guideNotNeeded: Boolean(booking.guide_not_needed_at),
+    guideNotNeeded: guideNotNeeded !== null,
     isGuide: guide?.profile_id === viewerId,
     isOperator: operator?.profile_id === viewerId,
     tourTitle: pkg?.title ?? "Tour",

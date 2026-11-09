@@ -3,6 +3,7 @@ import {
   guideCoverage,
   guideCoverageNote,
   guideNotNeededDay,
+  isMissingGuideNotNeededColumn,
   parseGuideNotNeededNote,
 } from "@/lib/tours/guide-not-needed";
 
@@ -72,5 +73,30 @@ describe("guideNotNeededDay", () => {
 
   it("shows nothing for a timestamp it cannot read", () => {
     expect(guideNotNeededDay("not a date")).toBe("");
+  });
+});
+
+describe("isMissingGuideNotNeededColumn", () => {
+  it("recognises the column as absent in a read and in a write", () => {
+    expect(
+      isMissingGuideNotNeededColumn({ code: "42703", message: 'column tours_bookings.guide_not_needed_at does not exist' }),
+    ).toBe(true);
+    expect(
+      isMissingGuideNotNeededColumn({
+        code: "PGRST204",
+        message: "Could not find the 'guide_not_needed_note' column of 'tours_bookings' in the schema cache",
+      }),
+    ).toBe(true);
+  });
+
+  it("falls back to the message when the code is missing", () => {
+    expect(isMissingGuideNotNeededColumn({ message: "column guide_not_needed_at does not exist" })).toBe(true);
+  });
+
+  it("leaves every other error to the page that raised it", () => {
+    expect(isMissingGuideNotNeededColumn({ code: "42501", message: "permission denied for table tours_bookings" })).toBe(false);
+    expect(isMissingGuideNotNeededColumn({ code: "42703", message: 'column tours_bookings.other_column does not exist' })).toBe(false);
+    expect(isMissingGuideNotNeededColumn(null)).toBe(false);
+    expect(isMissingGuideNotNeededColumn(undefined)).toBe(false);
   });
 });

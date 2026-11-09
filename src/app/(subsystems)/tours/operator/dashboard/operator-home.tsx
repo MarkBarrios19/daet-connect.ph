@@ -12,6 +12,7 @@ import { RatingBadge } from "@/components/tours/star-rating";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bookingsByDay, occupancy } from "@/lib/tours/dashboards";
 import { guideCoverageNote } from "@/lib/tours/guide-not-needed";
+import { loadGuideNotNeeded } from "@/lib/tours/guide-not-needed-server";
 import { currentManilaMonth, formatDayHeading, isDateKey, monthKey, parseMonthParam, shiftMonth, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { summarizeLedger } from "@/lib/tours/ledger";
 import { toSummary } from "@/lib/tours/reviews";
@@ -27,7 +28,7 @@ type DayBooking = {
   number_of_pax: number;
   contact_name: string;
   assigned_guide_id: string | null;
-  /** Set when the guest asked to go without a guide (guide-not-needed.ts). */
+  /** Filled in from loadGuideNotNeeded(): set when the guest asked to go without a guide. */
   guide_not_needed_at?: string | null;
   tours_packages: { title: string; operator_id: string } | { title: string; operator_id: string }[] | null;
 };
@@ -50,14 +51,14 @@ export async function OperatorHome({ operatorId, searchParams }: { operatorId: s
     supabase.from("tours_operators").select("business_name").eq("id", operatorId).maybeSingle(),
     supabase
       .from("tours_bookings")
-      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id )")
+      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, tours_packages!inner ( title, operator_id )")
       .eq("tours_packages.operator_id", operatorId)
       .gte("tour_date", `${key}-01`)
       .lt("tour_date", `${nextKey}-01`)
       .order("tour_date"),
     supabase
       .from("tours_bookings")
-      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id )")
+      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, tours_packages!inner ( title, operator_id )")
       .eq("tours_packages.operator_id", operatorId)
       .eq("tour_date", today)
       .in("status", ["pending", "confirmed", "completed"]),
@@ -77,12 +78,18 @@ export async function OperatorHome({ operatorId, searchParams }: { operatorId: s
     loadOperatorLedger(month),
   ]);
 
-  const bookings = (monthBookings ?? []) as unknown as DayBooking[];
+  const monthRows = (monthBookings ?? []) as unknown as DayBooking[];
+  const todayRows = (todays ?? []) as unknown as DayBooking[];
+  // Its own read, so a database that is a migration behind still draws the page.
+  const guideNotNeeded = await loadGuideNotNeeded(supabase, [...monthRows, ...todayRows].map((b) => b.id));
+  const withGuideRequest = (rows: DayBooking[]): DayBooking[] =>
+    rows.map((row) => ({ ...row, guide_not_needed_at: guideNotNeeded.get(row.id)?.at ?? null }));
+  const bookings = withGuideRequest(monthRows);
   const load = bookingsByDay(bookings);
   const occ = occupancy(availability ?? []);
   const revenue = ledger.ok ? summarizeLedger(ledger.rows) : null;
   const rating = toSummary(ratingRow);
-  const todayList = (todays ?? []) as unknown as DayBooking[];
+  const todayList = withGuideRequest(todayRows);
   const dayList = selectedDay ? bookings.filter((b) => b.tour_date === selectedDay && b.status !== "rejected") : [];
   const title = (b: DayBooking) => (Array.isArray(b.tours_packages) ? b.tours_packages[0]?.title : b.tours_packages?.title) ?? "Tour";
   const monthHref = (m: string) => `/tours/operator/dashboard?month=${m}`;

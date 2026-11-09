@@ -1,7 +1,7 @@
 "use server";
 
 import { scheduleErrorMessage } from "@/lib/tours/guide-swap";
-import { parseGuideNotNeededNote } from "@/lib/tours/guide-not-needed";
+import { isMissingGuideNotNeededColumn, parseGuideNotNeededNote } from "@/lib/tours/guide-not-needed";
 import { emailBookingConfirmed, emailGuideAssigned, emailTripCalledOff } from "@/lib/email/notify-booking";
 import { parseCallOffReason } from "@/lib/tours/call-off";
 import { revalidatePath } from "next/cache";
@@ -124,7 +124,7 @@ export async function assignGuideToBooking(
 
     // Assign or unassign guide. Naming a guide answers any "we don't need one"
     // request, so the flag goes with it (the database guards this too).
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from("tours_bookings")
       .update(
         guideId
@@ -132,6 +132,15 @@ export async function assignGuideToBooking(
           : { assigned_guide_id: null },
       )
       .eq("id", bookingId);
+
+    // A database that has not had 20261201_guide_not_needed.sql yet: there is no
+    // flag to clear, so name the guide on its own.
+    if (updateError && isMissingGuideNotNeededColumn(updateError)) {
+      ({ error: updateError } = await supabase
+        .from("tours_bookings")
+        .update({ assigned_guide_id: guideId })
+        .eq("id", bookingId));
+    }
 
     if (updateError) {
       // R6: the schedule rule (available that day, not double-booked) is enforced in the database.
@@ -200,6 +209,12 @@ export async function setGuideNotNeeded(
 
     if (updateError) {
       console.error("Guide-not-needed error:", updateError);
+      if (isMissingGuideNotNeededColumn(updateError)) {
+        return {
+          success: false,
+          error: "No-guide requests can't be saved yet: the site's database update is still pending. Ask the CONNECT-Daet team to run it.",
+        };
+      }
       return {
         success: false,
         error: userFacingDbError(updateError, "Could not save the guest's guide request. Please try again."),

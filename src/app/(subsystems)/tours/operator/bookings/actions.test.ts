@@ -28,7 +28,8 @@ function fakeClient(options: {
   operator?: { id: string } | null;
   booking?: Record<string, unknown> | null;
   guide?: Record<string, unknown> | null;
-  updateError?: { code: string; message: string } | null;
+  /** One error per update, in order; the last one repeats. null = the write worked. */
+  updateError?: { code: string; message: string } | null | Array<{ code: string; message: string } | null>;
 }) {
   const patches: Patch[] = [];
   const rows = {
@@ -61,7 +62,11 @@ function fakeClient(options: {
         maybeSingle: async () => ({ data: rows[table as keyof typeof rows] ?? null, error: null }),
         update: (values: Record<string, unknown>) => {
           patches.push({ table, values });
-          return { eq: async () => ({ error: options.updateError ?? null }) };
+          const queued = options.updateError;
+          const error = Array.isArray(queued)
+            ? (queued.length > 1 ? queued.shift() : (queued[0] ?? null))
+            : (queued ?? null);
+          return { eq: async () => ({ error }) };
         },
       };
       return query;
@@ -165,6 +170,22 @@ describe("setGuideNotNeeded", () => {
     expect(patches).toHaveLength(0);
   });
 
+  it("says the database update is pending while the columns are missing", async () => {
+    const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+    const patches = fakeClient({
+      updateError: [
+        { code: "PGRST204", message: "Could not find the 'guide_not_needed_at' column of 'tours_bookings' in the schema cache" },
+      ],
+    });
+
+    const result = await setGuideNotNeeded(BOOKING_ID, true);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/database update is still pending/i);
+    expect(patches).toHaveLength(1);
+    logged.mockRestore();
+  });
+
   it("rejects a booking id that is not a uuid", async () => {
     const result = await setGuideNotNeeded("not-a-uuid", true);
 
@@ -195,6 +216,22 @@ describe("assignGuideToBooking", () => {
     expect(result).toEqual({ success: true });
     // Unassigning is not the guest's decision: the flag is left alone.
     expect(patches[0].values).toEqual({ assigned_guide_id: null });
+  });
+
+  it("names the guide anyway on a database without the no-guide columns", async () => {
+    // The migration is applied by hand: code can be live before the column is.
+    const patches = fakeClient({
+      updateError: [
+        { code: "PGRST204", message: "Could not find the 'guide_not_needed_at' column of 'tours_bookings' in the schema cache" },
+        null,
+      ],
+    });
+
+    const result = await assignGuideToBooking(BOOKING_ID, GUIDE_ID);
+
+    expect(result).toEqual({ success: true });
+    expect(patches).toHaveLength(2);
+    expect(patches[1].values).toEqual({ assigned_guide_id: GUIDE_ID });
   });
 
   it("refuses a guide who is not approved", async () => {

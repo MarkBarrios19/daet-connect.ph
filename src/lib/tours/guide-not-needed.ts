@@ -60,3 +60,25 @@ export function guideNotNeededDay(at: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "Asia/Manila" });
 }
+
+/**
+ * True when the database has not had migration 20261201_guide_not_needed.sql
+ * applied yet. PostgREST answers a read with `42703` ("column
+ * tours_bookings.guide_not_needed_at does not exist") and a write with
+ * `PGRST204` ("could not find the '…' column … in the schema cache").
+ *
+ * Code and database deploy separately here — SQL is run by hand — so the
+ * feature must be able to be absent without taking a page down with it.
+ */
+export function isMissingGuideNotNeededColumn(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+): boolean {
+  if (!error) return false;
+  const message = error.message ?? "";
+  // PostgREST names the column it could not find, so that is the surest sign.
+  if (/guide_not_needed_(at|note)/.test(message)) return true;
+  // Unknown-column / "not in the schema cache", with no message to read: the
+  // only optional columns these queries name are the two above.
+  const code = String(error.code ?? "");
+  return (code === "42703" || code === "PGRST204") && message.trim() === "";
+}
