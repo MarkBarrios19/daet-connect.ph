@@ -215,6 +215,20 @@ describe("fanGeometry", () => {
     geo.wedges.forEach((wedge) => expect(tokens(wedge.rest)).toHaveLength(18));
   });
 
+  it("ends an open phone photo at the measured tab bar, not underneath it", () => {
+    const tabBarHeight = 57;
+    const geo = fanGeometry(PHONE.width, PHONE.height, "phone", {
+      insets: { top: 56, bottom: tabBarHeight },
+    });
+    const x = geo.openPoints.map(([pointX]) => pointX);
+    const y = geo.openPoints.map(([, pointY]) => pointY);
+
+    expect(Math.min(...x)).toBe(0);
+    expect(Math.max(...x)).toBe(PHONE.width);
+    expect(Math.min(...y)).toBe(0);
+    expect(Math.max(...y)).toBe(PHONE.height - tabBarHeight);
+  });
+
   it("puts the point where the caller asks on a desktop, and keeps the default otherwise", () => {
     expect(fanGeometry(DESKTOP.width, DESKTOP.height).wedges[0].vp[1]).toBeCloseTo(0.578 * DESKTOP.height, 6);
     expect(fanGeometry(DESKTOP.width, DESKTOP.height, "desktop", { vpY: 500 }).wedges[0].vp[1]).toBe(500);
