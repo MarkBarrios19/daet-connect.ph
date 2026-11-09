@@ -95,7 +95,7 @@ export function GuideAssignment({
           value={selectedGuideId}
           onChange={(e) => setSelectedGuideId(e.target.value)}
           disabled={isSubmitting}
-          className="min-w-0 flex-1 basis-48 rounded-2xl border border-daet-ink/20 min-h-11 px-4 py-2 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
+          className="min-w-0 max-w-full flex-1 basis-48 rounded-2xl border border-daet-ink/20 min-h-11 px-4 py-2 text-base focus:border-daet-forest focus:outline-none focus:ring-2 focus:ring-daet-forest/20"
         >
           <option value="">Select a guide...</option>
           {[...availableGuides]
@@ -136,9 +136,9 @@ export function GuideAssignment({
       ) : null}
 
       {currentGuideId && (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-x-2 text-sm">
           <span className="text-daet-ink/70">Currently assigned:</span>
-          <span className="font-bold text-daet-forest dark:text-blue-300">
+          <span className="min-w-0 break-words font-bold text-daet-forest dark:text-blue-300">
             {availableGuides.find((g) => g.id === currentGuideId)?.full_name || "Unknown"}
           </span>
         </div>

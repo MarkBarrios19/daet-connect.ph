@@ -161,10 +161,10 @@ export function BookingRow({
 
       {open ? (
         <div id={panelId} className="border-t border-hairline px-4 pb-4 pt-4 sm:px-5">
-          <div className="grid gap-3 lg:grid-cols-3">
-            <section aria-label="Guest notes and requests" className="rounded-2xl bg-canvas p-4">
+          <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-3">
+            <section aria-label="Guest notes and requests" className="min-w-0 rounded-2xl bg-canvas p-4">
               <h3 className="text-sm font-bold text-daet-ink">Guest notes &amp; requests</h3>
-              <p className="mt-2 text-sm italic text-daet-ink">
+              <p className="mt-2 break-words text-sm italic text-daet-ink">
                 {booking.specialRequests ? `“${booking.specialRequests}”` : "No notes from the guest."}
               </p>
               <dl className="mt-3 space-y-1 text-sm">
@@ -180,18 +180,18 @@ export function BookingRow({
               {notes}
             </section>
 
-            <section aria-label="Guide and operations" className="rounded-2xl bg-canvas p-4">
+            <section aria-label="Guide and operations" className="min-w-0 rounded-2xl bg-canvas p-4">
               <h3 className="text-sm font-bold text-daet-ink">Guide &amp; operations</h3>
               <dl className="mt-2 space-y-2 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                   <dt className="text-daet-ink/70">Assigned guide:</dt>
-                  <dd className={`font-bold ${booking.guideName ? "text-daet-ink" : "text-daet-ink/70"}`}>
+                  <dd className={`min-w-0 break-words font-bold ${booking.guideName ? "text-daet-ink" : "text-daet-ink/70"}`}>
                     {booking.guideName ?? "Unassigned"}
                   </dd>
                 </div>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                   <dt className="text-daet-ink/70">Payment status:</dt>
-                  <dd className={`text-right font-bold ${NOTE_TONE[booking.note.tone]}`}>{booking.note.text}</dd>
+                  <dd className={`min-w-0 break-words text-right font-bold ${NOTE_TONE[booking.note.tone]}`}>{booking.note.text}</dd>
                 </div>
               </dl>
               {booking.calledOff === "awaiting" ? (
@@ -217,7 +217,7 @@ export function BookingRow({
               {operations}
             </section>
 
-            <section aria-label="Quick actions" className="rounded-2xl bg-canvas p-4">
+            <section aria-label="Quick actions" className="min-w-0 rounded-2xl bg-canvas p-4">
               <h3 className="text-sm font-bold text-daet-ink">Quick actions</h3>
               <div className="mt-3 flex flex-wrap items-start gap-2">{quickActions}</div>
             </section>

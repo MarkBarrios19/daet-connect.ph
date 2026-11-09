@@ -90,7 +90,7 @@ export async function retrieveCheckoutSession(config: PaymongoConfig, id: string
  */
 export async function createRefund(
   config: PaymongoConfig,
-  input: { paymentId: string; amountCentavos: number; reason: string; notes?: string },
+  input: { paymentId: string; amountCentavos: number; reason: string; notes?: string; idempotencyKey: string },
 ): Promise<RefundResource> {
   if (!/^pay_[A-Za-z0-9]+$/.test(input.paymentId)) throw new PaymongoApiError("Invalid payment id", 400, null);
   if (!Number.isInteger(input.amountCentavos) || input.amountCentavos < 100) {
@@ -98,6 +98,7 @@ export async function createRefund(
   }
   const result = await paymongoRequest<{ data: RefundResource }>(config, "/refunds", {
     method: "POST",
+    headers: { "Idempotency-Key": input.idempotencyKey },
     body: JSON.stringify({
       data: {
         attributes: {
@@ -109,5 +110,35 @@ export async function createRefund(
       },
     }),
   });
+  return result.data;
+}
+
+/** Read every refund for a payment, including refunds made outside this app. */
+export async function listPaymentRefunds(config: PaymongoConfig, paymentId: string): Promise<RefundResource[]> {
+  if (!/^pay_[A-Za-z0-9]+$/.test(paymentId)) throw new PaymongoApiError("Invalid payment id", 400, null);
+  const refunds: RefundResource[] = [];
+  let after: string | undefined;
+  const seenCursors = new Set<string>();
+  for (let page = 0; page < 100; page++) {
+    // Use PayMongo's documented default page size; not all accounts accept
+    // larger limits. Still walk every page and fail closed on bad pagination.
+    const params = new URLSearchParams({ "data.attributes.payment_id": paymentId });
+    if (after) params.set("data.attributes.after", after);
+    const result = await paymongoRequest<{ data: RefundResource[]; has_more: boolean }>(config, `/refunds?${params}`);
+    if (!Array.isArray(result?.data) || typeof result.has_more !== "boolean") throw new Error("Invalid PayMongo refund history.");
+    refunds.push(...result.data);
+    if (!result.has_more) return refunds;
+    const next = result.data[result.data.length - 1]?.id;
+    if (!next || seenCursors.has(next)) throw new Error("Invalid PayMongo refund pagination.");
+    seenCursors.add(next);
+    after = next;
+  }
+  throw new Error("PayMongo refund history is too long to verify.");
+}
+
+/** Retrieve the authoritative status of a previously accepted refund. */
+export async function retrieveRefund(config: PaymongoConfig, id: string): Promise<RefundResource> {
+  if (!/^ref_[A-Za-z0-9]+$/.test(id)) throw new PaymongoApiError("Invalid refund id", 400, null);
+  const result = await paymongoRequest<{ data: RefundResource }>(config, `/refunds/${id}`);
   return result.data;
 }

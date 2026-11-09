@@ -108,9 +108,8 @@ BEGIN
       reference_number, payment_date, notes, recorded_by, refund_of
     ) VALUES (
       p_booking_id, v_amount,
-      CASE WHEN v_payment.payment_method IN ('gcash', 'bank_transfer', 'cash') THEN v_payment.payment_method
-           WHEN v_payment.provider_method IN ('gcash', 'paymaya', 'grab_pay', 'qrph') THEN v_payment.provider_method
-           ELSE 'other' END,
+      CASE WHEN v_payment.payment_method IN ('cash', 'gcash', 'bank_transfer', 'credit_card', 'debit_card', 'paypal', 'other')
+           THEN v_payment.payment_method ELSE 'other' END,
       'refunded', 'paymongo', v_ref,
       v_ref, now(), 'Refund via PayMongo', auth.uid(), v_payment.id
     );
@@ -145,7 +144,7 @@ GRANT EXECUTE ON FUNCTION public.tours_record_online_refund(uuid, jsonb) TO auth
 -- row that names a payment (refund_of) must come through a function so the
 -- per-payment ceiling above is applied.
 -- ----------------------------------------------------------------
-ALTER POLICY "Operators insert payments" ON tours_payments
+ALTER POLICY tours_payments_insert_manual ON tours_payments
   WITH CHECK (
     provider = 'manual' AND provider_ref IS NULL AND refund_of IS NULL
     AND recorded_by = auth.uid()
@@ -153,8 +152,8 @@ ALTER POLICY "Operators insert payments" ON tours_payments
   );
 
 -- The ledger's own refund rows are never edited by hand.
-ALTER POLICY "Operators update own payments" ON tours_payments
+ALTER POLICY tours_payments_update_manual ON tours_payments
   USING (provider = 'manual' AND payment_status <> 'refunded' AND public.tours_is_booking_operator(booking_id))
   WITH CHECK (provider = 'manual' AND payment_status <> 'refunded' AND public.tours_is_booking_operator(booking_id));
-ALTER POLICY "Operators delete own payments" ON tours_payments
+ALTER POLICY tours_payments_delete_manual ON tours_payments
   USING (provider = 'manual' AND payment_status <> 'refunded' AND public.tours_is_booking_operator(booking_id));

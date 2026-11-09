@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getPaymongoConfig, retrieveCheckoutSession } from "@/lib/paymongo/client";
+import { getPaymongoConfig, retrieveCheckoutSession, retrieveRefund } from "@/lib/paymongo/client";
 import { processPaymongoWebhook } from "@/lib/paymongo/webhook";
 import { createSupabaseWebhookStore } from "@/lib/paymongo/webhook-store";
 
@@ -7,7 +7,7 @@ import { createSupabaseWebhookStore } from "@/lib/paymongo/webhook-store";
 /**
  * PayMongo webhook endpoint. Register it in the PayMongo dashboard (or API)
  * as https://<your-domain>/api/webhooks/paymongo for the
- * checkout_session.payment.paid event, and put the returned secret in
+ * checkout_session.payment.paid, payment.refunded and payment.refund.updated events, and put the returned secret in
  * PAYMONGO_WEBHOOK_SECRET.
  */
 export async function POST(request: Request) {
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
         webhookSecret: config.webhookSecret,
         mode: config.mode,
         retrieveSession: (id) => retrieveCheckoutSession(config, id),
+        retrieveRefund: (id) => retrieveRefund(config, id),
         store: createSupabaseWebhookStore(createSupabaseAdminClient()),
       },
     );

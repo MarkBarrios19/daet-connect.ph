@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Notice } from "@/components/ui/notice";
 import { formatPeso } from "@/lib/money";
 import { REFUND_REASONS, type RefundReasonKey } from "@/lib/paymongo/refunds";
-import { processRefund } from "./board-actions";
+import { getOnlineRefundAvailability, processRefund } from "./board-actions";
 
 export type ProcessRefundProps = {
   open: boolean;
@@ -20,8 +20,6 @@ export type ProcessRefundProps = {
   guestName: string;
   /** What the tourist can still get back. */
   refundable: number;
-  /** What came in through PayMongo, which is what an automatic refund can return. */
-  onlinePaid: number;
   /** True when the PayMongo keys are configured; the sandbox tag only shows then. */
   paymongoConfigured: boolean;
   paymongoLive: boolean;
@@ -42,14 +40,13 @@ export function ProcessRefundDialog({
   packageTitle,
   guestName,
   refundable,
-  onlinePaid,
   paymongoConfigured,
   paymongoLive,
   openBooking,
 }: ProcessRefundProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [method, setMethod] = useState<"paymongo" | "manual">(paymongoConfigured && onlinePaid > 0 ? "paymongo" : "manual");
+  const [method, setMethod] = useState<"paymongo" | "manual">(paymongoConfigured ? "paymongo" : "manual");
   const [amount, setAmount] = useState(refundable.toFixed(2));
   const [reason, setReason] = useState<RefundReasonKey | "">("");
   const [manualMethod, setManualMethod] = useState("gcash");
@@ -57,12 +54,32 @@ export function ProcessRefundDialog({
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const uid = useId();
+  const methodRef = useRef(method);
+  const [online, setOnline] = useState<{ available: number; error?: string } | null>(null);
 
-  const autoAvailable = Math.min(refundable, onlinePaid);
+  useEffect(() => {
+    if (!open || !paymongoConfigured) return;
+    let active = true;
+    getOnlineRefundAvailability(bookingId).then((result) => {
+      if (!active) return;
+      setOnline(result);
+      if (methodRef.current !== "paymongo") return;
+      if (!result.error && Math.min(refundable, result.available) < 1) { methodRef.current = "manual"; setMethod("manual"); }
+      if (!result.error && Math.min(refundable, result.available) >= 1) {
+        setAmount((current) => current === refundable.toFixed(2)
+          ? Math.min(refundable, result.available).toFixed(2) : current);
+      }
+    }).catch(() => {
+      if (active) setOnline({ available: 0, error: "PayMongo refund history could not be verified. Check the PayMongo dashboard before retrying." });
+    });
+    return () => { active = false; };
+  }, [bookingId, open, paymongoConfigured, refundable]);
+
+  const autoAvailable = Math.min(refundable, online?.available ?? 0);
   const amountNumber = Number(amount);
   const validAmount =
     Number.isFinite(amountNumber) && amountNumber > 0 && amountNumber <= refundable + 0.001 &&
-    (method !== "paymongo" || amountNumber <= autoAvailable + 0.001);
+    (method !== "paymongo" || (online != null && !online.error && amountNumber >= 1 && amountNumber <= autoAvailable + 0.001));
 
   function submit() {
     setError(null);
@@ -112,7 +129,7 @@ export function ProcessRefundDialog({
       }
     >
       <div className="rounded-2xl bg-canvas p-4">
-        <p className="text-sm text-daet-ink/70">Refund amount:</p>
+        <p className="text-sm text-daet-ink/70">Remaining in booking ledger:</p>
         <p className="text-2xl font-bold text-daet-ink">{formatPeso(refundable)}</p>
         <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-daet-ink">
           <span>
@@ -122,8 +139,10 @@ export function ProcessRefundDialog({
             <span className="text-daet-ink/70">Package:</span> <span className="font-bold">{packageTitle}</span>
           </span>
         </p>
-        {onlinePaid > 0 ? (
-          <p className="mt-1 text-sm text-daet-ink/70">{formatPeso(autoAvailable)} of it was paid online.</p>
+        {paymongoConfigured && !online ? (
+          <p className="mt-1 text-sm text-daet-ink/70">Checking PayMongo refund history…</p>
+        ) : online && !online.error ? (
+          <p className="mt-1 text-sm text-daet-ink/70">{formatPeso(autoAvailable)} available through PayMongo.</p>
         ) : null}
       </div>
 
@@ -132,7 +151,7 @@ export function ProcessRefundDialog({
         <div className="grid grid-cols-2 gap-3">
           {(
             [
-              ["paymongo", "PayMongo (Auto)", onlinePaid > 0 && paymongoConfigured],
+              ["paymongo", "PayMongo (Auto)", paymongoConfigured && Boolean(online && !online.error && autoAvailable >= 1)],
               ["manual", "Manual GCash", true],
             ] as const
           ).map(([value, label, enabled]) => (
@@ -141,7 +160,7 @@ export function ProcessRefundDialog({
               type="button"
               aria-pressed={method === value}
               disabled={!enabled || pending}
-              onClick={() => setMethod(value)}
+              onClick={() => { methodRef.current = value; setMethod(value); setError(null); }}
               className={`min-h-12 rounded-2xl px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 method === value
                   ? "bg-violet-600 text-white"
@@ -152,18 +171,20 @@ export function ProcessRefundDialog({
             </button>
           ))}
         </div>
-        {onlinePaid > 0 && !paymongoConfigured ? (
+        {!paymongoConfigured ? (
           <p className="mt-2 text-sm text-daet-ink/70">PayMongo is not configured on this site, so refunds are recorded by hand.</p>
         ) : null}
       </fieldset>
 
+      {online?.error ? <Notice variant="error" className="mt-3">{online.error}</Notice> : null}
+
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Field id={`${uid}-amount`} label="Amount (₱)" required hint={method === "paymongo" ? `Up to ${formatPeso(autoAvailable)} online.` : undefined}>
+        <Field id={`${uid}-amount`} label="Amount (₱)" required hint={method === "paymongo" && online && !online.error ? `Up to ${formatPeso(autoAvailable)} online.` : undefined}>
           <Input
             id={`${uid}-amount`}
             inputMode="decimal"
             value={amount}
-            onChange={(event) => setAmount(event.target.value)}
+            onChange={(event) => { setAmount(event.target.value); setError(null); }}
             required
           />
         </Field>
@@ -186,7 +207,7 @@ export function ProcessRefundDialog({
       ) : null}
 
       <Field id={`${uid}-reason`} label="Reason for refund" required className="mt-3">
-        <Select id={`${uid}-reason`} value={reason} onChange={(event) => setReason(event.target.value as RefundReasonKey)} required>
+        <Select id={`${uid}-reason`} value={reason} onChange={(event) => { setReason(event.target.value as RefundReasonKey); setError(null); }} required>
           <option value="">Select a reason…</option>
           {(Object.keys(REFUND_REASONS) as RefundReasonKey[]).map((key) => (
             <option key={key} value={key}>

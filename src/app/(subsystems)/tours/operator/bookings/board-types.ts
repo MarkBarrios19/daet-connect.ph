@@ -64,7 +64,6 @@ export type BoardRow = {
   note: PaymentNote;
   pendingProofs: ReviewableProof[];
   refundable: number;
-  onlinePaid: number;
   capacity: { capacity_total: number; capacity_booked: number } | null;
   /** Guide id → marked available (true) / unavailable (false) on the tour date. */
   availability: Record<string, boolean>;
