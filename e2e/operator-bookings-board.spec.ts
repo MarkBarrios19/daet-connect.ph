@@ -83,6 +83,7 @@ test("the board is usable and quiet at phone width", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+
 test("the operator can take the guide off when the guest doesn't need one", async ({ page, request }) => {
   const MOCK = "http://127.0.0.1:54329";
   // The mock keeps PATCHed rows for the rest of the run; start from the fixture.
@@ -113,3 +114,41 @@ test("the operator can take the guide off when the guest doesn't need one", asyn
   // Leave the fixture as the other specs expect it.
   await request.post(`${MOCK}/__reset_board`);
 });
+
+for (const width of [320, 375, 528, 1280]) {
+  test(`expanded booking details fit at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 812 });
+    const row = page.getByRole("article").filter({ hasText: "BK-20261023-7F3K2Q" }).first();
+    await row.getByRole("button", { name: /Show details for/ }).click();
+
+    const guidePanel = row.getByRole("region", { name: "Guide and operations" });
+    const select = guidePanel.getByLabel("Guide for this booking");
+    await expect(select).toBeVisible();
+    // Long option labels must not dictate the intrinsic width of the entire panel.
+    await select.evaluate((element: HTMLSelectElement) => {
+      element.options[0].text = "A guide with a very long name and phone number who is already on a tour that day";
+    });
+
+    const dimensions = await row.evaluate((element) => {
+      const panel = element.querySelector<HTMLElement>('[aria-label="Guide and operations"]')!;
+      const select = panel.querySelector<HTMLElement>('select')!;
+      const button = select.parentElement!.querySelector<HTMLElement>('button')!;
+      const panelRect = panel.getBoundingClientRect();
+      const withinPanel = (child: HTMLElement) => {
+        const rect = child.getBoundingClientRect();
+        return rect.left >= panelRect.left && rect.right <= panelRect.right;
+      };
+      return {
+        documentOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+        panelOverflow: panel.scrollWidth - panel.clientWidth,
+        selectFits: withinPanel(select),
+        buttonFits: withinPanel(button),
+      };
+    });
+    expect(dimensions.documentOverflow).toBeLessThanOrEqual(0);
+    expect(dimensions.panelOverflow).toBeLessThanOrEqual(0);
+    expect(dimensions.selectFits).toBe(true);
+    expect(dimensions.buttonFits).toBe(true);
+  });
+}
+

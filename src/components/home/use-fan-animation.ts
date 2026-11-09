@@ -8,7 +8,6 @@ import {
   fanWedgePoints,
   lerpPoints,
   midVector,
-  rectPolygon,
   restWidths,
   toClipPath,
   widthsWithFocus,
@@ -153,7 +152,9 @@ export function useFanAnimation({
     if (wedges.length === 0) return;
 
     const state = live.current;
-    const whole = rectPolygon(geo.width, geo.height);
+    // On phones, the fixed tab bar owns the bottom inset. Opening a wedge fills
+    // only the photo area above it instead of drawing an image beneath the bar.
+    const whole = geo.openPoints;
 
     geo.fans.forEach((fan, fanIndex) => {
       const widths = state.widths.slice(fan.from, fan.from + fan.count);

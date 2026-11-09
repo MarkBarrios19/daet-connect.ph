@@ -150,36 +150,34 @@ export function GuideAssignment({
             </p>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex min-w-0 flex-1 basis-48 flex-col">
-                <label htmlFor={`${groupId}-guide`} className="sr-only">
-                  Guide for this booking
-                </label>
-                <Select
-                  id={`${groupId}-guide`}
-                  value={selectedGuideId}
-                  onChange={(event) => setSelectedGuideId(event.target.value)}
-                  disabled={pending}
-                  className="min-h-11 py-2"
-                >
-                  <option value="">Select a guide...</option>
-                  {[...availableGuides]
-                    .sort(
-                      (a, b) =>
-                        Number(blocked(a.id)) - Number(blocked(b.id)) ||
-                        rank(availability[a.id]) - rank(availability[b.id]),
-                    )
-                    .map((guide) => {
-                      const reason = guide.id === currentGuideId ? null : busy[guide.id];
-                      return (
-                        <option key={guide.id} value={guide.id} disabled={Boolean(reason)}>
-                          {reason ? "✕ " : availability[guide.id] === true ? "✓ " : availability[guide.id] === false ? "✕ " : ""}
-                          {guide.full_name} - {guide.contact_phone}
-                          {reason ? ` (${BUSY_LABELS[reason]})` : availability[guide.id] === false ? " (not available)" : ""}
-                        </option>
-                      );
-                    })}
-                </Select>
-              </div>
+              <label htmlFor={`${groupId}-guide`} className="sr-only">
+                Guide for this booking
+              </label>
+              <Select
+                id={`${groupId}-guide`}
+                value={selectedGuideId}
+                onChange={(event) => setSelectedGuideId(event.target.value)}
+                disabled={pending}
+                className="min-w-0 max-w-full flex-1 basis-48 min-h-11 py-2"
+              >
+                <option value="">Select a guide...</option>
+                {[...availableGuides]
+                  .sort(
+                    (a, b) =>
+                      Number(blocked(a.id)) - Number(blocked(b.id)) ||
+                      rank(availability[a.id]) - rank(availability[b.id]),
+                  )
+                  .map((guide) => {
+                    const reason = guide.id === currentGuideId ? null : busy[guide.id];
+                    return (
+                      <option key={guide.id} value={guide.id} disabled={Boolean(reason)}>
+                        {reason ? "✕ " : availability[guide.id] === true ? "✓ " : availability[guide.id] === false ? "✕ " : ""}
+                        {guide.full_name} - {guide.contact_phone}
+                        {reason ? ` (${BUSY_LABELS[reason]})` : availability[guide.id] === false ? " (not available)" : ""}
+                      </option>
+                    );
+                  })}
+              </Select>
 
               {currentGuideId ? (
                 <Button variant="secondary" className="shrink-0" onClick={handleUnassign} disabled={pending}>
@@ -202,7 +200,7 @@ export function GuideAssignment({
           {currentGuideId ? (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-daet-ink/70">Currently assigned:</span>
-              <span className="font-bold text-daet-forest dark:text-blue-300">{currentGuideName}</span>
+              <span className="min-w-0 break-words font-bold text-daet-forest dark:text-blue-300">{currentGuideName}</span>
             </div>
           ) : null}
 
@@ -220,6 +218,7 @@ export function GuideAssignment({
           </button>
         </>
       )}
+
 
       <Modal
         open={askingNoGuide}
@@ -261,6 +260,7 @@ export function GuideAssignment({
           placeholder={currentGuideId ? "e.g. Guest asked in chat: “di namin kailangan ng tour guide”" : "e.g. Guest asked in chat"}
         />
       </Modal>
+
     </div>
   );
 }

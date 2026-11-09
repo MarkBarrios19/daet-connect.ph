@@ -83,6 +83,9 @@ export function PlaceFan({
     width: DEFAULT_HERO_SIZE.width,
     height: DEFAULT_HERO_SIZE.height,
   });
+  // The server cannot know the device viewport. Keep the fan and the layout
+  // that depends on it hidden until the browser has supplied real dimensions.
+  const [heroMeasured, setHeroMeasured] = useState(false);
   const [layout, setLayout] = useState<FanLayout>("desktop");
   // Where the fan's point should be. Null until the headline has been measured,
   // which leaves the server's standing value in place.
@@ -95,9 +98,10 @@ export function PlaceFan({
 
   useEffect(() => {
     const element = sectionRef.current;
-    if (!element || typeof ResizeObserver === "undefined") return;
+    if (!element) return;
 
     let frame = 0;
+    const tabBar = document.querySelector<HTMLElement>('nav[aria-label="Dashboard"]');
     // `clientWidth`/`clientHeight`, not `getBoundingClientRect()`: the page fold
     // slides and, before this, scaled the section, and a transformed box
     // measures smaller than the element the shapes are written for.
@@ -115,7 +119,6 @@ export function PlaceFan({
       // The sticky bar the hero starts under, and the tab bar fixed over its
       // foot: both take visible room, so the fans are centred on neither.
       const header = document.querySelector("header");
-      const tabBar = document.querySelector('nav[aria-label="Dashboard"]');
       const top = header?.getBoundingClientRect().height ?? 0;
       const bottom = tabBar && getComputedStyle(tabBar).display !== "none" ? tabBar.getBoundingClientRect().height : 0;
       setInsets((was) => (was.top === top && was.bottom === bottom ? was : { top, bottom }));
@@ -124,6 +127,7 @@ export function PlaceFan({
       // A landscape phone keeps one fan of six; anything else under 768 is two.
       const landscapePhone = height < 500;
       setLayout(width >= 768 || landscapePhone ? "desktop" : "phone");
+      setHeroMeasured(true);
     };
 
     const schedule = () => {
@@ -132,12 +136,17 @@ export function PlaceFan({
     };
 
     measure();
-    const observer = new ResizeObserver(schedule);
-    observer.observe(element);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    observer?.observe(element);
+    if (tabBar) observer?.observe(tabBar);
+    window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
 
     return () => {
       cancelAnimationFrame(frame);
-      observer.disconnect();
+      observer?.disconnect();
+      window.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
     };
   }, []);
 
@@ -252,7 +261,10 @@ export function PlaceFan({
    */
   const returnToHeroTop = useCallback(() => {
     if (typeof window === "undefined" || window.scrollY <= 0) return;
-    window.scrollTo({ top: 0, behavior: "auto" });
+    // `auto` follows the document's global `scroll-behavior: smooth`, which
+    // leaves the sheet floating partway down the page while the scroll animates.
+    // Opening is a layout correction, not navigation: snap to the hero now.
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
   const open = useCallback(
@@ -490,7 +502,9 @@ export function PlaceFan({
 
   return (
     // The header is a scrim pinned over the top of the page, so the photos run up
-    // under it: the hero starts at the top of the page and ends at the fold.
+    // under it: the hero starts at the top of the page and fills the current
+    // viewport. Its dynamic height keeps the open photo and its bottom sheet
+    // aligned with the fixed phone tab bar when browser chrome changes size.
     //
     // No `overscroll-contain` on it: the hero is the whole first screen, so
     // containing the wheel there left the page unscrollable from the top. The
@@ -498,6 +512,7 @@ export function PlaceFan({
     <section
       ref={sectionRef}
       aria-labelledby="home-title"
+      data-fan-ready={heroMeasured ? "true" : "false"}
       onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -506,11 +521,19 @@ export function PlaceFan({
       // A finger on the open photo pans it sideways. Down and up belongs to the
       // page, or the visitor is stuck on a full screen of photo: no scroll, no
       // pull to refresh, and no way out but a tap they have to guess at.
-      style={sheet && isOpen ? { touchAction: "pan-y" } : undefined}
+      style={
+        {
+          // Use the measured bar height everywhere inside the hero, rather than
+          // an assumed 3.5rem: both the detail sheet and open-photo clip stop at
+          // the actual top edge of this device's fixed navigation.
+          "--tab-bar-h": `${insets.bottom}px`,
+          touchAction: sheet && isOpen ? "pan-y" : undefined,
+        } as React.CSSProperties
+      }
       // The hero is the page's own ground in both themes (owner's note on
       // image-59: one background, not a lighter band above a darker page), and
       // its words are the theme's ink, so they match the headings below it.
-      className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas"
+      className="relative -mt-[var(--header-h)] hero-viewport max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas"
     >
       <div role="group" aria-label="Places in Daet" className="absolute inset-0 z-0">
         {places.map((place, index) => {

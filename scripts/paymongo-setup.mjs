@@ -6,7 +6,7 @@
  *     node scripts/paymongo-setup.mjs [--test-checkout]
  *
  * 1. Checks the key is a TEST key and that PayMongo accepts it.
- * 2. Registers <APP_URL>/api/webhooks/paymongo for checkout_session.payment.paid,
+ * 2. Registers <APP_URL>/api/webhooks/paymongo for payment and refund events,
  *    or reuses (and re-enables) an existing webhook for that URL.
  * 3. Prints the environment variables to set on the deployment.
  * 4. --test-checkout: creates a ₱100 test checkout to pay with PayMongo's test
@@ -18,6 +18,8 @@ import { pathToFileURL } from "node:url";
 
 export const API_BASE = "https://api.paymongo.com/v1";
 export const PAID_EVENT = "checkout_session.payment.paid";
+export const REFUND_EVENTS = ["payment.refunded", "payment.refund.updated"];
+export const WEBHOOK_EVENTS = [PAID_EVENT, ...REFUND_EVENTS];
 export const WEBHOOK_PATH = "/api/webhooks/paymongo";
 
 /** Validates inputs and derives the webhook URL. Throws with a readable message. */
@@ -50,7 +52,7 @@ export function decideWebhook(existing, webhookUrl) {
   return {
     action: "reuse",
     hook,
-    needsEvent: !events.includes(PAID_EVENT),
+    needsEvent: WEBHOOK_EVENTS.some((event) => !events.includes(event)),
     needsEnable: hook.attributes?.status !== "enabled",
     duplicates: same.length - 1,
   };
@@ -93,7 +95,7 @@ export async function runSetup({ secretKey, appUrl, methods, testCheckout = fals
   if (decision.action === "create") {
     const created = await request("/webhooks", {
       method: "POST",
-      body: JSON.stringify({ data: { attributes: { url: plan.webhookUrl, events: [PAID_EVENT] } } }),
+      body: JSON.stringify({ data: { attributes: { url: plan.webhookUrl, events: WEBHOOK_EVENTS } } }),
     });
     hook = created.data;
     secret = hook?.attributes?.secret_key ?? null;
@@ -101,10 +103,10 @@ export async function runSetup({ secretKey, appUrl, methods, testCheckout = fals
   } else {
     hook = decision.hook;
     if (decision.needsEvent) {
-      const events = [...new Set([...(hook.attributes?.events ?? []), PAID_EVENT])];
+      const events = [...new Set([...(hook.attributes?.events ?? []), ...WEBHOOK_EVENTS])];
       const updated = await request(`/webhooks/${hook.id}`, { method: "PUT", body: JSON.stringify({ data: { attributes: { url: plan.webhookUrl, events } } }) });
       hook = updated.data ?? hook;
-      log(`✔ Added ${PAID_EVENT} to the existing webhook.`);
+      log(`✔ Added payment and refund events to the existing webhook.`);
     }
     if (decision.needsEnable) {
       const enabled = await request(`/webhooks/${hook.id}/enable`, { method: "POST" });

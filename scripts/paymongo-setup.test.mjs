@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decideWebhook, PAID_EVENT, planSetup, runSetup } from "./paymongo-setup.mjs";
+import { decideWebhook, PAID_EVENT, WEBHOOK_EVENTS, planSetup, runSetup } from "./paymongo-setup.mjs";
 
 const app = "https://daet-preview.vercel.app/";
 
@@ -29,8 +29,9 @@ test("decide reuses, re-enables or extends an existing webhook", () => {
   assert.equal(d.action, "reuse");
   assert.equal(d.needsEnable, true);
   assert.equal(d.needsEvent, true);
-  const ok = decideWebhook([{ id: "hook_2", attributes: { url, status: "enabled", events: [PAID_EVENT] } }], url);
+  const ok = decideWebhook([{ id: "hook_2", attributes: { url, status: "enabled", events: WEBHOOK_EVENTS } }], url);
   assert.equal(ok.needsEnable || ok.needsEvent, false);
+  assert.equal(decideWebhook([{ id: "hook_3", attributes: { url, status: "enabled", events: [PAID_EVENT] } }], url).needsEvent, true);
 });
 
 function fakePaymongo(existing = []) {
@@ -55,7 +56,7 @@ test("run creates the webhook, prints the secret and a test checkout", async () 
   assert.equal(result.secret, "whsk_new");
   assert.equal(result.checkoutUrl, "https://checkout.paymongo.com/cs_1");
   const create = calls.find((c) => c.method === "POST" && c.path === "/webhooks");
-  assert.deepEqual(create.body.data.attributes, { url: "https://daet-preview.vercel.app/api/webhooks/paymongo", events: [PAID_EVENT] });
+  assert.deepEqual(create.body.data.attributes, { url: "https://daet-preview.vercel.app/api/webhooks/paymongo", events: WEBHOOK_EVENTS });
   const checkout = calls.find((c) => c.path === "/checkout_sessions");
   assert.equal(checkout.body.data.attributes.line_items[0].amount, 10000);
   assert.ok(out.join("\n").includes("PAYMONGO_WEBHOOK_SECRET=whsk_new"));
@@ -64,7 +65,7 @@ test("run creates the webhook, prints the secret and a test checkout", async () 
 
 test("run reuses an existing enabled webhook without creating another", async () => {
   const url = "https://daet-preview.vercel.app/api/webhooks/paymongo";
-  const { calls, fetchImpl } = fakePaymongo([{ id: "hook_1", attributes: { url, status: "enabled", events: [PAID_EVENT] } }]);
+  const { calls, fetchImpl } = fakePaymongo([{ id: "hook_1", attributes: { url, status: "enabled", events: WEBHOOK_EVENTS } }]);
   const result = await runSetup({ secretKey: "sk_test_good", appUrl: app }, fetchImpl, () => {});
   assert.equal(result.webhookId, "hook_1");
   assert.equal(calls.filter((c) => c.method === "POST").length, 0);

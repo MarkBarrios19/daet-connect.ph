@@ -44,6 +44,21 @@ export function createSupabaseWebhookStore(admin: SupabaseClient): WebhookStore 
       return data?.length ?? 0;
     },
 
+    async reconcileRefund(refund) {
+      const { data: operation, error } = await admin.from("tours_refund_operations")
+        .select("id, state").eq("provider_ref", refund.id).maybeSingle();
+      if (error) throw new Error(`Could not read refund operation: ${error.message}`);
+      // An external refund, a duplicate event, or a webhook that arrived before
+      // the create response was recorded. Pending operations are also polled.
+      if (!operation || !["sending", "pending"].includes(operation.state)) return;
+      const status = refund.attributes.status === "processing" ? "pending" : refund.attributes.status;
+      const { error: updateError } = await admin.rpc("tours_update_refund_operation", {
+        p_id: operation.id, p_state: status, p_ref: refund.id,
+        p_payment_ref: refund.attributes.payment_id, p_centavos: refund.attributes.amount,
+      });
+      if (updateError) throw new Error(`Could not reconcile refund: ${updateError.message}`);
+    },
+
     async markProcessed(eventId, outcome, bookingId) {
       const { error } = await admin
         .from("tours_payment_events")

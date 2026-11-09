@@ -683,15 +683,36 @@ describe("PlaceFan's hero", () => {
     delete (Element.prototype as unknown as Record<string, unknown>).clientHeight;
   });
 
-  it("runs up under the sticky header, so the photos start at the top of the page", () => {
-    // The header is a scrim pinned over the page, not a bar above it: the hero
-    // takes the whole viewport and pulls itself up by exactly the header's
-    // height, so its last pixel is the fold.
+  it("marks viewport-dependent fan markup unready before the browser can measure it", () => {
+    const { container } = renderFan();
+    const section = container.querySelector("section") as HTMLElement;
+
+    // SSR cannot know whether this is a phone or desktop. The global CSS hides
+    // the fan and headline while this is false, preventing a wrong-layout flash.
+    expect(section).toHaveAttribute("data-fan-ready", "false");
+  });
+
+  it("reveals the fan with mobile geometry after measuring a phone viewport", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    const section = container.querySelector("section") as HTMLElement;
+    const group = container.querySelector('[role="group"]') as HTMLElement;
+
+    expect(section).toHaveAttribute("data-fan-ready", "true");
+    expect(group.querySelector('[data-wedge="0"]')).toHaveStyle({
+      clipPath: fanGeometry(390, 844, "phone").wedges[0].rest,
+    });
+  });
+
+  it("fills the current viewport under the sticky header, so the open photo reaches the tab bar", () => {
+    // The header is a scrim pinned over the page, not a bar above it. The hero
+    // starts at the top and uses the dynamic viewport: a small-viewport height
+    // can end early on mobile and expose the next section below the bottom sheet.
     const { container } = renderFan();
     const section = container.querySelector("section") as HTMLElement;
 
     expect(section.className).toContain("-mt-[var(--header-h)]");
-    expect(section.className).toContain("h-[100svh]");
+    expect(section.className).toContain("hero-viewport");
     expect(section.className).toContain("max-h-[1080px]");
     expect(section.className).toContain("min-h-[520px]");
     expect(section.className).not.toContain("h-[calc(100svh-var(--header-h))]");
@@ -900,9 +921,13 @@ describe("PlaceFan on a phone", () => {
       setHeroSize(390, 844);
       const { container } = renderFan();
       const headline = container.querySelector("[data-headline]") as HTMLElement;
+      const section = container.querySelector("section") as HTMLElement;
 
       // The middle of what is left between the two: 56 at the top, 57 at the foot.
       expect(headline.style.top).toBe(`${(56 + 844 - 57) / 2}px`);
+      // The sheet and its open-photo clip inherit the measured nav height, not
+      // only the CSS estimate used by the rest of the app.
+      expect(section.style.getPropertyValue("--tab-bar-h")).toBe("57px");
     } finally {
       header.remove();
       tabBar.remove();
@@ -1397,7 +1422,7 @@ describe("PlaceFan's page position", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
   });
 
   it("leaves a page that is already at the top alone", () => {

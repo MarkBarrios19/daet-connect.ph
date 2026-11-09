@@ -1,3 +1,4 @@
+import type { RefundResource } from "@/lib/paymongo/refunds";
 import {
   centavosToPesos,
   extractPaidPayments,
@@ -42,6 +43,7 @@ export interface WebhookStore {
   bookingExists(bookingId: string): Promise<boolean>;
   /** Inserts ledger rows, skipping any whose (provider, provider_ref) already exists. Returns rows inserted. */
   insertPayments(rows: LedgerInsert[]): Promise<number>;
+  reconcileRefund?(refund: RefundResource): Promise<void>;
   markProcessed(eventId: string, outcome: string, bookingId: string | null): Promise<void>;
 }
 
@@ -83,6 +85,7 @@ export type WebhookDeps = {
   webhookSecret: string;
   mode: SignatureMode;
   retrieveSession: (id: string) => Promise<unknown>;
+  retrieveRefund?: (id: string) => Promise<RefundResource>;
   store: WebhookStore;
   now?: Date;
 };
@@ -128,6 +131,23 @@ export async function processPaymongoWebhook(
 
   const { alreadyProcessed } = await deps.store.recordEvent({ id: eventId, type: eventType, livemode, payload });
   if (alreadyProcessed) return respond(200, "Duplicate event");
+
+  if (eventType === "payment.refund.updated" || eventType === "payment.refunded") {
+    const embedded = asRecord(eventAttributes?.data);
+    if (embedded?.type !== "refund" || typeof embedded.id !== "string" || !/^ref_[A-Za-z0-9]+$/.test(embedded.id)) {
+      // Some payment.refunded events contain a payment rather than a refund.
+      // The operator's availability check will reconcile any pending operation.
+      await deps.store.markProcessed(eventId, "no_refund_resource", null);
+      return respond(200, "No refund resource in event");
+    }
+    if (!deps.retrieveRefund || !deps.store.reconcileRefund) throw new Error("Refund reconciliation is not configured");
+    const refund = await deps.retrieveRefund(embedded.id);
+    if (refund?.id !== embedded.id || !["pending", "processing", "succeeded", "failed"].includes(refund.attributes?.status))
+      throw new Error("Invalid PayMongo refund response");
+    await deps.store.reconcileRefund(refund);
+    await deps.store.markProcessed(eventId, "refund_checked", null);
+    return respond(200, "Refund checked");
+  }
 
   if (eventType !== PAID_EVENT) {
     await deps.store.markProcessed(eventId, "ignored", null);
