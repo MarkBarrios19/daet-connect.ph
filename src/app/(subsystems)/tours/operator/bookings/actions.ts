@@ -1,6 +1,7 @@
 "use server";
 
 import { scheduleErrorMessage } from "@/lib/tours/guide-swap";
+import { parseGuideNotNeededNote } from "@/lib/tours/guide-not-needed";
 import { emailBookingConfirmed, emailGuideAssigned, emailTripCalledOff } from "@/lib/email/notify-booking";
 import { parseCallOffReason } from "@/lib/tours/call-off";
 import { revalidatePath } from "next/cache";
@@ -16,6 +17,80 @@ type ActionResult = {
   error?: string;
 };
 
+type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+type OwnedBooking = {
+  id: string;
+  status: string;
+  tour_date: string;
+  assigned_guide_id: string | null;
+};
+
+/**
+ * The signed-in operator, with the booking checked to be on one of their own
+ * packages. Every action below starts here, so no action trusts a booking id
+ * from the browser.
+ */
+async function requireOwnedBooking(
+  supabase: Supabase,
+  bookingId: string,
+): Promise<{ ok: true; operatorId: string; booking: OwnedBooking } | { ok: false; error: string }> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { ok: false, error: "Authentication required" };
+  }
+
+  const { data: operator, error: operatorError } = await supabase
+    .from("tours_operators")
+    .select("id")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  if (operatorError || !operator) {
+    return { ok: false, error: "Operator profile not found" };
+  }
+
+  const { data: booking, error: bookingFetchError } = await supabase
+    .from("tours_bookings")
+    .select(
+      `
+      id,
+      status,
+      tour_date,
+      assigned_guide_id,
+      tours_packages!inner (
+        operator_id
+      )
+    `,
+    )
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (bookingFetchError || !booking) {
+    return { ok: false, error: "Booking not found" };
+  }
+
+  const pkg = Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages;
+
+  if (pkg?.operator_id !== operator.id) {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  return { ok: true, operatorId: operator.id, booking: booking as OwnedBooking };
+}
+
+/** The board and the tourist's own page both read what happens here. */
+function revalidateBooking(bookingId: string) {
+  revalidatePath("/tours/operator/bookings");
+  revalidatePath("/tours/operator/dashboard");
+  revalidatePath("/tours/operator/live");
+  revalidatePath(`/tours/bookings/${bookingId}`);
+}
+
 export async function assignGuideToBooking(
   bookingId: string,
   guideId: string | null
@@ -23,56 +98,15 @@ export async function assignGuideToBooking(
   try {
     const supabase = await createSupabaseServerClient();
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, error: "Authentication required" };
-    }
-
-    // Get operator profile
-    const { data: operator, error: operatorError } = await supabase
-      .from("tours_operators")
-      .select("id")
-      .eq("profile_id", user.id)
-      .maybeSingle();
-
-    if (operatorError || !operator) {
-      return { success: false, error: "Operator profile not found" };
-    }
-
-    // Verify the booking belongs to this operator's package
-    const { data: booking, error: bookingFetchError } = await supabase
-      .from("tours_bookings")
-      .select(
-        `
-        id,
-        tours_packages!inner (
-          operator_id
-        )
-      `
-      )
-      .eq("id", bookingId)
-      .maybeSingle();
-
-    if (bookingFetchError || !booking) {
-      return { success: false, error: "Booking not found" };
-    }
-
-    // Check ownership
-    const pkg = Array.isArray(booking.tours_packages)
-      ? booking.tours_packages[0]
-      : booking.tours_packages;
-
-    if (pkg?.operator_id !== operator.id) {
-      return { success: false, error: "Unauthorized" };
+    const owned = await requireOwnedBooking(supabase, bookingId);
+    if (!owned.ok) {
+      return { success: false, error: owned.error };
     }
 
     // If guideId provided, verify the guide exists and is approved
     if (guideId) {
+      if (!isUuid(guideId)) return { success: false, error: "Guide not found" };
+
       const { data: guide, error: guideError } = await supabase
         .from("tours_guides")
         .select("id, accreditation_status")
@@ -88,10 +122,15 @@ export async function assignGuideToBooking(
       }
     }
 
-    // Assign or unassign guide
+    // Assign or unassign guide. Naming a guide answers any "we don't need one"
+    // request, so the flag goes with it (the database guards this too).
     const { error: updateError } = await supabase
       .from("tours_bookings")
-      .update({ assigned_guide_id: guideId })
+      .update(
+        guideId
+          ? { assigned_guide_id: guideId, guide_not_needed_at: null, guide_not_needed_note: null }
+          : { assigned_guide_id: null },
+      )
       .eq("id", bookingId);
 
     if (updateError) {
@@ -104,12 +143,73 @@ export async function assignGuideToBooking(
 
     if (guideId) emailGuideAssigned(bookingId, guideId);
 
-    // Revalidate the bookings page
-    revalidatePath("/tours/operator/bookings");
+    revalidateBooking(bookingId);
 
     return { success: true };
   } catch (err) {
     console.error("Unexpected error in assignGuideToBooking:", err);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Records that this tour goes ahead without a guide, or goes back to needing
+ * one.
+ *
+ * The guest usually asks in chat ("di namin kailangan ng tour guide"). Setting
+ * this clears whoever was assigned — the database cancels their pending swap
+ * request and tells them and the guest — and leaves the booking visibly
+ * guideless on purpose, so the board, the dashboard and the live page stop
+ * asking for a guide. Clearing it puts the booking back in the "needs a guide"
+ * queue; the operator then picks one with assignGuideToBooking.
+ */
+export async function setGuideNotNeeded(
+  bookingId: string,
+  notNeeded: boolean,
+  note?: string,
+): Promise<ActionResult> {
+  if (!isUuid(bookingId)) return { success: false, error: "Booking not found" };
+
+  const parsed = parseGuideNotNeededNote(note);
+  if (!parsed.ok) return { success: false, error: parsed.error };
+
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const owned = await requireOwnedBooking(supabase, bookingId);
+    if (!owned.ok) {
+      return { success: false, error: owned.error };
+    }
+
+    if (owned.booking.status !== "pending" && owned.booking.status !== "confirmed") {
+      return { success: false, error: "Only a pending or confirmed booking can change its guide." };
+    }
+
+    const { error: updateError } = await supabase
+      .from("tours_bookings")
+      .update(
+        notNeeded
+          ? {
+              assigned_guide_id: null,
+              guide_not_needed_at: new Date().toISOString(),
+              guide_not_needed_note: parsed.note,
+            }
+          : { guide_not_needed_at: null, guide_not_needed_note: null },
+      )
+      .eq("id", bookingId);
+
+    if (updateError) {
+      console.error("Guide-not-needed error:", updateError);
+      return {
+        success: false,
+        error: userFacingDbError(updateError, "Could not save the guest's guide request. Please try again."),
+      };
+    }
+
+    revalidateBooking(bookingId);
+    return { success: true };
+  } catch (err) {
+    console.error("Unexpected error in setGuideNotNeeded:", err);
     return { success: false, error: "An unexpected error occurred" };
   }
 }

@@ -11,6 +11,7 @@ import { QrVerifyScanner } from "@/components/tours/qr-verify-scanner";
 import { RatingBadge } from "@/components/tours/star-rating";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bookingsByDay, occupancy } from "@/lib/tours/dashboards";
+import { guideCoverageNote } from "@/lib/tours/guide-not-needed";
 import { currentManilaMonth, formatDayHeading, isDateKey, monthKey, parseMonthParam, shiftMonth, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { summarizeLedger } from "@/lib/tours/ledger";
 import { toSummary } from "@/lib/tours/reviews";
@@ -26,6 +27,8 @@ type DayBooking = {
   number_of_pax: number;
   contact_name: string;
   assigned_guide_id: string | null;
+  /** Set when the guest asked to go without a guide (guide-not-needed.ts). */
+  guide_not_needed_at?: string | null;
   tours_packages: { title: string; operator_id: string } | { title: string; operator_id: string }[] | null;
 };
 
@@ -47,14 +50,14 @@ export async function OperatorHome({ operatorId, searchParams }: { operatorId: s
     supabase.from("tours_operators").select("business_name").eq("id", operatorId).maybeSingle(),
     supabase
       .from("tours_bookings")
-      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, tours_packages!inner ( title, operator_id )")
+      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id )")
       .eq("tours_packages.operator_id", operatorId)
       .gte("tour_date", `${key}-01`)
       .lt("tour_date", `${nextKey}-01`)
       .order("tour_date"),
     supabase
       .from("tours_bookings")
-      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, tours_packages!inner ( title, operator_id )")
+      .select("id, booking_reference, tour_date, status, number_of_pax, contact_name, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id )")
       .eq("tours_packages.operator_id", operatorId)
       .eq("tour_date", today)
       .in("status", ["pending", "confirmed", "completed"]),
@@ -231,7 +234,8 @@ function BookingLines({ bookings, title }: { bookings: DayBooking[]; title: (b: 
               {title(b)}
             </Link>
             <p className="truncate text-sm text-slate-600 dark:text-slate-400">
-              {b.booking_reference} · {b.contact_name} · {b.number_of_pax} guest{b.number_of_pax === 1 ? "" : "s"}{b.assigned_guide_id ? "" : " · no guide yet"}
+              {b.booking_reference} · {b.contact_name} · {b.number_of_pax} guest{b.number_of_pax === 1 ? "" : "s"}
+              {guideCoverageNote(b)}
             </p>
           </div>
           <Badge tone={STATUS_TONE[b.status] ?? "neutral"} className="mt-3 shrink-0">{STATUS_LABEL[b.status] ?? b.status}</Badge>

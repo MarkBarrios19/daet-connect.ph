@@ -241,6 +241,13 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           </Notice>
         ) : null}
 
+        {!closed && booking.guide_not_needed_at && !booking.assigned_guide_id ? (
+          <Notice variant="info" className="mb-6" title="No guide for this tour">
+            As you asked, the operator is running this tour without a guide. Message them if you change your mind and
+            want one.
+          </Notice>
+        ) : null}
+
         {booking.status === "pending" ? (
           <Notice variant="success" className="mb-6" title="Booking sent">
             The operator will confirm it here and in your notifications. You can pay once it is confirmed.

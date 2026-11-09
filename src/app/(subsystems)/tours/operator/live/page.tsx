@@ -43,7 +43,7 @@ export default async function OperatorLivePage() {
   const today = toManilaDateKey(new Date());
   const { data: bookings } = await supabase
     .from("tours_bookings")
-    .select("id, tour_date, booking_reference, contact_name, number_of_pax, assigned_guide_id, tours_packages!inner ( title, operator_id, meeting_time )")
+    .select("id, tour_date, booking_reference, contact_name, number_of_pax, assigned_guide_id, guide_not_needed_at, tours_packages!inner ( title, operator_id, meeting_time )")
     .eq("tours_packages.operator_id", operator.id)
     .eq("status", "confirmed")
     .gte("tour_date", shiftDay(today, -1))
@@ -97,7 +97,9 @@ export default async function OperatorLivePage() {
                 </span>
                 <span className="mt-1 block text-sm text-daet-ink/75">
                   {!b.assigned_guide_id
-                    ? "No guide assigned yet."
+                    ? b.guide_not_needed_at
+                      ? "No guide: the guest asked to go without one."
+                      : "No guide assigned yet."
                     : state === "live"
                       ? `Live since ${formatClock(s!.started_at)} · ${s!.stops_reached} stop${s!.stops_reached === 1 ? "" : "s"} reached · ${sharing(b.id) ? "guest sharing" : "guest not sharing"}`
                       : state === "ended"

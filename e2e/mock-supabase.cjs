@@ -30,6 +30,22 @@ const SAVED_TRIP_START = (() => {
 
 // Live tour tracking keeps state across requests (POST /__reset_live clears it).
 const LIVE_BID = "e9466de5-4877-47c1-ac14-d86deeb38b9e";
+/**
+ * Rows written through PATCH in a test (the bookings board's guide panel, for
+ * one). `build(role)` rebuilds every table on each request, so a write only
+ * lasts if it is replayed here. `/__reset_board` clears it.
+ */
+const rowPatches = new Map();
+function applyRowPatches(tables) {
+  for (const [key, patch] of rowPatches) {
+    const at = key.indexOf(":");
+    const table = key.slice(0, at);
+    const id = key.slice(at + 1);
+    const row = (tables[table] || []).find((r) => r.id === id);
+    if (row) Object.assign(row, patch);
+  }
+}
+
 const freshLive = () => ({
   session: null,
   positions: [],
@@ -1263,6 +1279,7 @@ http
       if (url.pathname === "/auth/v1/.well-known/jwks.json")
         return send(200, JWKS);
       const { tables, analytics, inbox, header, user } = build(role);
+      applyRowPatches(tables);
       // GET reads the session's user; the PUT that saves a name or a password is
       // handled below, once the auth log exists to record it.
       if (url.pathname === "/auth/v1/user" && req.method !== "PUT")
@@ -1643,6 +1660,10 @@ http
             approved_at: "2026-10-16T13:18:25Z",
           },
         ]);
+      if (url.pathname === "/__reset_board") {
+        rowPatches.clear();
+        return send(200, { ok: true });
+      }
       if (url.pathname === "/__reset_live") {
         live = freshLive();
         return send(200, { ok: true });
@@ -1797,6 +1818,26 @@ http
         return send(404, { message: "unknown live rpc" });
       }
       const table = url.pathname.replace("/rest/v1/", "");
+      // A write the board makes (guide assignment, "no guide needed"), kept for
+      // the rest of the run so the refreshed page reads it back.
+      if (req.method === "PATCH" && table !== "profiles" && Array.isArray(tables[table])) {
+        let patch = {};
+        try {
+          patch = JSON.parse(body || "{}");
+        } catch {
+          patch = {};
+        }
+        const idFilter = (url.searchParams.get("id") || "").replace(/^eq\./, "");
+        const matched = [];
+        for (const row of tables[table]) {
+          if (idFilter && row.id !== idFilter) continue;
+          Object.assign(row, patch);
+          const key = `${table}:${row.id}`;
+          rowPatches.set(key, { ...(rowPatches.get(key) || {}), ...patch });
+          matched.push(row);
+        }
+        return send(200, matched);
+      }
       if (table === "profiles" && req.method === "PATCH") {
         let patch = {};
         try {

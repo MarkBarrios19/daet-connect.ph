@@ -207,6 +207,10 @@ export function BookingBoard({ rows, selectableIds }: { rows: BoardRow[]; select
                       ? "The guide has been told the trip is off."
                       : `${row.guideName} is leading this tour.`}
                   </p>
+                ) : row.guideNotNeeded ? (
+                  <p className="mt-2 text-sm text-daet-ink/70">
+                    No guide: the guest asked to go without one.
+                  </p>
                 ) : null}
                 {row.lifecycleStatus !== "rejected" && row.lifecycleStatus !== "cancelled" ? (
                   <div className="mt-3">
@@ -220,6 +224,7 @@ export function BookingBoard({ rows, selectableIds }: { rows: BoardRow[]; select
                       }))}
                       availability={row.availability}
                       busy={Object.fromEntries(row.picker.map((guide) => [guide.id, guide.reason]))}
+                      guideNotNeeded={row.guideNotNeeded}
                     />
                   </div>
                 ) : null}

@@ -35,7 +35,13 @@ export default async function OperatorLiveTourPage({ params }: PageProps) {
         <Link href="/tours/operator/live" className="mb-4 inline-flex min-h-11 items-center text-sm font-bold text-daet-ink/70 hover:text-daet-ink">
           ← Live now
         </Link>
-        {!tour.hasGuide ? <Notice variant="info" className="mb-4">Assign a guide on the bookings page so they can start the live tour.</Notice> : null}
+        {!tour.hasGuide ? (
+          <Notice variant="info" className="mb-4">
+            {tour.guideNotNeeded
+              ? "This tour goes ahead without a guide, as the guest asked. You can still share your location from here."
+              : "Assign a guide on the bookings page so they can start the live tour."}
+          </Notice>
+        ) : null}
         <LiveTourBoard role="operator" {...tour} />
       </div>
     </PageFrame>

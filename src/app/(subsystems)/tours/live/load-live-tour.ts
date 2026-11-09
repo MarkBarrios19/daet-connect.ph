@@ -2,7 +2,7 @@ import "server-only";
 import type { LiveTourBoardProps } from "@/components/tours/live/live-tour-board";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-type Loaded = Omit<LiveTourBoardProps, "role"> & { touristId: string; status: string; tourDate: string; isGuide: boolean; isOperator: boolean; hasGuide: boolean };
+type Loaded = Omit<LiveTourBoardProps, "role"> & { touristId: string; status: string; tourDate: string; isGuide: boolean; isOperator: boolean; hasGuide: boolean; guideNotNeeded: boolean };
 
 const num = (v: unknown): number | null => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 
@@ -16,7 +16,7 @@ export async function loadLiveTour(bookingId: string, viewerId: string): Promise
   const { data: booking } = await supabase
     .from("tours_bookings")
     .select(
-      "id, user_id, status, tour_date, booking_reference, contact_name, contact_phone, assigned_guide_id, tours_packages ( id, title, meeting_point_name, meeting_lat, meeting_lng, tours_operators ( profile_id ) )",
+      "id, user_id, status, tour_date, booking_reference, contact_name, contact_phone, assigned_guide_id, guide_not_needed_at, tours_packages ( id, title, meeting_point_name, meeting_lat, meeting_lng, tours_operators ( profile_id ) )",
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -43,6 +43,7 @@ export async function loadLiveTour(bookingId: string, viewerId: string): Promise
     status: booking.status,
     tourDate: booking.tour_date,
     hasGuide: Boolean(booking.assigned_guide_id),
+    guideNotNeeded: Boolean(booking.guide_not_needed_at),
     isGuide: guide?.profile_id === viewerId,
     isOperator: operator?.profile_id === viewerId,
     tourTitle: pkg?.title ?? "Tour",

@@ -25,7 +25,6 @@
   "src/app/(subsystems)/tours/bookings/[id]/review-form.tsx": 2,
   "src/app/(subsystems)/tours/guide/guide-registration-form.tsx": 7,
   "src/app/(subsystems)/tours/my-itineraries/[id]/page.tsx": 1,
-  "src/app/(subsystems)/tours/operator/bookings/guide-assignment.tsx": 1,
   "src/app/(subsystems)/tours/operator/merch/page.tsx": 1,
   "src/app/(subsystems)/tours/operator/operator-registration-form.tsx": 7,
   "src/app/(subsystems)/tours/operator/packages/[id]/availability/availability-manager.tsx": 3,

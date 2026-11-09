@@ -180,6 +180,7 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
       `
       id, booking_reference, status, tour_date, number_of_pax, total_amount, total_paid, payment_status,
       contact_name, contact_email, contact_phone, special_requests, assigned_guide_id, package_id,
+      guide_not_needed_at, guide_not_needed_note,
       called_off_at, called_off_reason, call_off_resolution, rescheduled_from, cancellation_reason,
       tours_packages!inner ( id, title, cover_image_url, operator_id )
     `,
@@ -391,6 +392,9 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
       specialRequests: booking.special_requests,
       guideId: booking.assigned_guide_id,
       guideName: guideName(booking.assigned_guide_id),
+      guideNotNeeded: booking.guide_not_needed_at
+        ? { at: booking.guide_not_needed_at, note: booking.guide_not_needed_note ?? null }
+        : null,
       note: paymentNote({
         totalAmount: booking.total_amount,
         totalPaid: booking.total_paid,
