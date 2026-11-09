@@ -683,6 +683,27 @@ describe("PlaceFan's hero", () => {
     delete (Element.prototype as unknown as Record<string, unknown>).clientHeight;
   });
 
+  it("marks viewport-dependent fan markup unready before the browser can measure it", () => {
+    const { container } = renderFan();
+    const section = container.querySelector("section") as HTMLElement;
+
+    // SSR cannot know whether this is a phone or desktop. The global CSS hides
+    // the fan and headline while this is false, preventing a wrong-layout flash.
+    expect(section).toHaveAttribute("data-fan-ready", "false");
+  });
+
+  it("reveals the fan with mobile geometry after measuring a phone viewport", () => {
+    setHeroSize(390, 844);
+    const { container } = renderFan();
+    const section = container.querySelector("section") as HTMLElement;
+    const group = container.querySelector('[role="group"]') as HTMLElement;
+
+    expect(section).toHaveAttribute("data-fan-ready", "true");
+    expect(group.querySelector('[data-wedge="0"]')).toHaveStyle({
+      clipPath: fanGeometry(390, 844, "phone").wedges[0].rest,
+    });
+  });
+
   it("fills the current viewport under the sticky header, so the open photo reaches the tab bar", () => {
     // The header is a scrim pinned over the page, not a bar above it. The hero
     // starts at the top and uses the dynamic viewport: a small-viewport height
