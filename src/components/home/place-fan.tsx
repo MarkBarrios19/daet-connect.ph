@@ -252,7 +252,10 @@ export function PlaceFan({
    */
   const returnToHeroTop = useCallback(() => {
     if (typeof window === "undefined" || window.scrollY <= 0) return;
-    window.scrollTo({ top: 0, behavior: "auto" });
+    // `auto` follows the document's global `scroll-behavior: smooth`, which
+    // leaves the sheet floating partway down the page while the scroll animates.
+    // Opening is a layout correction, not navigation: snap to the hero now.
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
   const open = useCallback(
@@ -490,7 +493,9 @@ export function PlaceFan({
 
   return (
     // The header is a scrim pinned over the top of the page, so the photos run up
-    // under it: the hero starts at the top of the page and ends at the fold.
+    // under it: the hero starts at the top of the page and fills the current
+    // viewport. Its dynamic height keeps the open photo and its bottom sheet
+    // aligned with the fixed phone tab bar when browser chrome changes size.
     //
     // No `overscroll-contain` on it: the hero is the whole first screen, so
     // containing the wheel there left the page unscrollable from the top. The
@@ -510,7 +515,7 @@ export function PlaceFan({
       // The hero is the page's own ground in both themes (owner's note on
       // image-59: one background, not a lighter band above a darker page), and
       // its words are the theme's ink, so they match the headings below it.
-      className="relative -mt-[var(--header-h)] h-[100svh] max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas"
+      className="relative -mt-[var(--header-h)] hero-viewport max-h-[1080px] min-h-[520px] w-full overflow-hidden bg-canvas"
     >
       <div role="group" aria-label="Places in Daet" className="absolute inset-0 z-0">
         {places.map((place, index) => {
