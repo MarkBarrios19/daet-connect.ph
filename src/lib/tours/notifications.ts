@@ -26,6 +26,8 @@ const KINDS: Record<string, NotificationKind> = {
   cancellation_approved: "return",
   cancellation_declined: "return",
   guide_assigned: "guide",
+  guide_unassigned: "guide",
+  guide_not_needed: "guide",
   payment_received: "money",
   refund_recorded: "money",
   proof_submitted: "receipt",

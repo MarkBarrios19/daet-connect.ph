@@ -13,6 +13,7 @@ import { getAuthUser } from "@/lib/tours/server-auth";
 import { manilaDayStartUtc, toManilaDateKey } from "@/lib/tours/events-calendar";
 import { FREE_CANCELLATION_HOURS } from "@/lib/tours/cancellation";
 import { isBusyReason, type BusyReason } from "@/lib/tours/guide-swap";
+import { loadGuideNotNeeded } from "@/lib/tours/guide-not-needed-server";
 import { canCallOff, callOffState } from "@/lib/tours/call-off";
 import { getPaymongoConfig } from "@/lib/paymongo/client";
 import {
@@ -219,6 +220,8 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
   }
 
   const bookingIds = (bookings ?? []).map((booking) => booking.id);
+  // Its own read, so a database that is a migration behind still draws the board.
+  const guideNotNeeded = await loadGuideNotNeeded(supabase, bookingIds);
   const tourDates = [...new Set((bookings ?? []).map((booking) => booking.tour_date))];
   const today = toManilaDateKey(new Date());
   const upcomingDates = tourDates.filter((date) => date >= today);
@@ -388,6 +391,7 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
       specialRequests: booking.special_requests,
       guideId: booking.assigned_guide_id,
       guideName: guideName(booking.assigned_guide_id),
+      guideNotNeeded: guideNotNeeded.get(booking.id) ?? null,
       note: paymentNote({
         totalAmount: booking.total_amount,
         totalPaid: booking.total_paid,

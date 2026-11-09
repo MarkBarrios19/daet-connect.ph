@@ -61,6 +61,8 @@ export type BoardRow = {
   specialRequests: string | null;
   guideId: string | null;
   guideName: string | null;
+  /** Set when the guest asked for this tour to go ahead without a guide. */
+  guideNotNeeded: { at: string; note: string | null } | null;
   note: PaymentNote;
   pendingProofs: ReviewableProof[];
   refundable: number;

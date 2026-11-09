@@ -8,6 +8,7 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
+import { loadGuideNotNeeded } from "@/lib/tours/guide-not-needed-server";
 import { formatClock } from "@/lib/tours/live-tracking";
 import { getAuthUser } from "@/lib/tours/server-auth";
 
@@ -50,6 +51,8 @@ export default async function OperatorLivePage() {
     .lte("tour_date", shiftDay(today, 1))
     .order("tour_date");
   const ids = (bookings ?? []).map((b) => b.id);
+  // Its own read, so a database that is a migration behind still lists the tours.
+  const guideNotNeeded = await loadGuideNotNeeded(supabase, ids);
   const [{ data: sessions }, { data: flares }, { data: positions }] = ids.length
     ? await Promise.all([
         supabase.from("tours_live_sessions").select("booking_id, started_at, ended_at, stops_reached").in("booking_id", ids),
@@ -97,7 +100,9 @@ export default async function OperatorLivePage() {
                 </span>
                 <span className="mt-1 block text-sm text-daet-ink/75">
                   {!b.assigned_guide_id
-                    ? "No guide assigned yet."
+                    ? guideNotNeeded.has(b.id)
+                      ? "No guide: the guest asked to go without one."
+                      : "No guide assigned yet."
                     : state === "live"
                       ? `Live since ${formatClock(s!.started_at)} · ${s!.stops_reached} stop${s!.stops_reached === 1 ? "" : "s"} reached · ${sharing(b.id) ? "guest sharing" : "guest not sharing"}`
                       : state === "ended"

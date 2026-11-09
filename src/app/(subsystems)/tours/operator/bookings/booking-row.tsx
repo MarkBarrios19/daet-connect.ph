@@ -185,8 +185,15 @@ export function BookingRow({
               <dl className="mt-2 space-y-2 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                   <dt className="text-daet-ink/70">Assigned guide:</dt>
-                  <dd className={`min-w-0 break-words font-bold ${booking.guideName ? "text-daet-ink" : "text-daet-ink/70"}`}>
-                    {booking.guideName ?? "Unassigned"}
+                  {/* A guide, the guest's "we don't need one", or nobody yet. */}
+                  <dd
+                    className={`min-w-0 break-words font-bold ${
+                      booking.guideName || booking.guideNotNeeded
+                        ? "text-daet-ink dark:text-white"
+                        : "text-daet-ink/70"
+                    }`}
+                  >
+                    {booking.guideName ?? (booking.guideNotNeeded ? "None — as the guest asked" : "Unassigned")}
                   </dd>
                 </div>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-2">
