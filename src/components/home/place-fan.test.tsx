@@ -1397,7 +1397,7 @@ describe("PlaceFan's page position", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bagasbas Beach: open photo and details" }));
 
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
   });
 
   it("leaves a page that is already at the top alone", () => {

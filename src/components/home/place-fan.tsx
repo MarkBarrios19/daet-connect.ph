@@ -252,7 +252,10 @@ export function PlaceFan({
    */
   const returnToHeroTop = useCallback(() => {
     if (typeof window === "undefined" || window.scrollY <= 0) return;
-    window.scrollTo({ top: 0, behavior: "auto" });
+    // `auto` follows the document's global `scroll-behavior: smooth`, which
+    // leaves the sheet floating partway down the page while the scroll animates.
+    // Opening is a layout correction, not navigation: snap to the hero now.
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
   const open = useCallback(
