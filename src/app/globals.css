@@ -380,6 +380,27 @@
   }
 }
 
+/* A card drop-down's body drawing itself open (CollapsibleCard). Same deal as
+   the FAQ answers above: native <details> still does the opening, this is only
+   the transition; where `auto` is not interpolatable the body simply appears. */
+@supports (interpolate-size: allow-keywords) {
+  details[data-collapsible-card]::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 280ms var(--ease-out),
+      opacity 180ms var(--ease-out),
+      content-visibility 280ms allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+
+  details[data-collapsible-card][open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
 /* Dark theme values. Raised cards stay one tone lighter than the ground, as in
    light mode. Brand blue fills, green/yellow fills and text-white keep their
    light values: they pass contrast on both grounds. */

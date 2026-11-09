@@ -15,8 +15,8 @@ function getDetector(): Detector | null {
   return Ctor ? new Ctor({ formats: ["qr_code"] }) : null;
 }
 
-/** Camera/manual QR scanner that routes to the server-side signed-token verifier. */
-export function QrVerifyScanner({ expectedType }: { expectedType: ScannableQrType }) {
+/** Camera/manual QR scanner that routes to the server-side signed-token verifier. `showHeader={false}` drops the built-in title block when the caller supplies one (e.g. a CollapsibleCard header). */
+export function QrVerifyScanner({ expectedType, showHeader = true }: { expectedType: ScannableQrType; showHeader?: boolean }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -117,11 +117,17 @@ export function QrVerifyScanner({ expectedType }: { expectedType: ScannableQrTyp
   }
 
   return (
-    <section aria-labelledby={`qr-scanner-title-${expectedType}`} className="space-y-4">
-      <div>
-        <h2 id={`qr-scanner-title-${expectedType}`} className="text-lg font-bold text-daet-ink">{title}</h2>
-        <p className="mt-1 text-sm text-daet-ink/70">{description}</p>
-      </div>
+    <section
+      aria-labelledby={showHeader ? `qr-scanner-title-${expectedType}` : undefined}
+      aria-label={showHeader ? undefined : title}
+      className="space-y-4"
+    >
+      {showHeader ? (
+        <div>
+          <h2 id={`qr-scanner-title-${expectedType}`} className="text-lg font-bold text-daet-ink">{title}</h2>
+          <p className="mt-1 text-sm text-daet-ink/70">{description}</p>
+        </div>
+      ) : null}
 
       {supported ? (
         <div className="overflow-hidden rounded-2xl bg-slate-950">

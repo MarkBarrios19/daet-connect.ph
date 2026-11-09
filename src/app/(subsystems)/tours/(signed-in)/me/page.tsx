@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { PageBody } from "@/components/ui/signed-in-frame";
@@ -267,9 +268,9 @@ async function TripsContent() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <QrVerifyScanner expectedType="guide" />
-          </Card>
+          <CollapsibleCard title="Scan a guide badge" description="Scan a guide's CONNECT-Daet badge to check their current accreditation.">
+            <QrVerifyScanner expectedType="guide" showHeader={false} />
+          </CollapsibleCard>
 
           <Card id="rewards" className="scroll-mt-6">
             <CardHeader title="Your points" />
@@ -306,8 +307,10 @@ async function TripsContent() {
             </details>
           </Card>
 
-          <Card>
-            <CardHeader title="Messages" />
+          <CollapsibleCard
+            title="Messages"
+            hint={unreadChats > 0 ? <span className="text-blue-700 dark:text-blue-300">{unreadChats} unread</span> : "No unread messages."}
+          >
             <p className="text-daet-ink">
               {unreadChats > 0 ? (
                 <>
@@ -320,10 +323,12 @@ async function TripsContent() {
             <ButtonLink href="/tours/messages" variant="secondary" className="mt-3">
               Open inbox
             </ButtonLink>
-          </Card>
+          </CollapsibleCard>
 
-          <Card>
-            <CardHeader title="Saved trip plans" action={<Link href="/tours/my-itineraries" className="inline-flex min-h-11 items-center font-bold text-blue-700 dark:text-blue-300 hover:underline">All plans</Link>} />
+          <CollapsibleCard
+            title="Saved trip plans"
+            action={<Link href="/tours/my-itineraries" className="inline-flex min-h-11 items-center font-bold text-blue-700 dark:text-blue-300 hover:underline">All plans</Link>}
+          >
             {(itineraries ?? []).length === 0 ? (
               <p className="text-sm text-daet-ink/70">
                 Plan a trip around Daet and save it here. <Link href="/tours/plan" className="inline-flex min-h-11 items-center font-bold text-daet-forest dark:text-blue-300 underline">Start planning</Link>
@@ -342,7 +347,7 @@ async function TripsContent() {
                 ))}
               </ul>
             )}
-          </Card>
+          </CollapsibleCard>
 
           <PushOptIn variant="prompt" />
         </div>
