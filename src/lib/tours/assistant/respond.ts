@@ -63,6 +63,8 @@ export type RespondDeps = {
   supabase: SupabaseClient;
   userId: string | null;
   today: string;
+  /** Whether the caller's authoritative role is tourist. */
+  canBook?: boolean;
   /** Whether the AI may be used for this call (key configured and within the limit). */
   aiAllowed: boolean;
   /** Road legs for travel_time (the cached Routes API); estimates when missing. */
@@ -104,7 +106,7 @@ export async function* respond(raw: unknown, deps: RespondDeps): AsyncGenerator<
     return;
   }
   const { history, here, trip, image } = cleaned;
-  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], route: deps.route, here, trip, image };
+  const ctx: ToolContext = { supabase: deps.supabase, userId: deps.userId, today: deps.today, cards: [], canBook: deps.canBook === true, route: deps.route, here, trip, image };
 
   // Photos need a signed-in visitor and a full AI answer; basic mode can't look at one.
   if (image && (!deps.userId || !deps.aiAllowed)) {

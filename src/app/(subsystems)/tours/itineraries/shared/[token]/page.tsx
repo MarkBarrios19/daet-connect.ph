@@ -9,6 +9,8 @@ import { rowsToDays, type SavedItem } from "@/lib/tours/itinerary/form";
 import { isUuid } from "@/lib/tours/operator-access";
 import { BookEachTrip } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 
 export const metadata: Metadata = { title: "Shared itinerary", robots: { index: false } };
 
@@ -23,7 +25,8 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
   if (!shared) notFound();
 
   const days = rowsToDays(shared.items ?? [], shared.start_date);
-  const tours = await bookableForDays(supabase, days);
+  const [tours, session] = await Promise.all([bookableForDays(supabase, days), getAuthenticatedSession()]);
+  const canBook = canStartBooking(session);
 
   return (
     <PageFrame>
@@ -36,7 +39,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
         </div>
         {tours.length ? (
           <div className="mt-6 space-y-2">
-            <BookEachTrip packages={tours} group={null} title="Book these tours yourself" />
+            <BookEachTrip packages={tours} group={null} title={canBook ? "Book these tours yourself" : "Tour options"} canBook={canBook} />
             <p className="text-sm text-slate-600 dark:text-slate-400">Each tour is booked and paid separately, by each person or group.</p>
           </div>
         ) : null}

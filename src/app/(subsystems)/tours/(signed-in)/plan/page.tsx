@@ -7,7 +7,8 @@ import { timed } from "@/lib/server-timing";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { isLlmEnabled } from "@/lib/tours/itinerary/llm";
 import { addDays } from "@/lib/tours/itinerary/types";
-import { getAuthUser } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 import { PlannerApp } from "@/app/(subsystems)/tours/plan/planner-app";
 import { PlannerV2 } from "@/app/(subsystems)/tours/plan/planner-v2";
 
@@ -53,13 +54,15 @@ async function Planner({ searchParams }: PageProps) {
   // The travel assistant links here with the tourist's own description of the trip.
   const { describe } = await searchParams;
   const initialDescription = typeof describe === "string" ? describe.slice(0, 500) : "";
-  const user = await timed("page:plan", getAuthUser);
+  const session = await timed("page:plan", getAuthenticatedSession);
+  const signedIn = Boolean(session.user);
+  const canBook = canStartBooking(session);
 
   // The merged chat + plan planner. TRIP_PLANNER_V2=off brings back the old form.
   if (process.env.TRIP_PLANNER_V2 !== "off") {
     return (
       <PageBody bleed>
-        <PlannerV2 signedIn={Boolean(user)} initialDescription={initialDescription} />
+        <PlannerV2 signedIn={signedIn} canBook={canBook} initialDescription={initialDescription} />
       </PageBody>
     );
   }
@@ -72,7 +75,7 @@ async function Planner({ searchParams }: PageProps) {
           Tell us about your days. We build a schedule that fits opening hours, travel time and your budget.
         </p>
         <div className="mt-8">
-          <PlannerApp defaultDate={addDays(toManilaDateKey(new Date()), 1)} aiAvailable={isLlmEnabled()} signedIn={Boolean(user)} initialDescription={initialDescription} />
+          <PlannerApp defaultDate={addDays(toManilaDateKey(new Date()), 1)} aiAvailable={isLlmEnabled()} signedIn={signedIn} initialDescription={initialDescription} />
         </div>
       </div>
     </PageBody>

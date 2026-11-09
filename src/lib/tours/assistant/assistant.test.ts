@@ -91,6 +91,19 @@ describe("tools", () => {
     expect(await tourDetails(ctx(), { packageId: "not-a-uuid" })).toHaveProperty("error");
   });
 
+  it("only returns booking links when the caller's context allows booking", async () => {
+    const ineligible = ctx();
+    const hidden = await tourDetails(ineligible, { packageId: PKG });
+    expect(hidden).not.toHaveProperty("bookingLink");
+    expect(ineligible.cards.some((card) => card.type === "link" && card.href.endsWith("/book"))).toBe(false);
+
+    const eligible = ctx(ME);
+    eligible.canBook = true;
+    const shown = await tourDetails(eligible, { packageId: PKG });
+    expect(shown).toHaveProperty("bookingLink", `/tours/packages/${PKG}/book`);
+    expect(eligible.cards).toContainEqual({ type: "link", href: `/tours/packages/${PKG}/book`, label: "Book Calaguas Island Hopping" });
+  });
+
   it("never shows bookings to visitors, and only the tourist's own when signed in", async () => {
     const visitor = ctx(null);
     expect(await myBookings(visitor, {})).toMatchObject({ signedIn: false });

@@ -19,15 +19,15 @@ export function groupPrice(pkg: BookablePackage, group: number): number | null {
  * separately), and the total for the group. Without a group (a shared,
  * view-only plan) each viewer books for themselves, so there is no total.
  */
-export function BookEachTrip({ packages, group, title = "Book each trip" }: { packages: DatedPackage[]; group: number | null; title?: string }) {
+export function BookEachTrip({ packages, group, title, canBook = false }: { packages: DatedPackage[]; group: number | null; title?: string; canBook?: boolean }) {
   if (!packages.length) return null;
   const prices = group ? packages.map((p) => groupPrice(p, group)) : [];
   const known = prices.filter((p): p is number => p !== null);
   return (
     <div className="space-y-2">
-      <h3 className="font-bold text-daet-ink">{title}</h3>
+      <h3 className="font-bold text-daet-ink">{title ?? (canBook ? "Book each trip" : "Tour options")}</h3>
       {packages.map((p) => (
-        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookHref(p.id, p.date, group)} />
+        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookHref(p.id, p.date, group)} canBook={canBook} />
       ))}
       {group && packages.length > 1 && known.length ? (
         <p className="text-sm font-semibold text-daet-ink">
@@ -39,7 +39,7 @@ export function BookEachTrip({ packages, group, title = "Book each trip" }: { pa
   );
 }
 
-export function BookableCard({ pkg, group, bookHref: href }: { pkg: BookablePackage; group: number | null; bookHref?: string }) {
+export function BookableCard({ pkg, group, bookHref: href, canBook = false }: { pkg: BookablePackage; group: number | null; bookHref?: string; canBook?: boolean }) {
   const price = pkg.price
     ? pkg.price.perPerson
       ? `from ${formatPeso(pkg.price.amount)} per person${group && group > 1 ? ` · about ${formatPeso(pkg.price.amount * group)} for ${group}` : ""}`
@@ -61,7 +61,7 @@ export function BookableCard({ pkg, group, bookHref: href }: { pkg: BookablePack
       <p className="text-sm text-daet-ink">{WEATHER_RULE}</p>
       {pkg.notIncluded.length ? <p className="text-sm text-slate-600 dark:text-slate-400">Not included: {pkg.notIncluded.join(", ")}.</p> : null}
       <div className="flex flex-wrap items-center gap-2 pt-1">
-        {href ? (
+        {href && canBook ? (
           <Link href={href} className="inline-flex min-h-11 items-center rounded-full bg-blue-600 px-5 text-sm font-bold text-white hover:bg-blue-700">
             Book this trip
           </Link>
@@ -86,7 +86,7 @@ const tourDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateStri
  * day and group price, the total, and one Book button per tour, because each
  * operator is booked and paid separately.
  */
-export function BookSummary({ packages, group }: { packages: DatedPackage[]; group: number | null }) {
+export function BookSummary({ packages, group, canBook = false }: { packages: DatedPackage[]; group: number | null; canBook?: boolean }) {
   if (!packages.length) return null;
   const rows = packages.map((p) => ({ p, price: group ? groupPrice(p, group) : null }));
   const known = rows.flatMap((r) => (r.price === null ? [] : [r.price]));
@@ -94,7 +94,7 @@ export function BookSummary({ packages, group }: { packages: DatedPackage[]; gro
   return (
     <section aria-labelledby="book-summary" className="space-y-3 rounded-2xl bg-surface p-5">
       <h2 id="book-summary" className="font-[family-name:var(--font-display)] text-[1.75rem] font-semibold leading-8 text-daet-ink">
-        Book each trip
+        {canBook ? "Book each trip" : "Tour options"}
       </h2>
       <ul className="group/books space-y-3">
         {rows.map(({ p, price }) => (
@@ -107,7 +107,13 @@ export function BookSummary({ packages, group }: { packages: DatedPackage[]; gro
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1.5">
               <strong className="text-daet-ink">{price !== null ? formatPeso(price) : "See price"}</strong>
-              <BookLink href={bookHref(p.id, p.date, group)} label={`Book ${p.title}${price !== null ? ` · ${formatPeso(price)}` : ""}`} />
+              {canBook ? (
+                <BookLink href={bookHref(p.id, p.date, group)} label={`Book ${p.title}${price !== null ? ` · ${formatPeso(price)}` : ""}`} />
+              ) : (
+                <Link href={`/tours/packages/${p.id}`} className="inline-flex min-h-11 items-center px-3 text-sm font-bold text-blue-700 hover:underline dark:text-blue-300">
+                  Details
+                </Link>
+              )}
             </span>
           </li>
         ))}

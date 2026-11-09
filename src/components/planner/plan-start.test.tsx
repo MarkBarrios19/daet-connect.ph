@@ -12,7 +12,10 @@ jest.mock("next/image", () => ({ __esModule: true, default: (props: { alt: strin
 jest.mock("@/components/maps/route-map", () => ({ RouteMap: () => null }));
 
 describe("PlanStart", () => {
-  beforeEach(() => window.sessionStorage.clear());
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
 
   it("sends what they type, and an example trip when tapped", () => {
     const onSend = jest.fn();
@@ -28,9 +31,17 @@ describe("PlanStart", () => {
   });
 
   it("shows the saved dates and group on the chips, and Dates opens the trip form", () => {
-    window.sessionStorage.setItem("daet-trip-context-v1", JSON.stringify({ dates: { start: "2026-11-06", end: "2026-11-08" }, travelers: { adults: 2, children: [] }, origin: { city: "Manila" } }));
+    const keyInDays = (days: number) => {
+      const date = new Date();
+      date.setUTCDate(date.getUTCDate() + days);
+      return date.toISOString().slice(0, 10);
+    };
+    const start = keyInDays(30);
+    const end = keyInDays(32);
+    const label = (key: string) => new Date(`${key}T00:00:00Z`).toLocaleDateString("en-PH", { month: "short", day: "numeric", timeZone: "UTC" });
+    window.sessionStorage.setItem("daet-trip-context-v1", JSON.stringify({ dates: { start, end }, travelers: { adults: 2, children: [] }, origin: { city: "Manila" } }));
     render(<PlanStart signedIn onSend={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Nov 6 to Nov 8" }));
+    fireEvent.click(screen.getByRole("button", { name: `${label(start)} to ${label(end)}` }));
     expect(screen.getByRole("button", { name: "2 travelers" })).toBeInTheDocument();
     expect(screen.getByRole("form", { name: "Your trip" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Recents" })).toHaveAttribute("href", "/tours/my-itineraries");
@@ -72,7 +83,7 @@ describe("TravelChip", () => {
 describe("BookSummary", () => {
   const pkg: DatedPackage = { id: "pkg1", title: "Surf lesson", coverImageUrl: null, matched: ["Bagasbas Beach"], price: { amount: 1200, perPerson: true }, operatorName: "Coast Tours", verified: true, notIncluded: [], date: "2026-11-06" };
   it("lists each tour with the group price, the total and its own Book button", () => {
-    render(<BookSummary packages={[pkg, { ...pkg, id: "pkg2", title: "Calaguas day trip", price: { amount: 2400, perPerson: true }, date: "2026-11-07" }]} group={2} />);
+    render(<BookSummary packages={[pkg, { ...pkg, id: "pkg2", title: "Calaguas day trip", price: { amount: 2400, perPerson: true }, date: "2026-11-07" }]} group={2} canBook />);
     expect(screen.getByText("Total if you book both")).toBeInTheDocument();
     expect(screen.getByText("₱7,200.00")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Book Surf lesson · ₱2,400.00" })).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-06&pax=2");

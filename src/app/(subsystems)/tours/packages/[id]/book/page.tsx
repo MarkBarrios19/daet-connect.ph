@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bookableDates, type AvailabilityRow } from "@/lib/tours/availability";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 import { BookingForm } from "./booking-form";
-import { getAuthUser } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
 
 
 type PageProps = {
@@ -33,14 +33,25 @@ export default async function BookPackagePage({ params, searchParams }: PageProp
   const query = await searchParams;
   const prefill = { date: typeof query.date === "string" ? query.date : undefined, pax: typeof query.pax === "string" ? query.pax : undefined };
   const back = new URLSearchParams(Object.entries(prefill).filter((e): e is [string, string] => typeof e[1] === "string"));
-  const supabase = await createSupabaseServerClient();
-
-  // Get current user
-  const user = await getAuthUser();
-  
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session.user) {
     redirect(`/login?next=${encodeURIComponent(`/tours/packages/${id}/book${back.size ? `?${back}` : ""}`)}`);
   }
+  if (session.error || !session.role) {
+    return (
+      <PageFrame>
+        <Notice variant="error" title="Your account role could not be verified">
+          Booking is available only to tourist accounts. Please try again later or contact support if this continues.
+        </Notice>
+      </PageFrame>
+    );
+  }
+  if (session.role !== "tourist") {
+    redirect(session.role === "admin" ? "/tours/admin" : "/dashboard");
+  }
+
+  const user = session.user;
+  const supabase = await createSupabaseServerClient();
 
   // Fetch package details with price variants
   const { data: pkg, error } = await supabase

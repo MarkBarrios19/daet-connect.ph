@@ -156,6 +156,13 @@ BEGIN
   IF n = 1 THEN pass := pass + 1; ELSE fails := fails || 'operator cannot confirm own booking; '; END IF;
   BEGIN PERFORM tours_admin_analytics(current_date - 7, current_date); ok := false; EXCEPTION WHEN others THEN ok := true; END;
   IF ok THEN pass := pass + 1; ELSE fails := fails || 'operator runs analytics; '; END IF;
+  -- Only tourists create bookings (F13); not even for the operator's own account.
+  BEGIN
+    INSERT INTO tours_bookings (package_id, user_id, price_variant_id, tour_date, number_of_pax, contact_name, contact_email, contact_phone, booking_reference)
+    VALUES (v_pkg, v_operator_profile, v_variant, v_date, greatest(v_min, 1), 'x', 'x@example.ph', '0', 'BK-TEST-OPERATOR');
+    ok := false;
+  EXCEPTION WHEN others THEN ok := true; END;
+  IF ok THEN pass := pass + 1; ELSE fails := fails || 'operator creates booking; '; END IF;
   BEGIN
     INSERT INTO tours_merchandise (name, category, seller_name, submitted_by_operator_id, review_status, created_by)
     VALUES ('Test', 'tshirt', 'Test', v_operator, 'approved', v_operator_profile);
@@ -176,6 +183,12 @@ BEGIN
   IF ok THEN pass := pass + 1; ELSE fails := fails || 'guide inserts check-in directly (bypassing tours_check_in); '; END IF;
   SELECT count(*) INTO n FROM tours_guide_availability WHERE guide_id <> v_guide;
   IF n = 0 THEN pass := pass + 1; ELSE fails := fails || 'guide sees other guides'' availability; '; END IF;
+  BEGIN
+    INSERT INTO tours_bookings (package_id, user_id, price_variant_id, tour_date, number_of_pax, contact_name, contact_email, contact_phone, booking_reference)
+    VALUES (v_pkg, v_guide_profile, v_variant, v_date, greatest(v_min, 1), 'x', 'x@example.ph', '0', 'BK-TEST-GUIDE');
+    ok := false;
+  EXCEPTION WHEN others THEN ok := true; END;
+  IF ok THEN pass := pass + 1; ELSE fails := fails || 'guide creates booking; '; END IF;
   RESET ROLE;
 
   -- ------------------------------------------------------------ admin
@@ -188,6 +201,13 @@ BEGIN
   SET LOCAL ROLE authenticated;
   BEGIN PERFORM tours_admin_analytics(current_date - 30, current_date); ok := true; EXCEPTION WHEN others THEN ok := false; END;
   IF ok THEN pass := pass + 1; ELSE fails := fails || 'admin cannot run analytics; '; END IF;
+  -- Admin tools manage tours and bookings; they do not book on a tourist's behalf.
+  BEGIN
+    INSERT INTO tours_bookings (package_id, user_id, price_variant_id, tour_date, number_of_pax, contact_name, contact_email, contact_phone, booking_reference)
+    VALUES (v_pkg, v_admin, v_variant, v_date, greatest(v_min, 1), 'x', 'x@example.ph', '0', 'BK-TEST-ADMIN');
+    ok := false;
+  EXCEPTION WHEN others THEN ok := true; END;
+  IF ok THEN pass := pass + 1; ELSE fails := fails || 'admin creates booking; '; END IF;
   RESET ROLE;
 
   -- ------------------------------------------------------------ messaging channels

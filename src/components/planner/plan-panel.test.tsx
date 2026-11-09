@@ -112,7 +112,7 @@ describe("PlanPanel", () => {
 
   it("books each trip on its plan day for the whole group, with a total", () => {
     const second = { ...itinerary.packages[0], id: "pkg2", title: "Daet Heritage Walk", matched: ["Daet Park"], price: { amount: 1000, perPerson: false } };
-    render(<PlanPanel itinerary={{ ...itinerary, packages: [...itinerary.packages, second] }} onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
+    render(<PlanPanel itinerary={{ ...itinerary, packages: [...itinerary.packages, second] }} canBook onChange={jest.fn()} onAsk={jest.fn()} actions={noop} />);
     fireEvent.click(screen.getByRole("button", { name: "All days" }));
     const books = screen.getAllByRole("link", { name: "Book this trip" });
     expect(books[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-10&pax=3");

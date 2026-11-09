@@ -35,10 +35,13 @@ import { usePlaceHash } from "./use-place-hash";
 export function PlaceFan({
   places,
   signedIn,
+  canBook = false,
   mapPlaces = [],
 }: {
   places: FanPlace[];
   signedIn: boolean;
+  /** Only verified tourist accounts may start a booking. */
+  canBook?: boolean;
   /** The places the open card's map can pin, with the coordinates from the places table. */
   mapPlaces?: MapPoint[];
 }) {
@@ -683,7 +686,7 @@ export function PlaceFan({
               size="md"
               className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
             >
-              Book Now
+              {canBook ? "Book Now" : "Explore tours"}
             </ButtonLink>
           </div>
         ) : (
@@ -704,7 +707,7 @@ export function PlaceFan({
                 size="xl"
                 className="wayra [--wayra-fill:var(--color-blue-700)] [--wayra-ink:#fff]"
               >
-                Book Now
+                {canBook ? "Book Now" : "Explore tours"}
               </ButtonLink>
               {/* Both buttons sit on the hero's pale ground in light mode, so
                   both carry the theme-aware outline: `onBlue` is white on

@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAssistantLlmEnabled, runAssistant } from "@/lib/tours/assistant/llm";
 import { cleanHistory, respond, withSignInCard } from "@/lib/tours/assistant/respond";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 import { clearAiHistory, loadAiHistory, savingReply } from "@/lib/tours/assistant/history";
 import { toManilaDateKey } from "@/lib/tours/events-calendar";
 
@@ -27,6 +28,13 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Booking links follow the same rule as the pages: a visitor may start the
+  // flow, a signed-in staff account is never offered it, and a failed role
+  // lookup fails closed.
+  const { data: role, error: roleError } = user
+    ? await supabase.rpc("get_my_role")
+    : { data: null, error: null };
+  const canBook = canStartBooking({ user, role, error: roleError ? roleError.message : null });
   // A day's allowance of full answers (3 without an account, 20 with one),
   // counted per account or per device; then basic mode.
   const jar = await cookies();
@@ -45,6 +53,7 @@ export async function POST(request: Request) {
     supabase,
     userId: user?.id ?? null,
     today,
+    canBook,
     aiAllowed,
     tripQuestions: process.env.TRIP_PLANNER_V2 !== "off",
     route: async (from, to) => (await planRoute([from, to])).legs[0],

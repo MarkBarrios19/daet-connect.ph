@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { PageBody } from "@/components/ui/signed-in-frame";
 import { PushOptIn } from "@/components/tours/push-opt-in";
+import { QrVerifyScanner } from "@/components/tours/qr-verify-scanner";
 import { checkPayable, remainingBalance } from "@/lib/paymongo/checkout";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -86,8 +87,11 @@ async function TripsContent() {
   }
   const session = await getAuthenticatedSession();
   if (!session.user) redirect(`/login?next=${encodeURIComponent("/tours/me")}`);
-  // Staff have their own dashboards.
+  // Staff have their own dashboards. An unavailable role fails closed rather than exposing the tourist dashboard.
   if (session.role && session.role !== "tourist") redirect(session.role === "admin" ? "/tours/admin" : "/dashboard");
+  if (session.error || session.role !== "tourist") {
+    return <Notice variant="error" title="We could not verify your account role">Please try again later. Tourist dashboard features are unavailable until your role can be verified.</Notice>;
+  }
 
   const userId = session.user.id;
   const supabase = await createSupabaseServerClient();
@@ -263,6 +267,10 @@ async function TripsContent() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <QrVerifyScanner expectedType="guide" />
+          </Card>
+
           <Card id="rewards" className="scroll-mt-6">
             <CardHeader title="Your points" />
             <p className="font-[family-name:var(--font-display)] text-5xl font-semibold text-daet-ink">
