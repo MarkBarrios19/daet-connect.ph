@@ -14,6 +14,7 @@ import {
   restWidths,
   toClipPath,
   widthsWithFocus,
+  type FanGeometry,
   type Point,
 } from "./fan-geometry";
 import { useFanAnimation } from "./use-fan-animation";
@@ -150,19 +151,21 @@ function Harness({
   onOpened,
   onClosed,
   api,
+  geometry: currentGeometry = geometry,
 }: {
   onOpened?: () => void;
   onClosed?: () => void;
   api: { current: Api | null };
+  geometry?: FanGeometry;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const fan = useFanAnimation({ root, geometry, onOpened, onClosed });
+  const fan = useFanAnimation({ root, geometry: currentGeometry, onOpened, onClosed });
   api.current = fan;
 
   return (
     <div ref={root}>
       <div data-headline />
-      {geometry.wedges.map((_, index) => (
+      {currentGeometry.wedges.map((_, index) => (
         <button type="button" key={index} data-wedge={index}>
           <span data-photo={index} />
           <span data-chip={index} />
@@ -172,9 +175,11 @@ function Harness({
   );
 }
 
-function mount(options: { onOpened?: () => void; onClosed?: () => void } = {}) {
+function mount(options: { onOpened?: () => void; onClosed?: () => void } = {}, currentGeometry = geometry) {
   const api: { current: Api | null } = { current: null };
-  const view = render(<Harness api={api} onOpened={options.onOpened} onClosed={options.onClosed} />);
+  const view = render(
+    <Harness api={api} onOpened={options.onOpened} onClosed={options.onClosed} geometry={currentGeometry} />,
+  );
   const wedges = Array.from(view.container.querySelectorAll<HTMLElement>("[data-wedge]"));
   const photos = Array.from(view.container.querySelectorAll<HTMLElement>("[data-photo]"));
   const chips = Array.from(view.container.querySelectorAll<HTMLElement>("[data-chip]"));
@@ -289,6 +294,16 @@ describe("useFanAnimation", () => {
       expect(call.vars.autoAlpha).toBe(0);
       expect(call.vars.y).toBe(6);
     });
+  });
+
+  it("stops an opened phone photo at the measured tab bar", () => {
+    const withTabBar = fanGeometry(WIDTH, HEIGHT, "phone", { insets: { top: 56, bottom: 57 } });
+    const { api, wedges } = mount({}, withTabBar);
+
+    act(() => api.current?.openAt(4, { instant: true }));
+
+    expect(wedges[4].style.clipPath).toBe(toClipPath(withTabBar.openPoints, WIDTH, HEIGHT));
+    expect(Math.max(...withTabBar.openPoints.map(([, y]) => y))).toBe(HEIGHT - 57);
   });
 
   it("morphs an opening wedge towards the whole hero, and the others outward", () => {

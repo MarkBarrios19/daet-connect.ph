@@ -210,7 +210,7 @@ export interface FanGeometry {
   wedges: Wedge[];
   /** Rest shapes in pixels, in DOM order. */
   points: Point[][];
-  /** The shape that fills the hero when a place is open, in pixels. */
+  /** The open photo's visible rectangle in pixels, stopping above the bottom inset. */
   openPoints: Point[];
 }
 
@@ -336,7 +336,7 @@ export function fanGeometry(
         wedgePolygon(fan.vp, a0, a1, radius, gap, ARC_POINTS, far.get(fan)),
       ),
     ),
-    openPoints: rectPolygon(width, height),
+    openPoints: rectPolygon(width, height - Math.max(0, Math.min(height, options.insets?.bottom ?? 0))),
   };
 }
 

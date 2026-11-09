@@ -921,9 +921,13 @@ describe("PlaceFan on a phone", () => {
       setHeroSize(390, 844);
       const { container } = renderFan();
       const headline = container.querySelector("[data-headline]") as HTMLElement;
+      const section = container.querySelector("section") as HTMLElement;
 
       // The middle of what is left between the two: 56 at the top, 57 at the foot.
       expect(headline.style.top).toBe(`${(56 + 844 - 57) / 2}px`);
+      // The sheet and its open-photo clip inherit the measured nav height, not
+      // only the CSS estimate used by the rest of the app.
+      expect(section.style.getPropertyValue("--tab-bar-h")).toBe("57px");
     } finally {
       header.remove();
       tabBar.remove();
