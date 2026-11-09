@@ -87,6 +87,8 @@ test.describe("R6: guide schedules and swap requests", () => {
   test("the operator sees the request and why some guides can't be picked", async ({ context, page }) => {
     await signInAs(context, "operator");
     await page.goto("/tours/operator/bookings", { waitUntil: "networkidle" });
+    // The swap request shows inside the booking's own panel.
+    await page.getByRole("button", { name: /Show details for BK-20261023-7F3K2Q/ }).click();
     const request = page.getByRole("region", { name: "Guide swap request" });
     await expect(request.getByText(/asks to hand this tour to another guide/)).toBeVisible();
     await expect(request.getByText("My boat license renewal is on that day.", { exact: false })).toBeVisible();

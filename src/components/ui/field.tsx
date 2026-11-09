@@ -80,3 +80,22 @@ export function Textarea({ invalid, className, ...props }: ComponentProps<"texta
 export function Select({ invalid, className, ...props }: ComponentProps<"select"> & ControlProps) {
   return <select aria-invalid={invalid || undefined} className={cn(controlClasses, className)} {...props} />;
 }
+
+/**
+ * A checkbox the size of a fingertip. The 44px label box is the target; the
+ * square itself stays small so a table row does not grow around it. Always
+ * give it a label — visible, or `sr-only` inside a `<label>` when the column
+ * heading already says what it is.
+ */
+export function Checkbox({ className, ...props }: ComponentProps<"input">) {
+  return (
+    <input
+      type="checkbox"
+      className={cn(
+        "h-5 w-5 shrink-0 rounded border-line text-blue-600 accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:ring-offset-2 disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}

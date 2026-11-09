@@ -139,6 +139,22 @@ export function guideAssignedEmail(b: BookingEmailData, guideName: string | null
   ]);
 }
 
+/** Sent when money is on its way back: how much, and what a refund of part of it means. */
+export function refundSentEmail(b: BookingEmailData, amount: number) {
+  const left = Math.max(0, b.totalPaid - amount);
+  return render(`Refund sent: ${b.reference}`, [
+    hello(b.contactName),
+    `${b.operatorName ?? "The operator"} sent back ${formatPeso(amount)} for ${b.tourTitle} on ${longDate(b.tourDate)}.`,
+    left > 0
+      ? `${formatPeso(left)} of what you paid is still to be returned.`
+      : "That is everything you paid; nothing more is owed on this booking.",
+    "",
+    `Booking reference: ${b.reference}`,
+    { label: "View booking", href: b.bookingUrl },
+    "Where the money lands (GCash, card, bank) depends on how you paid, and takes a few banking days.",
+  ]);
+}
+
 /** Sent when the operator calls the trip off: why, and the two choices. */
 export function tripCalledOffEmail(b: BookingEmailData, reason: string) {
   return render(`Trip called off: ${b.tourTitle} on ${longDate(b.tourDate)}`, [
