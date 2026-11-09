@@ -102,3 +102,27 @@ export function isSettledRefundStatus(status: string | null | undefined): boolea
 export function refundReference(refundId: string): string {
   return refundId;
 }
+
+/** Compare the provider's active refunds with the ledger before sending more money. */
+export function refundHistoryMatches(
+  provider: RefundResource[],
+  ledger: Array<{ provider_ref: string | null; amount: number | string }>,
+  paymentId: string,
+): boolean {
+  const active = new Map<string, number>();
+  for (const refund of provider) {
+    const a = refund?.attributes;
+    if (!refund?.id || !a || a.payment_id !== paymentId || !Number.isInteger(a.amount) || a.amount <= 0 ||
+        !["pending", "processing", "succeeded", "failed"].includes(a.status)) return false;
+    if (isSettledRefundStatus(a.status)) {
+      if (active.has(refund.id)) return false;
+      active.set(refund.id, a.amount);
+    }
+  }
+  if (active.size !== ledger.length) return false;
+  for (const row of ledger) {
+    if (!row.provider_ref || active.get(row.provider_ref) !== pesosToCentavos(Number(row.amount))) return false;
+    active.delete(row.provider_ref);
+  }
+  return active.size === 0;
+}

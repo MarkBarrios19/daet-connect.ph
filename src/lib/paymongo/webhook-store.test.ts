@@ -24,3 +24,23 @@ describe("insertPayments emails", () => {
     expect(emailPaymentReceived).not.toHaveBeenCalled();
   });
 });
+
+describe("refund reconciliation", () => {
+  const refund = { id: "ref_one", type: "refund" as const, attributes: { status: "succeeded", payment_id: "pay_one", amount: 10000, reason: null } };
+  it("passes a matching operation and authoritative values to the privileged RPC", async () => {
+    const rpc = jest.fn().mockResolvedValue({ error: null });
+    const maybeSingle = jest.fn().mockResolvedValue({ data: { id: "operation", state: "pending" }, error: null });
+    const admin = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }), rpc } as unknown as SupabaseClient;
+    await createSupabaseWebhookStore(admin).reconcileRefund!(refund);
+    expect(rpc).toHaveBeenCalledWith("tours_update_refund_operation", { p_id: "operation", p_state: "succeeded", p_ref: "ref_one", p_payment_ref: "pay_one", p_centavos: 10000 });
+  });
+
+  it("does not modify unknown or already terminal operations", async () => {
+    const rpc = jest.fn();
+    for (const data of [null, { id: "operation", state: "succeeded" }]) {
+      const admin = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data, error: null }) }) }) }), rpc } as unknown as SupabaseClient;
+      await createSupabaseWebhookStore(admin).reconcileRefund!(refund);
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});

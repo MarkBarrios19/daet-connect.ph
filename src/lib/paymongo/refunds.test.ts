@@ -1,4 +1,4 @@
-import { isRefundReason, isSettledRefundStatus, planRefund, REFUND_NOTES_MAX, refundNotes, REFUND_REASONS } from "./refunds";
+import { isRefundReason, isSettledRefundStatus, planRefund, refundHistoryMatches, REFUND_NOTES_MAX, refundNotes, REFUND_REASONS } from "./refunds";
 
 const payment = (over: Partial<{ id: string; provider_ref: string; amount: number; refunded: number | null }> = {}) => ({
   id: "pay-row-1",
@@ -97,5 +97,32 @@ describe("isSettledRefundStatus", () => {
   it("treats money on its way back as done enough to record", () => {
     for (const status of ["succeeded", "processing", "pending"]) expect(isSettledRefundStatus(status)).toBe(true);
     for (const status of ["failed", "", null, undefined]) expect(isSettledRefundStatus(status)).toBe(false);
+  });
+});
+
+describe("refundHistoryMatches", () => {
+  const refund = (id: string, amount: number, status = "succeeded", payment_id = "pay_abc123") => ({
+    id, type: "refund" as const, attributes: { amount, status, payment_id, reason: null },
+  });
+
+  it("matches active refunds by reference and centavo amount, ignoring failed refunds", () => {
+    expect(refundHistoryMatches(
+      [refund("ref_one", 25000), refund("ref_two", 10000, "processing"), refund("ref_failed", 5000, "failed")],
+      [{ provider_ref: "ref_one", amount: 250 }, { provider_ref: "ref_two", amount: "100.00" }],
+      "pay_abc123",
+    )).toBe(true);
+    expect(refundHistoryMatches([], [], "pay_abc123")).toBe(true);
+  });
+
+  it("rejects an unrecorded provider refund, changed amount, or unmatched ledger entry", () => {
+    expect(refundHistoryMatches([refund("ref_external", 60000)], [], "pay_abc123")).toBe(false);
+    expect(refundHistoryMatches([refund("ref_one", 60000)], [{ provider_ref: "ref_one", amount: 599 }], "pay_abc123")).toBe(false);
+    expect(refundHistoryMatches([], [{ provider_ref: "ref_one", amount: 600 }], "pay_abc123")).toBe(false);
+    expect(refundHistoryMatches([refund("ref_one", 60000, "failed")], [{ provider_ref: "ref_one", amount: 600 }], "pay_abc123")).toBe(false);
+  });
+
+  it("fails closed for unknown statuses or refunds for another payment", () => {
+    expect(refundHistoryMatches([refund("ref_one", 100, "unknown")], [], "pay_abc123")).toBe(false);
+    expect(refundHistoryMatches([refund("ref_one", 100, "succeeded", "pay_other")], [], "pay_abc123")).toBe(false);
   });
 });

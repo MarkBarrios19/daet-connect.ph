@@ -364,9 +364,6 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
   const mapped: BoardRow[] = (bookings ?? []).map((booking) => {
     const pkg = Array.isArray(booking.tours_packages) ? booking.tours_packages[0] : booking.tours_packages;
     const refunds = refundsFor(booking.id);
-    // PayMongo can only return what came in through PayMongo. The board does not
-    // need the split to draw a row; Process Refund reads the payments itself.
-    const onlinePaid = round2(Number(booking.total_paid ?? 0));
     const status = boardStatus(
       { id: booking.id, status: booking.status, total_amount: booking.total_amount, total_paid: booking.total_paid },
       refunds,
@@ -399,7 +396,6 @@ async function BookingsContent({ searchParams }: { searchParams: SearchParams })
       }),
       pendingProofs: proofsByBooking.get(booking.id) ?? [],
       refundable: status === "refunded" ? 0 : (refundableByBooking.get(booking.id) ?? 0),
-      onlinePaid,
       capacity: slotFor(booking.package_id, booking.tour_date)
         ? {
             capacity_total: slotFor(booking.package_id, booking.tour_date)!.capacity_total,

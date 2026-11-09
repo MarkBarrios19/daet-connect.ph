@@ -1,4 +1,5 @@
 import { buildSignatureHeader } from "@/lib/paymongo/signature";
+import type { RefundResource } from "@/lib/paymongo/refunds";
 import { ledgerRowsFromSession, processPaymongoWebhook, type LedgerInsert, type WebhookStore } from "@/lib/paymongo/webhook";
 
 const SECRET = "whsk_test_secret";
@@ -55,6 +56,7 @@ class MemoryStore implements WebhookStore {
     }
     return inserted;
   }
+  reconcileRefund = jest.fn(async (_refund: RefundResource) => {});
   async markProcessed(id: string, outcome: string, bookingId: string | null) {
     this.events.set(id, { processed: true, outcome, bookingId });
   }
@@ -196,4 +198,26 @@ describe("ledgerRowsFromSession", () => {
       }),
     ]);
   });
+});
+
+
+it("refund events re-fetch authoritative status and process redelivery once", async () => {
+  const store = new MemoryStore();
+  const apiRefund: RefundResource = { id: "ref_1", type: "refund", attributes: { payment_id: "pay_1", amount: 100, status: "succeeded", reason: null } };
+  const retrieveRefund = jest.fn().mockResolvedValue(apiRefund);
+  const body = JSON.stringify({ data: { id: "evt_ref", attributes: { type: "payment.refund.updated", livemode: false, data: { id: "ref_1", type: "refund", attributes: { status: "failed" } } } } });
+  const deps = { webhookSecret: SECRET, mode: "test" as const, retrieveSession: jest.fn(), retrieveRefund, store, now: NOW };
+  const request = { rawBody: body, signatureHeader: buildSignatureHeader(SECRET, T, body, "test") };
+  expect((await processPaymongoWebhook(request, deps)).status).toBe(200);
+  expect(store.reconcileRefund).toHaveBeenCalledWith(apiRefund);
+  expect((await processPaymongoWebhook(request, deps)).body.message).toBe("Duplicate event");
+  expect(retrieveRefund).toHaveBeenCalledTimes(1);
+});
+
+it("a refund webhook lookup failure leaves the event retryable", async () => {
+  const store = new MemoryStore();
+  const body = JSON.stringify({ data: { id: "evt_ref", attributes: { type: "payment.refund.updated", livemode: false, data: { id: "ref_1", type: "refund" } } } });
+  const deps = { webhookSecret: SECRET, mode: "test" as const, retrieveSession: jest.fn(), retrieveRefund: jest.fn().mockRejectedValue(new Error("offline")), store, now: NOW };
+  await expect(processPaymongoWebhook({ rawBody: body, signatureHeader: buildSignatureHeader(SECRET, T, body, "test") }, deps)).rejects.toThrow("offline");
+  expect(store.events.get("evt_ref")?.processed).toBe(false);
 });
