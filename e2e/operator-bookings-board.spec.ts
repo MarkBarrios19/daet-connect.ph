@@ -83,27 +83,33 @@ test("the board is usable and quiet at phone width", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("the operator can record that the guest doesn't need a guide", async ({ page, request }) => {
-  // The mock keeps PATCHed rows for the run; start from the fixture's state.
-  await request.post("http://127.0.0.1:54329/__reset_board");
+test("the operator can take the guide off when the guest doesn't need one", async ({ page, request }) => {
+  const MOCK = "http://127.0.0.1:54329";
+  // The mock keeps PATCHed rows for the rest of the run; start from the fixture.
+  await request.post(`${MOCK}/__reset_board`);
   await page.reload({ waitUntil: "networkidle" });
 
   const row = page.getByRole("article").filter({ hasText: "BK-20261023-7F3K2Q" }).first();
   await row.getByRole("button", { name: /Show details for/ }).click();
 
   const panel = row.getByRole("region", { name: "Guide and operations" });
-  await expect(panel.getByText("Unassigned")).toBeVisible();
+  // The fixture's booking has a guide; the guest's request takes them off it.
+  await expect(panel.getByText("Currently assigned:")).toBeVisible();
 
   await panel.getByRole("button", { name: /doesn't need a guide/ }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Record that no guide is needed" })).toBeVisible();
-  await dialog.getByLabel(/What did the guest say/).fill("Guest asked in chat");
+  await expect(dialog.getByRole("heading", { name: /Take .+ off this tour\?/ })).toBeVisible();
+  await dialog.getByLabel(/What did the guest say/).fill("Di namin kailangan ng tour guide");
   await dialog.getByRole("button", { name: "No guide needed" }).click();
 
-  // The row refreshes to the recorded decision, not an unfinished assignment.
+  // The row refreshes to the recorded decision, with nobody assigned.
   await expect(panel.getByText("No guide for this tour")).toBeVisible();
-  await expect(panel.getByText("“Guest asked in chat”")).toBeVisible();
+  await expect(panel.getByText("“Di namin kailangan ng tour guide”")).toBeVisible();
   await expect(panel.getByText("None — as the guest asked")).toBeVisible();
   await expect(panel.getByRole("button", { name: "Assign a guide after all" })).toBeVisible();
+  await expect(panel.getByText("Currently assigned:")).toHaveCount(0);
   await expect(panel.getByRole("button", { name: /doesn't need a guide/ })).toHaveCount(0);
+
+  // Leave the fixture as the other specs expect it.
+  await request.post(`${MOCK}/__reset_board`);
 });
