@@ -216,6 +216,18 @@
   }
 }
 
+/* The fan and headline are calculated from the measured client viewport. Keep
+ * the server's desktop-sized placeholder out of the first paint on phones; the
+ * client reveals these layers only after it has the real hero dimensions.
+ * The no-script list remains visible as a useful fallback. */
+[data-fan-ready="false"] > [role="group"],
+[data-fan-ready="false"] > [data-headline],
+[data-fan-ready="false"] > [data-gesture-hints],
+[data-fan-ready="false"] > #place-detail,
+[data-fan-ready="false"] > button[aria-label="Back to the fan"] {
+  visibility: hidden;
+}
+
 /* A panel that sticks below the header.
  *
  * The booking card sat at `top-6` — 24px from the top of the page, 37px less

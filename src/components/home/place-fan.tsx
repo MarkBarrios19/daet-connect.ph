@@ -83,6 +83,9 @@ export function PlaceFan({
     width: DEFAULT_HERO_SIZE.width,
     height: DEFAULT_HERO_SIZE.height,
   });
+  // The server cannot know the device viewport. Keep the fan and the layout
+  // that depends on it hidden until the browser has supplied real dimensions.
+  const [heroMeasured, setHeroMeasured] = useState(false);
   const [layout, setLayout] = useState<FanLayout>("desktop");
   // Where the fan's point should be. Null until the headline has been measured,
   // which leaves the server's standing value in place.
@@ -95,7 +98,7 @@ export function PlaceFan({
 
   useEffect(() => {
     const element = sectionRef.current;
-    if (!element || typeof ResizeObserver === "undefined") return;
+    if (!element) return;
 
     let frame = 0;
     // `clientWidth`/`clientHeight`, not `getBoundingClientRect()`: the page fold
@@ -124,6 +127,7 @@ export function PlaceFan({
       // A landscape phone keeps one fan of six; anything else under 768 is two.
       const landscapePhone = height < 500;
       setLayout(width >= 768 || landscapePhone ? "desktop" : "phone");
+      setHeroMeasured(true);
     };
 
     const schedule = () => {
@@ -132,12 +136,16 @@ export function PlaceFan({
     };
 
     measure();
-    const observer = new ResizeObserver(schedule);
-    observer.observe(element);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    observer?.observe(element);
+    window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
 
     return () => {
       cancelAnimationFrame(frame);
-      observer.disconnect();
+      observer?.disconnect();
+      window.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
     };
   }, []);
 
@@ -503,6 +511,7 @@ export function PlaceFan({
     <section
       ref={sectionRef}
       aria-labelledby="home-title"
+      data-fan-ready={heroMeasured ? "true" : "false"}
       onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
