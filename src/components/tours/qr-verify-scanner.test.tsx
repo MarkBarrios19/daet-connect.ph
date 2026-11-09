@@ -33,6 +33,14 @@ describe("QrVerifyScanner", () => {
     expect(push).toHaveBeenCalledWith(`/tours/verify/${token("booking")}?mode=verify`);
   });
 
+  it("drops its own heading when the caller supplies one, and keeps an accessible name", () => {
+    const { container } = render(<QrVerifyScanner expectedType="guide" showHeader={false} />);
+
+    expect(container.querySelector("h2")).toBeNull();
+    expect(screen.getByLabelText("Scan a guide badge")).toBeInTheDocument();
+    expect(screen.getByLabelText("Or paste the guide badge link or code")).toBeInTheDocument();
+  });
+
   it("rejects a QR with the wrong type without navigating", () => {
     render(<QrVerifyScanner expectedType="booking" />);
     fireEvent.change(screen.getByLabelText("Or paste the tourist ticket link or code"), { target: { value: token("guide") } });
