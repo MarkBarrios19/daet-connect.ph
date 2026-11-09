@@ -683,15 +683,15 @@ describe("PlaceFan's hero", () => {
     delete (Element.prototype as unknown as Record<string, unknown>).clientHeight;
   });
 
-  it("runs up under the sticky header, so the photos start at the top of the page", () => {
-    // The header is a scrim pinned over the page, not a bar above it: the hero
-    // takes the whole viewport and pulls itself up by exactly the header's
-    // height, so its last pixel is the fold.
+  it("fills the current viewport under the sticky header, so the open photo reaches the tab bar", () => {
+    // The header is a scrim pinned over the page, not a bar above it. The hero
+    // starts at the top and uses the dynamic viewport: a small-viewport height
+    // can end early on mobile and expose the next section below the bottom sheet.
     const { container } = renderFan();
     const section = container.querySelector("section") as HTMLElement;
 
     expect(section.className).toContain("-mt-[var(--header-h)]");
-    expect(section.className).toContain("h-[100svh]");
+    expect(section.className).toContain("hero-viewport");
     expect(section.className).toContain("max-h-[1080px]");
     expect(section.className).toContain("min-h-[520px]");
     expect(section.className).not.toContain("h-[calc(100svh-var(--header-h))]");
