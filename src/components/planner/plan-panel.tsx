@@ -94,6 +94,7 @@ export function PlanPanel({
   footer,
   onPickDates,
   request,
+  canBook = false,
 }: {
   itinerary: ItineraryResult;
   onChange: (next: ItineraryResult) => void;
@@ -106,6 +107,8 @@ export function PlanPanel({
   onPickDates?: () => void;
   /** A change asked from outside the panel (a follow-up chip); runs once per new value. */
   request?: { text: string; id: number } | null;
+  /** Only verified tourist accounts may start a booking. */
+  canBook?: boolean;
 }) {
   const { plan } = itinerary;
   const [day, setDay] = useState<number | "all">(0);
@@ -339,6 +342,7 @@ export function PlanPanel({
                   busy={pending}
                   packagesFor={(id) => byStop.get(`${i}:${id}`) ?? []}
                   bookingHref={(p) => bookHref(p.id, datedFor(p), group)}
+                  canBook={canBook}
                   onAsk={onAsk}
                   onSwap={(b) => run(`Swapped ${b.name}.`, () => actions.swap(itinerary, i, b.attractionId))}
                   onRemove={(b) => removeWithUndo(i, b)}
@@ -351,7 +355,7 @@ export function PlanPanel({
             <div className="space-y-2">
               <h3 className="font-bold text-daet-ink">More tours near your plan</h3>
               {rest.map((p) => (
-                <BookableCard key={p.id} pkg={p} group={group} bookHref={bookHref(p.id, datedFor(p), group)} />
+                <BookableCard key={p.id} pkg={p} group={group} bookHref={bookHref(p.id, datedFor(p), group)} canBook={canBook} />
               ))}
             </div>
           ) : null}
@@ -394,6 +398,7 @@ function DayStops({
   busy,
   packagesFor,
   bookingHref,
+  canBook,
   onAsk,
   onSwap,
   onRemove,
@@ -407,6 +412,7 @@ function DayStops({
   busy: boolean;
   packagesFor: (attractionId: string) => BookablePackage[];
   bookingHref: (p: BookablePackage) => string;
+  canBook: boolean;
   onAsk: (text: string) => void;
   onSwap: (b: VisitBlock) => void;
   onRemove: (b: VisitBlock) => void;
@@ -442,6 +448,7 @@ function DayStops({
               busy={busy}
               packages={packagesFor(b.attractionId)}
               bookingHref={bookingHref}
+              canBook={canBook}
               onAsk={() => onAsk(`Tell me about ${b.name}`)}
               onNearby={() => onAsk(`What's near ${b.name}? Food and places to see.`)}
               onSwap={() => onSwap(b)}
@@ -473,6 +480,7 @@ function StopCard({
   busy,
   packages,
   bookingHref,
+  canBook,
   onAsk,
   onNearby,
   onSwap,
@@ -485,6 +493,7 @@ function StopCard({
   busy: boolean;
   packages: BookablePackage[];
   bookingHref: (p: BookablePackage) => string;
+  canBook: boolean;
   onAsk: () => void;
   onNearby: () => void;
   onSwap: () => void;
@@ -537,7 +546,7 @@ function StopCard({
         />
       ) : null}
       {packages.map((p) => (
-        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p)} />
+        <BookableCard key={p.id} pkg={p} group={group} bookHref={bookingHref(p)} canBook={canBook} />
       ))}
     </article>
   );

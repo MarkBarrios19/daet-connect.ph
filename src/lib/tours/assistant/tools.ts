@@ -34,6 +34,8 @@ export type ToolContext = {
   userId: string | null;
   today: string;
   cards: AssistantCard[];
+  /** Authoritative role gate from the server; booking links are shown only to tourists. */
+  canBook?: boolean;
   /** Road leg between two points (the cached Routes API on the server); an estimate when missing. */
   route?: (from: LatLng, to: LatLng) => Promise<Leg>;
   /** The traveller's location, rounded, when they chose to share it for this message. Never stored. */
@@ -139,7 +141,7 @@ export async function tourDetails(ctx: ToolContext, input: { packageId: string }
   const inclusions = (data.tours_package_inclusions ?? []) as Array<{ item_text: string; is_included: boolean }>;
   const stops = ((data.tours_package_stops ?? []) as Array<{ location_name: string; stop_order: number }>).sort((a, b) => a.stop_order - b.stop_order);
   addCard(ctx, { type: "tour", id: data.id, title: data.title, location: data.location_name, priceFrom: priceFrom(data.tours_package_price_variants as VariantRow[]), duration: durationText(data.duration_value, data.duration_type), href: `/tours/packages/${data.id}` });
-  if (dates.length) addCard(ctx, { type: "link", href: `/tours/packages/${data.id}/book`, label: `Book ${data.title}` });
+  if (dates.length && ctx.canBook) addCard(ctx, { type: "link", href: `/tours/packages/${data.id}/book`, label: `Book ${data.title}` });
   return {
     title: data.title,
     operator: one(data.tours_operators as { business_name: string } | { business_name: string }[] | null)?.business_name ?? null,
@@ -158,7 +160,7 @@ export async function tourDetails(ctx: ToolContext, input: { packageId: string }
     stops: stops.map((s) => s.location_name),
     nextOpenDates: dates.map((d) => ({ date: d.date, seatsLeft: d.seatsLeft })),
     link: `/tours/packages/${data.id}`,
-    bookingLink: `/tours/packages/${data.id}/book`,
+    ...(ctx.canBook ? { bookingLink: `/tours/packages/${data.id}/book` } : {}),
   };
 }
 

@@ -1,4 +1,5 @@
-import { getAuthUser } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
@@ -107,14 +108,14 @@ type PackageRow = {
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient();
   const [
-    user,
+    session,
     eventsResult,
     merchResult,
     tripsResult,
     placesResult,
     countsResult,
   ] = await Promise.all([
-    getAuthUser(),
+    getAuthenticatedSession(),
     supabase.from("tours_events").select(EVENT_COLUMNS).eq("is_published", true).gte("ends_at", new Date().toISOString()).order("starts_at", { ascending: true }).limit(4),
     supabase.from("tours_merchandise").select(MERCH_COLUMNS).eq("is_active", true).eq("is_featured", true).order("created_at", { ascending: false }).limit(4),
     // Trips on the home page: the newest published ones, with the same columns
@@ -197,7 +198,7 @@ export default async function HomePage() {
     <PageFrame bleed credits={credits}>
       {/* First screen: six photos of Daet fanned out, the headline in the dark
           under the point they radiate from. */}
-      <PlaceFan places={FAN_PLACES} mapPlaces={mapPlaces} signedIn={!!user} />
+      <PlaceFan places={FAN_PLACES} mapPlaces={mapPlaces} signedIn={!!session.user} canBook={canStartBooking(session)} />
 
       {/* Places: one panel open at a time, the rest narrow and grey. */}
       <section aria-labelledby="home-places" className={SECTION}>

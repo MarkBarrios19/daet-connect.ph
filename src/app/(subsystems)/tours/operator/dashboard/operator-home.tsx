@@ -7,6 +7,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageFrame } from "@/components/ui/page-frame";
 import { MonthCalendar } from "@/components/tours/month-calendar";
+import { QrVerifyScanner } from "@/components/tours/qr-verify-scanner";
 import { RatingBadge } from "@/components/tours/star-rating";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { bookingsByDay, occupancy } from "@/lib/tours/dashboards";
@@ -173,6 +174,10 @@ export async function OperatorHome({ operatorId, searchParams }: { operatorId: s
             ) : (
               <BookingLines bookings={todayList} title={title} />
             )}
+          </Card>
+
+          <Card>
+            <QrVerifyScanner expectedType="booking" />
           </Card>
 
           {revenue && revenue.byPackage.length > 0 ? (

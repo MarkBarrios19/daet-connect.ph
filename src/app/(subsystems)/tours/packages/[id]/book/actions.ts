@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedSession } from "@/lib/tours/server-auth";
 import { validateCreateBooking, type CreateBookingInput } from "@/lib/tours/booking-contract";
 import { userFacingDbError } from "@/lib/tours/db-errors";
 import { emailBookingReceived } from "@/lib/email/notify-booking";
@@ -13,22 +14,23 @@ interface CreateBookingResult {
 
 export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
   try {
-    // Validate input
+    // Writes require a current Supabase Auth session and an authoritative tourist role.
+    const session = await getVerifiedSession();
+    if (!session.user) {
+      return { success: false, error: "You must be logged in to book." };
+    }
+    if (session.error || session.role !== "tourist") {
+      return { success: false, error: session.error ?? "Only tourist accounts can create bookings." };
+    }
+
+    // Validate input only after the role gate, so non-tourists cannot reach any booking work.
     const validationError = validateCreateBooking(input);
     if (validationError) {
       return { success: false, error: validationError };
     }
 
+    const user = session.user;
     const supabase = await createSupabaseServerClient();
-
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { success: false, error: "You must be logged in to book." };
-    }
 
     // Get package details to verify it exists and is published
     const { data: pkg, error: pkgError } = await supabase

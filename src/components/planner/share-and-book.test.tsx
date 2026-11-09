@@ -10,17 +10,23 @@ const pkg: DatedPackage = { id: "pkg1", title: "Surf Lesson", coverImageUrl: nul
 
 describe("BookEachTrip", () => {
   it("books for the group on the saved trip", () => {
-    render(<BookEachTrip packages={[pkg]} group={3} />);
+    render(<BookEachTrip packages={[pkg]} group={3} canBook />);
     expect(screen.getByRole("link", { name: "Book this trip" })).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11&pax=3");
     expect(screen.getByText(/about ₱2,400.00 for 3/)).toBeInTheDocument();
   });
 
   it("lets a viewer of a shared plan book for themselves, with no group total", () => {
-    render(<BookEachTrip packages={[pkg, { ...pkg, id: "pkg2" }]} group={null} title="Book these tours yourself" />);
+    render(<BookEachTrip packages={[pkg, { ...pkg, id: "pkg2" }]} group={null} title="Book these tours yourself" canBook />);
     expect(screen.getByRole("heading", { name: "Book these tours yourself" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Book this trip" })[0]).toHaveAttribute("href", "/tours/packages/pkg1/book?date=2026-11-11");
     expect(screen.queryByText(/for all 2 trips/)).not.toBeInTheDocument();
     expect(screen.queryByText(/about ₱/)).not.toBeInTheDocument();
+  });
+
+  it("does not show booking links when the caller is not an eligible tourist", () => {
+    render(<BookEachTrip packages={[pkg]} group={null} />);
+    expect(screen.queryByRole("link", { name: "Book this trip" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See details" })).toHaveAttribute("href", "/tours/packages/pkg1");
   });
 });
 

@@ -42,7 +42,7 @@ const actions: PanelActions = {
  * the chat pinned on the left at full height (a third of the width) and the
  * plan on the right (Desktop-Results). On phones the plan opens as a sheet.
  */
-export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boolean; initialDescription?: string }) {
+export function PlannerV2({ signedIn, canBook, initialDescription = "" }: { signedIn: boolean; canBook: boolean; initialDescription?: string }) {
   const [itinerary, setItinerary] = useState<ItineraryResult | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -126,6 +126,7 @@ export function PlannerV2({ signedIn, initialDescription = "" }: { signedIn: boo
   const panel = itinerary ? (
     <PlanPanel
       itinerary={itinerary}
+      canBook={canBook}
       onChange={setItinerary}
       onAsk={ask}
       actions={actions}

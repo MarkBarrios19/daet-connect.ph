@@ -14,6 +14,8 @@ import { PageFrame } from "@/components/ui/page-frame";
 import { Notice } from "@/components/ui/notice";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 import { RatingBadge, Stars } from "@/components/tours/star-rating";
 import { ReviewList } from "@/components/tours/review-list";
 import { distribution, toSummary, type Review } from "@/lib/tours/reviews";
@@ -112,6 +114,15 @@ export default async function PackageDetailPage({ params }: PageProps) {
 
   if (!pkg || pkg.status !== "published") {
     notFound();
+  }
+
+  // Booking is for tourist accounts. A visitor may start the flow (the booking
+  // page asks them to sign in); a signed-in staff account is never offered it.
+  let canBook = false;
+  try {
+    canBook = canStartBooking(await getAuthenticatedSession());
+  } catch {
+    // Fail closed: package details remain public when the role lookup is unavailable.
   }
 
   const operatorRow = Array.isArray(pkg.tours_operators) ? pkg.tours_operators[0] : pkg.tours_operators;
@@ -355,7 +366,7 @@ export default async function PackageDetailPage({ params }: PageProps) {
         </div>
 
         {/* Booking panel: beside the content on wide screens, a bar at the bottom on phones. */}
-        <aside aria-label="Book this trip" className="hidden lg:block">
+        <aside aria-label={canBook ? "Book this trip" : "Explore more tours"} className="hidden lg:block">
           {/* Stuck below the sticky header, not under it: the header is
               translucent, so a card at top-6 showed through it. */}
           <div className="sticky top-[calc(var(--header-h)+1.5rem)] rounded-2xl card-edge bg-surface p-6">
@@ -366,9 +377,15 @@ export default async function PackageDetailPage({ params }: PageProps) {
             {pkg.tours_package_price_variants && pkg.tours_package_price_variants.length > 1 ? (
               <p className="mt-2 text-sm text-daet-ink/80">{pkg.tours_package_price_variants.length} price options</p>
             ) : null}
-            <ButtonLink href={`/tours/packages/${pkg.id}/book`} size="lg" fullWidth className="mt-5">
-              Book this trip
-            </ButtonLink>
+            {canBook ? (
+              <ButtonLink href={`/tours/packages/${pkg.id}/book`} size="lg" fullWidth className="mt-5">
+                Book this trip
+              </ButtonLink>
+            ) : (
+              <ButtonLink href="/tours/browse" size="lg" fullWidth className="mt-5" variant="secondary">
+                Explore tours
+              </ButtonLink>
+            )}
             <ul className="mt-6 space-y-3 text-daet-ink">
               {["Confirmed by the local operator", `Free cancellation up to ${FREE_CANCELLATION_HOURS} hours before`, "Led by an accredited local guide"].map((line) => (
                 <li key={line} className="flex items-start gap-2">
@@ -388,9 +405,15 @@ export default async function PackageDetailPage({ params }: PageProps) {
             <span className="text-xl font-bold text-daet-ink">{formatPeso(displayPrice)}</span> <span className="text-sm text-daet-ink/75">{priceLabel}</span>
             <ApproxPrice pesos={displayPrice} className="text-xs" />
           </p>
-          <ButtonLink href={`/tours/packages/${pkg.id}/book`} size="lg" className="shrink-0">
-            Book this trip
-          </ButtonLink>
+          {canBook ? (
+            <ButtonLink href={`/tours/packages/${pkg.id}/book`} size="lg" className="shrink-0">
+              Book this trip
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/tours/browse" size="lg" className="shrink-0" variant="secondary">
+              Explore tours
+            </ButtonLink>
+          )}
         </div>
       </div>
       <div className="h-20 lg:hidden" aria-hidden="true" />

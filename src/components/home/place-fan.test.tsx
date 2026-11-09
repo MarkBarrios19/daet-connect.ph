@@ -35,7 +35,7 @@ beforeAll(() => {
 
 const renderFan = (signedInOrProps: boolean | Partial<React.ComponentProps<typeof PlaceFan>> = false) => {
   const props = typeof signedInOrProps === "boolean" ? { signedIn: signedInOrProps } : signedInOrProps;
-  return render(<PlaceFan places={FAN_PLACES} signedIn={false} {...props} />);
+  return render(<PlaceFan places={FAN_PLACES} signedIn={false} canBook={!props.signedIn} {...props} />);
 };
 
 // The hero's own geometry at the size the fan renders at before it is measured.
@@ -114,6 +114,13 @@ describe("PlaceFan", () => {
 
     expect(screen.getByRole("link", { name: "Book Now" })).toHaveAttribute("href", "/tours/browse");
     expect(screen.getByRole("button", { name: "Ask the travel guide" })).toBeInTheDocument();
+  });
+
+  it("shows browsing instead of a booking CTA to a signed-in non-tourist", () => {
+    renderFan({ signedIn: true, canBook: false });
+
+    expect(screen.getByRole("link", { name: "Explore tours" })).toHaveAttribute("href", "/tours/browse");
+    expect(screen.queryByRole("link", { name: "Book Now" })).not.toBeInTheDocument();
   });
 
   it("keeps the hero's second button legible on the pale ground", () => {

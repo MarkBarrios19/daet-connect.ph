@@ -28,7 +28,8 @@ const outline = "inline-flex min-h-11 items-center gap-2 rounded-full border bor
 const shortDay = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 import { BookSummary } from "@/components/planner/book-each-trip";
 import { bookableForDays } from "@/lib/tours/itinerary/bookable";
-import { getAuthUser } from "@/lib/tours/server-auth";
+import { getAuthenticatedSession } from "@/lib/tours/server-auth";
+import { canStartBooking } from "@/lib/tours/booking-eligibility";
 
 /** Who the saved trip is for: the planner's travellers, else the form's group size. */
 function groupFromPreferences(value: unknown): number | null {
@@ -45,8 +46,10 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   if (!isSupabaseConfigured() || !isUuid(id)) notFound();
   const supabase = await createSupabaseServerClient();
-  const user = await getAuthUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/tours/my-itineraries/${id}`)}`);
+  const session = await getAuthenticatedSession();
+  if (!session.user) redirect(`/login?next=${encodeURIComponent(`/tours/my-itineraries/${id}`)}`);
+  const user = session.user;
+  const canBook = canStartBooking(session);
 
   const { data: itinerary } = await supabase
     .from("tours_itineraries")
@@ -253,7 +256,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ id: 
             {points.length ? (
               <TripMap points={points} />
             ) : null}
-            <BookSummary packages={tours} group={group} />
+            <BookSummary packages={tours} group={group} canBook={canBook} />
             <section id="share" aria-labelledby="share-title" className="scroll-mt-24 rounded-2xl bg-surface p-5">
               <h2 id="share-title" className="mb-3 text-lg font-bold text-daet-ink">Share</h2>
               <ShareControls id={itinerary.id} title={itinerary.title} initialToken={itinerary.share_token} baseUrl={appBaseUrl()} />
