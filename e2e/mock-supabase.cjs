@@ -1196,6 +1196,9 @@ function build(role) {
     _event_availability: eventAvailability,
     tours_cancellations: cancellations,
     tours_payments: payments,
+    // 20261130: no refund is in flight on a fixture booking, so the Process
+    // Refund dialog's reconciliation check finds nothing to reconcile.
+    tours_refund_operations: [],
     tours_payment_proofs: proofs,
     tours_operators: [operator],
     tours_guides: guides,

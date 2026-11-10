@@ -19,7 +19,7 @@ const bookingId = "410520f7-428e-4a5e-9f7c-e6c14a2399e5";
 const payment = { id: "row1", provider_ref: "pay_abc", amount: 600 };
 const providerRefund = { id: "ref_previous", type: "refund" as const, attributes: { amount: 60000, payment_id: "pay_abc", status: "succeeded", reason: null } };
 
-function mockDatabase(status = "confirmed", ledgerError: { code: string; message: string } | null = null, operation: unknown = null) {
+function mockDatabase(status = "confirmed", ledgerError: { code: string; message: string } | null = null, operation: unknown = null, reservationsError: { code: string; message: string } | null = null) {
   const update = jest.fn();
   const rpc = jest.fn(async (name: string) => ({ data: name === "tours_refundable_amount" ? 600 : name === "tours_reserve_online_refund" ? "op-id" : 0, error: null }));
   const from = (table: string) => {
@@ -32,7 +32,8 @@ function mockDatabase(status = "confirmed", ledgerError: { code: string; message
       update: (value: unknown) => { update(value); return builder; },
       maybeSingle: async () => ({ data: table === "tours_refund_operations" ? operation : table === "tours_operators"
         ? { id: "op1", accreditation_status: "approved" }
-        : { id: bookingId, status, tour_date: "2099-01-01", total_paid: 600, booking_reference: "BK-TEST", tours_packages: { operator_id: "op1" } }, error: null }),
+        : { id: bookingId, status, tour_date: "2099-01-01", total_paid: 600, booking_reference: "BK-TEST", tours_packages: { operator_id: "op1" } },
+        error: table === "tours_refund_operations" ? reservationsError : null }),
       then: (resolve: (result: unknown) => void) => resolve({ data: query.includes("refund_of") ? [] : null, error: query.includes("refund_of") ? ledgerError : null }),
     };
     return builder;
@@ -84,6 +85,35 @@ test("a missing refund column gives an actionable setup message and never sends 
   expect(db.update).not.toHaveBeenCalled();
   expect(listPaymentRefunds).not.toHaveBeenCalled();
   expect(createRefund).not.toHaveBeenCalled();
+  log.mockRestore();
+});
+
+test("a missing refund reservations table names the migration instead of blaming permissions", async () => {
+  const db = mockDatabase("confirmed", null, null, {
+    code: "PGRST205",
+    message: "Could not find the table 'public.tours_refund_operations' in the schema cache",
+  });
+  const log = jest.spyOn(console, "error").mockImplementation(() => {});
+  const result = await processRefund({ bookingId, method: "paymongo", amount: 600 });
+  expect(result.success).toBe(false);
+  expect(result.error).toContain("20261130_paymongo_refund_reservations.sql");
+  expect(result.error).toContain("Nothing was sent to PayMongo");
+  expect(result.error).not.toContain("check the database setup");
+  expect(db.update).not.toHaveBeenCalled();
+  expect(createRefund).not.toHaveBeenCalled();
+  log.mockRestore();
+});
+
+test("a permission error on the reservations table keeps the general message", async () => {
+  mockDatabase("confirmed", null, null, {
+    code: "42501",
+    message: "permission denied for table tours_refund_operations",
+  });
+  const log = jest.spyOn(console, "error").mockImplementation(() => {});
+  const result = await processRefund({ bookingId, method: "paymongo", amount: 600 });
+  expect(result.success).toBe(false);
+  expect(result.error).toContain("check the database setup");
+  expect(result.error).not.toContain("20261130_paymongo_refund_reservations.sql");
   log.mockRestore();
 });
 

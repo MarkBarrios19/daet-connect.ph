@@ -22,6 +22,10 @@ import {
   refundHistoryMatches,
   type OnlinePayment,
 } from "@/lib/paymongo/refunds";
+import {
+  isMissingRefundReservationsTable,
+  REFUND_RESERVATIONS_NOT_INSTALLED,
+} from "@/lib/paymongo/refund-reservations";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -273,7 +277,13 @@ async function reconcilePendingRefund(supabase: Supabase, bookingId: string): Pr
   const { data: operation, error } = await supabase.from("tours_refund_operations")
     .select("id, state, provider_ref").eq("booking_id", bookingId)
     .in("state", ["reserved", "sending", "pending"]).maybeSingle();
-  if (error) return "Refund reservations could not be checked. Ask an administrator to check the database setup.";
+  if (error) {
+    console.error("Refund reservations check failed:", error.code, error.message);
+    // A missing table used to read as a permission problem. Say which
+    // migration is missing instead: the operator can hand that to an admin.
+    if (isMissingRefundReservationsTable(error)) return REFUND_RESERVATIONS_NOT_INSTALLED;
+    return "Refund reservations could not be checked. Ask an administrator to check the database setup.";
+  }
   if (!operation) return null;
   if (operation.state !== "pending" || !operation.provider_ref)
     return "A PayMongo refund is in progress or its outcome is uncertain. Do not retry; ask an administrator to reconcile it.";

@@ -2199,6 +2199,57 @@ export type Database = {
           },
         ]
       }
+      tours_refund_operations: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          payment_id: string
+          provider_ref: string | null
+          requested_by: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          payment_id: string
+          provider_ref?: string | null
+          requested_by: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          payment_id?: string
+          provider_ref?: string | null
+          requested_by?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tours_refund_operations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "tours_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_refund_operations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "tours_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tours_qr_scan_logs: {
         Row: {
           guide_id: string
@@ -2758,6 +2809,10 @@ export type Database = {
         Args: { p_topic: string }
         Returns: boolean
       }
+      tours_record_online_refund: {
+        Args: { p_booking_id: string; p_rows: Json }
+        Returns: number
+      }
       tours_record_refund: {
         Args: {
           p_amount: number
@@ -2770,6 +2825,28 @@ export type Database = {
       tours_refundable_amount: {
         Args: { p_booking_id: string }
         Returns: number
+      }
+      tours_reserve_online_refund: {
+        Args: {
+          p_amount: number
+          p_booking_id: string
+          p_payment_id: string
+        }
+        Returns: string
+      }
+      tours_sync_refund_cancellation: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      tours_update_refund_operation: {
+        Args: {
+          p_centavos?: number
+          p_id: string
+          p_payment_ref?: string
+          p_ref?: string
+          p_state: string
+        }
+        Returns: undefined
       }
       tours_reply_to_review: {
         Args: { p_reply: string; p_review_id: string }
